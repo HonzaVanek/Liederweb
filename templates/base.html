@@ -1,15 +1,24 @@
+    {% load static %}
 <!DOCTYPE html>
 <html lang="cs">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Lieder Society{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 <body>
     <header>
         <nav>
-            <a href="https://lieder-society.cz/" target="_blank" rel="noopener noreferrer">Lieder Society</a>
-            <a href="/rozesilac/">Rozesílač</a>
+            <a href="https://lieder-society.cz/" target="_blank" class="nav-button nav-lieder">
+                Lieder Society <span>→</span>
+            </a>
+
+            <a href="/rozesilac/" class="nav-button nav-rozesilac">
+                Rozesílač <span>→</span>
+            </a>
         </nav>
     </header>
 
