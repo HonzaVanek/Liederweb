@@ -1,0 +1,12 @@
+Ahoj {{ user.username }},
+
+děkujeme za registraci. Pro aktivaci svého účtu klikni na následující odkaz:
+
+{{ activation_link }}
+
+Teď jsi registrovaná. Ještě musíš napsat Vaňkovi, aby ten tvůj účet označil jako admin, pak budeš mít přístup k rozesílači Liedermailů na adrese http://liedersociety.online/rozesilac/ 
+Jestli je to nějakej haluz a tenhle mail jsi dostal/a omylem tak se omlouváme, někdo asi tvůj email vyplnil na stránce http://liedersociety.online/registrace/ 
+
+S pozdravem,
+
+Liederweb tým (což sem teda jenom já, ale takle to vypadá víc profi)

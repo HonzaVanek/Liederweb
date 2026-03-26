@@ -7,7 +7,7 @@
 {% block content %}
 <div class="login-container">
     <h1>Přihlášení</h1>
-    <p>Pro přístup k rozesílači je nutné se přihlásit. Pokud ještě nemáš svůj účet, <a href="#">zaregistruj se</a> - zadej platný email, kam bude zaslán registrační odkaz. Pak ještě musíš napsat Vaňkovi, aby z tvého účtu povolil přístup k rozesílači.</p>
+    <p>Pro přístup k rozesílači je nutné se přihlásit. Pokud ještě nemáš svůj účet, <a href="{% url 'registrace' %}">zaregistruj se</a> - zadej platný email, kam bude zaslán registrační odkaz. Pak ještě musíš napsat Vaňkovi, aby z tvého účtu povolil přístup k rozesílači.</p>
     <form method="post">
         {% csrf_token %}
 
