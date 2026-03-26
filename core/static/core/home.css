@@ -1,0 +1,19 @@
+h1 {
+    font-size: 2.5em;
+    margin-top: 100px;
+    text-align: center;
+}
+
+h1 span {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-style: italic;
+}
+
+p {
+    font-size: 1.2em;
+    margin-top: 15px;
+    text-align: center;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}

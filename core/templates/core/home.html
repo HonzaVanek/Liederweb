@@ -1,8 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
+
 
 {% block title %}Nový web Lieder Society{% endblock %}
 
+{% block style %}{% static "core/home.css" %}{% endblock style %}
+
 {% block content %}
-    <h1>(Zatím) Interní web Lieder Society</h1>
+    <h1>Interní (zatím) web <span>Lieder Society</span></h1>
     <p>Toto je hlavní stránka, časem tu možná bude ukázka nového webu Lieder Society. Nyní si vyber z MENU nahoře - buď web Lieder Society nebo Rozesílač newsletterů (ten je jen pro adminy).</p>
 {% endblock %}
