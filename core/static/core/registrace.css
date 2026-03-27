@@ -1,10 +1,11 @@
-.login-container {
+.register-container {
     width: 450px;
     margin: 80px auto;
     padding: 40px;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    border: #000 solid 2px;
     border-radius: 8px;
-    border:#000 solid 2px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+
     background:
         repeating-linear-gradient(
             to bottom,
@@ -27,12 +28,12 @@
             rgba(0,0,0,0.035) 36px,
             rgba(0,0,0,0.035) 37px,
             transparent 37px,
-            transparent 75px
+            transparent 80px
         ),
         #ffffff;
 }
 
-.login-container h1 {
+.register-container h1 {
     text-align: center;
     margin-bottom: 30px;
     color: #333;
@@ -41,37 +42,19 @@
     letter-spacing: 2px;
 }
 
-.login-container > p {
+.register-container > p {
     width: 100%;
     margin: 0 auto 30px;
     margin-top: 15px;
-
     padding: 12px 16px;
-    background-color: #f8f8f8;          
-    border-left: 4px solid #000;  
+    background-color: #f8f8f8;
+    border-left: 4px solid #000;
     border-radius: 4px;
-
     font-style: italic;
     color: #555;
     line-height: 1.4;
     text-align: left;
 }
-
-.login-container > p > a {
-    color: #000;
-    font-weight: 700;
-    font-style: normal;
-    text-decoration: underline;
-    padding: 2px 4px;
-    border-radius: 3px;
-    transition: background-color 0.35s ease, color 0.35s ease;
-}
-
-.login-container > p > a:hover {
-    background-color: #000;
-    color: #fff;
-}
-
 
 form {
     position: relative;
@@ -89,13 +72,27 @@ form {
     border-radius: 3px;
     background: none;
     outline: none;
-    border: 1px solid #646262;
+    border: 1px solid #000;
     transition: border-color 0.35s ease-out, box-shadow 0.35s ease-out;
 }
 
 .form-group input:hover {
     border-color: #504f4f;
     box-shadow: 0 0 0 1px #504f4f;
+}
+
+.form-group input:focus {
+    border-color: #000;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+}
+
+.form-group input:-webkit-autofill,
+.form-group input:-webkit-autofill:hover,
+.form-group input:-webkit-autofill:focus,
+.form-group input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+    -webkit-text-fill-color: #000 !important;
+    transition: background-color 9999s ease-in-out 0s;
 }
 
 .form-group label {
@@ -110,17 +107,12 @@ form {
     padding: 0 4px;
 }
 
-.form-group input:focus {
-    border-color: #000000;
-    box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
-}
-
 .form-group input:focus + label,
 .form-group input:not(:placeholder-shown) + label {
     top: -10px;
     left: 8px;
     font-size: 12px;
-    color: #000000;
+    color: #000;
 }
 
 .btn {
@@ -152,31 +144,40 @@ form {
     font-weight: bold;
 }
 
-/* Styl pro chybové hlášky */
-.errorlist {
+.field-errors .errorlist {
     margin-top: 6px;
     margin-bottom: 15px;
     padding-left: 0;
-    color: #d32f2f;  /* tmavě červená */
+    color: #d32f2f;
     font-weight: 500;
     list-style-type: none;
     font-size: 0.95rem;
 }
 
-.errorlist li {
-    background-color: #fdecea;  /* světle červené pozadí */
+.field-errors .errorlist li {
+    background-color: #fdecea;
     border: 1px solid #f5c6cb;
     padding: 8px 12px;
     border-radius: 4px;
 }
 
+.register-footer {
+    margin-top: 16px;
+    text-align: center;
+    color: #444;
+    font-size: 0.95rem;
+}
 
-/* Override pro autofill, aby se zabránilo pozadí a zachovalo se konzistentní zobrazení */
-.form-group input:-webkit-autofill,
-.form-group input:-webkit-autofill:hover,
-.form-group input:-webkit-autofill:focus,
-.form-group input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
-    -webkit-text-fill-color: #000 !important;
-    transition: background-color 9999s ease-in-out 0s;
+.register-footer a {
+    color: #000;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+.register-footer a:hover {
+    background-color: #000;
+    color: #fff;
 }

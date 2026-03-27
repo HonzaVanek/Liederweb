@@ -12,15 +12,32 @@
 </head>
 <body>
     <header>
-        <nav>
-            <a href="https://lieder-society.cz/" target="_blank" class="nav-button nav-lieder">
-                Lieder Society <span>→</span>
-            </a>
+        <div class="nav-wrapper">
+            <nav>
+                <a href="https://lieder-society.cz/" target="_blank" class="nav-button nav-lieder">
+                    Lieder Society <span>→</span>
+                </a>
 
-            <a href="/rozesilac/" class="nav-button nav-rozesilac">
-                Rozesílač <span>→</span>
-            </a>
-        </nav>
+                <a href="/rozesilac/" class="nav-button nav-rozesilac">
+                    Rozesílač <span>→</span>
+                </a>
+            </nav>
+
+            {% if request.resolver_match.namespace == 'rozesilac' and request.user.is_authenticated %}
+                <div class="nav-user-panel">
+                    <span class="logged-user">
+                        {{ request.user.username }}
+                    </span>
+
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="logout-button">
+                            Odhlásit
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
     </header>
 
     <main>

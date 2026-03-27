@@ -22,10 +22,10 @@ class VlastniLoginForm(AuthenticationForm):
     
 
 class RegistraceForm(UserCreationForm):
-    username = forms.CharField(label="Uživatelské jméno")
-    email = forms.EmailField(required=True, label='Email')
-    password1 = forms.CharField(label="Heslo", widget=forms.PasswordInput)
-    password2 = forms.CharField(label="Potvrzení hesla", widget=forms.PasswordInput)
+    username = forms.CharField(label="Uživatelské jméno", widget=forms.TextInput(attrs={"placeholder": " "}))
+    email = forms.EmailField(required=True, label='Email', widget=forms.EmailInput(attrs={"placeholder": " "}))
+    password1 = forms.CharField(label="Heslo", widget=forms.PasswordInput(attrs={"placeholder": " "}))
+    password2 = forms.CharField(label="Potvrzení hesla", widget=forms.PasswordInput(attrs={"placeholder": " "}))
 
     class Meta:
         model = User

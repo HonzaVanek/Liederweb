@@ -134,8 +134,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/login'
+LOGIN_REDIRECT_URL = '/rozesilac/'
+LOGOUT_REDIRECT_URL = '/login/'
 
 
 # zatím neřešíme vůbec produkci, takže zatím emaily do konzole

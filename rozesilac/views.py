@@ -1,8 +1,8 @@
 from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+from core.decorators import rozesilac_access_required
 
 # Create your views here.
 
-@login_required
+@rozesilac_access_required
 def dashboard(request):
     return render(request, 'rozesilac/dashboard.html')

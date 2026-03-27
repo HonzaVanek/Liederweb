@@ -2,25 +2,33 @@
 {% load static %}
 
 {% block title %}Registrace{% endblock title %}
-
 {% block style %}{% static "core/registrace.css" %}{% endblock style %}
 
 {% block content %}
 <div class="register-container">
-    <h1>Registrace nového uživatele</h1>
+    <h1>Registrace</h1>
+
+    <p>
+        Vyplň registrační údaje a použij platný e-mail. Po vytvoření účtu ještě
+        musí přístup k rozesílači povolit Vaněk (ó velký správce, demiurg, jasné slunce).
+    </p>
+
     <form method="post" novalidate>
         {% csrf_token %}
 
         {% if form.non_field_errors %}
-            <div class="non-field-errors">
-                {{ form.non_field_errors }}
+            <div class="form-error">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
             </div>
         {% endif %}
 
         {% for field in form %}
             <div class="form-group">
-                {{ field.label_tag }}
                 {{ field }}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+
                 {% if field.errors %}
                     <div class="field-errors">
                         {{ field.errors }}
@@ -30,6 +38,11 @@
         {% endfor %}
 
         <button type="submit" class="btn">Registrovat</button>
+
+        <div class="register-footer">
+            Už máš účet?
+            <a href="{% url 'login' %}">Přihlásit se</a>
+        </div>
     </form>
 </div>
 {% endblock content %}
