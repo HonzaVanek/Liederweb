@@ -1,0 +1,16 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}Rozesílač | Smazat šablonu{% endblock title %}
+
+{% block rozesilac_content %}
+<h2>Smazat šablonu</h2>
+
+<p>Opravdu chceš smazat šablonu <strong>{{ template_obj.name }}</strong>?</p>
+<p class="muted">Tato akce je nevratná.</p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Ano, smazat</button>
+  <a href="{% url 'rozesilac:templates' %}">Zpět</a>
+</form>
+{% endblock rozesilac_content %}

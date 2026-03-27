@@ -1,0 +1,185 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}Rozesílač | Kontakty{% endblock title %}
+
+{% block rozesilac_content %}
+<h2>Kontakty</h2>
+
+<p class="help-text">Zde můžeš spravovat kontakty pro rozesílání emailů. Nejprve vytvoř jednu nebo více skupin kontaktů. Pak můžeš do jednotlivých skupin přidávat kontakty (jeden kontakt může být i ve více skupinách najednou). To pole aktivní je defaultně zaškrtnuté, pokud je odškrtnuté, tak to znamená, že kontakt sice máme ve skupině, ale maily mu posílat nebudeme. Zároveň když se uživatel odhlásí z odběru newsletterů, tak o jeho email nepřijdeme, ale právě se přehodí na neaktivní, takže mu maily chodit už nebudou (můžeš ho manuálně upravit zas na aktivní, ale to bych asi nedělal když se odhlásil). Kontakty lze nahrávat i hromadně přes Excel, z toho drop-down MENU nejdřív vyber do jaké skupiny chceš kontakty importovat. Přes Excel ale teda nejde nahrávat kontaky do více skupin najednou. Dole pak je seznam úplně všech kontaktů, lze je i upravovat. Možná tam časem přidám nějaký paginator, aby nebyly všechny na jedné stránce, ale třeba jen prvních 20 a pak by se dalo překlikávat na další stránky...</p>
+
+{% if messages %}
+<ul class="messages">
+  {% for m in messages %}
+    <li class="{{ m.tags }}">{{ m }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<section class="content-section">
+<h3>Skupiny kontaktů</h3>
+
+<form method="post" class="section-form">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="add_group">
+
+  <div class="form-grid" style="grid-template-columns: 1fr auto;">
+    <div>
+      <label>Název skupiny</label>
+      {{ group_form.name }}
+      {% for e in group_form.name.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+    <div>
+      <button type="submit">Vytvořit skupinu</button>
+    </div>
+  </div>
+</form>
+
+{% if groups %}
+<div class="table-responsive">
+  <table class="table" style="margin-bottom: 24px;">
+    <thead>
+      <tr>
+        <th>Skupina</th>
+        <th>Počet kontaktů</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for g in groups %}
+        <tr>
+          <td>{{ g.name }}</td>
+          <td>{{ g.contacts.count }}</td>
+          <td class="actions">
+            <form method="post" style="display:inline;" onsubmit="return confirm('Opravdu smazat skupinu {{ g.name }}?');">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete_group">
+              <input type="hidden" name="group_id" value="{{ g.id }}">
+              <button type="submit">Smazat</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+</section>
+<section class="content-section">
+<h3>Přidat kontakt</h3>
+<form method="post" class="section-form">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="add_contact">
+
+  <div class="form-grid" style="grid-template-columns: 1fr 1fr 1.5fr 120px;">
+    <div>
+      <label>Jméno</label>
+      {{ add_form.name }}
+      {% for e in add_form.name.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+    </div>
+    <div>
+      <label>Oslovení</label>
+      {{ add_form.salutation }}
+      {% for e in add_form.salutation.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+    </div>
+    <div>
+      <label>Email</label>
+      {{ add_form.email }}
+      {% for e in add_form.email.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+    </div>
+    <div>
+      <label>Aktivní</label>
+      {{ add_form.is_active }}
+    </div>
+  </div>
+
+  <div class="template-form-row">
+    <label>Skupiny</label>
+    {{ add_form.groups }}
+    {% for e in add_form.groups.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+  </div>
+
+  <div class="form-actions">
+    <button type="submit">Uložit</button>
+  </div>
+</form>
+</section>
+
+<section class="content-section content-section-soft">
+<h3>Import z XLSX</h3>
+<p class="muted">Soubor musí mít první řádek hlavičky: <strong>jméno</strong> a <strong>email</strong>, ideálně i <strong>oslovení</strong>.</p>
+
+<form method="post" enctype="multipart/form-data" style="margin-bottom:20px;">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="import">
+
+  <div class="template-form-row">
+    {{ import_form.file }}
+    {% for e in import_form.file.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+  </div>
+
+  <div class="template-form-row">
+    <label>Přiřadit import do skupiny</label>
+    {{ import_form.group }}
+    {% for e in import_form.group.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+  </div>
+
+  <button type="submit">Importovat</button>
+</form>
+</section>
+
+<section class="content-section">
+<h3>Seznam uložených kontaktů</h3>
+
+{% if contacts %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Jméno</th>
+      <th>Oslovení</th>
+      <th>Email</th>
+      <th>Skupiny</th>
+      <th>Aktivní</th>
+      <th>Počet doručení</th>
+      <th>Potvrzené kliky</th>
+      <th>Akce</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in contacts %}
+      <tr>
+        <td>{{ c.name }}</td>
+        <td>{{ c.salutation|default:"—" }}</td>
+        <td>{{ c.email }}</td>
+        <td>
+          {% for g in c.groups.all %}
+            <span class="contact-group-badge">{{ g.name }}</span>
+          {% empty %}
+            <span class="muted">—</span>
+          {% endfor %}
+        </td>
+        <td>{% if c.is_active %}Ano{% else %}Ne{% endif %}</td>
+        <td>{{ c.delivery_count_for_ui }}</td>
+        <td>{{ c.confirmed_unique_click_count_for_ui }}</td>
+        <td class="actions">
+          <a href="{% url 'rozesilac:contact_detail' c.id %}">Statistiky</a>
+          |
+          <a href="{% url 'rozesilac:contact_edit' c.id %}">Upravit</a>
+          |
+          <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_contact">
+            <input type="hidden" name="contact_id" value="{{ c.id }}">
+            <button type="submit" onclick="return confirm('Opravdu smazat kontakt {{ c.email }}?');">Smazat</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</section>
+{% else %}
+<p class="muted">Zatím žádné kontakty.</p>
+{% endif %}
+{% endblock rozesilac_content %}

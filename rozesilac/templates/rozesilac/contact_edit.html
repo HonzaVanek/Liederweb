@@ -1,0 +1,64 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}Rozesílač | {{ page_title }}{% endblock title %}
+
+{% block rozesilac_content %}
+<h2>{{ page_title }}</h2>
+
+{% if messages %}
+<ul class="messages">
+  {% for m in messages %}
+    <li class="{{ m.tags }}">{{ m }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<form method="post">
+  {% csrf_token %}
+
+  <div class="template-form-row">
+    <label for="{{ form.name.id_for_label }}">Jméno</label>
+    {{ form.name }}
+    {% for e in form.name.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+    <label for="{{ form.email.id_for_label }}">Email</label>
+    {{ form.email }}
+    {% for e in form.email.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+    <label for="{{ form.salutation.id_for_label }}">Oslovení</label>
+    {{ form.salutation }}
+    {% for e in form.salutation.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+    <label for="{{ form.is_active.id_for_label }}">Aktivní</label>
+    {{ form.is_active }}
+    {% for e in form.is_active.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+    <label>Skupiny</label>
+    {{ form.groups }}
+    {% for e in form.groups.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="form-actions">
+    <button type="submit">{{ submit_label }}</button>
+    <a href="{% url 'rozesilac:contacts' %}">Zpět na kontakty</a>
+  </div>
+</form>
+{% endblock rozesilac_content %}

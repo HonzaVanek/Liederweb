@@ -1,0 +1,22 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+{% block title %}Rozesílač | Duplikovat šablonu{% endblock title %}
+
+{% block rozesilac_content %}
+<h2>Duplikovat šablonu</h2>
+
+<p>Opravdu chceš vytvořit kopii této šablony?</p>
+
+<div class="template-form-row">
+  <p><strong>Název:</strong> {{ template_obj.name }}</p>
+  <p><strong>Předmět:</strong> {{ template_obj.subject }}</p>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="form-actions">
+    <button type="submit">Duplikovat</button>
+    <a href="{% url 'rozesilac:templates' %}">Zrušit</a>
+  </div>
+</form>
+{% endblock rozesilac_content %}

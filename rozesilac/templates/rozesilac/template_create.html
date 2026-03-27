@@ -1,0 +1,225 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block title %}Rozesílač | {{ page_title }}{% endblock title %}
+
+{% block rozesilac_content %}
+<h2>{{ page_title }}</h2>
+
+{% if messages %}
+  <ul class="messages">
+    {% for m in messages %}
+      <li class="{{ m.tags }}">{{ m }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if form.errors %}
+  <div class="form-errors" style="margin-bottom: 15px;">
+    Oprav prosím chyby ve formuláři.
+  </div>
+{% endif %}
+
+  <div class="template-form-row image-panel">
+    <h3>Obrázky do emailu</h3>
+
+    {% if image_upload_form.non_field_errors %}
+      <div class="form-errors" style="margin-bottom: 10px;">
+    {% for error in image_upload_form.non_field_errors %}
+        <div>{{ error }}</div>
+    {% endfor %}
+      </div>
+{% endif %}
+
+    <p class="muted">
+      Využito: {{ total_size|filesizeformat }} z {{ limit_size|filesizeformat }}
+      |
+      <a href="{% url 'rozesilac:images' %}">Otevřít galerii všech obrázků</a>
+    </p>
+
+    <form method="post" action="{% url 'rozesilac:image_upload' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+
+      <div class="image-upload-inline">
+        <div>
+          <label for="{{ image_upload_form.title.id_for_label }}">Název</label>
+          {{ image_upload_form.title }}
+          {% for e in image_upload_form.title.errors %}
+          <div class="form-errors">{{ e }}</div>
+          {% endfor %}
+        </div>
+        <div>
+          <label for="{{ image_upload_form.image.id_for_label }}">Soubor</label>
+          {{ image_upload_form.image }}
+              {% for e in image_upload_form.image.errors %}
+                <div class="form-errors">{{ e }}</div>
+              {% endfor %}
+        </div>
+        <div>
+          <button type="submit">Nahrát obrázek</button>
+        </div>
+      </div>
+    </form>
+
+    {% if recent_images %}
+      <h4>Poslední 4 nahrané obrázky</h4>
+      <div class="recent-images-grid">
+        {% for img in recent_images %}
+          <div class="recent-image-card">
+            <img src="{{ img.image.url }}" alt="{{ img.title }}" class="recent-image-thumb">
+            <div class="muted small">{{ img.title|default:"Bez názvu" }}</div>
+            <div class="muted small">Velikost: {{ img.file_size|filesizeformat }}</div>
+            <input type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{{ img.image.url }}" id="recent-img-url-{{ img.id }}">
+            <button type="button" onclick="copyImageUrl('recent-img-url-{{ img.id }}')">Kopírovat URL</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">Zatím nejsou nahrané žádné obrázky.</p>
+    {% endif %}
+  </div>
+
+<form method="post" onsubmit="if (window.tinymce) { tinymce.triggerSave(); }" novalidate>
+  {% csrf_token %}
+
+  <div class="template-form-row">
+    <label for="{{ form.name.id_for_label }}">Název šablony</label>
+    {{ form.name }}
+    {% for e in form.name.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+    <label for="{{ form.subject.id_for_label }}">Předmět emailu</label>
+    {{ form.subject }}
+    {% for e in form.subject.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+  <label for="{{ form.preheader.id_for_label }}">Text náhledu emailu</label>
+  {{ form.preheader }}
+  <p class="muted">
+    Tento text se zobrazuje v náhledu emailu v inboxu (např. Seznam nebo Outlook to tak má).
+    Když ho nevyplníš, některé klienty mohou místo něj zobrazit třeba odkaz nebo jiný nevhodný kus HTML.
+  </p>
+  {% for e in form.preheader.errors %}
+    <div class="form-errors">{{ e }}</div>
+  {% endfor %}
+</div>
+
+  <div class="template-form-row">
+    <label for="{{ form.html_body.id_for_label }}">HTML tělo emailu</label>
+    {{ form.html_body }}
+    {% for e in form.html_body.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <button type="button" id="generate-text-btn">Přegenerovat text z HTML</button>
+
+  <div class="template-form-row">
+    <label for="{{ form.text_body.id_for_label }}">Textová verze</label>
+    {{ form.text_body }}
+    <p class="muted">
+      Tady se to bude generovat automaticky z HTML editoru. Můžeš tady cokoli upravit, pak se to přestane generovat automaticky a zůstane to tak, jak jsi upravila. Pokud zmáčkneš tlačítko "Přegenerovat text z HTML", smažeš tu ruční úpravu a text se znovu vygeneruje z toho HTML editoru výše. Tadyto pole "Textová verze" musí být vyplněné proto, že se používá pro emailové klienty, které neumí (nebo uživatel nechce) zobrazit HTML, a taky pro zlepšení doručitelnosti emailů (aby nebyl vnímán jako spam).
+    </p>
+    {% for e in form.text_body.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="form-actions">
+    <button type="submit">{{ submit_label }}</button>
+    <a href="{% url 'rozesilac:templates' %}">Zpět na seznam</a>
+  </div>
+</form>
+
+<script src="https://cdn.tiny.cloud/1/ht1e06x69yx3opbtynakr5hfqn8bn0m36l3dxv75qqshj24t/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
+
+<script>
+function htmlToPlainTextInBrowser(html) {
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
+
+  temp.querySelectorAll("br").forEach(br => br.replaceWith("\n"));
+
+  temp.querySelectorAll("p").forEach(p => {
+    p.insertAdjacentText("beforeend", "\n\n");
+  });
+
+  temp.querySelectorAll("li").forEach(li => {
+    li.insertAdjacentText("afterbegin", "• ");
+    li.insertAdjacentText("beforeend", "\n");
+  });
+
+  let text = temp.textContent || temp.innerText || "";
+  text = text.replace(/\u00a0/g, " ");
+  text = text.replace(/\n{3,}/g, "\n\n");
+  text = text.replace(/[ \t]+/g, " ");
+  return text.trim();
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const textBodyField = document.getElementById("id_text_body");
+  const generateBtn = document.getElementById("generate-text-btn");
+
+  let textBodyTouchedManually = false;
+
+  if (textBodyField) {
+    textBodyField.addEventListener("input", function () {
+      textBodyTouchedManually = true;
+    });
+  }
+
+  tinymce.init({
+    selector: "#id_html_body",
+    height: 500,
+    menubar: true,
+    plugins: "lists link image table code autoresize preview",
+    toolbar: "undo redo | styles | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | link image table | preview code",
+    branding: false,
+    convert_urls: false,
+    promotion: false,
+    content_style: "body { font-family: Arial, sans-serif; font-size: 14px; }",
+    setup: function (editor) {
+      function syncTextBody(force = false) {
+        if (!textBodyField) return;
+
+        if (!force && textBodyTouchedManually) {
+          return;
+        }
+
+        const html = editor.getContent();
+        const generated = htmlToPlainTextInBrowser(html);
+        textBodyField.value = generated;
+      }
+
+      editor.on("init change keyup SetContent", function () {
+        syncTextBody(false);
+      });
+
+      if (generateBtn) {
+        generateBtn.addEventListener("click", function () {
+          syncTextBody(true);
+          textBodyTouchedManually = false;
+        });
+      }
+    }
+  });
+});
+</script>
+
+<script>
+function copyImageUrl(inputId) {
+  const input = document.getElementById(inputId);
+  input.select();
+  input.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(input.value);
+}
+</script>
+
+{% endblock rozesilac_content %}

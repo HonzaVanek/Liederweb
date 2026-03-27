@@ -1,0 +1,295 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}Rozesílač | Statistiky kontaktu{% endblock title %}
+
+{% block rozesilac_content %}
+<h2>Statistiky kontaktu</h2>
+
+<p>
+  <a href="{% url 'rozesilac:contacts' %}">← Zpět na kontakty</a>
+  |
+  <a href="{% url 'rozesilac:contact_edit' contact.id %}">Upravit kontakt</a>
+</p>
+
+<div class="template-form-row">
+  <p><strong>Jméno:</strong> {{ contact.name }}</p>
+  <p><strong>Oslovení:</strong> {{ contact.salutation|default:"—" }}</p>
+  <p><strong>Email:</strong> {{ contact.email }}</p>
+  <p><strong>Aktivní:</strong> {% if contact.is_active %}Ano{% else %}Ne{% endif %}</p>
+</div>
+
+<div class="template-form-row">
+  <p><strong>Skupiny:</strong>
+    {% for g in contact.groups.all %}
+      <span class="contact-group-badge">{{ g.name }}</span>
+    {% empty %}
+      <span class="muted">—</span>
+    {% endfor %}
+  </p>
+</div>
+
+<div class="template-form-row">
+  <p><strong>Počet doručení:</strong> {{ total_deliveries }}</p>
+  <p><strong>Úspěšně odesláno:</strong> {{ sent_deliveries }}</p>
+  <p><strong>Chybných doručení:</strong> {{ failed_deliveries }}</p>
+</div>
+
+<div class="template-form-row">
+  <p><strong>Kampaně s potvrzeným klikem:</strong> {{ clicked_campaigns_count }}</p>
+  <p><strong>Potvrzené unikátní kliky celkem:</strong> {{ confirmed_unique_click_count_total }}</p>
+  <p><strong>Poslední potvrzený klik:</strong>
+    {% if last_human_click_at %}
+      {{ last_human_click_at|date:"d.m.Y H:i:s" }}
+    {% else %}
+      —
+    {% endif %}
+  </p>
+</div>
+
+<style>
+  .click-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 9999;
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  .click-modal-window {
+    background: #fff;
+    max-width: 1200px;
+    margin: 40px auto;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+  }
+
+  .click-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .click-modal-header h3 {
+    margin: 0;
+  }
+
+  .click-modal-close {
+    border: none;
+    background: transparent;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .click-modal-body {
+    padding: 20px;
+  }
+
+  .detail-btn {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+</style>
+
+<h3>Historie doručení</h3>
+
+{% if deliveries %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Kampaň</th>
+        <th>Předmět</th>
+        <th>Odesláno</th>
+        <th>Status</th>
+        <th>Potvrzené kliky</th>
+        <th>Kliknuté URL</th>
+        <th>Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in deliveries %}
+        <tr>
+          <td>
+            #{{ d.campaign.id }}
+            {% if d.campaign.template %}
+              ({{ d.campaign.template.name }})
+            {% endif %}
+          </td>
+          <td>{{ d.campaign.subject }}</td>
+          <td>
+            {% if d.sent_at %}
+              {{ d.sent_at|date:"d.m.Y H:i:s" }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>{{ d.status }}</td>
+          <td>{{ d.confirmed_unique_click_count_for_ui }}</td>
+          <td>
+            {% if d.clicked_urls_for_ui %}
+              <ul style="margin: 0; padding-left: 18px;">
+                {% for url in d.clicked_urls_for_ui %}
+                  <li style="margin-bottom: 4px; word-break: break-word;">
+                    <a href="{{ url }}" target="_blank" rel="noopener">{{ url }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>
+            {% if d.click_events.all %}
+              <button
+                type="button"
+                class="detail-btn"
+                onclick="openClickModal('click-modal-{{ d.id }}')"
+              >
+                Detail
+              </button>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% for d in deliveries %}
+    <div
+      id="click-modal-{{ d.id }}"
+      class="click-modal-overlay"
+      onclick="closeClickModalOnOverlay(event, 'click-modal-{{ d.id }}')"
+    >
+      <div class="click-modal-window">
+        <div class="click-modal-header">
+          <h3>Technický detail doručení</h3>
+          <button
+            type="button"
+            class="click-modal-close"
+            onclick="closeClickModal('click-modal-{{ d.id }}')"
+          >×</button>
+        </div>
+
+        <div class="click-modal-body">
+          <p>
+            <strong>Kampaň:</strong>
+            #{{ d.campaign.id }}
+            {% if d.campaign.template %}
+              ({{ d.campaign.template.name }})
+            {% endif %}
+          </p>
+          <p><strong>Předmět:</strong> {{ d.campaign.subject }}</p>
+          <p><strong>Email:</strong> {{ d.to_email }}</p>
+          <p><strong>Jméno:</strong> {{ d.to_name|default:"-" }}</p>
+          <p><strong>Status:</strong> {{ d.status }}</p>
+          <p><strong>Odesláno:</strong>
+            {% if d.sent_at %}
+              {{ d.sent_at|date:"d.m.Y H:i:s" }}
+            {% else %}
+              —
+            {% endif %}
+          </p>
+          <p><strong>Technické requesty celkem:</strong> {{ d.click_count }}</p>
+          <p><strong>Technické unikátní URL:</strong> {{ d.unique_click_count }}</p>
+          <p><strong>Potvrzené unikátní kliky:</strong> {{ d.confirmed_unique_click_count_for_ui }}</p>
+          <p><strong>První potvrzený klik:</strong>
+            {% if d.first_human_click_at_for_ui %}
+              {{ d.first_human_click_at_for_ui|date:"d.m.Y H:i:s" }}
+            {% else %}
+              —
+            {% endif %}
+          </p>
+          <p><strong>Poslední potvrzený klik:</strong>
+            {% if d.last_human_click_at_for_ui %}
+              {{ d.last_human_click_at_for_ui|date:"d.m.Y H:i:s" }}
+            {% else %}
+              —
+            {% endif %}
+          </p>
+
+          {% if d.click_events.all %}
+            <table class="table" style="margin-top: 10px;">
+              <thead>
+                <tr>
+                  <th>Čas</th>
+                  <th>URL</th>
+                  <th>Podezřelý</th>
+                  <th>Duplicitní</th>
+                  <th>IP</th>
+                  <th>User-Agent</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in d.click_events.all %}
+                  <tr>
+                    <td>{{ e.created_at|date:"d.m.Y H:i:s" }}</td>
+                    <td style="word-break: break-word;">
+                      <a href="{{ e.original_url }}" target="_blank" rel="noopener">
+                        {{ e.original_url }}
+                      </a>
+                    </td>
+                    <td>{% if e.is_suspected_bot %}ano{% else %}ne{% endif %}</td>
+                    <td>{% if e.is_duplicate %}ano{% else %}ne{% endif %}</td>
+                    <td>{{ e.ip_address|default:"—" }}</td>
+                    <td style="word-break: break-word;">{{ e.user_agent|default:"—" }}</td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="6">Žádné klik eventy.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p>Žádné klik eventy.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+
+  <script>
+    function openClickModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeClickModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+
+    function closeClickModalOnOverlay(event, id) {
+      if (event.target.id === id) {
+        closeClickModal(id);
+      }
+    }
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        document.querySelectorAll('.click-modal-overlay').forEach(function(modal) {
+          modal.style.display = 'none';
+        });
+        document.body.style.overflow = '';
+      }
+    });
+  </script>
+{% else %}
+  <p class="muted">Tomuto kontaktu zatím nebyl odeslán žádný email.</p>
+{% endif %}
+{% endblock rozesilac_content %}

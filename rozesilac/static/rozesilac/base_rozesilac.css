@@ -1,24 +1,32 @@
+/* =========================================================
+   ROZESÍLAČ – základní layout a sdílené komponenty
+   ========================================================= */
+
 .rozesilac-wrap {
     display: flex;
     min-height: calc(100vh - 80px);
 }
 
-/* SIDEBAR */
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+
 .rozesilac-sidebar {
     width: 240px;
     background: #fff;
     border-right: 2px solid #000;
     padding: 20px;
+    flex-shrink: 0;
 }
 
 .rozesilac-title {
-    font-family: "Georgia", serif;
+    font-family: "Georgia", "Times New Roman", serif;
     font-style: italic;
     margin-bottom: 25px;
     letter-spacing: 1px;
+    color: #222;
 }
 
-/* NAV */
 .rozesilac-nav {
     display: flex;
     flex-direction: column;
@@ -31,23 +39,517 @@
     padding: 10px 12px;
     border: 1px solid #000;
     border-radius: 4px;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* hover */
 .rozesilac-nav a:hover {
     background: #000;
     color: #fff;
 }
 
-/* active */
-.rozesilac-nav a.active {
+.rozesilac-nav a.active,
+.rozesilac-nav a[aria-current="page"] {
     background: #000;
     color: #fff;
 }
 
-/* MAIN */
+/* =========================================================
+   HLAVNÍ OBSAH
+   ========================================================= */
+
 .rozesilac-main {
     flex: 1;
+    min-width: 0;
     padding: 30px;
+}
+
+/* =========================================================
+   OBECNÁ TYPOGRAFIE
+   ========================================================= */
+
+.rozesilac-main h1,
+.rozesilac-main h2 {
+    text-align: center;
+    margin: 0 0 22px 0;
+    color: #222;
+    font-family: "Georgia", "Times New Roman", serif;
+    font-style: italic;
+    letter-spacing: 1px;
+}
+
+.rozesilac-main h2 {
+    font-size: 1.8rem;
+}
+
+.rozesilac-main h3 {
+    margin: 28px 0 14px 0;
+    color: #222;
+    font-size: 1.2rem;
+}
+
+.rozesilac-main p {
+    margin-bottom: 14px;
+    line-height: 1.5;
+    color: #333;
+}
+
+.muted {
+    color: #666;
+}
+
+.small {
+    font-size: 0.85rem;
+}
+
+/* =========================================================
+   HELP / INFO TEXT
+   ========================================================= */
+
+.help-text {
+    width: 100%;
+    margin: 0 auto 28px;
+    padding: 12px 16px;
+    background-color: #f8f8f8;
+    border-left: 4px solid #000;
+    border-radius: 4px;
+    font-style: italic;
+    color: #555;
+    line-height: 1.45;
+    text-align: center;
+}
+
+.help-text a {
+    color: #000;
+    font-weight: 700;
+    text-decoration: none;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+.help-text a:hover {
+    background-color: #000;
+    color: #fff;
+}
+
+/* =========================================================
+   FLASH MESSAGES
+   ========================================================= */
+
+.messages {
+    list-style: none;
+    margin: 0 0 22px 0;
+    padding: 0;
+}
+
+.messages li {
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.messages li.success,
+.messages .success {
+    background-color: #f1f8f1;
+    color: #1f5c1f;
+    border: 1px solid #cfe3cf;
+}
+
+.messages li.error,
+.messages .error {
+    background-color: #fdecea;
+    color: #8c1d1d;
+    border: 1px solid #f5c6cb;
+}
+
+.messages li.warning,
+.messages .warning {
+    background-color: #fff8e6;
+    color: #7a5a00;
+    border: 1px solid #ead9a0;
+}
+
+.messages li.info,
+.messages .info {
+    background-color: #f3f3f3;
+    color: #333;
+    border: 1px solid #d9d9d9;
+}
+
+/* =========================================================
+   ODKAZY A TLAČÍTKA
+   ========================================================= */
+
+.rozesilac-main a {
+    color: #000;
+    text-decoration: none;
+}
+
+.rozesilac-main a:hover {
+    text-decoration: underline;
+}
+
+.rozesilac-main button,
+.rozesilac-main input[type="submit"],
+.top-action a,
+.rozesilac-main a.btn-link {
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.15s ease;
+}
+
+.top-action a,
+.rozesilac-main a.btn-link {
+    display: inline-block;
+    padding: 10px 18px;
+    background-color: #fff;
+    color: #000;
+    border: 2px solid #000;
+    border-radius: 6px;
+    font-weight: 700;
+    text-decoration: none;
+    margin-bottom: 8px;
+}
+
+.top-action a:hover,
+.rozesilac-main a.btn-link:hover {
+    background-color: #000;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.rozesilac-main button,
+.rozesilac-main input[type="submit"] {
+    display: inline-block;
+    border: 2px solid #000;
+    border-radius: 6px;
+    padding: 10px 18px;
+    background-color: #fff;
+    color: #000;
+    font-size: 0.96rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.rozesilac-main button:hover,
+.rozesilac-main input[type="submit"]:hover {
+    background-color: #000;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* =========================================================
+   TABULKY
+   ========================================================= */
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background-color: #fff;
+    border: 1px solid #d7d7d7;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table th,
+.table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e3e3e3;
+    vertical-align: middle;
+}
+
+.table th {
+    background-color: #111;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 0.9rem;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+.table tbody tr:hover {
+    background-color: #f2f2f2;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table td.actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.table td.actions a,
+.table td.actions button {
+    display: inline-block;
+    padding: 7px 12px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    margin-left: 6px;
+}
+
+.table td.actions a {
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #000;
+}
+
+.table td.actions a:hover {
+    background-color: #000;
+    color: #fff;
+    text-decoration: none;
+}
+
+.table td.actions button {
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #000;
+    cursor: pointer;
+}
+
+.table td.actions button:hover {
+    background-color: #000;
+    color: #fff;
+}
+
+/* =========================================================
+   FORMULÁŘE – OBECNÝ STYL
+   ========================================================= */
+
+.rozesilac-main form {
+    margin-bottom: 20px;
+}
+
+.template-form-row,
+.form-group {
+    margin-bottom: 18px;
+}
+
+.template-form-row label,
+.form-group label,
+.form-grid label,
+.rozesilac-main label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 700;
+    color: #222;
+}
+
+.rozesilac-main input[type="text"],
+.rozesilac-main input[type="email"],
+.rozesilac-main input[type="url"],
+.rozesilac-main input[type="password"],
+.rozesilac-main input[type="number"],
+.rozesilac-main input[type="date"],
+.rozesilac-main input[type="search"],
+.rozesilac-main input[type="file"],
+.rozesilac-main select,
+.rozesilac-main textarea,
+.full-width-input,
+#id_template,
+#id_test_email,
+#id_note {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 0.98rem;
+    color: #222;
+    background-color: #fff;
+    border: 1px solid #000;
+    border-radius: 4px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.rozesilac-main textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+.rozesilac-main input:focus,
+.rozesilac-main select:focus,
+.rozesilac-main textarea:focus,
+.full-width-input:focus,
+#id_template:focus,
+#id_test_email:focus,
+#id_note:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+}
+
+.rozesilac-main input[type="checkbox"],
+.rozesilac-main input[type="radio"] {
+    accent-color: #000;
+}
+
+.form-errors {
+    color: #b00020;
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+.errorlist {
+    list-style: none;
+    padding-left: 0;
+    margin: 6px 0 0 0;
+    color: #b00020;
+    font-size: 0.9rem;
+}
+
+.errorlist li {
+    background-color: #fdecea;
+    border: 1px solid #f5c6cb;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+/* =========================================================
+   SDÍLENÉ LAYOUT POMOCNÉ TŘÍDY
+   ========================================================= */
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 160px;
+    gap: 12px;
+    align-items: end;
+}
+
+.form-grid input[type="checkbox"] {
+    transform: scale(1.2);
+}
+
+.form-actions {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+
+.content-section {
+    margin-bottom: 24px;
+    padding: 20px 22px;
+    background: #fafafa;
+    border: 1px solid #dcdcdc;
+    border-radius: 10px;
+}
+
+.content-section h3 {
+    margin-top: 0;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e4e4e4;
+}
+
+.content-section-soft {
+    background: #f6f6f6;
+}
+
+.section-form,
+.section-table {
+    margin-bottom: 0;
+}
+
+.form-grid-group {
+    grid-template-columns: 1fr auto;
+}
+
+.form-grid-contact {
+    grid-template-columns: 1fr 1fr 160px;
+}
+
+/* =========================================================
+   BADGE PRO SKUPINY
+   ========================================================= */
+
+.contact-group-badge {
+    display: inline-block;
+    padding: 4px 9px;
+    margin: 2px 6px 2px 0;
+    border-radius: 999px;
+    background: #f2f2f2;
+    border: 1px solid #d5d5d5;
+    color: #222;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+    .rozesilac-main {
+        max-width: 100%;
+        padding: 22px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .form-grid > *:last-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 900px) {
+    .rozesilac-wrap {
+        flex-direction: column;
+    }
+
+    .rozesilac-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 2px solid #000;
+    }
+
+    .rozesilac-main {
+        width: 100%;
+    }
+}
+
+@media (max-width: 700px) {
+    .rozesilac-main,
+    .rozesilac-sidebar,
+    .content-section {
+        padding: 16px;
+    }
+
+    .rozesilac-main h2 {
+        font-size: 1.55rem;
+        margin-bottom: 16px;
+    }
+
+    .rozesilac-main h3 {
+        font-size: 1.08rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        min-width: 0;
+    }
 }

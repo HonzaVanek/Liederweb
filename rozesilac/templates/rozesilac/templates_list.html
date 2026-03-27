@@ -1,0 +1,56 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% load static %}
+
+{% block title %}Rozesílač{% endblock %}
+
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'rozesilac/templates_list.css' %}">{% endblock %}
+
+{% block rozesilac_content %}
+<h2>Šablony</h2>
+
+<p class="help-text" style="text-align: left;">Toto je stránka se seznamem existujících šablon (emailů). Je možné vytvořit novou šablonu, nebo upravit, duplikovat či smazat nějakou stávající ze seznamu níže. Obvykle při novém newsletteru prostě jen zduplikuješ nějakou stávající a pak si jí upravíš do finální podoby. Do šablony lze vkládat proměnné, které budou nahrazeny konkrétními hodnotami při rozesílání. Zatím máme dva takové placeholdery: </br>První je {% verbatim %}{{ osloveni }}{% endverbatim %}. Tohle když tam dáš, ve finálním emailu se místo toho dá text, který má kontakt v poli oslovení. (viz stránka <a href="{% url 'rozesilac:contacts' %}">kontakty</a>). Pokud není oslovení u kontaktu vyplněno, použije se jméno kontaktu, pokud ani to není vyplněno, tak email. Proto by bylo dobré, aby všechny kontakty raději měly pole oslovení vyplněné, jinak by u někoho to oslovení nemuselo uplně dávat smysl. </br>Druhý placeholder je {% verbatim %}{{ unsubscribe_url }}{% endverbatim %}. To je adresa, která je unikátní pro každý kontakt a je to adresa, na které se může daný kontakt odhlásit z newsletter. Takže pokud chceme v newsletteru mít v patičce nějaký odkaz na odhlášení, mohl by pak v té reálné šabloně vypadat třeba nějak takto: <code>&lt;a href="{% verbatim %}{{ unsubscribe_url }}{% endverbatim %}"&gt;Odhlásit odběr&lt;/a&gt;</code> případně celá ta věta z patičky těch vašich newsletterů by v kódu vypadala takhle (vlastně to asi můžeš vždycky dát na konec jakéhokoli newsletteru): <code>&lt;p style="margin: 0;"&gt;&lt;em&gt; Pokud si tyto e-maily nepřejete dále dostávat, můžete se z jejich odběru odhlásit &lt;a style="color: #000000; text-decoration: underline;" href="{% verbatim  %}{{ unsubscribe_url }}{% endverbatim  %}" target="_blank" rel="noopener"&gt;zde&lt;/a&gt;.&lt;/em&gt;&lt;/p&gt;</code>  </p>
+
+{% if messages %}
+<ul class="messages">
+  {% for m in messages %}
+    <li class="{{ m.tags }}">{{ m }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<p class="top-action">
+  <a href="{% url 'rozesilac:template_create' %}">+ Vytvořit novou šablonu</a>
+</p>
+
+{% if templates %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Název</th>
+        <th>Předmět</th>
+        <th>Upraveno</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in templates %}
+        <tr>
+          <td>{{ t.name }}</td>
+          <td>{{ t.subject }}</td>
+          <td>{{ t.updated_at|date:"d.m.Y H:i" }}</td>
+            <td class="actions">
+              <a href="{% url 'rozesilac:template_edit' t.id %}">Upravit</a>
+              |
+              <a href="{% url 'rozesilac:template_duplicate' t.id %}">Duplikovat</a>
+              |
+              <a href="{% url 'rozesilac:template_delete' t.id %}" style="background-color:#e53935;" onmouseover="this.style.backgroundColor='#c62828'" onmouseout="this.style.backgroundColor='#e53935'">Smazat</a>
+            </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="muted">Zatím nejsou vytvořené žádné šablony.</p>
+{% endif %}
+{% endblock rozesilac_content %}
