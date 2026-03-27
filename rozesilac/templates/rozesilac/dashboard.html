@@ -1,7 +1,12 @@
-{% extends "base.html" %}
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% load static %}
 
 {% block title %}Rozesílač{% endblock %}
 
-{% block content %}
-    <h1>Dashboard rozesílače</h1>
-{% endblock %}
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'rozesilac/dashboard.css' %}">{% endblock %}
+
+{% block rozesilac_content %}
+  <h2>Dashboard</h2>
+
+{% endblock rozesilac_content %}

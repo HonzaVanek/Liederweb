@@ -2,7 +2,7 @@ from functools import wraps
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 
-def rozesilac_access_required(view_func):
+def staff_required(view_func):
     @login_required
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):

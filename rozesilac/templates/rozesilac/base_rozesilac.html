@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Rozesílač{% endblock title %}
+
+{% block extra_css %}<link rel="stylesheet" href="{% static 'rozesilac/base_rozesilac.css' %}">{% endblock %}
+
+{% block content %}
+<div class="rozesilac-wrap">
+
+  <aside class="rozesilac-sidebar">
+    <h2 class="rozesilac-title">Rozesílač</h2>
+
+    <nav class="rozesilac-nav">
+      <a href="{% url 'rozesilac:dashboard' %}"
+         class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+         Dashboard
+      </a>
+
+      <a href="{% url 'rozesilac:templates' %}"
+         class="{% if request.resolver_match.url_name == 'templates' or request.resolver_match.url_name == 'template_edit' or request.resolver_match.url_name == 'template_create' %}active{% endif %}">
+         Šablony
+      </a>
+
+      <a href="{% url 'rozesilac:contacts' %}"
+         class="{% if request.resolver_match.url_name == 'contacts' or request.resolver_match.url_name == 'contact_edit' %}active{% endif %}">
+         Kontakty
+      </a>
+
+      <a href="{% url 'rozesilac:images' %}"
+         class="{% if request.resolver_match.url_name == 'images' %}active{% endif %}">
+         Obrázky
+      </a>
+
+      <a href="{% url 'rozesilac:send' %}"
+         class="{% if request.resolver_match.url_name == 'send' %}active{% endif %}">
+         Odeslat
+      </a>
+
+      <a href="{% url 'rozesilac:campaigns' %}"
+         class="{% if request.resolver_match.url_name == 'campaigns' or request.resolver_match.url_name == 'campaign_detail' %}active{% endif %}">
+         Kampaně
+      </a>
+    </nav>
+  </aside>
+
+  <main class="rozesilac-main">
+    {% block rozesilac_content %}{% endblock %}
+  </main>
+
+</div>
+{% endblock content %}
