@@ -20,7 +20,11 @@ urlpatterns = [
     path("obrazky/upload/", views.image_upload, name="image_upload"),
 
     path("odeslat/", views.send, name="send"),
+
     path("kampane/", views.campaigns, name="campaigns"),
-    path("kampane/<int:campaign_id>/", views.campaign_detail, name="campaign_detail"), 
+    path("kampane/<int:campaign_id>/", views.campaign_detail, name="campaign_detail"),
+
+    path("click/<str:token>/", views.click_tracking, name="click_tracking"),
+    path("unsubscribe/<uuid:token>/", views.unsubscribe, name="unsubscribe"),
 ]
     

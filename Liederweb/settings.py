@@ -140,5 +140,10 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 # zatím neřešíme vůbec produkci, takže zatím emaily do konzole
 APP_ENV = 'dev'
+ALLOWED_FROM_EMAILS = [
+    ("info@liedersociety.cz", "Lieder Society"),
+    ("newsletter@liedersociety.cz", "Newsletter Lieder Society")
+]
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "local@test.project"
+NEWSLETTER_DEFAULT_FROM_EMAIL = "newsletter@liedersociety.cz"

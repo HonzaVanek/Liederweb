@@ -1,7 +1,10 @@
 from django import forms
 from django.core.exceptions import ValidationError
-
+import re
+from bs4 import BeautifulSoup
 from rozesilac.models import EmailTemplate, EmailImage, ContactGroup, Contact
+from django.conf import settings
+from django.db.models import Sum
 
 
 #přepis html emailu do plaintextu:
@@ -146,3 +149,87 @@ class ContactImportForm(forms.Form):
         if not name.endswith(".xlsx"):
             raise ValidationError("Tohle nevypadá jako xlsx soubor. Nahraj prosím soubor s příponou .xlsx, který má dva sloupce se záhlavím jméno a email")
         return f
+    
+
+
+
+# odesílání kampaní:
+class SendCampaignForm(forms.Form):
+    SEND_MODE_CHOICES = [
+        ("test", "Testovací email"),
+        ("live", "Ostré rozeslání"),
+    ]
+
+    template = forms.ModelChoiceField(
+        queryset=EmailTemplate.objects.all().order_by("name"),
+        label="Šablona",
+        empty_label="-- vyber šablonu --",
+    )
+
+    from_email = forms.ChoiceField(
+        label="Odesílatel",
+        choices=[
+            (email, f"{name} <{email}>")
+            for email, name in settings.ALLOWED_FROM_EMAILS
+        ]
+    )
+
+    send_mode = forms.ChoiceField(
+        choices=SEND_MODE_CHOICES,
+        widget=forms.RadioSelect,
+        initial="test",
+        label="Režim odeslání",
+    )
+
+    test_email = forms.EmailField(
+        required=False,
+        label="Testovací email",
+        widget=forms.EmailInput(attrs={"placeholder": "test@example.com"}),
+    )
+
+    groups = forms.ModelMultipleChoiceField(
+        queryset=ContactGroup.objects.all().order_by("name"),
+        required=False,
+        label="Skupiny kontaktů",
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    contacts = forms.ModelMultipleChoiceField(
+        queryset=Contact.objects.filter(is_active=True).prefetch_related("groups").order_by("email"),
+        required=False,
+        label="Kontakty",
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    note = forms.CharField(
+        required=False,
+        label="Poznámka",
+        widget=forms.Textarea(attrs={"rows": 3, "placeholder": "Volitelná interní poznámka ke kampani"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # popisek skupiny s počtem aktivních kontaktů
+        self.fields["groups"].label_from_instance = lambda obj: f"{obj.name} ({obj.contacts.filter(is_active=True).count()})"
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        send_mode = cleaned_data.get("send_mode")
+        test_email = cleaned_data.get("test_email")
+        groups = cleaned_data.get("groups")
+        contacts = cleaned_data.get("contacts")
+
+        if send_mode == "test":
+            if not test_email:
+                self.add_error("test_email", "U testovacího režimu musíš vyplnit testovací email.")
+
+        elif send_mode == "live":
+            if not groups or groups.count() == 0:
+                self.add_error("groups", "Pro ostré rozeslání musíš vybrat aspoň jednu skupinu.")
+
+            if not contacts or contacts.count() == 0:
+                self.add_error("contacts", "Pro ostré rozeslání musíš nechat vybraný aspoň jeden kontakt.")
+
+        return cleaned_data

@@ -1,0 +1,322 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}Rozesílač | Detail kampaně{% endblock title %}
+
+{% block rozesilac_content %}
+<h2>Detail kampaně</h2>
+
+<p>
+  <a href="{% url 'rozesilac:campaigns' %}">← Zpět na všechny kampaně</a>
+</p>
+
+{% if messages %}
+<ul class="messages">
+  {% for m in messages %}
+    <li class="{{ m.tags }}">{{ m }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<div class="template-form-row">
+  <p><strong>Předmět:</strong> {{ campaign.subject }}</p>
+  <p><strong>Režim:</strong> {% if campaign.is_test %}Testovací{% else %}Ostrý{% endif %}</p>
+  <p><strong>Vytvořil:</strong> {{ campaign.created_by }}</p>
+  <p><strong>Vytvořeno:</strong> {{ campaign.created_at|date:"d.m.Y H:i" }}</p>
+  <p><strong>Poznámka:</strong> {{ campaign.note|default:"-" }}</p>
+</div>
+
+<div class="template-form-row">
+  <p><strong>Odesláno:</strong> {{ sent_count }}</p>
+  <p><strong>Chyby:</strong> {{ failed_count }}</p>
+  <p><strong>Ve frontě:</strong> {{ queued_count }}</p>
+</div>
+
+<div class="template-form-row">
+  <p><strong>Klikli alespoň na jeden odkaz:</strong> {{ clicked_delivery_count }}</p>
+  <p><strong>Míra prokliku:</strong> {{ click_rate_percent }} %</p>
+  <p><strong>Unikátní kliky celkem:</strong> {{ total_unique_click_count }}</p>
+</div>
+
+<p style="margin: 18px 0 10px 0;">
+  <button type="button" class="detail-btn" onclick="toggleTrackedLinks()">
+    Trackované odkazy
+  </button>
+</p>
+
+<div id="tracked-links-box" style="display: none; margin-bottom: 22px;">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Odkaz</th>
+        <th>Počet kliků</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in tracked_links_stats %}
+        <tr>
+          <td style="word-break: break-word;">
+            <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.url }}</a>
+          </td>
+          <td>{{ item.click_count }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="2">V kampani nejsou žádné trackované odkazy.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .click-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 9999;
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  .click-modal-window {
+    background: #fff;
+    max-width: 1200px;
+    margin: 40px auto;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+  }
+
+  .click-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .click-modal-header h3 {
+    margin: 0;
+  }
+
+  .click-modal-close {
+    border: none;
+    background: transparent;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .click-modal-body {
+    padding: 20px;
+  }
+
+  .detail-btn {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+</style>
+
+<h3>Doručení</h3>
+
+{% if deliveries %}
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Jméno</th>
+        <th>Status</th>
+        <th>Odesláno</th>
+        <th>Kliknul</th>
+        <th>Unikátní kliky</th>
+        <th>První klik</th>
+        <th>Poslední klik</th>
+        <th>Kliknuté URL</th>
+        <th>Technické detaily</th>
+        <th>Chyba</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in deliveries %}
+        <tr>
+          <td>{{ d.to_email }}</td>
+          <td>{{ d.to_name }}</td>
+          <td>{{ d.status }}</td>
+          <td>
+            {% if d.sent_at %}
+              {{ d.sent_at|date:"d.m.Y H:i:s" }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>
+            {% if d.confirmed_unique_click_count_for_ui > 0 %}
+              ✓
+            {% elif d.has_suspected_bot_click %}
+              ?
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>{{ d.confirmed_unique_click_count_for_ui }}</td>
+          <td>
+            {% if d.first_human_click_at_for_ui %}
+              {{ d.first_human_click_at_for_ui|date:"d.m.Y H:i:s" }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>
+            {% if d.last_human_click_at_for_ui %}
+              {{ d.last_human_click_at_for_ui|date:"d.m.Y H:i:s" }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>
+            {% if d.clicked_urls_for_ui %}
+              <ul style="margin: 0; padding-left: 18px;">
+                {% for url in d.clicked_urls_for_ui %}
+                  <li style="margin-bottom: 4px; word-break: break-word;">
+                    <a href="{{ url }}" target="_blank" rel="noopener">{{ url }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>
+            {% if d.click_events.all %}
+              <button
+                type="button"
+                class="detail-btn"
+                onclick="openClickModal('click-modal-{{ d.id }}')"
+              >
+                Detail
+              </button>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>{{ d.error|default:"-" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% for d in deliveries %}
+    <div
+      id="click-modal-{{ d.id }}"
+      class="click-modal-overlay"
+      onclick="closeClickModalOnOverlay(event, 'click-modal-{{ d.id }}')"
+    >
+      <div class="click-modal-window">
+        <div class="click-modal-header">
+          <h3>Technický detail doručení</h3>
+          <button
+            type="button"
+            class="click-modal-close"
+            onclick="closeClickModal('click-modal-{{ d.id }}')"
+          >×</button>
+        </div>
+
+        <div class="click-modal-body">
+          <p><strong>Email:</strong> {{ d.to_email }}</p>
+          <p><strong>Jméno:</strong> {{ d.to_name|default:"-" }}</p>
+          <p><strong>Status:</strong> {{ d.status }}</p>
+          <p><strong>Technické requesty celkem:</strong> {{ d.click_count }}</p>
+          <p><strong>Technické unikátní URL:</strong> {{ d.unique_click_count }}</p>
+          <p><strong>Potvrzené unikátní kliky:</strong> {{ d.confirmed_unique_click_count_for_ui }}</p>
+
+          {% if d.click_events.all %}
+            <table class="table" style="margin-top: 10px;">
+              <thead>
+                <tr>
+                  <th>Čas</th>
+                  <th>URL</th>
+                  <th>Podezřelý</th>
+                  <th>Duplicitní</th>
+                  <th>IP</th>
+                  <th>User-Agent</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in d.click_events.all %}
+                  <tr>
+                    <td>{{ e.created_at|date:"d.m.Y H:i:s" }}</td>
+                    <td style="word-break: break-word;">
+                      <a href="{{ e.original_url }}" target="_blank" rel="noopener">
+                        {{ e.original_url }}
+                      </a>
+                    </td>
+                    <td>{% if e.is_suspected_bot %}ano{% else %}ne{% endif %}</td>
+                    <td>{% if e.is_duplicate %}ano{% else %}ne{% endif %}</td>
+                    <td>{{ e.ip_address|default:"-" }}</td>
+                    <td style="word-break: break-word;">{{ e.user_agent|default:"-" }}</td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="6">Žádné klik eventy.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p>Žádné klik eventy.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+
+  <script>
+    function toggleTrackedLinks() {
+      const box = document.getElementById('tracked-links-box');
+      if (!box) return;
+
+      if (box.style.display === 'none' || box.style.display === '') {
+        box.style.display = 'block';
+      } else {
+        box.style.display = 'none';
+      }
+    }
+
+    function openClickModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+
+    function closeClickModal(id) {
+      const modal = document.getElementById(id);
+      if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+
+    function closeClickModalOnOverlay(event, id) {
+      if (event.target.id === id) {
+        closeClickModal(id);
+      }
+    }
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        document.querySelectorAll('.click-modal-overlay').forEach(function(modal) {
+          modal.style.display = 'none';
+        });
+        document.body.style.overflow = '';
+      }
+    });
+  </script>
+{% else %}
+  <p class="muted">K této kampani zatím nejsou žádná doručení.</p>
+{% endif %}
+{% endblock rozesilac_content %}
