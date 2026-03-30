@@ -1,6 +1,7 @@
 {% extends "rozesilac/base_rozesilac.html" %}
 
 {% load static %}
+{% load l10n %}
 
 {% block title %}Rozesílač{% endblock %}
 
@@ -8,5 +9,164 @@
 
 {% block rozesilac_content %}
   <h2>Dashboard</h2>
+  <p class="help-text">
+    Tohle je základní stránka pro rozesílač. Jednotlivé funkce jsou v MENU vlevo, je to jednak správa jednotlivých šablon v editoru html emailů, pak správa jednotlivých kontaktů na které budeme posílat maily (už máme vytvořené i skupiny kontaktů, možné je nahrát najednou víc kontaktů přes Excel), pak stránka kde budeme opravdu managovat to samotné odesílání a pod těmi kampaněmi jsou nějaké proběhlé kampaně, statistiky, chyby. Tady na téhle stránce "dashboard" je nějaký základní přehled podle dat, které máme, proběhlé kampaně a kdo jak moc kliká.
+  </p>
 
+  <div class="dashboard-cards">
+    <div class="dashboard-card">
+      <div class="dashboard-card-label">Kontakty celkem</div>
+      <div class="dashboard-card-value">{{ contacts_total }}</div>
+    </div>
+
+    <div class="dashboard-card">
+      <div class="dashboard-card-label">Aktivní kontakty</div>
+      <div class="dashboard-card-value">{{ active_contacts_total }}</div>
+    </div>
+
+    <div class="dashboard-card">
+      <div class="dashboard-card-label">Kampaně celkem</div>
+      <div class="dashboard-card-value">{{ campaigns_total }}</div>
+    </div>
+
+    <div class="dashboard-card">
+      <div class="dashboard-card-label">Odeslané emaily</div>
+      <div class="dashboard-card-value">{{ sent_deliveries_total }}</div>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <section class="dashboard-panel">
+      <h3>Poslední kampaň</h3>
+
+      {% if latest_campaign %}
+        <p><strong>Předmět:</strong> {{ latest_campaign.subject }}</p>
+        <p>
+          <strong>Šablona:</strong>
+          {% if latest_campaign.template %}
+            {{ latest_campaign.template.name }}
+          {% else %}
+            —
+          {% endif %}
+        </p>
+        <p><strong>Vytvořeno:</strong> {{ latest_campaign.created_at|date:"d.m.Y H:i" }}</p>
+        <p><strong>Odesláno:</strong> {{ latest_campaign.sent_count_for_ui }}</p>
+        <p><strong>Kontakty s potvrzeným klikem:</strong> {{ latest_campaign.clicked_delivery_count_for_ui }}</p>
+        <p><strong>Potvrzené unikátní kliky:</strong> {{ latest_campaign.confirmed_unique_click_count_total_for_ui }}</p>
+        <p><strong>Proklikovost:</strong> {{ latest_campaign.click_rate_percent_for_ui }} %</p>
+
+        <p class="dashboard-panel-action">
+          <a href="{% url 'rozesilac:campaign_detail' latest_campaign.id %}">Otevřít detail kampaně</a>
+        </p>
+      {% else %}
+        <p class="muted">Zatím nebyla odeslána žádná kampaň.</p>
+      {% endif %}
+    </section>
+
+    <section class="dashboard-panel">
+      <h3>Top kampaně podle kliků</h3>
+
+      {% if top_campaigns %}
+        <div class="table-responsive">
+          <table class="table dashboard-table">
+            <thead>
+              <tr>
+                <th>Kampaň</th>
+                <th class="num-head">Potvrzené kliky</th>
+                <th class="num-head">Proklikovost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for campaign in top_campaigns %}
+                <tr>
+                  <td>
+                    <a href="{% url 'rozesilac:campaign_detail' campaign.id %}">
+                      #{{ campaign.id }}
+                    </a>
+                    {% if campaign.template %}
+                      ({{ campaign.template.name }})
+                    {% endif %}
+                  </td>
+                  <td class="num-cell">{{ campaign.confirmed_unique_click_count_total_for_ui }}</td>
+                  <td class="num-cell">{{ campaign.click_rate_percent_for_ui }} %</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">Zatím nejsou žádná data.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="dashboard-grid">
+    <section class="dashboard-panel">
+      <h3>Nejvíc engaged kontakty</h3>
+
+      {% if top_contacts %}
+        <div class="table-responsive">
+          <table class="table dashboard-table">
+            <thead>
+              <tr>
+                <th>Kontakt</th>
+                <th class="num-head">Doručení</th>
+                <th class="num-head">Potvrzené kliky</th>
+                <th class="num-head">Kampaně s klikem</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in top_contacts %}
+                <tr>
+                  <td>
+                    <a href="{% url 'rozesilac:contact_detail' c.id %}">
+                      {{ c.name|default:c.email }}
+                    </a>
+                  </td>
+                  <td class="num-cell">{{ c.delivery_count_for_ui }}</td>
+                  <td class="num-cell">{{ c.confirmed_unique_click_count_for_ui }}</td>
+                  <td class="num-cell">{{ c.clicked_campaigns_count_for_ui }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">Zatím nejsou žádná data.</p>
+      {% endif %}
+    </section>
+
+    <section class="dashboard-panel">
+      <h3>Poslední kampaně – proklikovost</h3>
+
+      {% if recent_campaigns %}
+        <div class="campaign-bars">
+          {% for campaign in recent_campaigns %}
+            <div class="campaign-bar-row">
+              <div class="campaign-bar-label">
+                <a href="{% url 'rozesilac:campaign_detail' campaign.id %}">
+                  #{{ campaign.id }}
+                </a>
+                {% if campaign.template %}
+                  ({{ campaign.template.name }})
+                {% endif %}
+              </div>
+
+              <div class="campaign-bar-track">
+                <div
+                  class="campaign-bar-fill"
+                  style="width: {% localize off %}{{ campaign.click_rate_width_for_ui }}{% endlocalize %}%;"></div>
+              </div>
+
+              <div class="campaign-bar-value">
+                {% localize off %}{{ campaign.click_rate_percent_for_ui }}{% endlocalize %}%
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">Zatím nejsou žádné kampaně.</p>
+      {% endif %}
+    </section>
+  </div>
 {% endblock rozesilac_content %}

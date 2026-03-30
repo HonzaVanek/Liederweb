@@ -1,0 +1,10 @@
+<h2>Odhlášení z newsletteru</h2>
+
+<p>
+Opravdu se chcete odhlásit z lieder-society newsletteru pro adresu <strong>{{ contact.email }}</strong>?
+</p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Ano, odhlásit</button>
+</form>

@@ -185,32 +185,32 @@ def template_create(request):
 
 @staff_required
 def template_edit(request, template_id):
-        template_obj = get_object_or_404(EmailTemplate, id=template_id)
+    template_obj = get_object_or_404(EmailTemplate, id=template_id)
 
-        if request.method == "POST":
-            form = EmailTemplateForm(request.POST, instance=template_obj)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Šablona byla upravena.")
-                return redirect("rozesilac:templates")
-        else:
-            form = EmailTemplateForm(instance=template_obj)
+    if request.method == "POST":
+        form = EmailTemplateForm(request.POST, instance=template_obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Šablona byla upravena.")
+            return redirect("rozesilac:templates")
+    else:
+        form = EmailTemplateForm(instance=template_obj)
 
-        recent_images = EmailImage.objects.all()[:4]
-        total_size = EmailImage.objects.aggregate(total=Sum("file_size"))["total"] or 0
-        limit_size = 100 * 1024 * 1024
-        image_upload_form = EmailImageUploadForm()
-        return render(request, "rozesilac/template_edit.html",
-                      {
-                        "form": form,
-                        "page_title": f"Upravit šablonu: {template_obj.name}",
-                        "submit_label": "Uložit změny",
-                        "template_obj": template_obj,
-                        "recent_images": recent_images,
-                        "total_size": total_size,
-                        "limit_size": limit_size,
-                        "image_upload_form": image_upload_form,
-                     },)
+    recent_images = EmailImage.objects.all()[:4]
+    total_size = EmailImage.objects.aggregate(total=Sum("file_size"))["total"] or 0
+    limit_size = 100 * 1024 * 1024
+    image_upload_form = EmailImageUploadForm()
+    return render(request, "rozesilac/template_edit.html",
+                    {
+                    "form": form,
+                    "page_title": f"Upravit šablonu: {template_obj.name}",
+                    "submit_label": "Uložit změny",
+                    "template_obj": template_obj,
+                    "recent_images": recent_images,
+                    "total_size": total_size,
+                    "limit_size": limit_size,
+                    "image_upload_form": image_upload_form,
+                    },)
 
 @staff_required
 def template_duplicate(request, template_id):
@@ -755,7 +755,7 @@ def add_click_tracking_to_html(html_content: str, delivery, base_url: str):
     if not html_content:
         return html_content, []
 
-    click_base = f"{base_url}{reverse('click_tracking', args=[delivery.tracking_token])}"
+    click_base = f"{base_url}{reverse('rozesilac:click_tracking', args=[delivery.tracking_token])}"
 
     tracked_urls = []
 
@@ -1097,5 +1097,5 @@ def unsubscribe(request, token):
                 recipient_list=["newsletter@liedersociety.cz"],
                 fail_silently=True,
             )
-        return render(request, "pojistenci/rozesilac/unsubscribe_done.html", {"contact": contact})
-    return render(request, "pojistenci/rozesilac/unsubscribe_confirm.html", {"contact": contact})
+        return render(request, "rozesilac/unsubscribe_done.html", {"contact": contact})
+    return render(request, "rozesilac/unsubscribe_confirm.html", {"contact": contact})

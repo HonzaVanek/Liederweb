@@ -1,0 +1,348 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}Rozesílač | Odesílání{% endblock title %}
+
+{% block rozesilac_content %}
+<h2>Odeslat email</h2>
+
+<p class="help-text">Tady už budem posílat připravené šablony (nebo to mu můžem říkat maily, kampaně, whatever). Vybereš kterou chceš poslat šablonu (finální mail), pak můžeš ještě zkontrolovat v náhledu že je to ta správná co chceš fakt poslat. Pak vybereš co má být jako email odesílatele - tam zatím sice lze vybrat info@liedersociety.cz nebo newsletter@liedersociety.cz, což je moje doména a funguje to z ní dobře. Na webu je to pak přesměrované, takže kdyby měl někdo potřebu zadat jako url liedersociety.cz tak nám to nevadí, protože ho to automaticky přesměruje na lieder-society.cz </br> Každopádně pak zvolíte režim odesílání - ten testovací je jenom když to chcete poslat fakt na jeden svůj mail, ale v podstatě lze dát rovnou ostré rozesílání a pak jako skupinu zvolit nějakou vlastní testovací skupinu, kde máte nějaký svoje maily třeba v různých klientech, abych mohl čeknout jak newsletter vypadá třeba na gmailu, jak na outlooku, jak na seznamu, etc. Když je to cajk tak pak zvolíte cílovou skupinu kontaktů, pak je ještě možné kdyžtak odškrtnout nějaký kontakt (zobrazí se jen ty aktivní, neaktivním mail poslat nelze), kdybyste mu to poslat nechtěly a pak Odeslat a bum. Zatím jsem teda nezkoušel to poslat na třeba 200 kontaktů, testoval jsem to tak do deseti, tak snad to bude fachat když jich bude hodně, musíme prostě vyzkoušet praxí. Imho se posílá tak 1-2 maily za sekundu, tzn. tipuju že 200 kontaktů se bude odesílat cca 3 minuty. Snad.</p>
+
+{% if messages %}
+<ul class="messages">
+  {% for m in messages %}
+    <li class="{{ m.tags }}">{{ m }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if form.errors %}
+  <div class="form-errors" style="margin-bottom: 15px;">
+    Oprav prosím chyby ve formuláři.
+  </div>
+{% endif %}
+
+<form method="post" id="send-campaign-form">
+  {% csrf_token %}
+
+  <div class="template-form-row">
+    <label for="{{ form.template.id_for_label }}">Šablona</label>
+    {{ form.template }}
+    {% for e in form.template.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+
+    <div style="margin-top:10px;">
+      <button type="button" id="preview-template-btn">Zobrazit náhled šablony</button>
+    </div>
+  </div>
+ 
+  <div class="template-form-row">
+    <label for="{{ form.from_email.id_for_label }}">Odesílatel</label>
+    {{ form.from_email }}
+  </div>
+
+  <div class="template-form-row">
+    <label>Režim odeslání</label>
+    {{ form.send_mode }}
+    {% for e in form.send_mode.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row" id="test-email-row">
+    <label for="{{ form.test_email.id_for_label }}">Testovací email</label>
+    {{ form.test_email }}
+    {% for e in form.test_email.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row" id="groups-row">
+    <label>Skupiny kontaktů</label>
+    <div class="contacts-box">
+      {{ form.groups }}
+    </div>
+    {% for e in form.groups.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row" id="contacts-row">
+    <div class="contacts-header-row">
+      <label>Kontakty k odeslání</label>
+      <div class="contacts-actions-inline">
+        <button type="button" id="select-all-contacts-btn">Označit vše</button>
+        <button type="button" id="deselect-all-contacts-btn">Odznačit vše</button>
+      </div>
+    </div>
+
+    <div class="contacts-box">
+      {{ form.contacts }}
+    </div>
+    {% for e in form.contacts.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+    <label for="{{ form.note.id_for_label }}">Poznámka</label>
+    {{ form.note }}
+    {% for e in form.note.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" id="send-submit-btn">Odeslat</button>
+  </div>
+</form>
+
+<div id="sending-overlay" class="sending-overlay" hidden>
+  <div class="sending-overlay__box">
+    <div class="sending-overlay__spinner" aria-hidden="true"></div>
+    <h3>Odesíláme e-maily</h3>
+    <p>Je to jízda, bombí se tam maily jeden za druhym, prosím čekej a nezavírej stránku. Nějakých 200 kontaktů může trvat klidně i několik minut.</p>
+  </div>
+</div>
+
+<div id="template-preview-modal" class="template-preview-modal" style="display:none;">
+  <div class="template-preview-backdrop"></div>
+
+  <div class="template-preview-dialog">
+    <div class="template-preview-header">
+      <h3 style="margin:0;">Náhled šablony</h3>
+      <button type="button" id="close-preview-btn" class="template-preview-close">×</button>
+    </div>
+
+    <div class="template-preview-subject">
+      <strong>Předmět:</strong>
+      <span id="preview-subject"></span>
+    </div>
+
+    <iframe id="template-preview-iframe" class="template-preview-iframe"></iframe>
+  </div>
+</div>
+
+<div id="template-preview-data" style="display:none;">
+  {% for t in templates_for_preview %}
+    <div
+      class="template-preview-item"
+      data-template-id="{{ t.id }}"
+      data-template-subject="{{ t.subject|escape }}"
+    >{{ t.html_body|safe }}</div>
+  {% endfor %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const modeInputs = document.querySelectorAll('input[name="send_mode"]');
+  const groupInputs = document.querySelectorAll('input[name="groups"]');
+  const contactInputs = document.querySelectorAll('input[name="contacts"]');
+
+  const testEmailRow = document.getElementById("test-email-row");
+  const groupsRow = document.getElementById("groups-row");
+  const contactsRow = document.getElementById("contacts-row");
+  const form = document.getElementById("send-campaign-form");
+  const sendSubmitBtn = document.getElementById("send-submit-btn");
+  const sendingOverlay = document.getElementById("sending-overlay");
+
+  const selectAllBtn = document.getElementById("select-all-contacts-btn");
+  const deselectAllBtn = document.getElementById("deselect-all-contacts-btn");
+
+  const previewBtn = document.getElementById("preview-template-btn");
+  const previewModal = document.getElementById("template-preview-modal");
+  const closePreviewBtn = document.getElementById("close-preview-btn");
+  const previewSubject = document.getElementById("preview-subject");
+  const previewIframe = document.getElementById("template-preview-iframe");
+  const templateSelect = document.getElementById("id_template");
+
+  let isSubmitting = false;
+
+  // mapování kontakt_id -> skupiny
+  const contactGroupMap = {
+    {% for contact in form.fields.contacts.queryset %}
+      "{{ contact.id }}": [{% for g in contact.groups.all %}"{{ g.id }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+    {% endfor %}
+  };
+
+  function openPreviewModal() {
+    const selectedTemplateId = templateSelect ? templateSelect.value : "";
+
+    if (!selectedTemplateId) {
+      alert("Nejdřív vyber šablonu.");
+      return;
+    }
+
+    const previewItem = document.querySelector(
+      `.template-preview-item[data-template-id="${selectedTemplateId}"]`
+    );
+
+    if (!previewItem) {
+      alert("Nepodařilo se načíst náhled vybrané šablony.");
+      return;
+    }
+
+    const subject = previewItem.dataset.templateSubject || "";
+    const html = previewItem.innerHTML || "";
+
+    previewSubject.textContent = subject;
+
+    const iframeDoc = previewIframe.contentDocument || previewIframe.contentWindow.document;
+    iframeDoc.open();
+    iframeDoc.write(html);
+    iframeDoc.close();
+
+    previewModal.style.display = "flex";
+  }
+
+  function closePreviewModal() {
+    previewModal.style.display = "none";
+  }
+
+  function showSendingOverlay() {
+   if (sendingOverlay) {
+     sendingOverlay.hidden = false;
+    }
+
+   if (sendSubmitBtn) {
+     sendSubmitBtn.disabled = true;
+     sendSubmitBtn.textContent = "Odesílám...";
+    }
+  }
+
+  if (previewBtn) {
+    previewBtn.addEventListener("click", openPreviewModal);
+  }
+
+  if (closePreviewBtn) {
+    closePreviewBtn.addEventListener("click", closePreviewModal);
+  }
+
+  if (previewModal) {
+    previewModal.addEventListener("click", function (e) {
+      if (e.target.classList.contains("template-preview-backdrop")) {
+        closePreviewModal();
+      }
+    });
+  }
+
+
+
+  
+  function getSelectedMode() {
+    const selected = document.querySelector('input[name="send_mode"]:checked');
+    return selected ? selected.value : "test";
+  }
+
+  function getSelectedGroupIds() {
+    return Array.from(document.querySelectorAll('input[name="groups"]:checked')).map(el => el.value);
+  }
+
+  function updateModeVisibility() {
+    const mode = getSelectedMode();
+
+    if (mode === "test") {
+      testEmailRow.style.display = "block";
+      groupsRow.style.display = "none";
+      contactsRow.style.display = "none";
+    } else {
+      testEmailRow.style.display = "none";
+      groupsRow.style.display = "block";
+      contactsRow.style.display = "block";
+    }
+  }
+
+  function updateVisibleContacts() {
+    const selectedGroups = getSelectedGroupIds();
+
+    contactInputs.forEach(function (input) {
+      const contactId = input.value;
+      const groupIds = contactGroupMap[contactId] || [];
+      const wrapper = input.closest("li") || input.closest("div") || input.parentElement;
+
+      const shouldShow = selectedGroups.some(groupId => groupIds.includes(groupId));
+
+      if (wrapper) {
+        wrapper.style.display = shouldShow ? "" : "none";
+      }
+
+      if (shouldShow) {
+        input.checked = true;
+      } else {
+        input.checked = false;
+      }
+    });
+  }
+
+  function selectAllVisibleContacts() {
+    contactInputs.forEach(function (input) {
+      const wrapper = input.closest("li") || input.closest("div") || input.parentElement;
+      if (wrapper && wrapper.style.display !== "none") {
+        input.checked = true;
+      }
+    });
+  }
+
+  function deselectAllVisibleContacts() {
+    contactInputs.forEach(function (input) {
+      const wrapper = input.closest("li") || input.closest("div") || input.parentElement;
+      if (wrapper && wrapper.style.display !== "none") {
+        input.checked = false;
+      }
+    });
+  }
+
+  modeInputs.forEach(function (input) {
+    input.addEventListener("change", function () {
+      updateModeVisibility();
+      updateVisibleContacts();
+    });
+  });
+
+  groupInputs.forEach(function (input) {
+    input.addEventListener("change", function () {
+      updateVisibleContacts();
+    });
+  });
+
+  if (selectAllBtn) {
+    selectAllBtn.addEventListener("click", function () {
+      selectAllVisibleContacts();
+    });
+  }
+
+  if (deselectAllBtn) {
+    deselectAllBtn.addEventListener("click", function () {
+      deselectAllVisibleContacts();
+    });
+  }
+
+  updateModeVisibility();
+  updateVisibleContacts();
+
+  form.addEventListener("submit", function (e) {
+    if (isSubmitting) {
+      e.preventDefault();
+      return;
+    }
+
+    const mode = getSelectedMode();
+
+    if (mode === "live") {
+      const checkedContacts = Array.from(contactInputs).filter(function (input) {
+        const wrapper = input.closest("li") || input.closest("div") || input.parentElement;
+        return wrapper && wrapper.style.display !== "none" && input.checked;
+      }).length;
+
+      const confirmed = confirm(`Opravdu chceš odeslat ostrou kampaň na ${checkedContacts} kontaktů?`);
+      if (!confirmed) {
+        e.preventDefault();
+        return;
+      }
+    }
+    isSubmitting = true;
+    showSendingOverlay();
+  });
+});
+</script>
+{% endblock rozesilac_content %}
