@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / "Liederweb" / "settings.env")
+load_dotenv(BASE_DIR / "settings.env")
 
 
 # Quick-start development settings - unsuitable for production
@@ -37,14 +37,14 @@ if not SECRET_KEY:
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-if APP_ENV == "dev":
-    DEBUG = True
-else:
-    DEBUG = False
+DEBUG = APP_ENV == "dev"
 
 # na Produkci - nastavené ALLOWED_HOSTS
 if APP_ENV == "prod":
     ALLOWED_HOSTS = ["liedersociety.online", "www.liedersociety.online"]
+    CSRF_TRUSTED_ORIGINS = ["https://liedersociety.online", "https://www.liedersociety.online",]
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 else:
     ALLOWED_HOSTS = []
 
@@ -142,9 +142,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+STATICFILES_DIRS = [BASE_DIR / 'static',]
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
@@ -187,7 +185,5 @@ if APP_ENV == "prod":
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
     BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 else:
-    email_to_console = "django.core.mail.backends.console.EmailBackend"
-    EMAIL_BACKEND = email_to_console
-    NEWSLETTER_EMAIL_BACKEND = email_to_console
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
     DEFAULT_FROM_EMAIL = "local@test.project"
