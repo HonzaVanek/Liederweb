@@ -3,6 +3,9 @@
 
 {% block title %}Přihlášení{% endblock %}
 {% block style %}{% static "core/login.css" %}{% endblock style %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/login.css' %}">
+{% endblock extra_css %}
 
 {% block content %}
 <div class="login-container">
