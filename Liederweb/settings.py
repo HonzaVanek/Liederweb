@@ -41,8 +41,8 @@ DEBUG = APP_ENV == "dev"
 
 # na Produkci - nastavené ALLOWED_HOSTS
 if APP_ENV == "prod":
-    ALLOWED_HOSTS = ["liedersociety.online", "www.liedersociety.online"]
-    CSRF_TRUSTED_ORIGINS = ["https://liedersociety.online", "https://www.liedersociety.online",]
+    ALLOWED_HOSTS = ["liedersociety.website", "www.liedersociety.website", "liederweb-8885.rostiapp.cz", "www.liederweb-8885.rostiapp.cz"]
+    CSRF_TRUSTED_ORIGINS = ["https://liedersociety.website", "https://www.liedersociety.website", "https://liederweb-8885.rostiapp.cz"]
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 else:
