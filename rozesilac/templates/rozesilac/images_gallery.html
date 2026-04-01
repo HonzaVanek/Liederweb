@@ -1,12 +1,17 @@
 {% extends "rozesilac/base_rozesilac.html" %}
 {% load static %}
 
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'rozesilac/images_gallery.css' %}">{% endblock %}
+
 {% block title %}Rozesílač | Obrázky{% endblock title %}
 
 {% block rozesilac_content %}
-<h2>Obrázky</h2>
 
-<p class="help-text">Na této stránce můžeš nahrávat na náš server obrázky, které se používají v šablonách pro rozesílání. Můžeš nahrát nový obrázek, nebo smazat nějaký stávající. Pro vložení obrázku do šablony pak použij URL, kterou najdeš u každého obrázku v galerii níže. Obrázek do šablony samozřejmě nemusí být jenom tady, ale kdekoli na internetu, ale pro vložení do šablony musíš znát přesné URL (a když ho pak někdo z internetu smaže, tak pak samozřejmě zmizí i z toho našeho mailu). Obecně doporučuji používat jenom menší obrázky (cca do 200 kB), aby se emaily rychle načítaly. Tady jsem dal omezení, aby šly nahrávat obrázky o maximální velikosti 2MB a vzhledem k omezené kapacitě serveru (máme free verzi, větší objem serveru je placený) je další omezení to, že celková velikost všech obrázků nesmí být víc jak 100MB. Ale podle mě to bude v pohodě stačit, kdyby snad ne, nějak pořešíme :)</p>
+<div class="images-page">
+
+  <h2>Obrázky</h2>
+
+<p class="help-text">Na této stránce můžeš nahrávat na náš server obrázky, které se používají v šablonách pro rozesílání. Můžeš nahrát nový obrázek, nebo smazat nějaký stávající. Pro vložení obrázku do šablony pak použij URL, kterou najdeš u každého obrázku v galerii níže. Obrázek do šablony samozřejmě nemusí být jenom tady, ale kdekoli na internetu, ale pro vložení do šablony musíš znát přesné URL (a když ho pak někdo z internetu smaže, tak pak samozřejmě zmizí i z toho našeho mailu). Obecně doporučuji používat jenom menší obrázky (cca do 200 kB), aby se emaily rychle načítaly. Tady jsem dal omezení, aby šly nahrávat obrázky o maximální velikosti 2MB a vzhledem k omezené kapacitě serveru (máme levný server, tak nemáme velkou kapacitu disku, větší objem serveru je dražší) je další omezení to, že celková velikost všech obrázků nesmí být víc jak 100MB. Ale podle mě to bude v pohodě stačit, kdyby snad ne, nějak pořešíme :)</p>
 
 {% if messages %}
 <ul class="messages">
@@ -16,45 +21,46 @@
 </ul>
 {% endif %}
 
-<p class="muted">
+<p class="muted gallery-usage">
   Využito: {{ total_size|filesizeformat }} z {{ limit_size|filesizeformat }}
 </p>
 
-<h3>Nahrát obrázek</h3>
+<div class="image-panel">
+  <h3>Nahrát obrázek</h3>
 
-{% if upload_form.non_field_errors %}
-  <div class="form-errors" style="margin-bottom: 10px;">
-    {% for error in upload_form.non_field_errors %}
-      <div>{{ error }}</div>
-    {% endfor %}
-  </div>
-{% endif %}
+  {% if upload_form.non_field_errors %}
+    <div class="form-errors" style="margin-bottom: 10px;">
+      {% for error in upload_form.non_field_errors %}
+        <div>{{ error }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
 
-<form method="post" enctype="multipart/form-data">
-  {% csrf_token %}
-  <input type="hidden" name="action" value="upload">
+  <form method="post" enctype="multipart/form-data" class="image-upload-form">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="upload">
 
-  <div class="template-form-row">
-    <label for="{{ upload_form.title.id_for_label }}">Název</label>
-    {{ upload_form.title }}
-    {% for e in upload_form.title.errors %}
-      <div class="form-errors">{{ e }}</div>
-    {% endfor %}
-  </div>
+    <div class="template-form-row">
+      <label for="{{ upload_form.title.id_for_label }}">Název</label>
+      {{ upload_form.title }}
+      {% for e in upload_form.title.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
 
-  <div class="template-form-row">
-    <label for="{{ upload_form.image.id_for_label }}">Soubor</label>
-    {{ upload_form.image }}
-    {% for e in upload_form.image.errors %}
-      <div class="form-errors">{{ e }}</div>
-    {% endfor %}
-  </div>
+    <div class="template-form-row">
+      <label for="{{ upload_form.image.id_for_label }}">Soubor</label>
+      {{ upload_form.image }}
+      {% for e in upload_form.image.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
 
-  <div class="form-actions">
-    <button type="submit">Nahrát obrázek</button>
-  </div>
-
-</form>
+    <div class="form-actions">
+      <button type="submit">Nahrát obrázek</button>
+    </div>
+  </form>
+</div>
 
 
 
@@ -76,7 +82,7 @@
 
         <div class="image-url-box">
           <input type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{{ img.image.url }}" id="img-url-{{ img.id }}">
-          <button type="button" onclick="copyImageUrl('img-url-{{ img.id }}')">Kopírovat URL</button>
+          <button type="button" onclick="copyImageUrl('img-url-{{ img.id }}', this)">Kopírovat URL</button>
         </div>
 
         <form method="post" onsubmit="return confirm('Opravdu smazat tento obrázek?');">
@@ -89,15 +95,24 @@
     {% endfor %}
   </div>
 {% else %}
-  <p class="muted">Zatím nejsou nahrané žádné obrázky.</p>
+  <p class="muted image-empty">Zatím nejsou nahrané žádné obrázky.</p>
 {% endif %}
 
+</div>
+
 <script>
-function copyImageUrl(inputId) {
+function copyImageUrl(inputId, button) {
   const input = document.getElementById(inputId);
-  input.select();
-  input.setSelectionRange(0, 99999);
-  navigator.clipboard.writeText(input.value);
+  navigator.clipboard.writeText(input.value).then(() => {
+    const originalText = button.textContent;
+    button.textContent = 'Zkopírováno';
+    button.disabled = true;
+
+    setTimeout(() => {
+      button.textContent = originalText;
+      button.disabled = false;
+    }, 1200);
+  });
 }
 </script>
 {% endblock rozesilac_content %}

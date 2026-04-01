@@ -553,3 +553,140 @@
         min-width: 0;
     }
 }
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+    .rozesilac-main {
+        max-width: 100%;
+        padding: 22px;
+    }
+
+    .rozesilac-sidebar {
+        width: 220px;
+        padding: 18px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .form-grid > *:last-child {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 900px) {
+    .rozesilac-wrap {
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .rozesilac-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 2px solid #000;
+        padding: 16px;
+    }
+
+    .rozesilac-title {
+        margin-bottom: 16px;
+        font-size: 1.8rem;
+    }
+
+    .rozesilac-nav {
+        gap: 8px;
+    }
+
+    .rozesilac-nav a {
+        padding: 10px 12px;
+    }
+
+    .rozesilac-main {
+        width: 100%;
+        padding: 22px 18px;
+    }
+}
+
+@media (max-width: 700px) {
+    .rozesilac-main,
+    .content-section {
+        padding: 16px;
+    }
+
+    .rozesilac-sidebar {
+        padding: 14px;
+    }
+
+    .rozesilac-title {
+        font-size: 1.55rem;
+        margin-bottom: 14px;
+    }
+
+    .rozesilac-nav a {
+        padding: 9px 11px;
+        font-size: 0.97rem;
+    }
+
+    .rozesilac-main h2 {
+        font-size: 1.55rem;
+        margin-bottom: 16px;
+    }
+
+    .rozesilac-main h3 {
+        font-size: 1.08rem;
+    }
+
+    .help-text {
+        text-align: left;
+        padding: 12px 14px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-actions a,
+    .form-actions button,
+    .form-actions input[type="submit"] {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .rozesilac-sidebar {
+        padding: 12px;
+    }
+
+    .rozesilac-title {
+        font-size: 1.35rem;
+    }
+
+    .rozesilac-nav a {
+        padding: 8px 10px;
+        font-size: 0.94rem;
+        border-radius: 4px;
+    }
+
+    .rozesilac-main {
+        padding: 14px 12px;
+    }
+
+    .rozesilac-main h2 {
+        font-size: 1.35rem;
+        letter-spacing: 0.5px;
+    }
+
+    .help-text {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+}

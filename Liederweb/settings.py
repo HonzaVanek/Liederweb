@@ -39,6 +39,33 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = APP_ENV == "dev"
 
+if APP_ENV == "prod":
+    LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+    },
+}
+
 # na Produkci - nastavené ALLOWED_HOSTS
 if APP_ENV == "prod":
     ALLOWED_HOSTS = ["liedersociety.website", "www.liedersociety.website", "liederweb-8885.rostiapp.cz", "www.liederweb-8885.rostiapp.cz"]

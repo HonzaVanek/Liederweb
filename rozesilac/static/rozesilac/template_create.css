@@ -1,0 +1,328 @@
+/* =========================================================
+   TEMPLATE CREATE / EDIT
+   stránkové CSS navazující na base + base_rozesilac
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   ERROR BOX nahoře
+   --------------------------------------------------------- */
+
+.form-errors {
+    border-radius: 6px;
+}
+
+/* ---------------------------------------------------------
+   IMAGE PANEL
+   --------------------------------------------------------- */
+
+.image-panel {
+    width: 100%;
+    margin-bottom: 28px;
+    padding: 22px;
+    background: #fafafa;
+    border: 1px solid #dddddd;
+    border-radius: 12px;
+}
+
+.image-panel h3 {
+    margin-top: 0;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e4e4e4;
+}
+
+.image-panel h4 {
+    margin: 22px 0 12px 0;
+    color: #222;
+    font-size: 1rem;
+}
+
+.image-panel .muted {
+    line-height: 1.5;
+}
+
+/* řádek s využitím + odkazem */
+.image-panel > p.muted {
+    margin-bottom: 16px;
+}
+
+/* ---------------------------------------------------------
+   INLINE UPLOAD
+   --------------------------------------------------------- */
+
+.image-upload-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 600px; /* ať to není přes celou šířku */
+}
+
+.image-upload-inline > div {
+    min-width: 0;
+}
+
+.image-upload-inline button {
+    align-self: flex-start;
+}
+
+.image-upload-inline button[type="submit"] {
+    white-space: nowrap;
+}
+
+/* file input – sladěný s galerií */
+.rozesilac-main input[type="file"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #000;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 0.96rem;
+    color: #222;
+    cursor: pointer;
+}
+
+.rozesilac-main input[type="file"]::file-selector-button {
+    margin-right: 12px;
+    padding: 8px 14px;
+    border: 1px solid #000;
+    border-radius: 6px;
+    background: #f4f4f4;
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.rozesilac-main input[type="file"]::file-selector-button:hover {
+    background: #000;
+    color: #fff;
+}
+
+/* ---------------------------------------------------------
+   RECENT IMAGES
+   --------------------------------------------------------- */
+
+.recent-images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 10px;
+}
+
+.recent-image-card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #d8d8d8;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.recent-image-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+    border-color: #bfbfbf;
+}
+
+.recent-image-thumb-wrap {
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background: #f6f6f6;
+    border-bottom: 1px solid #e5e5e5;
+    overflow: hidden;
+}
+
+.recent-image-thumb {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.recent-image-meta {
+    padding: 12px 14px 8px;
+}
+
+.recent-image-meta .title {
+    display: block;
+    margin-bottom: 5px;
+    color: #111;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.recent-image-meta .muted {
+    display: block;
+    font-size: 0.84rem;
+    line-height: 1.4;
+}
+
+.recent-image-url-box {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+    padding: 0 14px 14px;
+}
+
+.recent-image-url-box input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+    background: #fafafa;
+    color: #333;
+    border: 1px solid #d4d4d4;
+    border-radius: 6px;
+    font-family: Consolas, Monaco, "Courier New", monospace;
+}
+
+.recent-image-url-box button {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    line-height: 1.2;
+    border-width: 1px;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+/* ---------------------------------------------------------
+   HLAVNÍ FORMULÁŘ ŠABLONY
+   --------------------------------------------------------- */
+
+.rozesilac-main form[novalidate] {
+    width: 100%;
+}
+
+.rozesilac-main form[novalidate] .template-form-row {
+    margin-bottom: 20px;
+}
+
+/* help texty pod poli */
+.template-form-row .muted {
+    margin-top: 8px;
+    line-height: 1.55;
+    font-size: 0.95rem;
+}
+
+/* textarea text verze trochu vyšší */
+#id_text_body {
+    min-height: 240px;
+}
+
+/* ---------------------------------------------------------
+   TINYMCE WRAPPER
+   --------------------------------------------------------- */
+
+.tox-tinymce {
+    border-radius: 8px !important;
+    overflow: hidden;
+    border: 1px solid #000 !important;
+}
+
+.tox .tox-toolbar,
+.tox .tox-toolbar__primary,
+.tox .tox-editor-header {
+    border-color: #dddddd !important;
+}
+
+.tox .tox-edit-area::before {
+    border: none !important;
+}
+
+/* ---------------------------------------------------------
+   BUTTON: Přegenerovat text z HTML
+   --------------------------------------------------------- */
+
+#generate-text-btn {
+    margin: 2px 0 18px 0;
+}
+
+/* ---------------------------------------------------------
+   FORM ACTIONS dole
+   --------------------------------------------------------- */
+
+.form-actions a {
+    display: inline-block;
+    padding: 10px 18px;
+    border: 2px solid #000;
+    border-radius: 6px;
+    background: #fff;
+    color: #000;
+    text-decoration: none;
+    font-weight: 700;
+    transition: background-color 0.25s ease, color 0.25s ease, transform 0.15s ease;
+}
+
+.form-actions a:hover {
+    background: #000;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+    .image-upload-inline {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .image-upload-inline > div:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .recent-images-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .image-panel {
+        padding: 16px;
+    }
+
+    .image-upload-inline {
+        grid-template-columns: 1fr;
+    }
+
+    .recent-images-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .recent-image-thumb-wrap {
+        height: 210px;
+    }
+
+    .recent-image-url-box {
+        flex-direction: column;
+    }
+
+    .recent-image-url-box button {
+        width: 100%;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .form-actions a,
+    .form-actions button {
+        width: 100%;
+        text-align: center;
+    }
+}

@@ -1,0 +1,292 @@
+/* =========================================================
+   OBRÁZKY – stránkové CSS
+   Navazuje na base + base_rozesilac
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   HELP / INFO
+   --------------------------------------------------------- */
+
+.help-text {
+    width: 100%;
+    margin: 0 0 20px 0;
+    padding: 14px 18px;
+    background-color: #f8f8f8;
+    border: 1px solid #e1e1e1;
+    border-left: 4px solid #000;
+    border-radius: 8px;
+    font-style: italic;
+    color: #444;
+    line-height: 1.6;
+    text-align: left;
+}
+
+.gallery-usage {
+    display: inline-block;
+    margin: 0 0 24px 0;
+    padding: 8px 12px;
+    background: #fff;
+    border: 1px solid #d8d8d8;
+    border-radius: 999px;
+    color: #444;
+    font-size: 0.95rem;
+}
+
+/* ---------------------------------------------------------
+   UPLOAD PANEL
+   --------------------------------------------------------- */
+
+.image-panel {
+    width: 100%;
+    margin-bottom: 28px;
+    padding: 22px;
+    background: #fafafa;
+    border: 1px solid #dddddd;
+    border-radius: 12px;
+}
+
+.image-panel h3 {
+    margin-top: 0;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e4e4e4;
+}
+
+/* formulář přes celou šířku, žádné sloupce vedle sebe */
+.image-upload-form {
+    width: 100%;
+}
+
+.image-upload-form .template-form-row {
+    margin-bottom: 18px;
+}
+
+.image-upload-form .form-actions {
+    margin-top: 4px;
+}
+
+/* ---------------------------------------------------------
+   FILE INPUT – zkultivovaný vzhled
+   --------------------------------------------------------- */
+
+.rozesilac-main input[type="file"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #000;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 0.96rem;
+    color: #222;
+    cursor: pointer;
+}
+
+.rozesilac-main input[type="file"]::file-selector-button {
+    margin-right: 12px;
+    padding: 8px 14px;
+    border: 1px solid #000;
+    border-radius: 6px;
+    background: #f4f4f4;
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.rozesilac-main input[type="file"]::file-selector-button:hover {
+    background: #000;
+    color: #fff;
+}
+
+/* ---------------------------------------------------------
+   GALERIE
+   --------------------------------------------------------- */
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 18px;
+    width: 100%;
+    margin-top: 14px;
+}
+
+.image-card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #d8d8d8;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.image-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+    border-color: #bfbfbf;
+}
+
+/* náhled – celý obrázek, bez ořezu */
+.image-thumb-wrap {
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background: #f6f6f6;
+    border-bottom: 1px solid #e5e5e5;
+    overflow: hidden;
+}
+
+.image-thumb {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+
+/* ---------------------------------------------------------
+   META
+   --------------------------------------------------------- */
+
+.image-meta {
+    padding: 14px 16px 10px;
+}
+
+.image-meta strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #111;
+    font-size: 1rem;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.image-meta .muted,
+.image-meta span {
+    font-size: 0.88rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* ---------------------------------------------------------
+   URL BOX
+   --------------------------------------------------------- */
+
+.image-url-box {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+    padding: 0 16px 12px;
+}
+
+.image-url-box input[type="text"] {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 8px 10px;
+    font-size: 0.84rem;
+    background: #fafafa;
+    color: #333;
+    border: 1px solid #d4d4d4;
+    border-radius: 6px;
+    font-family: Consolas, Monaco, "Courier New", monospace;
+}
+
+.image-url-box button {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 0.83rem;
+    line-height: 1.2;
+    border-width: 1px;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+/* ---------------------------------------------------------
+   DELETE BUTTON
+   --------------------------------------------------------- */
+
+.image-card form {
+    margin: 0;
+    padding: 0 16px 16px;
+}
+
+.image-card form button[type="submit"] {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.84rem;
+    line-height: 1.2;
+    border: 1px solid #c62828;
+    background: #fff;
+    color: #c62828;
+    border-radius: 6px;
+    font-weight: 700;
+}
+
+.image-card form button[type="submit"]:hover {
+    background: #c62828;
+    color: #fff;
+    transform: none;
+}
+
+/* ---------------------------------------------------------
+   FORM ERROR BOX
+   --------------------------------------------------------- */
+
+.form-errors {
+    margin-top: 6px;
+}
+
+/* ---------------------------------------------------------
+   EMPTY STATE
+   --------------------------------------------------------- */
+
+.image-empty {
+    margin-top: 8px;
+    padding: 18px;
+    border: 1px dashed #cfcfcf;
+    border-radius: 10px;
+    background: #fafafa;
+    color: #666;
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------- */
+
+@media (max-width: 900px) {
+    .image-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    }
+
+    .image-thumb-wrap {
+        height: 200px;
+    }
+}
+
+@media (max-width: 700px) {
+    .image-panel {
+        padding: 16px;
+    }
+
+    .image-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .image-thumb-wrap {
+        height: 220px;
+    }
+
+    .image-url-box {
+        flex-direction: column;
+    }
+
+    .image-url-box button,
+    .image-card form button[type="submit"] {
+        width: 100%;
+    }
+}
