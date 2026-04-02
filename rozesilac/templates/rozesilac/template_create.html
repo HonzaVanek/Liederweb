@@ -183,6 +183,24 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  const editorContentStyle = `
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #222;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    table {
+      max-width: 100%;
+    }
+  `;
+
   tinymce.init({
     selector: "#id_html_body",
     height: 500,
@@ -192,7 +210,7 @@ document.addEventListener("DOMContentLoaded", function () {
     branding: false,
     convert_urls: false,
     promotion: false,
-    content_style: "body { font-family: Arial, sans-serif; font-size: 14px; }",
+    content_style: editorContentStyle,
     setup: function (editor) {
       function syncTextBody(force = false) {
         if (!textBodyField) return;

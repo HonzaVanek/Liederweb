@@ -190,10 +190,53 @@ document.addEventListener("DOMContentLoaded", function () {
 
     previewSubject.textContent = subject;
 
-    const iframeDoc = previewIframe.contentDocument || previewIframe.contentWindow.document;
-    iframeDoc.open();
-    iframeDoc.write(html);
-    iframeDoc.close();
+    previewIframe.srcdoc = `
+    <!DOCTYPE html>
+    <html lang="cs">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Náhled šablony</title>
+      <style>
+        html, body {
+          margin: 0;
+          padding: 0;
+          background: #f3f3f3;
+        }
+
+        body {
+          font-family: Arial, sans-serif;
+          font-size: 14px;
+          line-height: 1.4;
+          color: #222;
+        }
+
+        .preview-shell {
+          max-width: 900px;
+          margin: 0 auto;
+          padding: 24px;
+          background: #fff;
+          min-height: 100vh;
+          box-sizing: border-box;
+        }
+
+        img {
+          max-width: 100%;
+          height: auto;
+        }
+
+        table {
+          max-width: 100%;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="preview-shell">
+        ${html}
+      </div>
+    </body>
+    </html>
+    `;
 
     previewModal.style.display = "flex";
   }
