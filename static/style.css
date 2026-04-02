@@ -215,3 +215,74 @@ nav {
         font-size: 14px;
     }
 }
+
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+body.dark-mode {
+    background-color: #111;
+    color: #eee;
+}
+
+/* HEADER */
+body.dark-mode header {
+    background-color: #1a1a1a;
+    border-bottom: 2px solid #444;
+}
+
+/* NAV BUTTONS */
+body.dark-mode .nav-button {
+    background-color: #1b1b1b;
+    color: #eee;
+    border-color: #555;
+}
+
+body.dark-mode .nav-button:hover {
+    background-color: #eee;
+    color: #111;
+}
+
+/* USER PANEL */
+body.dark-mode .logged-user {
+    color: #ddd;
+}
+
+body.dark-mode .logout-button {
+    background-color: #1b1b1b;
+    color: #eee;
+    border-color: #555;
+}
+
+body.dark-mode .logout-button:hover {
+    background-color: #eee;
+    color: #111;
+}
+
+/* TOGGLE BUTTON */
+.dark-mode-toggle {
+    padding: 6px 10px;
+    border: 1px solid #000;
+    background: #fff;
+    color: #000;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.dark-mode-toggle:hover {
+    background: #000;
+    color: #fff;
+}
+
+body.dark-mode .dark-mode-toggle {
+    background: #1b1b1b;
+    color: #eee;
+    border-color: #555;
+}
+
+body.dark-mode .dark-mode-toggle:hover {
+    background: #eee;
+    color: #111;
+}

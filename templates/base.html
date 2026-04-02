@@ -25,6 +25,9 @@
 
             {% if request.resolver_match.namespace == 'rozesilac' and request.user.is_authenticated %}
                 <div class="nav-user-panel">
+                    <button type="button" id="dark-mode-toggle" class="dark-mode-toggle">
+                        🌛
+                    </button>
                     <span class="logged-user">
                         {{ request.user.username }}
                     </span>
@@ -43,5 +46,29 @@
     <main>
         {% block content %}{% endblock %}
     </main>
+
+    <script>
+    (function () {
+        const btn = document.getElementById("dark-mode-toggle");
+
+        // načtení stavu
+        if (localStorage.getItem("darkMode") === "on") {
+            document.body.classList.add("dark-mode");
+        }
+
+        if (btn) {
+            btn.addEventListener("click", function () {
+                document.body.classList.toggle("dark-mode");
+
+                if (document.body.classList.contains("dark-mode")) {
+                    localStorage.setItem("darkMode", "on");
+                } else {
+                    localStorage.setItem("darkMode", "off");
+                }
+            });
+        }
+    })();
+    </script>
+
 </body>
 </html>

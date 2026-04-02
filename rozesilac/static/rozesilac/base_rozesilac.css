@@ -690,3 +690,243 @@
         line-height: 1.5;
     }
 }
+
+/* =========================================================
+   DARK MODE – ROZESÍLAČ
+   ========================================================= */
+
+body.dark-mode .rozesilac-sidebar {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .rozesilac-title {
+    color: #eee;
+}
+
+body.dark-mode .rozesilac-nav a {
+    color: #eee;
+    border-color: #555;
+    background: #1b1b1b;
+}
+
+body.dark-mode .rozesilac-nav a:hover,
+body.dark-mode .rozesilac-nav a.active {
+    background: #eee;
+    color: #111;
+}
+
+body.dark-mode .rozesilac-main {
+    background: #111;
+}
+
+/* TEXTY */
+body.dark-mode .rozesilac-main h1,
+body.dark-mode .rozesilac-main h2,
+body.dark-mode .rozesilac-main h3 {
+    color: #eee;
+}
+
+body.dark-mode .rozesilac-main p {
+    color: #ccc;
+}
+
+body.dark-mode .muted {
+    color: #999;
+}
+
+/* PANELY */
+body.dark-mode .content-section {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+/* HELP TEXT */
+body.dark-mode .help-text {
+    background: #1a1a1a;
+    color: #ddd;
+    border-left-color: #eee;
+}
+
+/* FORMULÁŘE */
+body.dark-mode .rozesilac-main input,
+body.dark-mode .rozesilac-main textarea,
+body.dark-mode .rozesilac-main select {
+    background: #181818;
+    color: #eee;
+    border-color: #555;
+}
+
+/* BUTTONY */
+body.dark-mode .rozesilac-main button,
+body.dark-mode .rozesilac-main input[type="submit"],
+body.dark-mode .top-action a {
+    background: #1b1b1b;
+    color: #eee;
+    border-color: #555;
+}
+
+body.dark-mode .rozesilac-main button:hover,
+body.dark-mode .rozesilac-main input[type="submit"]:hover,
+body.dark-mode .top-action a:hover {
+    background: #eee;
+    color: #111;
+}
+
+/* TABULKY */
+body.dark-mode .table {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .table th {
+    background: #eee;
+    color: #111;
+}
+
+body.dark-mode .table td {
+    border-color: #444;
+}
+
+body.dark-mode .table tbody tr:nth-child(even) {
+    background: #181818;
+}
+
+body.dark-mode .table tbody tr:hover {
+    background: #222;
+}
+
+/* BADGE */
+body.dark-mode .contact-group-badge {
+    background: #222;
+    border-color: #555;
+    color: #ddd;
+}
+
+/* PANELY (dashboard, boxy, karty) */
+body.dark-mode .dashboard-card,
+body.dark-mode .dashboard-panel {
+    background: #1b1b1b;   /* místo bílé */
+    border-color: #444;
+}
+
+/* TEXTY UVNITŘ PANELŮ */
+body.dark-mode .dashboard-card-label {
+    color: #aaa;
+}
+
+body.dark-mode .dashboard-card-value {
+    color: #fff;
+}
+
+body.dark-mode .dashboard-panel h3 {
+    color: #fff;
+}
+
+body.dark-mode .dashboard-panel p {
+    color: #ccc;
+}
+
+/* TABULKY – dark mode důsledně */
+body.dark-mode .table {
+    background: #1b1b1b;
+    border-color: #444;
+    color: #eee;
+}
+
+body.dark-mode .table th {
+    background: #e9e9e9;
+    color: #111;
+    border-bottom-color: #cfcfcf;
+}
+
+body.dark-mode .table td {
+    color: #eee;
+    border-bottom-color: #3a3a3a;
+}
+
+body.dark-mode .table tbody tr {
+    background: #1b1b1b;
+}
+
+body.dark-mode .table tbody tr:nth-child(even) {
+    background: #181818;
+}
+
+body.dark-mode .table tbody tr:hover {
+    background: #232323;
+}
+
+body.dark-mode .table td a,
+body.dark-mode .dashboard-table td a,
+body.dark-mode .campaign-bar-label a,
+body.dark-mode .rozesilac-main .table a {
+    color: #fff;
+}
+
+body.dark-mode .table td a:hover,
+body.dark-mode .dashboard-table td a:hover,
+body.dark-mode .campaign-bar-label a:hover,
+body.dark-mode .rozesilac-main .table a:hover {
+    color: #ddd;
+}
+
+/* číselné buňky */
+body.dark-mode .dashboard-table .num-cell,
+body.dark-mode .dashboard-table td.num-cell {
+    color: #fff;
+}
+
+/* wrapper okolo scrollovací tabulky */
+body.dark-mode .table-responsive {
+    background: transparent;
+}
+
+/* scrollbar v horizontálním scrollu – jen webkit, ale lepší než nic */
+body.dark-mode .table-responsive::-webkit-scrollbar {
+    height: 10px;
+}
+
+body.dark-mode .table-responsive::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+body.dark-mode .table-responsive::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 999px;
+}
+
+body.dark-mode .table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+
+/* LABELY A POPISKY FORMULÁŘŮ */
+body.dark-mode .template-form-row label,
+body.dark-mode .form-group label,
+body.dark-mode .form-grid label,
+body.dark-mode .rozesilac-main label {
+    color: #f1f1f1;
+}
+
+/* jemnější pomocné texty pod formuláři */
+body.dark-mode .template-form-row .muted,
+body.dark-mode .form-group .muted,
+body.dark-mode .rozesilac-main .small {
+    color: #b5b5b5;
+}
+
+/* placeholdery v inputech */
+body.dark-mode .rozesilac-main input::placeholder,
+body.dark-mode .rozesilac-main textarea::placeholder {
+    color: #8f8f8f;
+    opacity: 1;
+}
+
+/* checkbox/radio texty v seznamových polích */
+body.dark-mode .rozesilac-main ul li,
+body.dark-mode .rozesilac-main .contacts-box,
+body.dark-mode .rozesilac-main .contacts-box label {
+    color: #e6e6e6;
+}
+

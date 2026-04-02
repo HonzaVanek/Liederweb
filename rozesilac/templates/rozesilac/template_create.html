@@ -183,12 +183,38 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  const editorContentStyle = `
+const isDarkMode = document.body.classList.contains("dark-mode");
+
+const editorContentStyle = isDarkMode
+  ? `
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #eee;
+      background: #1b1b1b;
+    }
+
+    a {
+      color: #8ab4ff;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    table {
+      max-width: 100%;
+    }
+  `
+  : `
     body {
       font-family: Arial, sans-serif;
       font-size: 14px;
       line-height: 1.4;
       color: #222;
+      background: #fff;
     }
 
     img {
@@ -201,17 +227,19 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   `;
 
-  tinymce.init({
-    selector: "#id_html_body",
-    height: 500,
-    menubar: true,
-    plugins: "lists link image table code autoresize preview",
-    toolbar: "undo redo | styles | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | link image table | preview code",
-    branding: false,
-    convert_urls: false,
-    promotion: false,
-    content_style: editorContentStyle,
-    setup: function (editor) {
+tinymce.init({
+  selector: "#id_html_body",
+  height: 500,
+  menubar: true,
+  plugins: "lists link image table code autoresize preview",
+  toolbar: "undo redo | styles | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | link image table | preview code",
+  branding: false,
+  convert_urls: false,
+  promotion: false,
+  skin: isDarkMode ? "oxide-dark" : "oxide",
+  content_css: isDarkMode ? "dark" : "default",
+  content_style: editorContentStyle,
+  setup: function (editor) {
       function syncTextBody(force = false) {
         if (!textBodyField) return;
 

@@ -326,3 +326,82 @@
         text-align: center;
     }
 }
+
+body.dark-mode .tox-tinymce {
+    border-color: #555 !important;
+}
+
+body.dark-mode .tox .tox-toolbar,
+body.dark-mode .tox .tox-toolbar__primary,
+body.dark-mode .tox .tox-editor-header {
+    border-color: #444 !important;
+}
+
+/* =========================================================
+   DARK MODE – TEMPLATE CREATE / EDIT
+   ========================================================= */
+
+body.dark-mode .image-panel {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .image-panel h3,
+body.dark-mode .image-panel h4 {
+    color: #fff;
+    border-bottom-color: #3a3a3a;
+}
+
+body.dark-mode .image-panel .muted {
+    color: #aaa;
+}
+
+body.dark-mode .image-upload-inline label {
+    color: #f1f1f1;
+}
+
+/* recent images */
+body.dark-mode .recent-image-card {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .recent-image-card:hover {
+    border-color: #666;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+}
+
+body.dark-mode .recent-image-thumb-wrap {
+    background: #161616;
+    border-bottom-color: #333;
+}
+
+body.dark-mode .recent-image-meta .title {
+    color: #fff;
+}
+
+body.dark-mode .recent-image-meta .muted {
+    color: #aaa;
+}
+
+body.dark-mode .recent-image-url-box input[type="text"] {
+    background: #121212;
+    color: #e6e6e6;
+    border-color: #555;
+}
+
+body.dark-mode .recent-image-url-box button {
+    background: #1b1b1b;
+    color: #eee;
+    border-color: #555;
+}
+
+body.dark-mode .recent-image-url-box button:hover {
+    background: #eee;
+    color: #111;
+}
+
+/* hlavní form help texty na stránce create/edit */
+body.dark-mode .template-form-row .muted {
+    color: #b5b5b5;
+}

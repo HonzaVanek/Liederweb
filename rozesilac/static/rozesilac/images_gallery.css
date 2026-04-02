@@ -290,3 +290,89 @@
         width: 100%;
     }
 }
+
+/* =========================================================
+   DARK MODE – stránka Obrázky
+   ========================================================= */
+
+body.dark-mode .gallery-usage {
+    background: #1b1b1b;
+    color: #ddd;
+    border-color: #444;
+}
+
+body.dark-mode .image-panel {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .image-panel h3 {
+    color: #fff;
+    border-bottom-color: #3a3a3a;
+}
+
+body.dark-mode .image-panel label,
+body.dark-mode .image-upload-form label {
+    color: #f1f1f1;
+}
+
+body.dark-mode .image-empty {
+    background: #1b1b1b;
+    color: #bdbdbd;
+    border-color: #444;
+}
+
+/* galerie karty */
+body.dark-mode .image-card {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .image-card:hover {
+    border-color: #666;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+}
+
+body.dark-mode .image-thumb-wrap {
+    background: #161616;
+    border-bottom-color: #333;
+}
+
+body.dark-mode .image-meta strong {
+    color: #fff;
+}
+
+body.dark-mode .image-meta .muted,
+body.dark-mode .image-meta span {
+    color: #aaa;
+}
+
+body.dark-mode .image-url-box input[type="text"] {
+    background: #121212;
+    color: #e6e6e6;
+    border-color: #555;
+}
+
+body.dark-mode .image-url-box button {
+    background: #1b1b1b;
+    color: #eee;
+    border-color: #555;
+}
+
+body.dark-mode .image-url-box button:hover {
+    background: #eee;
+    color: #111;
+}
+
+/* mazací tlačítko */
+body.dark-mode .image-card form button[type="submit"] {
+    background: #1b1b1b;
+    color: #ff8a8a;
+    border-color: #a94444;
+}
+
+body.dark-mode .image-card form button[type="submit"]:hover {
+    background: #c62828;
+    color: #fff;
+    border-color: #c62828;
+}
