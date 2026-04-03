@@ -1,0 +1,59 @@
+.unsubscribe-container {
+    max-width: 520px;
+    margin: 80px auto;
+    padding: 40px 32px;
+    background-color: #fff;
+    border: 2px solid #000;
+    border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+/* BRAND */
+.brand {
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+}
+
+/* NADPIS */
+.unsubscribe-container h1 {
+    font-size: 30px;
+    margin-bottom: 18px;
+    color: #111;
+}
+
+/* HLAVNÍ TEXT */
+.info-text {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 14px;
+}
+
+/* DOPLŇKOVÝ TEXT */
+.sub-text {
+    font-size: 14px;
+    color: #666;
+}
+
+/* EMAIL */
+.info-text strong {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 4px 8px;
+    background-color: #f3f3f3;
+    border-radius: 4px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+    .unsubscribe-container {
+        margin: 40px 16px;
+        padding: 28px 20px;
+    }
+
+    .unsubscribe-container h1 {
+        font-size: 26px;
+    }
+}

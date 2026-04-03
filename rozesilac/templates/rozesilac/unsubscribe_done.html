@@ -1,5 +1,28 @@
-<h2>Odhlášení proběhlo</h2>
+{% load static %}
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odhlášení proběhlo</title>
 
-<p>
-Adresa <strong>{{ contact.email }}</strong> byla úspěšně odhlášena z newsletteru. Je nám líto, že se odhlašujete, ale samozřejmě respektujeme vaše rozhodnutí. Pokud byste se někdy v budoucnu chtěli znovu přihlásit k odběru, budete vždy vítáni! Stačí se znovu přihlásit na lieder-society.cz Děkujeme vám za váš čas s námi a přejeme vám hezký den!
-</p>
+    <link rel="stylesheet" href="{% static 'rozesilac/unsubscribe_done.css' %}">
+</head>
+<body>
+
+<div class="unsubscribe-container">
+    <p class="brand">Lieder Society</p>
+
+    <h1>Odhlášení proběhlo</h1>
+
+    <p class="info-text">
+        Adresa <strong>{{ contact.email }}</strong> byla úspěšně odhlášena z newsletteru.
+    </p>
+
+    <p class="sub-text">
+        Je nám líto, že odcházíte. Pokud si to někdy rozmyslíte, můžete se kdykoli znovu přihlásit.
+    </p>
+</div>
+
+</body>
+</html>

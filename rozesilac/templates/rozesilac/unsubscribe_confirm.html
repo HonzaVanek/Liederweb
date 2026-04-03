@@ -1,10 +1,35 @@
-<h2>Odhlášení z newsletteru</h2>
+{% load static %}
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odhlášení z newsletteru</title>
 
-<p>
-Opravdu se chcete odhlásit z lieder-society newsletteru pro adresu <strong>{{ contact.email }}</strong>?
-</p>
+    <link rel="stylesheet" href="{% static 'rozesilac/unsubscribe_confirm.css' %}">
+</head>
+<body>
 
-<form method="post">
-  {% csrf_token %}
-  <button type="submit">Ano, odhlásit</button>
-</form>
+<div class="unsubscribe-container">
+    <h1>Odhlášení z newsletteru</h1>
+
+    <p class="info-text">
+        Opravdu se chcete odhlásit z newsletteru Lieder Society pro adresu
+        <strong>{{ contact.email }}</strong>?
+    </p>
+
+    <form method="post" class="unsubscribe-form">
+        {% csrf_token %}
+
+        <button type="submit" class="btn-danger">
+            Ano, odhlásit
+        </button>
+
+        <a href="javascript:history.back()" class="btn-secondary">
+            Zrušit
+        </a>
+    </form>
+</div>
+
+</body>
+</html>

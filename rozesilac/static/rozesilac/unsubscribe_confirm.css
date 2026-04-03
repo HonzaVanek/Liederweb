@@ -1,0 +1,120 @@
+.unsubscribe-container {
+    max-width: 520px;
+    margin: 70px auto;
+    padding: 40px 32px;
+    background-color: #fff;
+    border: 2px solid #000;
+    border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+/* NADPIS */
+.unsubscribe-container h1 {
+    font-size: 30px;
+    margin-bottom: 20px;
+    color: #111;
+}
+
+/* TEXT */
+.info-text {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.info-text strong {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 4px 8px;
+    background-color: #f3f3f3;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* FORM */
+.unsubscribe-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* PRIMARY (danger) */
+.btn-danger {
+    padding: 14px;
+    border: 2px solid #e53935;
+    border-radius: 6px;
+    background-color: #e53935;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+    background-color: #fff;
+    color: #e53935;
+}
+
+/* SECONDARY */
+.btn-secondary {
+    display: inline-block;
+    padding: 12px;
+    border: 2px solid #000;
+    border-radius: 6px;
+    background-color: #fff;
+    color: #000;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #000;
+    color: #fff;
+}
+
+/* DARK MODE */
+body.dark-mode .unsubscribe-container {
+    background-color: #1a1a1a;
+    border-color: #555;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+body.dark-mode .unsubscribe-container h1 {
+    color: #eee;
+}
+
+body.dark-mode .info-text {
+    color: #ccc;
+}
+
+body.dark-mode .info-text strong {
+    background-color: #2a2a2a;
+    color: #eee;
+}
+
+body.dark-mode .btn-secondary {
+    background-color: #1b1b1b;
+    color: #eee;
+    border-color: #555;
+}
+
+body.dark-mode .btn-secondary:hover {
+    background-color: #eee;
+    color: #111;
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+    .unsubscribe-container {
+        margin: 40px 16px;
+        padding: 28px 20px;
+    }
+
+    .unsubscribe-container h1 {
+        font-size: 26px;
+    }
+}
