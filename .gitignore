@@ -7,3 +7,6 @@ staticfiles/
 media/
 Liederweb/settings.env
 settings.env
+data.json
+db.sqlite3.backup
+users.json
