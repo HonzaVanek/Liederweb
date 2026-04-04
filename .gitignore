@@ -10,3 +10,4 @@ settings.env
 data.json
 db.sqlite3.backup
 users.json
+.vscode/settings.json
