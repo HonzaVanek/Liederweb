@@ -181,7 +181,7 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-STATICFILES_DIRS = [BASE_DIR / 'static',]
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
@@ -204,6 +204,7 @@ LOGOUT_REDIRECT_URL = '/login/'
 # na produkci mailgun pro registraci, Brevo pro rozesilac, na dev emaily do konzole
 
 NEWSLETTER_DEFAULT_FROM_EMAIL = "newsletter@liedersociety.cz"
+NEWSLETTER_BASE_URL = "https://liedersociety.website"
 
 ANYMAIL = {
     "MAILGUN_API_KEY": os.environ.get("MAILGUN_API_KEY"),

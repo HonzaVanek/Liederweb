@@ -23,8 +23,9 @@ urlpatterns = [
 
     path("kampane/", views.campaigns, name="campaigns"),
     path("kampane/<int:campaign_id>/", views.campaign_detail, name="campaign_detail"),
+    path("kampane/<int:campaign_id>/zrusit/", views.campaign_cancel, name="campaign_cancel"),
+    path("kampane/<int:campaign_id>/preplanovat/", views.campaign_reschedule, name="campaign_reschedule"),
 
     path("click/<str:token>/", views.click_tracking, name="click_tracking"),
     path("unsubscribe/<uuid:token>/", views.unsubscribe, name="unsubscribe"),
 ]
-    

@@ -160,6 +160,11 @@ class SendCampaignForm(forms.Form):
         ("live", "Ostré rozeslání"),
     ]
 
+    DELIVERY_MODE_CHOICES = [
+        ("now", "Odeslat hned"),
+        ("scheduled", "Naplánovat na později"),
+    ]
+
     template = forms.ModelChoiceField(
         queryset=EmailTemplate.objects.all().order_by("name"),
         label="Šablona",
@@ -179,6 +184,24 @@ class SendCampaignForm(forms.Form):
         widget=forms.RadioSelect,
         initial="test",
         label="Režim odeslání",
+    )
+
+    delivery_mode = forms.ChoiceField(
+        choices=DELIVERY_MODE_CHOICES,
+        widget=forms.RadioSelect,
+        initial="now",
+        label="Kdy odeslat",
+    )
+
+    scheduled_at = forms.DateTimeField(
+        required=False,
+        label="Naplánovat na",
+        input_formats=["%Y-%m-%dT%H:%M"],
+        widget=forms.DateTimeInput(
+            attrs={
+                "type": "datetime-local",
+            }
+        ),
     )
 
     test_email = forms.EmailField(
@@ -217,6 +240,8 @@ class SendCampaignForm(forms.Form):
         cleaned_data = super().clean()
 
         send_mode = cleaned_data.get("send_mode")
+        delivery_mode = cleaned_data.get("delivery_mode")
+        scheduled_at = cleaned_data.get("scheduled_at")
         test_email = cleaned_data.get("test_email")
         groups = cleaned_data.get("groups")
         contacts = cleaned_data.get("contacts")
@@ -231,5 +256,25 @@ class SendCampaignForm(forms.Form):
 
             if not contacts or contacts.count() == 0:
                 self.add_error("contacts", "Pro ostré rozeslání musíš nechat vybraný aspoň jeden kontakt.")
+
+        if delivery_mode == "scheduled":
+            if send_mode != "live":
+                self.add_error("delivery_mode", "Naplánovat lze jen ostré rozeslání, ne testovací email.")
+
+            if not scheduled_at:
+                self.add_error("scheduled_at", "Pro naplánované odeslání musíš vyplnit datum a čas.")
+
+            else:
+                from django.utils import timezone
+
+                if timezone.is_naive(scheduled_at):
+                    scheduled_at = timezone.make_aware(
+                        scheduled_at,
+                        timezone.get_current_timezone()
+                    )
+                    cleaned_data["scheduled_at"] = scheduled_at
+
+                if scheduled_at <= timezone.now():
+                    self.add_error("scheduled_at", "Naplánovaný čas musí být v budoucnosti.")
 
         return cleaned_data

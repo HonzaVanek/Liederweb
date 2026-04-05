@@ -88,6 +88,25 @@
   </div>
 
   <div class="template-form-row">
+    <label>Kdy odeslat</label>
+    {{ form.delivery_mode }}
+    {% for e in form.delivery_mode.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row" id="scheduled-at-row">
+    <label for="{{ form.scheduled_at.id_for_label }}">Naplánovat na</label>
+    {{ form.scheduled_at }}
+    <p class="small muted" style="margin-top: 6px;">
+      Čas se bere podle lokálního času serveru / aplikace. Takže radši se v tom nevrtej v zahraničí :)
+    </p>
+    {% for e in form.scheduled_at.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
     <label for="{{ form.note.id_for_label }}">Poznámka</label>
     {{ form.note }}
     {% for e in form.note.errors %}
@@ -139,12 +158,15 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const modeInputs = document.querySelectorAll('input[name="send_mode"]');
+  const deliveryModeInputs = document.querySelectorAll('input[name="delivery_mode"]');
   const groupInputs = document.querySelectorAll('input[name="groups"]');
   const contactInputs = document.querySelectorAll('input[name="contacts"]');
 
   const testEmailRow = document.getElementById("test-email-row");
   const groupsRow = document.getElementById("groups-row");
   const contactsRow = document.getElementById("contacts-row");
+  const scheduledAtRow = document.getElementById("scheduled-at-row");
+
   const form = document.getElementById("send-campaign-form");
   const sendSubmitBtn = document.getElementById("send-submit-btn");
   const sendingOverlay = document.getElementById("sending-overlay");
@@ -246,13 +268,20 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function showSendingOverlay() {
-   if (sendingOverlay) {
-     sendingOverlay.hidden = false;
+    if (sendingOverlay) {
+      sendingOverlay.hidden = false;
     }
 
-   if (sendSubmitBtn) {
-     sendSubmitBtn.disabled = true;
-     sendSubmitBtn.textContent = "Odesílám...";
+    if (sendSubmitBtn) {
+      sendSubmitBtn.disabled = true;
+      sendSubmitBtn.textContent = "Odesílám...";
+    }
+  }
+
+  function disableSubmitButton(text) {
+    if (sendSubmitBtn) {
+      sendSubmitBtn.disabled = true;
+      sendSubmitBtn.textContent = text;
     }
   }
 
@@ -272,12 +301,14 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-
-
-  
   function getSelectedMode() {
     const selected = document.querySelector('input[name="send_mode"]:checked');
     return selected ? selected.value : "test";
+  }
+
+  function getSelectedDeliveryMode() {
+    const selected = document.querySelector('input[name="delivery_mode"]:checked');
+    return selected ? selected.value : "now";
   }
 
   function getSelectedGroupIds() {
@@ -286,15 +317,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function updateModeVisibility() {
     const mode = getSelectedMode();
+    const deliveryMode = getSelectedDeliveryMode();
 
     if (mode === "test") {
       testEmailRow.style.display = "block";
       groupsRow.style.display = "none";
       contactsRow.style.display = "none";
+      scheduledAtRow.style.display = "none";
     } else {
       testEmailRow.style.display = "none";
       groupsRow.style.display = "block";
       contactsRow.style.display = "block";
+      scheduledAtRow.style.display = deliveryMode === "scheduled" ? "block" : "none";
     }
   }
 
@@ -345,6 +379,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  deliveryModeInputs.forEach(function (input) {
+    input.addEventListener("change", function () {
+      updateModeVisibility();
+    });
+  });
+
   groupInputs.forEach(function (input) {
     input.addEventListener("change", function () {
       updateVisibleContacts();
@@ -373,6 +413,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const mode = getSelectedMode();
+    const deliveryMode = getSelectedDeliveryMode();
 
     if (mode === "live") {
       const checkedContacts = Array.from(contactInputs).filter(function (input) {
@@ -380,14 +421,27 @@ document.addEventListener("DOMContentLoaded", function () {
         return wrapper && wrapper.style.display !== "none" && input.checked;
       }).length;
 
-      const confirmed = confirm(`Opravdu chceš odeslat ostrou kampaň na ${checkedContacts} kontaktů?`);
+      let confirmText = "";
+      if (deliveryMode === "scheduled") {
+        confirmText = `Opravdu chceš naplánovat ostrou kampaň na ${checkedContacts} kontaktů?`;
+      } else {
+        confirmText = `Opravdu chceš odeslat ostrou kampaň na ${checkedContacts} kontaktů?`;
+      }
+
+      const confirmed = confirm(confirmText);
       if (!confirmed) {
         e.preventDefault();
         return;
       }
     }
+
     isSubmitting = true;
-    showSendingOverlay();
+
+    if (deliveryMode === "scheduled") {
+      disableSubmitButton("Plánuji...");
+    } else {
+      showSendingOverlay();
+    }
   });
 });
 </script>

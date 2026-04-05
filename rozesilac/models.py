@@ -55,6 +55,8 @@ class EmailTemplate(models.Model):
     
 
 class EmailCampaign(models.Model):
+    STATUS_CHOICES = [("draft", "Rozpracováno"), ("scheduled", "Naplánováno"), ("sending", "Odesílá se"), ("sent", "Odesláno"), ("failed", "Selhalo"), ("cancelled", "Zrušeno"),]
+    
     template = models.ForeignKey(EmailTemplate, on_delete=models.PROTECT)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="email_campaigns")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -64,9 +66,20 @@ class EmailCampaign(models.Model):
     preheader = models.CharField(max_length=200, blank=True)
     html_body = models.TextField()
     text_body = models.TextField(blank=True)
+    from_email = models.EmailField(null=True, blank=True, verbose_name="Odesílatel")
 
     is_test = models.BooleanField(default=False)
     note = models.CharField(max_length=250, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft", db_index=True, verbose_name="Stav",)
+    scheduled_at = models.DateTimeField(null=True, blank=True, db_index=True, verbose_name="Naplánováno na",)
+    started_at = models.DateTimeField(null=True, blank=True, verbose_name="Odesílání spuštěno",)
+    finished_at = models.DateTimeField(null=True, blank=True, verbose_name="Odesílání dokončeno",)
+    
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Emailová kampaň"
+        verbose_name_plural = "Emailové kampaně"
 
     def __str__(self) -> str:
         return f"{'TEST ' if self.is_test else ''}{self.subject} ({self.created_at:%Y-%m-%d %H:%M})"
@@ -80,6 +93,14 @@ class EmailDelivery(models.Model):
     campaign = models.ForeignKey(EmailCampaign, on_delete=models.CASCADE, related_name="deliveries")
     to_email = models.EmailField()
     to_name = models.CharField(max_length=200, blank=True)
+    contact = models.ForeignKey(
+        Contact,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="email_deliveries",
+        verbose_name="Kontakt",
+    )
 
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="queued")
     error = models.TextField(blank=True)

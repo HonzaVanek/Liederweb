@@ -1,5 +1,5 @@
 from collections import Counter
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.conf import settings
 from django.db import IntegrityError
 from django.http import HttpResponseForbidden
@@ -784,6 +784,140 @@ def add_click_tracking_to_html(html_content: str, delivery, base_url: str):
 
     return rendered_html, unique_tracked_urls
 
+def send_single_delivery(campaign, delivery, base_url: str, from_email: str):
+    contact = delivery.contact
+    osloveni = get_contact_salutation(contact) if contact else delivery.to_email
+
+    if contact:
+        unsubscribe_path = reverse("rozesilac:unsubscribe", args=[contact.unsubscribe_token])
+        unsubscribe_url = f"{base_url}{unsubscribe_path}"
+    else:
+        unsubscribe_url = ""
+
+    template_context = Context({
+        "osloveni": osloveni,
+        "jmeno": contact.name if contact and contact.name else "",
+        "email": delivery.to_email,
+        "unsubscribe_url": unsubscribe_url,
+    })
+
+    rendered_subject = Template(campaign.subject).render(template_context)
+    rendered_html_body = Template(campaign.html_body).render(template_context)
+
+    preheader = (campaign.preheader or "").strip()
+    if preheader:
+        rendered_html_body = add_preheader_to_html(rendered_html_body, preheader)
+
+    rendered_html_body, tracked_urls = add_click_tracking_to_html(rendered_html_body, delivery, base_url)
+
+    text_template = campaign.text_body.strip() if campaign.text_body else ""
+    if text_template:
+        rendered_text_body = Template(text_template).render(template_context)
+    else:
+        rendered_text_body = "Tento email obsahuje HTML verzi zprávy."
+
+    if preheader:
+        rendered_text_body = f"{preheader}\n\n{rendered_text_body}"
+
+    for url in tracked_urls:
+        EmailCampaignTrackedLink.objects.get_or_create(campaign=campaign, url=url,)
+
+    # DEV = klasický Django email backend
+    if settings.APP_ENV != "prod":
+        msg = EmailMultiAlternatives(
+            subject=rendered_subject,
+            body=rendered_text_body,
+            from_email=from_email,
+            to=[delivery.to_email],
+            reply_to=["info@liedersociety.cz"],
+        )
+
+        msg.attach_alternative(rendered_html_body, "text/html")
+        msg.send(fail_silently=False)
+
+    # PROD = Brevo API
+    else:
+        payload = {
+            "sender": {
+                "email": from_email,
+                "name": "Lieder Society",
+            },
+            "to": [
+                {
+                    "email": delivery.to_email,
+                    "name": delivery.to_name or "",
+                }
+            ],
+            "subject": rendered_subject,
+            "htmlContent": rendered_html_body,
+            "textContent": rendered_text_body,
+            "replyTo": {
+                "email": "info@liedersociety.cz",
+                "name": "Lieder Society",
+            },
+        }
+
+        headers = {
+            "accept": "application/json",
+            "api-key": settings.BREVO_API_KEY,
+            "content-type": "application/json",
+        }
+
+        response = requests.post(
+            settings.BREVO_API_URL,
+            json=payload,
+            headers=headers,
+            timeout=20,
+        )
+
+        if response.status_code >= 400:
+            raise Exception(f"Brevo error {response.status_code}: {response.text}")
+
+
+def send_campaign_deliveries(campaign, base_url: str, from_email: str):
+    sent_count = 0
+    failed_count = 0
+
+    campaign.status = "sending"
+    campaign.started_at = timezone.now()
+    campaign.finished_at = None
+    campaign.save(update_fields=["status", "started_at", "finished_at"])
+
+    deliveries = campaign.deliveries.filter(status="queued").order_by("id")
+
+    for delivery in deliveries:
+        try:
+            send_single_delivery(
+                campaign=campaign,
+                delivery=delivery,
+                base_url=base_url,
+                from_email=from_email,
+            )
+
+            delivery.status = "sent"
+            delivery.sent_at = timezone.now()
+            delivery.error = ""
+            delivery.save(update_fields=["status", "sent_at", "error"])
+
+            sent_count += 1
+
+        except Exception as exc:
+            delivery.status = "failed"
+            delivery.error = str(exc)
+            delivery.save(update_fields=["status", "error"])
+
+            failed_count += 1
+
+    campaign.finished_at = timezone.now()
+
+    if failed_count == 0:
+        campaign.status = "sent"
+    else:
+        campaign.status = "failed"
+
+    campaign.save(update_fields=["status", "finished_at"])
+
+    return sent_count, failed_count
 
 @staff_required
 def send(request):
@@ -791,9 +925,10 @@ def send(request):
         form = SendCampaignForm(request.POST)
 
         if form.is_valid():
-
             template = form.cleaned_data["template"]
             send_mode = form.cleaned_data["send_mode"]
+            delivery_mode = form.cleaned_data["delivery_mode"]
+            scheduled_at = form.cleaned_data.get("scheduled_at")
             test_email = form.cleaned_data.get("test_email")
             contacts = form.cleaned_data.get("contacts")
             note = form.cleaned_data.get("note", "")
@@ -801,173 +936,68 @@ def send(request):
 
             is_test = send_mode == "test"
 
+            if delivery_mode == "scheduled":
+                campaign_status = "scheduled"
+            else:
+                campaign_status = "draft"
+
             campaign = EmailCampaign.objects.create(
                 template=template,
                 created_by=request.user,
                 subject=template.subject,
+                from_email=from_email,
                 preheader=template.preheader,
                 html_body=template.html_body,
                 text_body=template.text_body,
                 is_test=is_test,
                 note=note,
+                status=campaign_status,
+                scheduled_at=scheduled_at if delivery_mode == "scheduled" else None,
             )
 
             # --------------------------------------------------
-            # připravíme seznam příjemců
+            # připravíme a uložíme seznam příjemců do deliveries
             # --------------------------------------------------
-
-            recipients = []
 
             if is_test:
-                recipients.append({
-                    "email": test_email,
-                    "name": "",
-                    "contact": None,
-                })
-            else:
-                for contact in contacts:
-                    recipients.append({
-                        "email": contact.email,
-                        "name": contact.name,
-                        "contact": contact,
-                    })
-
-            sent_count = 0
-            failed_count = 0
-
-            # základ domény pro generování absolutních URL
-            base_url = f"{request.scheme}://{request.get_host()}"
-
-            # --------------------------------------------------
-            # odesílání
-            # --------------------------------------------------
-
-            for recipient in recipients:
-
-                delivery = EmailDelivery.objects.create(
+                EmailDelivery.objects.create(
                     campaign=campaign,
-                    to_email=recipient["email"],
-                    to_name=recipient["name"],
+                    to_email=test_email,
+                    to_name="",
+                    contact=None,
                     status="queued",
                 )
-
-                try:
-                    contact = recipient.get("contact")
-                    osloveni = get_contact_salutation(contact) if contact else recipient["email"]
-
-                    if contact:
-                        unsubscribe_path = reverse("rozesilac:unsubscribe", args=[contact.unsubscribe_token],)
-                        unsubscribe_url = f"{base_url}{unsubscribe_path}"
-                    else:
-                        unsubscribe_url = ""
-
-                    template_context = Context({
-                        "osloveni": osloveni,
-                        "jmeno": contact.name if contact and contact.name else "",
-                        "email": recipient["email"],
-                        "unsubscribe_url": unsubscribe_url,
-                    })
-
-                    rendered_subject = Template(campaign.subject).render(template_context)
-                    rendered_html_body = Template(campaign.html_body).render(template_context)
-                    
-                    preheader = (campaign.preheader or "").strip()
-                    if preheader:
-                        rendered_html_body = add_preheader_to_html(rendered_html_body, preheader)
-
-                     # přepsání odkazů na trackovací redirect
-                    rendered_html_body, tracked_urls = add_click_tracking_to_html(rendered_html_body, delivery, base_url)
-
-                    text_template = campaign.text_body.strip() if campaign.text_body else ""
-                    if text_template:
-                        rendered_text_body = Template(text_template).render(template_context)
-                    else:
-                        rendered_text_body = "Tento email obsahuje HTML verzi zprávy."
-
-
-                    if preheader:
-                        rendered_text_body = f"{preheader}\n\n{rendered_text_body}"
-
-                    for url in tracked_urls:
-                        EmailCampaignTrackedLink.objects.get_or_create(campaign=campaign, url=url,)
-
-                    # --------------------------------------------------
-                    # DEV = klasický Django email backend
-                    # --------------------------------------------------
-
-                    if settings.APP_ENV != "prod":
-
-                        msg = EmailMultiAlternatives(
-                            subject=rendered_subject,
-                            body=rendered_text_body,
-                            from_email=from_email,
-                            to=[recipient["email"]],
-                            reply_to=["info@liedersociety.cz"],
-                        )
-
-                        msg.attach_alternative(rendered_html_body, "text/html")
-                        msg.send(fail_silently=False)
-
-                    # --------------------------------------------------
-                    # PROD = Brevo API
-                    # --------------------------------------------------
-
-                    else:
-
-                        payload = {
-                            "sender": {
-                                "email": from_email,
-                                "name": "Lieder Society",
-                            },
-                            "to": [
-                                {
-                                    "email": recipient["email"],
-                                    "name": recipient["name"] or "",
-                                }
-                            ],
-                            "subject": rendered_subject,
-                            "htmlContent": rendered_html_body,
-                            "textContent": rendered_text_body,
-                            "replyTo": {
-                                "email": "info@liedersociety.cz",
-                                "name": "Lieder Society",
-                            },
-                        }
-
-                        headers = {
-                            "accept": "application/json",
-                            "api-key": settings.BREVO_API_KEY,  #tohle pak musíme upravit v settings 
-                            "content-type": "application/json",
-                        }
-
-                        response = requests.post(
-                            settings.BREVO_API_URL,  #tohle pak musíme upravit v settings 
-                            json=payload,
-                            headers=headers,
-                            timeout=20,
-                        )
-
-                        if response.status_code >= 400:
-                            raise Exception(f"Brevo error {response.status_code}: {response.text}")
-
-                    delivery.status = "sent"
-                    delivery.sent_at = timezone.now()
-                    delivery.error = ""
-                    delivery.save(update_fields=["status", "sent_at", "error"])
-
-                    sent_count += 1
-
-                except Exception as exc:
-
-                    delivery.status = "failed"
-                    delivery.error = str(exc)
-                    delivery.save(update_fields=["status", "error"])
-
-                    failed_count += 1
+            else:
+                for contact in contacts:
+                    EmailDelivery.objects.create(
+                        campaign=campaign,
+                        to_email=contact.email,
+                        to_name=contact.name,
+                        contact=contact,
+                        status="queued",
+                    )
 
             # --------------------------------------------------
-            # zpráva pro uživatele
+            # scheduled = jen uložit a skončit
             # --------------------------------------------------
+
+            if delivery_mode == "scheduled":
+                messages.success(
+                    request,
+                    f"Kampaň byla naplánována na {timezone.localtime(campaign.scheduled_at):%d.%m.%Y %H:%M}."
+                )
+                return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
+
+            # --------------------------------------------------
+            # immediate send
+            # --------------------------------------------------
+
+            base_url = f"{request.scheme}://{request.get_host()}"
+            sent_count, failed_count = send_campaign_deliveries(
+                campaign=campaign,
+                base_url=base_url,
+                from_email=from_email,
+            )
 
             if failed_count == 0:
                 messages.success(
@@ -997,7 +1027,9 @@ def send(request):
 @staff_required
 def campaigns(request):
     campaigns = (EmailCampaign.objects.select_related("created_by", "template").prefetch_related("deliveries").order_by("-created_at"))
+
     campaign_rows = []
+
     for campaign in campaigns:
         deliveries = campaign.deliveries.all()
         total_count = deliveries.count()
@@ -1005,23 +1037,44 @@ def campaigns(request):
         failed_count = deliveries.filter(status="failed").count()
         queued_count = deliveries.filter(status="queued").count()
 
-        campaign_rows.append({"campaign": campaign, "total_count": total_count, "sent_count": sent_count, "failed_count": failed_count, "queued_count": queued_count,})
-    return render(request, "rozesilac/campaigns_list.html", {"campaign_rows": campaign_rows})
+        campaign_rows.append({
+            "campaign": campaign,
+            "total_count": total_count,
+            "sent_count": sent_count,
+            "failed_count": failed_count,
+            "queued_count": queued_count,
+        })
+
+    return render(request, "rozesilac/campaigns_list.html", {"campaign_rows": campaign_rows},)
 
 
 @staff_required
 def campaign_detail(request, campaign_id):
     campaign = get_object_or_404(EmailCampaign, id=campaign_id)
 
-    human_clicks_subquery = EmailClickEvent.objects.filter(delivery=OuterRef("pk"), is_suspected_bot=False,)
+    human_clicks_subquery = EmailClickEvent.objects.filter(
+        delivery=OuterRef("pk"),
+        is_suspected_bot=False,
+    )
 
-    bot_clicks_subquery = EmailClickEvent.objects.filter(delivery=OuterRef("pk"), is_suspected_bot=True,)
+    bot_clicks_subquery = EmailClickEvent.objects.filter(
+        delivery=OuterRef("pk"),
+        is_suspected_bot=True,
+    )
 
     deliveries = (
         campaign.deliveries.all()
         .order_by("created_at")
-        .annotate(has_human_like_click=Exists(human_clicks_subquery), has_suspected_bot_click=Exists(bot_clicks_subquery),)
-        .prefetch_related(Prefetch("click_events", queryset=EmailClickEvent.objects.order_by("created_at"),))
+        .annotate(
+            has_human_like_click=Exists(human_clicks_subquery),
+            has_suspected_bot_click=Exists(bot_clicks_subquery),
+        )
+        .prefetch_related(
+            Prefetch(
+                "click_events",
+                queryset=EmailClickEvent.objects.order_by("created_at"),
+            )
+        )
     )
 
     sent_count = deliveries.filter(status="sent").count()
@@ -1030,12 +1083,10 @@ def campaign_detail(request, campaign_id):
 
     confirmed_clicked_delivery_count = 0
     confirmed_unique_click_count_total = 0
-
     confirmed_clicked_urls_all = []
 
     for delivery in deliveries:
         all_events = list(delivery.click_events.all())
-
         human_events = [e for e in all_events if not e.is_suspected_bot]
 
         unique_urls = []
@@ -1045,7 +1096,7 @@ def campaign_detail(request, campaign_id):
             if e.original_url not in seen_urls:
                 seen_urls.add(e.original_url)
                 unique_urls.append(e.original_url)
-            
+
             confirmed_clicked_urls_all.append(e.original_url)
 
         delivery.human_click_events_for_ui = human_events
@@ -1064,7 +1115,10 @@ def campaign_detail(request, campaign_id):
 
     tracked_links_stats = []
     for tracked_link in campaign.tracked_links.all():
-        tracked_links_stats.append({"url": tracked_link.url, "click_count": clicked_url_counter.get(tracked_link.url, 0),})
+        tracked_links_stats.append({
+            "url": tracked_link.url,
+            "click_count": clicked_url_counter.get(tracked_link.url, 0),
+        })
 
     tracked_links_stats.sort(key=lambda x: (-x["click_count"], x["url"]))
 
@@ -1083,6 +1137,62 @@ def campaign_detail(request, campaign_id):
             "tracked_links_stats": tracked_links_stats,
         },
     )
+
+@staff_required
+def campaign_cancel(request, campaign_id):
+    if request.method != "POST":
+        return redirect("rozesilac:campaign_detail", campaign_id=campaign_id)
+
+    campaign = get_object_or_404(EmailCampaign, id=campaign_id)
+
+    if campaign.status != "scheduled":
+        messages.error(request, "Zrušit lze jen kampaň, která je právě naplánovaná.")
+        return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
+
+    campaign.status = "cancelled"
+    campaign.finished_at = timezone.now()
+    campaign.save(update_fields=["status", "finished_at"])
+
+    messages.success(request, "Naplánovaná kampaň byla zrušena.")
+    return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
+
+
+@staff_required
+def campaign_reschedule(request, campaign_id):
+    if request.method != "POST":
+        return redirect("rozesilac:campaign_detail", campaign_id=campaign_id)
+
+    campaign = get_object_or_404(EmailCampaign, id=campaign_id)
+
+    if campaign.status != "scheduled":
+        messages.error(request, "Přeplánovat lze jen kampaň, která je právě naplánovaná.")
+        return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
+
+    raw_scheduled_at = (request.POST.get("scheduled_at") or "").strip()
+    if not raw_scheduled_at:
+        messages.error(request, "Musíš vyplnit nový datum a čas odeslání.")
+        return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
+
+    try:
+        parsed_dt = datetime.strptime(raw_scheduled_at, "%Y-%m-%dT%H:%M")
+        scheduled_at = timezone.make_aware(parsed_dt, timezone.get_current_timezone())
+    except ValueError:
+        messages.error(request, "Neplatný formát data a času.")
+        return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
+
+    if scheduled_at <= timezone.now():
+        messages.error(request, "Nový čas odeslání musí být v budoucnosti.")
+        return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
+
+    campaign.scheduled_at = scheduled_at
+    campaign.save(update_fields=["scheduled_at"])
+
+    messages.success(
+        request,
+        f"Kampaň byla přeplánována na {timezone.localtime(campaign.scheduled_at):%d.%m.%Y %H:%M}."
+    )
+    return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
+
 
 def unsubscribe(request, token):
     contact = get_object_or_404(Contact, unsubscribe_token=token)

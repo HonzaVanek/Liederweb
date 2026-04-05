@@ -5,6 +5,7 @@
 {% block rozesilac_content %}
 <h2>Kampaně</h2>
 <p class="help-text">Seznam vytvořených kampaní + na detailu kampaně pak statistiky kliknutí na odkazy v kampaních (nejen počty ale i kdo klikl). Statistiku prostého otevření nemáme, protože se to už moc nedělá - je to strašně nespolehlivé, protože emaily na serveru stejně třeba otevírá robot / antivir apod. a tak by se nám jako otevřené ukazovalo víc emailů než člověk opravdu otevře (děje se to i u různých mailchimpů apod., ale že je to nespolehlivý vám neřeknou :) Krom toho newslettery každej třeba otevře a pak hned zavře aniž by to četl (nechce to třeba mít jako nepřečtené v inboxu), takže nám to stejně nic neřekne. Relevantní statistika jsou ty kliknutí a ty tam máme a mělo by to fungovat (doufám :)) </p>
+
 {% if messages %}
 <ul class="messages">
   {% for m in messages %}
@@ -21,8 +22,10 @@
         <th>Předmět</th>
         <th>Šablona</th>
         <th>Režim</th>
+        <th>Stav</th>
         <th>Vytvořil</th>
         <th>Vytvořeno</th>
+        <th>Naplánováno</th>
         <th>Celkem</th>
         <th>Odesláno</th>
         <th>Chyby</th>
@@ -43,8 +46,32 @@
               Ostrá
             {% endif %}
           </td>
+          <td>
+            {% if row.campaign.status == "draft" %}
+              Rozpracováno
+            {% elif row.campaign.status == "scheduled" %}
+              Naplánováno
+            {% elif row.campaign.status == "sending" %}
+              Odesílá se
+            {% elif row.campaign.status == "sent" %}
+              Odesláno
+            {% elif row.campaign.status == "failed" %}
+              Selhalo
+            {% elif row.campaign.status == "cancelled" %}
+              Zrušeno
+            {% else %}
+              {{ row.campaign.status }}
+            {% endif %}
+          </td>
           <td>{{ row.campaign.created_by.username }}</td>
           <td>{{ row.campaign.created_at|date:"d.m.Y H:i" }}</td>
+          <td>
+            {% if row.campaign.scheduled_at %}
+              {{ row.campaign.scheduled_at|date:"d.m.Y H:i" }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
           <td>{{ row.total_count }}</td>
           <td>{{ row.sent_count }}</td>
           <td>{{ row.failed_count }}</td>

@@ -128,3 +128,120 @@
 .template-preview-subject span {
     color: #333;
 }
+
+
+/* =========================================================
+   SEND FORM – scheduling / datetime picker
+   ========================================================= */
+
+#scheduled-at-row {
+    max-width: 420px;
+}
+
+#id_scheduled_at {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 0.98rem;
+    color: #222;
+    background-color: #fff;
+    border: 1px solid #000;
+    border-radius: 6px;
+    box-sizing: border-box;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+}
+
+#id_scheduled_at:hover {
+    background-color: #fafafa;
+}
+
+#id_scheduled_at:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+    background-color: #fff;
+}
+
+/* text uvnitř datetime inputu */
+#id_scheduled_at::-webkit-datetime-edit {
+    color: #222;
+    padding: 0;
+}
+
+/* jednotlivé části data/času */
+#id_scheduled_at::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+}
+
+#id_scheduled_at::-webkit-datetime-edit-text,
+#id_scheduled_at::-webkit-datetime-edit-month-field,
+#id_scheduled_at::-webkit-datetime-edit-day-field,
+#id_scheduled_at::-webkit-datetime-edit-year-field,
+#id_scheduled_at::-webkit-datetime-edit-hour-field,
+#id_scheduled_at::-webkit-datetime-edit-minute-field {
+    color: #222;
+}
+
+/* ikona pickeru – Chrome / Edge */
+#id_scheduled_at::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.78;
+    transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+#id_scheduled_at::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    transform: scale(1.04);
+}
+
+/* když je input prázdný, ať nepůsobí mrtvě */
+#id_scheduled_at:invalid {
+    color: #666;
+}
+
+/* Dark mode */
+body.dark-mode #id_scheduled_at {
+    background-color: #181818;
+    color: #eee;
+    border-color: #555;
+}
+
+body.dark-mode #id_scheduled_at:hover {
+    background-color: #1f1f1f;
+}
+
+body.dark-mode #id_scheduled_at:focus {
+    background-color: #181818;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode #id_scheduled_at::-webkit-datetime-edit,
+body.dark-mode #id_scheduled_at::-webkit-datetime-edit-text,
+body.dark-mode #id_scheduled_at::-webkit-datetime-edit-month-field,
+body.dark-mode #id_scheduled_at::-webkit-datetime-edit-day-field,
+body.dark-mode #id_scheduled_at::-webkit-datetime-edit-year-field,
+body.dark-mode #id_scheduled_at::-webkit-datetime-edit-hour-field,
+body.dark-mode #id_scheduled_at::-webkit-datetime-edit-minute-field {
+    color: #eee;
+}
+
+body.dark-mode #id_scheduled_at::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.85;
+}
+
+body.dark-mode #id_scheduled_at:invalid {
+    color: #aaa;
+}
+
+#scheduled-at-row {
+    max-width: 420px;
+    padding: 14px 16px;
+    background: #fafafa;
+    border: 1px solid #e2e2e2;
+    border-radius: 8px;
+}
+
+body.dark-mode #scheduled-at-row {
+    background: #1b1b1b;
+    border-color: #444;
+}

@@ -19,11 +19,92 @@
 
 <div class="template-form-row">
   <p><strong>Předmět:</strong> {{ campaign.subject }}</p>
+  <p><strong>Šablona:</strong> {{ campaign.template.name }}</p>
   <p><strong>Režim:</strong> {% if campaign.is_test %}Testovací{% else %}Ostrý{% endif %}</p>
+  <p>
+    <strong>Stav:</strong>
+    {% if campaign.status == "draft" %}
+      Rozpracováno
+    {% elif campaign.status == "scheduled" %}
+      Naplánováno
+    {% elif campaign.status == "sending" %}
+      Odesílá se
+    {% elif campaign.status == "sent" %}
+      Odesláno
+    {% elif campaign.status == "failed" %}
+      Selhalo
+    {% elif campaign.status == "cancelled" %}
+      Zrušeno
+    {% else %}
+      {{ campaign.status }}
+    {% endif %}
+  </p>
+  <p><strong>Odesílatel:</strong> {{ campaign.from_email|default:"-" }}</p>
   <p><strong>Vytvořil:</strong> {{ campaign.created_by }}</p>
   <p><strong>Vytvořeno:</strong> {{ campaign.created_at|date:"d.m.Y H:i" }}</p>
+  <p>
+    <strong>Naplánováno na:</strong>
+    {% if campaign.scheduled_at %}
+      {{ campaign.scheduled_at|date:"d.m.Y H:i" }}
+    {% else %}
+      -
+    {% endif %}
+  </p>
+  <p>
+    <strong>Odesílání spuštěno:</strong>
+    {% if campaign.started_at %}
+      {{ campaign.started_at|date:"d.m.Y H:i:s" }}
+    {% else %}
+      -
+    {% endif %}
+  </p>
+  <p>
+    <strong>Odesílání dokončeno:</strong>
+    {% if campaign.finished_at %}
+      {{ campaign.finished_at|date:"d.m.Y H:i:s" }}
+    {% else %}
+      -
+    {% endif %}
+  </p>
   <p><strong>Poznámka:</strong> {{ campaign.note|default:"-" }}</p>
 </div>
+
+{% if campaign.status == "scheduled" %}
+  <div class="template-form-row">
+    <h3 style="margin-top: 0;">Správa naplánované kampaně</h3>
+
+    <form method="post" action="{% url 'rozesilac:campaign_cancel' campaign.id %}" style="margin-bottom: 18px;">
+      {% csrf_token %}
+      <button
+        type="submit"
+        class="detail-btn"
+        style="background-color: #c62828; color: white;"
+        onclick="return confirm('Opravdu chceš tuto naplánovanou kampaň zrušit?');"
+      >
+        Zrušit naplánovanou kampaň
+      </button>
+    </form>
+
+    <form method="post" action="{% url 'rozesilac:campaign_reschedule' campaign.id %}">
+      {% csrf_token %}
+      <label for="scheduled_at_reschedule"><strong>Přeplánovat na:</strong></label><br>
+      <input
+        type="datetime-local"
+        id="scheduled_at_reschedule"
+        name="scheduled_at"
+        value="{% if campaign.scheduled_at %}{{ campaign.scheduled_at|date:'Y-m-d\\TH:i' }}{% endif %}"
+        required
+      >
+      <button
+        type="submit"
+        class="detail-btn"
+        style="margin-left: 8px;"
+      >
+        Uložit nový termín
+      </button>
+    </form>
+  </div>
+{% endif %}
 
 <div class="template-form-row">
   <p><strong>Odesláno:</strong> {{ sent_count }}</p>
@@ -144,7 +225,17 @@
         <tr>
           <td>{{ d.to_email }}</td>
           <td>{{ d.to_name }}</td>
-          <td>{{ d.status }}</td>
+          <td>
+              {% if d.status == "queued" %}
+                Ve frontě
+              {% elif d.status == "sent" %}
+                Odesláno
+              {% elif d.status == "failed" %}
+                Chyba
+              {% else %}
+                {{ d.status }}
+              {% endif %}
+          </td>
           <td>
             {% if d.sent_at %}
               {{ d.sent_at|date:"d.m.Y H:i:s" }}

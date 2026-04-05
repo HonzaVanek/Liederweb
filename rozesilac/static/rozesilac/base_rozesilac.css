@@ -354,6 +354,7 @@
 .rozesilac-main input[type="url"],
 .rozesilac-main input[type="password"],
 .rozesilac-main input[type="number"],
+.rozesilac-main input[type="datetime-local"],
 .rozesilac-main input[type="date"],
 .rozesilac-main input[type="search"],
 .rozesilac-main input[type="file"],
