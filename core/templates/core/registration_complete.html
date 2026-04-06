@@ -1,2 +1,37 @@
-<h1>Děkujeme za registraci!</h1>
-<p>Na {{ form.cleaned_data.email }} jsme právě odeslali e-mail s odkazem na aktivaci.</p>
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Registrace dokončena{% endblock title %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'core/registrace.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<div class="register-container register-container--success">
+    <h1>Registrace dokončena</h1>
+
+    <p class="success-lead">
+        Děkujeme za registraci.
+    </p>
+
+    <p>
+        Na adresu <strong>{{ form.cleaned_data.email }}</strong> jsme právě odeslali e-mail
+        s odkazem pro aktivaci účtu.
+    </p>
+
+    <p>
+        Dokud účet nepotvrdíš přes odkaz v e-mailu a nebude ti schválen přístup,
+        do rozesílače se nedostaneš.
+    </p>
+
+    <div class="success-note">
+        Pokud e-mail nevidíš, zkontroluj i složku <strong>Spam</strong> nebo <strong>Hromadné</strong>.
+    </div>
+
+    <div class="register-footer">
+        Už máš aktivovaný účet?
+        <a href="{% url 'login' %}">Přihlásit se</a>
+    </div>
+</div>
+{% endblock content %}

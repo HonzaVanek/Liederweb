@@ -181,3 +181,43 @@ form {
     background-color: #000;
     color: #fff;
 }
+
+
+.register-container--success {
+    text-align: center;
+}
+
+.register-container--success > p {
+    margin-bottom: 18px;
+}
+
+.success-email {
+    font-weight: 700;
+    color: #000;
+    word-break: break-word;
+}
+
+.success-note {
+    margin: 22px 0 10px;
+    padding: 12px 16px;
+    background-color: #f8f8f8;
+    border: 1px dashed #000;
+    border-radius: 4px;
+    color: #444;
+    line-height: 1.5;
+    text-align: left;
+}
+
+@media (max-width: 600px) {
+    .register-container {
+        width: auto;
+        margin: 40px 16px;
+        padding: 24px 20px;
+    }
+
+    .register-container h1 {
+        margin-bottom: 22px;
+        font-size: 1.7rem;
+        letter-spacing: 1px;
+    }
+}
