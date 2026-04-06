@@ -23,7 +23,7 @@ class Command(BaseCommand):
         )
 
         if not campaign_ids:
-            self.stdout.write(self.style.SUCCESS("Žádné kampaně k odeslání."))
+            # self.stdout.write(self.style.SUCCESS("Žádné kampaně k odeslání.")) zakomentoval jsem, protože to může být běžný stav a nechci zahlcovat logy zbytečnými zprávami
             return
 
         self.stdout.write(f"Nalezeno kampaní k odeslání: {len(campaign_ids)}")
