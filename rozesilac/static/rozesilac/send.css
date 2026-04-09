@@ -245,3 +245,9 @@ body.dark-mode #scheduled-at-row {
     background: #1b1b1b;
     border-color: #444;
 }
+
+.help-text-event {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+}

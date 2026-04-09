@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 import re
 from bs4 import BeautifulSoup
 from rozesilac.models import EmailTemplate, EmailImage, ContactGroup, Contact
+from events.models import Event
 from django.conf import settings
 from django.db.models import Sum
 
@@ -169,6 +170,14 @@ class SendCampaignForm(forms.Form):
         queryset=EmailTemplate.objects.all().order_by("name"),
         label="Šablona",
         empty_label="-- vyber šablonu --",
+    )
+
+    event = forms.ModelChoiceField(
+        queryset=Event.objects.all().order_by("-starts_at"),
+        required=False,
+        label="Koncert",
+        help_text="Volitelné: propojí kampaň s konkrétním koncertem (umožní přehled, filtrování, VIP vstupenky apod.). Pokud to není kampaň k nějakému konkrétnímu koncertu, nevyplňuj.",
+        empty_label="-- bez navázání na koncert --",
     )
 
     from_email = forms.ChoiceField(

@@ -38,7 +38,17 @@
       <button type="button" id="preview-template-btn">Zobrazit náhled šablony</button>
     </div>
   </div>
- 
+
+  <div class="template-form-row">
+    <label for="{{ form.event.id_for_label }}">Navázat kampaň na koncert</label>
+        {% if form.event.help_text %}
+          <div class="help-text-event">
+            {{ form.event.help_text }}
+          </div>
+        {% endif %}
+      {{ form.event }}
+</div>
+
   <div class="template-form-row">
     <label for="{{ form.from_email.id_for_label }}">Odesílatel</label>
     {{ form.from_email }}

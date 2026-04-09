@@ -932,6 +932,7 @@ def send(request):
             test_email = form.cleaned_data.get("test_email")
             contacts = form.cleaned_data.get("contacts")
             note = form.cleaned_data.get("note", "")
+            event=form.cleaned_data.get("event")
             from_email = form.cleaned_data.get("from_email") or settings.NEWSLETTER_DEFAULT_FROM_EMAIL
 
             is_test = send_mode == "test"
@@ -951,6 +952,7 @@ def send(request):
                 text_body=template.text_body,
                 is_test=is_test,
                 note=note,
+                event=event,
                 status=campaign_status,
                 scheduled_at=scheduled_at if delivery_mode == "scheduled" else None,
             )
@@ -1026,7 +1028,7 @@ def send(request):
 
 @staff_required
 def campaigns(request):
-    campaigns = (EmailCampaign.objects.select_related("created_by", "template").prefetch_related("deliveries").order_by("-created_at"))
+    campaigns = (EmailCampaign.objects.select_related("created_by", "template", "event").prefetch_related("deliveries").order_by("-created_at"))
 
     campaign_rows = []
 
