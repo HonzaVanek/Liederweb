@@ -1,0 +1,23 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'events/event_detail.css' %}">{% endblock %}
+
+{% block title %}{{ event.title }}{% endblock title %}
+
+{% block rozesilac_content %}
+<h2>{{ event.title }}</h2>
+
+<p><strong>Datum:</strong> {{ event.starts_at }}</p>
+<p><strong>Místo:</strong> {{ event.venue }}</p>
+
+{% if event.poster_image %}
+  <img src="{{ event.poster_image.url }}" style="max-width:300px;">
+{% endif %}
+
+<p>{{ event.public_text }}</p>
+
+<p>
+  <a href="{% url 'events:event_edit' event.pk %}">Upravit</a>
+</p>
+{% endblock rozesilac_content %}

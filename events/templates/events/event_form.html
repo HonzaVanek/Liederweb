@@ -1,0 +1,17 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'events/event_form.css' %}">{% endblock %}
+
+{% block title %}Nový koncert{% endblock title %}
+
+{% block rozesilac_content %}
+<h2>{{ page_title }}</h2>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.as_p }}
+
+  <button type="submit">Uložit</button>
+</form>
+{% endblock rozesilac_content %}

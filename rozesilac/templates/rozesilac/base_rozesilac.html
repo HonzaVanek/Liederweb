@@ -32,6 +32,11 @@
          Obrázky
       </a>
 
+      <a href="{% url 'events:event_list' %}"
+         class="{% if request.resolver_match.namespace == 'events' %}active{% endif %}">
+         Koncerty
+      </a>
+
       <a href="{% url 'rozesilac:send' %}"
          class="{% if request.resolver_match.url_name == 'send' %}active{% endif %}">
          Odeslat

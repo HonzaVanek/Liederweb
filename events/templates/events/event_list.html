@@ -1,0 +1,39 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'events/event_list.css' %}">{% endblock %}
+
+{% block title %}Koncerty{% endblock title %}
+
+{% block rozesilac_content %}
+<h2>Koncerty</h2>
+
+<a href="{% url 'events:event_create' %}">+ Nový koncert</a>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Název</th>
+      <th>Datum</th>
+      <th>Místo</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for event in events %}
+      <tr>
+        <td>
+          <a href="{% url 'events:event_detail' event.pk %}">
+            {{ event.title }}
+          </a>
+        </td>
+        <td>{{ event.starts_at|date:"d.m.Y H:i" }}</td>
+        <td>{{ event.venue }}</td>
+      </tr>
+    {% empty %}
+      <tr>
+        <td colspan="3">Zatím nebyly vytvořeny žádné koncerty</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock rozesilac_content %}

@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
     path('rozesilac/', include('rozesilac.urls', namespace='rozesilac')),
+    path("events/", include("events.urls"))
 ]
 
 if settings.DEBUG:

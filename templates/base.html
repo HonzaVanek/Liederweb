@@ -23,7 +23,7 @@
                 </a>
             </nav>
 
-            {% if request.resolver_match.namespace == 'rozesilac' and request.user.is_authenticated %}
+            {% if request.user.is_authenticated and request.resolver_match.namespace == 'rozesilac' or request.resolver_match.namespace == 'events' %}
                 <div class="nav-user-panel">
                     <button type="button" id="dark-mode-toggle" class="dark-mode-toggle">
                         🌛
