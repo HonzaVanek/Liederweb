@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rozesilac',
     'core',
+    'events',
     'anymail'
 ]
 
