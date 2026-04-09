@@ -60,6 +60,14 @@ class EmailCampaign(models.Model):
     template = models.ForeignKey(EmailTemplate, on_delete=models.PROTECT)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="email_campaigns")
     created_at = models.DateTimeField(auto_now_add=True)
+    event = models.ForeignKey(
+                "events.Event",
+                on_delete=models.SET_NULL,
+                null=True,
+                blank=True,
+                related_name="campaigns",
+                verbose_name="Koncert",
+            )
 
     # co se poslalo (snapshot – ať to nezmění pozdější editace šablony)
     subject = models.CharField(max_length=250)
