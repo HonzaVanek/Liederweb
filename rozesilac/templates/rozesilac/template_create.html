@@ -24,12 +24,12 @@
     <h3>Obrázky do emailu</h3>
 
     {% if image_upload_form.non_field_errors %}
-      <div class="form-errors" style="margin-bottom: 10px;">
-    {% for error in image_upload_form.non_field_errors %}
-        <div>{{ error }}</div>
-    {% endfor %}
-      </div>
-{% endif %}
+        <div class="form-errors" style="margin-bottom: 10px;">
+      {% for error in image_upload_form.non_field_errors %}
+          <div>{{ error }}</div>
+      {% endfor %}
+        </div>
+    {% endif %}
 
     <p class="muted">
       Využito: {{ total_size|filesizeformat }} z {{ limit_size|filesizeformat }}

@@ -9,7 +9,14 @@ class Event(models.Model):
     venue = models.CharField(max_length=255, blank=True)
 
     public_text = models.TextField(blank=True)
-    poster_image = models.ImageField(upload_to="events/posters/", blank=True, null=True)
+    poster_image = models.ForeignKey(
+        "rozesilac.EmailImage",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="event_posters",
+        verbose_name="Plakát koncertu",
+    )
 
     vip_enabled = models.BooleanField(default=False)
     is_published = models.BooleanField(default=True)

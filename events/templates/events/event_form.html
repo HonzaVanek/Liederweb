@@ -3,15 +3,161 @@
 
 {% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'events/event_form.css' %}">{% endblock %}
 
-{% block title %}Nový koncert{% endblock title %}
+{% block title %}{{ page_title }}{% endblock title %}
 
 {% block rozesilac_content %}
 <h2>{{ page_title }}</h2>
 
-<form method="post" enctype="multipart/form-data">
-  {% csrf_token %}
-  {{ form.as_p }}
+{% if form.non_field_errors %}
+  <div class="form-errors" style="margin-bottom: 15px;">
+    {% for error in form.non_field_errors %}
+      <div>{{ error }}</div>
+    {% endfor %}
+  </div>
+{% endif %}
 
-  <button type="submit">Uložit</button>
+<form method="post">
+  {% csrf_token %}
+
+  <div class="template-form-row">
+    <label for="{{ form.title.id_for_label }}">Název koncertu</label>
+    {{ form.title }}
+    {% for e in form.title.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+    <label for="{{ form.slug.id_for_label }}">Slug</label>
+    {{ form.slug }}
+    {% if form.slug.help_text %}
+      <div class="help-text">{{ form.slug.help_text }}</div>
+    {% endif %}
+    {% for e in form.slug.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+    <label for="{{ form.starts_at.id_for_label }}">Datum a čas</label>
+    {{ form.starts_at }}
+    {% for e in form.starts_at.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+    <label for="{{ form.venue.id_for_label }}">Místo konání</label>
+    {{ form.venue }}
+    {% for e in form.venue.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+    <label for="{{ form.public_text.id_for_label }}">Text veřejné stránky koncertu</label>
+    {{ form.public_text }}
+    {% for e in form.public_text.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row">
+  <label>Plakát koncertu</label>
+
+  <div style="display:none;">
+    {{ form.poster_image }}
+  </div>
+
+  {% if form.poster_image.help_text %}
+    <div class="help-text">{{ form.poster_image.help_text }}</div>
+  {% endif %}
+
+  {% for e in form.poster_image.errors %}
+    <div class="form-errors">{{ e }}</div>
+  {% endfor %}
+</div>
+
+<div class="image-panel" style="margin-top: 20px;">
+  <h3>Vyber plakát z posledních nahraných obrázků</h3>
+
+  <p class="muted">
+    <a href="{% url 'rozesilac:images' %}">Otevřít galerii všech obrázků</a>
+  </p>
+
+  {% if recent_images %}
+    <div class="recent-images-grid">
+      {% for img in recent_images %}
+        <div class="recent-image-card selectable-image-card {% if form.instance.poster_image and form.instance.poster_image.id == img.id %}selected{% endif %}"
+             data-image-id="{{ img.id }}">
+          <div class="recent-image-thumb-wrap">
+            <img src="{{ img.image.url }}" alt="{{ img.title }}" class="recent-image-thumb">
+          </div>
+
+          <div class="recent-image-meta">
+            <span class="title">{{ img.title|default:"Bez názvu" }}</span>
+            <span class="muted small">
+              {{ img.file_size|filesizeformat }} | {{ img.uploaded_at|date:"d.m.Y H:i" }}
+            </span>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="select-image-button">
+              Vybrat tento obrázek
+            </button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Zatím nejsou nahrané žádné obrázky.</p>
+  {% endif %}
+</div>
+
+  <div class="template-form-row checkbox-row">
+    <label for="{{ form.vip_enabled.id_for_label }}">Povolit VIP rezervace</label>
+    {{ form.vip_enabled }}
+    {% for e in form.vip_enabled.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="template-form-row checkbox-row">
+    <label for="{{ form.is_published.id_for_label }}">Publikováno</label>
+    {{ form.is_published }}
+    {% for e in form.is_published.errors %}
+      <div class="form-errors">{{ e }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="form-actions">
+    <button type="submit">Uložit</button>
+    {% if event %}
+      <a href="{% url 'events:event_detail' event.pk %}" class="button-secondary">Zpět na detail</a>
+    {% else %}
+      <a href="{% url 'events:event_list' %}" class="button-secondary">Zpět na koncerty</a>
+    {% endif %}
+  </div>
 </form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const select = document.getElementById("{{ form.poster_image.id_for_label }}");
+  const cards = document.querySelectorAll(".selectable-image-card");
+
+  if (!select) return;
+
+  cards.forEach(card => {
+    const button = card.querySelector(".select-image-button");
+    const imageId = card.dataset.imageId;
+
+    button.addEventListener("click", function () {
+      select.value = imageId;
+
+      cards.forEach(c => c.classList.remove("selected"));
+      card.classList.add("selected");
+    });
+  });
+});
+</script>
 {% endblock rozesilac_content %}

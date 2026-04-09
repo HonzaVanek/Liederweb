@@ -1,5 +1,6 @@
 from django import forms
 from .models import Event
+from rozesilac.models import EmailImage
 
 
 class EventForm(forms.ModelForm):
@@ -22,3 +23,9 @@ class EventForm(forms.ModelForm):
             "venue": forms.TextInput(attrs={"placeholder": "Místo konání"}),
             "public_text": forms.Textarea(attrs={"rows": 6}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["poster_image"].queryset = EmailImage.objects.all().order_by("-uploaded_at")
+        self.fields["poster_image"].label = "Plakát koncertu"
+        self.fields["poster_image"].help_text = "Vyber obrázek z galerie v sekci Obrázky."

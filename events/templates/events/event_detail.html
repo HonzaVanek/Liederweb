@@ -6,18 +6,126 @@
 {% block title %}{{ event.title }}{% endblock title %}
 
 {% block rozesilac_content %}
-<h2>{{ event.title }}</h2>
+<div class="event-detail-page">
+  <div class="event-detail-header">
+    <h2>{{ event.title }}</h2>
 
-<p><strong>Datum:</strong> {{ event.starts_at }}</p>
-<p><strong>Místo:</strong> {{ event.venue }}</p>
+    <div class="event-detail-actions">
+      <a href="{% url 'events:event_edit' event.pk %}" class="button-like">Upravit koncert</a>
+      <a href="{% url 'events:event_list' %}" class="button-like button-secondary">Zpět na koncerty</a>
+    </div>
+  </div>
 
-{% if event.poster_image %}
-  <img src="{{ event.poster_image.url }}" style="max-width:300px;">
-{% endif %}
+  <div class="event-detail-grid">
+    <section class="event-detail-main">
+      <div class="detail-card">
+        <h3>Základní informace</h3>
 
-<p>{{ event.public_text }}</p>
+        <p><strong>Název:</strong> {{ event.title }}</p>
 
-<p>
-  <a href="{% url 'events:event_edit' event.pk %}">Upravit</a>
-</p>
+        <p>
+          <strong>Datum:</strong>
+          {% if event.starts_at %}
+            {{ event.starts_at|date:"d.m.Y H:i" }}
+          {% else %}
+            <span class="muted">Není vyplněno</span>
+          {% endif %}
+        </p>
+
+        <p>
+          <strong>Místo:</strong>
+          {% if event.venue %}
+            {{ event.venue }}
+          {% else %}
+            <span class="muted">Není vyplněno</span>
+          {% endif %}
+        </p>
+
+        <p>
+          <strong>Slug:</strong>
+          <code>{{ event.slug }}</code>
+        </p>
+
+        <p>
+          <strong>Publikováno:</strong>
+          {% if event.is_published %}Ano{% else %}Ne{% endif %}
+        </p>
+
+        <p>
+          <strong>VIP rezervace povoleny:</strong>
+          {% if event.vip_enabled %}Ano{% else %}Ne{% endif %}
+        </p>
+
+        <p>
+          <strong>Vytvořeno:</strong> {{ event.created_at|date:"d.m.Y H:i" }}<br>
+          <strong>Upraveno:</strong> {{ event.updated_at|date:"d.m.Y H:i" }}
+        </p>
+      </div>
+
+      <div class="detail-card">
+        <h3>Text veřejné stránky koncertu</h3>
+
+        {% if event.public_text %}
+          <div class="event-public-text">
+            {{ event.public_text|linebreaks }}
+          </div>
+        {% else %}
+          <p class="muted">Zatím není vyplněn žádný text veřejné stránky.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <aside class="event-detail-side">
+      <div class="detail-card">
+        <h3>Plakát</h3>
+
+        {% if event.poster_image %}
+          <div class="event-poster-wrap">
+            <img src="{{ event.poster_image.image.url }}"
+                 alt="{{ event.poster_image.title|default:event.title }}"
+                 class="event-poster">
+          </div>
+
+          <p class="muted small">
+            {{ event.poster_image.title|default:"Bez názvu" }}
+          </p>
+        {% else %}
+          <p class="muted">Ke koncertu zatím není vybraný žádný plakát.</p>
+        {% endif %}
+      </div>
+
+        <div class="detail-card">
+        <h3>Kampaně</h3>
+
+        {% if campaigns %}
+            <ul class="event-related-list">
+            {% for campaign in campaigns %}
+                <li>
+                <a href="{% url 'rozesilac:campaign_detail' campaign.id %}">
+                    {{ campaign.subject }}
+                </a>
+                <span class="muted small">
+                    | {{ campaign.created_at|date:"d.m.Y H:i" }}
+                    | {{ campaign.get_status_display }}
+                </span>
+                </li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p class="muted">Zatím k tomuto koncertu není navázaná žádná kampaň.</p>
+        {% endif %}
+        </div>
+
+        <div class="detail-card">
+        <h3>VIP rezervace</h3>
+
+        {% if vip_reservations %}
+            <p>Počet rezervací: {{ vip_reservations|length }}</p>
+        {% else %}
+            <p class="muted">Zatím nejsou žádné VIP rezervace.</p>
+        {% endif %}
+        </div>
+    </aside>
+  </div>
+</div>
 {% endblock rozesilac_content %}
