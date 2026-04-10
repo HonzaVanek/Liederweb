@@ -794,11 +794,23 @@ def send_single_delivery(campaign, delivery, base_url: str, from_email: str):
     else:
         unsubscribe_url = ""
 
+    event_public_url = ""
+    vip_event_url = ""
+
+    if campaign.event:
+        event_public_path = reverse("events:public_event_detail", args=[campaign.event.slug])
+        event_public_url = f"{base_url}{event_public_path}"
+
+        vip_event_path = reverse("events:vip_event_detail", args=[delivery.tracking_token])
+        vip_event_url = f"{base_url}{vip_event_path}"
+
     template_context = Context({
         "osloveni": osloveni,
         "jmeno": contact.name if contact and contact.name else "",
         "email": delivery.to_email,
         "unsubscribe_url": unsubscribe_url,
+        "event_public_url": event_public_url,
+        "vip_event_url": vip_event_url,
     })
 
     rendered_subject = Template(campaign.subject).render(template_context)
@@ -820,7 +832,7 @@ def send_single_delivery(campaign, delivery, base_url: str, from_email: str):
         rendered_text_body = f"{preheader}\n\n{rendered_text_body}"
 
     for url in tracked_urls:
-        EmailCampaignTrackedLink.objects.get_or_create(campaign=campaign, url=url,)
+        EmailCampaignTrackedLink.objects.get_or_create(campaign=campaign, url=url)
 
     # DEV = klasický Django email backend
     if settings.APP_ENV != "prod":

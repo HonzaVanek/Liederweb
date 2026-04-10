@@ -228,3 +228,6 @@ if APP_ENV == "prod":
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
     DEFAULT_FROM_EMAIL = "local@test.project"
+
+#zatím jen mně, ale to se musí změnit :)
+VIP_NOTIFICATION_EMAILS = ["vanek.hv@gmail.com"]

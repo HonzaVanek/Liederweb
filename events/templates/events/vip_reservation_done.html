@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'events/public_event_detail.css' %}">{% endblock %}
+
+{% block title %}Rezervace přijata{% endblock title %}
+
+{% block content %}
+<div class="public-event-page">
+  <div class="public-event-card">
+
+    <h1>Rezervace přijata</h1>
+
+    {% if contact and contact.salutation %}
+      <p>{{ contact.salutation }},</p>
+    {% elif contact and contact.name %}
+      <p>Dobrý den, {{ contact.name }},</p>
+    {% else %}
+      <p>Dobrý den,</p>
+    {% endif %}
+
+    <p>
+      Děkujeme, vaši žádost o čestnou vstupenku na koncert
+      <strong>{{ event.title }}</strong> jsme zaevidovali.
+    </p>
+
+    {% if reservation %}
+      <p class="muted">
+        Čas rezervace: {{ reservation.created_at|date:"d.m.Y H:i" }}
+      </p>
+    {% endif %}
+
+    <p>
+      Velmi si vážíme vaší podpory a těšíme se na setkání na koncertě.
+    </p>
+
+    <div class="vip-followup-box">
+      <h2>Chcete nás podpořit i jinak?</h2>
+
+      <p>
+        Pokud byste chtěli podpořit činnost Lieder Society i nad rámec návštěvy koncertu,
+        můžete se podívat také do našeho e-shopu.
+      </p>
+
+      <div class="public-event-actions">
+        <a href="https://eshop.lieder-society.cz" target="_blank" rel="noopener" class="primary-action-button">
+          Navštívit e-shop
+        </a>
+
+        <a href="{% url 'events:public_event_detail' event.slug %}" class="secondary-action-button">
+          Zpět na stránku koncertu
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock content %}

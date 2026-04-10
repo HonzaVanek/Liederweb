@@ -31,6 +31,25 @@
         {{ event.public_text|linebreaks }}
       </div>
     {% endif %}
+
+    {% if vip_mode and event.vip_enabled %}
+      <div class="vip-box">
+        <h2>Čestné vstupenky</h2>
+
+        {% if contact and contact.name %}
+          <p>Dobrý den, {{ contact.name }},</p>
+        {% endif %}
+
+        <p>
+          Jako VIP host si můžete požádat o čestnou vstupenku na tento koncert.
+        </p>
+
+        <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
+          {% csrf_token %}
+          <button type="submit">Požádat o čestnou vstupenku</button>
+        </form>
+      </div>
+    {% endif %}
   </div>
 </div>
 {% endblock content %}

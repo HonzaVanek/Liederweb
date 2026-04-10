@@ -11,6 +11,7 @@
     <link rel="icon" href="{% static 'Lieder-favicon.png' %}" type="image/png">
 </head>
 <body>
+    {% if not hide_header %}
     <header>
         <div class="nav-wrapper">
             <nav>
@@ -42,6 +43,7 @@
             {% endif %}
         </div>
     </header>
+    {% endif %}
 
     <main>
         {% block content %}{% endblock %}
