@@ -61,3 +61,16 @@ def event_detail(request, pk):
     return render(request, "events/event_detail.html", {
         "event": event,
     })
+
+
+def public_event_detail(request, slug):
+    event = get_object_or_404(
+        Event.objects.select_related("poster_image"),
+        slug=slug,
+        is_published=True,
+    )
+
+    return render(request, "events/public_event_detail.html", {
+        "event": event,
+        "vip_mode": False,
+    })

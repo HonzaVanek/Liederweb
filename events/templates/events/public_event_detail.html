@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'events/public_event_detail.css' %}">{% endblock %}
+
+{% block title %}{{ event.title }}{% endblock title %}
+
+{% block content %}
+<div class="public-event-page">
+  <div class="public-event-card">
+    <h1>{{ event.title }}</h1>
+
+    {% if event.starts_at %}
+      <p><strong>Datum:</strong> {{ event.starts_at|date:"d.m.Y H:i" }}</p>
+    {% endif %}
+
+    {% if event.venue %}
+      <p><strong>Místo:</strong> {{ event.venue }}</p>
+    {% endif %}
+
+    {% if event.poster_image %}
+      <div class="public-event-poster-wrap">
+        <img src="{{ event.poster_image.image.url }}"
+             alt="{{ event.poster_image.title|default:event.title }}"
+             class="public-event-poster">
+      </div>
+    {% endif %}
+
+    {% if event.public_text %}
+      <div class="public-event-text">
+        {{ event.public_text|linebreaks }}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock content %}

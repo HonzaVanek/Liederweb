@@ -11,7 +11,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.utils.encoding import force_bytes
 from django.urls import reverse
 from django.template.loader import render_to_string
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, send_mail
 
 def home(request):
     return render(request, 'core/home.html')
@@ -34,9 +34,16 @@ def registrace(request):
                 login(request, user)
                 return redirect('home')
 
-            # ----- PROD REŽIM ----- (zatím nelze)
+            # ----- PROD REŽIM -----
             user.is_active = False
             user.save()
+            send_mail(
+                subject='Nová registrace na Liederweb',
+                message=f'Uživatel {user.username} si vytvořil novou registraci. Email: {user.email}',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=['vanek.hv@gmail.com'],
+                fail_silently=True,
+            )
 
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)

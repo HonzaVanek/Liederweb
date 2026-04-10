@@ -60,6 +60,11 @@
           <strong>Vytvořeno:</strong> {{ event.created_at|date:"d.m.Y H:i" }}<br>
           <strong>Upraveno:</strong> {{ event.updated_at|date:"d.m.Y H:i" }}
         </p>
+        <p>
+          <a href="{% url 'events:public_event_detail' event.slug %}" target="_blank">
+            Otevřít veřejnou stránku koncertu
+          </a>
+        </p>
       </div>
 
       <div class="detail-card">

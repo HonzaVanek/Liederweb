@@ -23,6 +23,13 @@ class EventForm(forms.ModelForm):
             "venue": forms.TextInput(attrs={"placeholder": "Místo konání"}),
             "public_text": forms.Textarea(attrs={"rows": 6}),
         }
+
+    def clean_slug(self):
+        slug = self.cleaned_data["slug"]
+        reserved = ["create", "edit", "koncerty", "VIP", "public", "detail"]
+        if slug in reserved:
+            raise forms.ValidationError("Tento slug nelze použít.")
+        return slug
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
