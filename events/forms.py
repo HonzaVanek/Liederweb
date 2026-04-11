@@ -36,3 +36,21 @@ class EventForm(forms.ModelForm):
         self.fields["poster_image"].queryset = EmailImage.objects.all().order_by("-uploaded_at")
         self.fields["poster_image"].label = "Plakát koncertu"
         self.fields["poster_image"].help_text = "Vyber obrázek z galerie v sekci Obrázky."
+
+
+
+class VipReservationForm(forms.Form):
+    TICKET_COUNT_CHOICES = [
+        (1, "1 vstupenka"),
+        (2, "2 vstupenky"),
+        (3, "3 vstupenky"),
+        (4, "4 vstupenky"),
+    ]
+
+    ticket_count = forms.TypedChoiceField(
+        choices=TICKET_COUNT_CHOICES,
+        coerce=int,
+        initial=1,
+        label="Počet vstupenek",
+        widget=forms.RadioSelect,
+    )

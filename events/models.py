@@ -46,7 +46,7 @@ class VipReservation(models.Model):
         on_delete=models.SET_NULL,
         related_name="vip_reservations",
     )
-
+    ticket_count = models.PositiveSmallIntegerField(default=1, verbose_name="Počet vstupenek")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

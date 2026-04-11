@@ -33,23 +33,49 @@
     {% endif %}
 
     {% if vip_mode and event.vip_enabled %}
-      <div class="vip-box">
-        <h2>Čestné vstupenky</h2>
+  <div class="vip-box">
+    <h2>Čestné vstupenky</h2>
 
-        {% if contact and contact.name %}
-          <p>Dobrý den, {{ contact.name }},</p>
-        {% endif %}
-
-        <p>
-          Jako VIP host si můžete požádat o čestnou vstupenku na tento koncert.
-        </p>
-
-        <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
-          {% csrf_token %}
-          <button type="submit">Požádat o čestnou vstupenku</button>
-        </form>
-      </div>
+    {% if contact and contact.salutation %}
+      <p>{{ contact.salutation }},</p>
     {% endif %}
+
+    {% if reservation %}
+      <p>
+        Vaši žádost už evidujeme.
+        {% if reservation.ticket_count == 1 %}
+          Aktuálně máte rezervovanou <strong>1 vstupenku</strong>.
+        {% else %}
+          Aktuálně máte rezervovány <strong>{{ reservation.ticket_count }} vstupenky</strong>.
+        {% endif %}
+      </p>
+      <p class="muted">Pokud chcete počet upravit, můžete ho změnit níže a uložit znovu.</p>
+    {% else %}
+      <p>Jako VIP host si můžete požádat o čestné vstupenky na tento koncert.</p>
+    {% endif %}
+
+    <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
+      {% csrf_token %}
+
+      <div class="vip-ticket-count-block">
+        <p><strong>{{ vip_form.ticket_count.label }}</strong></p>
+        {{ vip_form.ticket_count }}
+
+        {% for e in vip_form.ticket_count.errors %}
+          <div class="form-errors">{{ e }}</div>
+        {% endfor %}
+      </div>
+
+      <button type="submit">
+        {% if reservation %}
+          Uložit změnu rezervace
+        {% else %}
+          Požádat o čestné vstupenky
+        {% endif %}
+      </button>
+    </form>
+  </div>
+{% endif %}
   </div>
 </div>
 {% endblock content %}

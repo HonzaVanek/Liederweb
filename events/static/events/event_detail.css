@@ -85,3 +85,22 @@
         grid-template-columns: 1fr;
     }
 }
+
+.event-reservations-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+}
+
+.event-reservations-table th,
+.event-reservations-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+    vertical-align: top;
+}
+
+.event-reservations-table th {
+    font-weight: 700;
+    background: #f7f7f7;
+}

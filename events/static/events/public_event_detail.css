@@ -112,3 +112,21 @@
         text-align: center;
     }
 }
+
+.vip-ticket-count-block {
+    margin: 18px 0;
+}
+
+.vip-ticket-count-block ul {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+}
+
+.vip-ticket-count-block li {
+    margin-bottom: 8px;
+}
+
+.vip-ticket-count-block label {
+    cursor: pointer;
+}

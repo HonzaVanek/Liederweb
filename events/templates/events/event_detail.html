@@ -122,13 +122,55 @@
         </div>
 
         <div class="detail-card">
-        <h3>VIP rezervace</h3>
 
-        {% if vip_reservations %}
-            <p>Počet rezervací: {{ vip_reservations|length }}</p>
-        {% else %}
+          <a href="{% url 'events:event_export_vip_xlsx' event.pk %}" class="button-like">
+            Exportovat seznam VIP rezervací
+          </a>
+
+          <h3>VIP rezervace</h3>
+
+          {% if vip_reservations %}
+            <p><strong>Počet rezervací:</strong> {{ vip_reservations|length }}</p>
+
+            <table class="event-reservations-table">
+              <thead>
+                <tr>
+                  <th>Jméno</th>
+                  <th>Email</th>
+                  <th>Čas rezervace</th>
+                  <th>Počet vstupenek</th>
+                  <th>Kampaň</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for reservation in vip_reservations %}
+                  <tr>
+                    <td>
+                      {% if reservation.contact.name %}
+                        {{ reservation.contact.name }}
+                      {% else %}
+                        <span class="muted">Bez jména</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ reservation.contact.email }}</td>
+                    <td>{{ reservation.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ reservation.ticket_count }}</td>
+                    <td>
+                      {% if reservation.campaign %}
+                        <a href="{% url 'rozesilac:campaign_detail' reservation.campaign.id %}">
+                          {{ reservation.campaign.subject }}
+                        </a>
+                      {% else %}
+                        <span class="muted">—</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
             <p class="muted">Zatím nejsou žádné VIP rezervace.</p>
-        {% endif %}
+          {% endif %}
         </div>
     </aside>
   </div>

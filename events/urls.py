@@ -11,6 +11,8 @@ urlpatterns = [
     path("vip/<str:token>/", views.vip_event_detail, name="vip_event_detail"),
     path("vip/<str:token>/reserve/", views.vip_reserve, name="vip_reserve"),
     path("vip/<str:token>/done/", views.vip_reservation_done, name="vip_reservation_done"),
+
+    path("<int:pk>/export-vip/", views.event_export_vip_xlsx, name="event_export_vip_xlsx"),
     
     # veřejná stránka se slugem prý má být dole jako poslední. Nejsem si jistý proč to tak je, ale asi aby se neshodovalo s ostatními URL, které začínají číslem (pk).
     path("<slug:slug>/", views.public_event_detail, name="public_event_detail")

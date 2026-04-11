@@ -1,15 +1,18 @@
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 
 from core.decorators import staff_required
 
 from .models import Event, VipReservation
 from rozesilac.models import EmailImage, EmailDelivery
-from .forms import EventForm
+from .forms import EventForm, VipReservationForm
 
 from django.conf import settings
 from django.core.mail import send_mail
 
+from openpyxl import Workbook
+from openpyxl.styles import Font
+from datetime import datetime
 
 @staff_required
 def event_list(request):
@@ -60,11 +63,23 @@ def event_edit(request, pk):
 
 @staff_required
 def event_detail(request, pk):
-    event = get_object_or_404(Event, pk=pk)
+    event = get_object_or_404(
+        Event.objects.select_related("poster_image").prefetch_related("campaigns", "vip_reservations__contact"),
+        pk=pk,
+    )
 
-    return render(request, "events/event_detail.html", {
-        "event": event,
-    })
+    campaigns = event.campaigns.all().order_by("-created_at")
+    vip_reservations = event.vip_reservations.select_related("contact", "campaign", "delivery").order_by("-created_at")
+
+    return render(
+        request,
+        "events/event_detail.html",
+        {
+            "event": event,
+            "campaigns": campaigns,
+            "vip_reservations": vip_reservations,
+        },
+    )
 
 
 def public_event_detail(request, slug):
@@ -80,6 +95,8 @@ def public_event_detail(request, slug):
         "hide_header": True,
         "delivery": None,
         "contact": None,
+        "reservation": None,
+        "vip_form": None,
     })
 
 def vip_event_detail(request, token):
@@ -96,11 +113,23 @@ def vip_event_detail(request, token):
     if not event.is_published:
         raise Http404("Tento koncert není veřejně dostupný.")
 
+    reservation = None
+    if delivery.contact:
+        reservation = VipReservation.objects.filter(
+            event=event,
+            contact=delivery.contact,
+        ).first()
+
+    initial_ticket_count = reservation.ticket_count if reservation else 1
+    vip_form = VipReservationForm(initial={"ticket_count": initial_ticket_count})
+
     return render(request, "events/public_event_detail.html", {
         "event": event,
         "vip_mode": True,
         "delivery": delivery,
         "contact": delivery.contact,
+        "reservation": reservation,
+        "vip_form": vip_form,
         "hide_header": True,
     })
 
@@ -126,40 +155,75 @@ def vip_reserve(request, token):
     if not contact:
         raise Http404("Tato VIP rezervace není navázaná na konkrétní kontakt.")
 
-    reservation, created = VipReservation.objects.get_or_create(
-        event=event,
-        contact=contact,
-        defaults={
-            "campaign": campaign,
+    form = VipReservationForm(request.POST)
+    if not form.is_valid():
+        return render(request, "events/public_event_detail.html", {
+            "event": event,
+            "vip_mode": True,
             "delivery": delivery,
-        }
-    )
+            "contact": contact,
+            "reservation": VipReservation.objects.filter(event=event, contact=contact).first(),
+            "vip_form": form,
+        })
+
+    ticket_count = form.cleaned_data["ticket_count"]
+
+    reservation = VipReservation.objects.filter(event=event, contact=contact).first()
+    created = reservation is None
+
+    if created:
+        reservation = VipReservation.objects.create(
+            event=event,
+            contact=contact,
+            campaign=campaign,
+            delivery=delivery,
+            ticket_count=ticket_count,
+        )
+    else:
+        reservation.ticket_count = ticket_count
+        if not reservation.campaign:
+            reservation.campaign = campaign
+        if not reservation.delivery:
+            reservation.delivery = delivery
+        reservation.save(update_fields=["ticket_count", "campaign", "delivery"])
 
     if created:
         subject = f"VIP rezervace: {contact.name or contact.email} – {event.title}"
 
-        body = (
-            f"Byla vytvořena nová VIP rezervace.\n\n"
-            f"Koncert: {event.title}\n"
-            f"{f'Datum koncertu: {event.starts_at:%d.%m.%Y %H:%M}\n' if event.starts_at else ''}"
-            f"{f'Místo: {event.venue}\n' if event.venue else ''}"
-            f"Jméno: {contact.name or '-'}\n"
-            f"Oslovení: {contact.salutation or '-'}\n"
-            f"E-mail: {contact.email}\n"
-            f"Čas rezervace: {reservation.created_at:%d.%m.%Y %H:%M}\n"
-            f"{f'Kampaň: {campaign.subject}\n' if campaign else ''}"
-        )
+        lines = [
+            "Byla vytvořena nová VIP rezervace.",
+            "",
+            f"Koncert: {event.title}",
+        ]
+
+        if event.starts_at:
+            lines.append(f"Datum koncertu: {event.starts_at:%d.%m.%Y %H:%M}")
+
+        if event.venue:
+            lines.append(f"Místo: {event.venue}")
+
+        lines.extend([
+            f"Jméno: {contact.name or '-'}",
+            f"Oslovení: {contact.salutation or '-'}",
+            f"E-mail: {contact.email}",
+            f"Počet vstupenek: {reservation.ticket_count}",
+            f"Čas rezervace: {reservation.created_at:%d.%m.%Y %H:%M}",
+        ])
+
+        if campaign:
+            lines.append(f"Kampaň: {campaign.subject}")
+
+        body = "\n".join(lines)
 
         try:
             send_mail(
                 subject=subject,
                 message=body,
                 from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-                recipient_list=getattr(settings, "VIP_NOTIFICATION_EMAILS", []),
+                recipient_list=getattr(settings, "VIP_NOTIFICATION_EMAILS", ["info@lieder-society.cz"]),
                 fail_silently=False,
             )
         except Exception:
-            # rezervaci nechceme zrušit jen kvůli tomu, že notifikační mail selhal
             pass
 
     return redirect("events:vip_reservation_done", token=token)
@@ -187,3 +251,53 @@ def vip_reservation_done(request, token):
         "reservation": reservation,
         "hide_header": True,
     })
+
+
+@staff_required
+def event_export_vip_xlsx(request, pk):
+    event = get_object_or_404(Event, pk=pk)
+
+    reservations = (
+        event.vip_reservations
+        .select_related("contact", "campaign")
+        .order_by("created_at")
+    )
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "VIP rezervace"
+
+    # hlavička
+    headers = ["Jméno", "Email", "Oslovení", "Počet vstupenek", "Čas rezervace", "Kampaň"]
+    ws.append(headers)
+
+    # bold header
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    # data
+    for r in reservations:
+        ws.append([
+            r.contact.name or "",
+            r.contact.email,
+            r.contact.salutation or "",
+            r.ticket_count,
+            r.created_at.strftime("%d.%m.%Y %H:%M"),
+            r.campaign.subject if r.campaign else "",
+        ])
+
+    # trochu lepší šířky sloupců
+    column_widths = [25, 30, 30, 18, 20, 30]
+    for i, width in enumerate(column_widths, start=1):
+        ws.column_dimensions[chr(64 + i)].width = width
+
+    # response
+    filename = f"vip_rezervace_{event.slug}.xlsx"
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    wb.save(response)
+    return response
