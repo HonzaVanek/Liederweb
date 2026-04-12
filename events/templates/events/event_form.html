@@ -1,7 +1,10 @@
 {% extends "rozesilac/base_rozesilac.html" %}
 {% load static %}
 
-{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'events/event_form.css' %}">{% endblock %}
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'events/event_form.css' %}">
+{% endblock %}
 
 {% block title %}{{ page_title }}{% endblock title %}
 
@@ -9,131 +12,566 @@
 <h2>{{ page_title }}</h2>
 
 {% if form.non_field_errors %}
-  <div class="form-errors" style="margin-bottom: 15px;">
+  <div class="form-errors form-errors-top">
     {% for error in form.non_field_errors %}
       <div>{{ error }}</div>
     {% endfor %}
   </div>
 {% endif %}
 
-<form method="post">
+<form method="post" id="event-form" novalidate>
   {% csrf_token %}
 
-  <div class="template-form-row">
-    <label for="{{ form.title.id_for_label }}">Název koncertu</label>
-    {{ form.title }}
-    {% for e in form.title.errors %}
-      <div class="form-errors">{{ e }}</div>
+  {{ program_formset.management_form }}
+  {{ artist_formset.management_form }}
+  {{ resource_formset.management_form }}
+  {{ practical_info_formset.management_form }}
+  {{ sponsor_formset.management_form }}
+
+  <div class="content-section">
+    <h3>Základní informace</h3>
+    <p class="section-intro">
+      Základ koncertu: název, datum, místo a údaje pro pravý informační panel na veřejné stránce.
+    </p>
+
+    <div class="template-form-row">
+      <label for="{{ form.title.id_for_label }}">Název koncertu</label>
+      {{ form.title }}
+      {% for e in form.title.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.subtitle.id_for_label }}">Podtitul</label>
+      {{ form.subtitle }}
+      {% for e in form.subtitle.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.slug.id_for_label }}">Slug</label>
+      {{ form.slug }}
+      <p class="small muted">Použije se ve veřejné URL koncertu.</p>
+      {% for e in form.slug.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.starts_at.id_for_label }}">Datum a čas</label>
+      {{ form.starts_at }}
+      {% for e in form.starts_at.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.venue.id_for_label }}">Místo konání</label>
+      {{ form.venue }}
+      {% for e in form.venue.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.venue_address.id_for_label }}">Adresa místa</label>
+      {{ form.venue_address }}
+      {% for e in form.venue_address.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.venue_map_url.id_for_label }}">Odkaz na mapu</label>
+      {{ form.venue_map_url }}
+      {% for e in form.venue_map_url.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.duration_text.id_for_label }}">Délka večera</label>
+      {{ form.duration_text }}
+      {% for e in form.duration_text.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="content-section">
+    <h3>Vizuál koncertu</h3>
+    <p class="section-intro">
+      Barva, plakát a další obrázky, ze kterých se postaví veřejná stránka koncertu.
+    </p>
+
+    <div class="template-form-row">
+      <label for="{{ form.theme_color.id_for_label }}">Barva koncertu</label>
+      {{ form.theme_color }}
+      <p class="small muted">Tahle barva určuje hlavní tón veřejné stránky koncertu.</p>
+      {% for e in form.theme_color.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label>Plakát koncertu</label>
+      <p class="poster-help-text">
+        Kliknutím na kartu níže vybereš plakát rychle. Pokud tam obrázek není, vyber ho ze seznamu všech obrázků.
+      </p>
+      {% for e in form.poster_image.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="image-panel">
+      <h3>Poslední nahrané obrázky</h3>
+
+      {% if recent_images %}
+        <div class="recent-images-grid">
+          {% for img in recent_images %}
+            <div
+              class="recent-image-card selectable-image-card {% if form.instance.poster_image and form.instance.poster_image.id == img.id %}selected{% endif %}"
+              data-image-id="{{ img.id }}"
+              tabindex="0"
+              role="button"
+              aria-label="Vybrat obrázek {{ img.title|default:'Bez názvu' }} jako plakát"
+            >
+              <div class="recent-image-thumb-wrap">
+                <img src="{{ img.image.url }}" alt="{{ img.title }}" class="recent-image-thumb">
+              </div>
+
+              <div class="recent-image-meta">
+                <span class="title">{{ img.title|default:"Bez názvu" }}</span>
+                <span class="muted small">
+                  {{ img.file_size|filesizeformat }} | {{ img.uploaded_at|date:"d.m.Y H:i" }}
+                </span>
+              </div>
+
+              <div class="form-actions recent-image-actions">
+                <button type="button" class="select-image-button">Vybrat jako plakát</button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">Zatím nejsou nahrané žádné obrázky.</p>
+      {% endif %}
+    </div>
+
+    <div class="template-form-row poster-select-row">
+      <label for="{{ form.poster_image.id_for_label }}">Nebo vyber plakát z celého seznamu obrázků</label>
+      {{ form.poster_image }}
+      {% for e in form.poster_image.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.hero_image.id_for_label }}">Cover fotka do hlavičky</label>
+      {{ form.hero_image }}
+      <p class="small muted">
+        Velká fotka na pozadí horní části veřejné stránky. Překryje ji barva koncertu.
+      </p>
+      {% for e in form.hero_image.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.hero_image_position.id_for_label }}">Která část cover fotky se má zvýraznit</label>
+      {{ form.hero_image_position }}
+      <p class="small muted">
+        Určuje, jestli se na veřejné stránce preferuje horní, střední nebo dolní část fotky.
+      </p>
+      {% for e in form.hero_image_position.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row checkbox-row single-checkbox-row">
+      <label for="{{ form.hero_parallax_enabled.id_for_label }}">Zapnout jemný parallax hero fotky</label>
+      {{ form.hero_parallax_enabled }}
+      {% for e in form.hero_parallax_enabled.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.secondary_image.id_for_label }}">Další fotka do obsahu stránky</label>
+      {{ form.secondary_image }}
+      <p class="small muted">
+        Volitelná druhá fotka, která se může zobrazit níže mezi texty.
+      </p>
+      {% for e in form.secondary_image.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <p class="gallery-link-wrap">
+      <a href="{% url 'rozesilac:images' %}" class="btn-link">Otevřít galerii všech obrázků</a>
+    </p>
+  </div>
+
+  <div class="content-section">
+    <h3>Obsah veřejné stránky</h3>
+    <p class="section-intro">
+      Delší texty a doplňkový obsah, který se zobrazí na veřejné stránce koncertu.
+    </p>
+
+    <div class="template-form-row">
+      <label for="{{ form.public_text.id_for_label }}">Úvodní text koncertu</label>
+      {{ form.public_text }}
+      {% for e in form.public_text.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.program_intro.id_for_label }}">Úvod k programu</label>
+      {{ form.program_intro }}
+      {% for e in form.program_intro.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.educational_text.id_for_label }}">Text „O hudbě“ / doprovodný text</label>
+      {{ form.educational_text }}
+      {% for e in form.educational_text.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row">
+      <label for="{{ form.youtube_url.id_for_label }}">YouTube video</label>
+      {{ form.youtube_url }}
+      <p class="small muted">
+        Volitelné. Vlož normální YouTube URL. Na veřejné stránce se z ní udělá vložené video.
+      </p>
+      {% for e in form.youtube_url.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="content-section">
+    <h3>Program koncertu</h3>
+    <p class="section-intro">Každý řádek představuje jednu položku programu.</p>
+
+    {% for subform in program_formset %}
+      <div class="inline-formset-card">
+        {{ subform.id }}
+
+        <div class="form-grid formset-grid-program">
+          <div>
+            <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
+            {{ subform.sort_order }}
+          </div>
+
+          <div>
+            <label for="{{ subform.composer.id_for_label }}">Skladatel</label>
+            {{ subform.composer }}
+          </div>
+
+          <div>
+            <label for="{{ subform.work_title.id_for_label }}">Název skladby / části</label>
+            {{ subform.work_title }}
+          </div>
+
+          <div>
+            <label for="{{ subform.note.id_for_label }}">Poznámka</label>
+            {{ subform.note }}
+          </div>
+
+          <div>
+            <label for="{{ subform.info_url.id_for_label }}">Odkaz na více informací</label>
+            {{ subform.info_url }}
+          </div>
+
+          <div class="delete-cell">
+            <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
+            {{ subform.DELETE }}
+          </div>
+        </div>
+
+        {% if subform.errors %}
+          <div class="form-errors formset-errors">
+            {% for field in subform %}
+              {% for error in field.errors %}
+                <div>{{ field.label }}: {{ error }}</div>
+              {% endfor %}
+            {% endfor %}
+            {% for error in subform.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
     {% endfor %}
   </div>
 
-  <div class="template-form-row">
-    <label for="{{ form.slug.id_for_label }}">Slug</label>
-    {{ form.slug }}
-    {% if form.slug.help_text %}
-      <div class="help-text">{{ form.slug.help_text }}</div>
-    {% endif %}
-    {% for e in form.slug.errors %}
-      <div class="form-errors">{{ e }}</div>
+
+  {% if artist_formset.non_form_errors %}
+  <div class="form-errors form-errors-top">
+    {% for error in artist_formset.non_form_errors %}
+      <div>{{ error }}</div>
     {% endfor %}
   </div>
+  {% endif %}
+ <div class="content-section">
+  <h3>Interpreti</h3>
+  <p class="section-intro">Jméno, role, volitelný odkaz a volitelná fotka interpreta.</p>
 
-  <div class="template-form-row">
-    <label for="{{ form.starts_at.id_for_label }}">Datum a čas</label>
-    {{ form.starts_at }}
-    {% for e in form.starts_at.errors %}
-      <div class="form-errors">{{ e }}</div>
-    {% endfor %}
-  </div>
+  {% for subform in artist_formset %}
+    <div class="inline-formset-card">
+      {{ subform.id }}
 
-  <div class="template-form-row">
-    <label for="{{ form.venue.id_for_label }}">Místo konání</label>
-    {{ form.venue }}
-    {% for e in form.venue.errors %}
-      <div class="form-errors">{{ e }}</div>
-    {% endfor %}
-  </div>
+      <div class="form-grid formset-grid-artist">
+        <div>
+          <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
+          {{ subform.sort_order }}
+        </div>
 
-  <div class="template-form-row">
-    <label for="{{ form.public_text.id_for_label }}">Text veřejné stránky koncertu</label>
-    {{ form.public_text }}
-    {% for e in form.public_text.errors %}
-      <div class="form-errors">{{ e }}</div>
-    {% endfor %}
-  </div>
+        <div>
+          <label for="{{ subform.name.id_for_label }}">Jméno</label>
+          {{ subform.name }}
+        </div>
 
-<div class="template-form-row">
-  <label>Plakát koncertu</label>
+        <div>
+          <label for="{{ subform.role.id_for_label }}">Role</label>
+          {{ subform.role }}
+        </div>
 
-  <p class="poster-help-text">
-    Vyber plakát kliknutím na některý z posledních nahraných obrázků níže.
-    Pokud tam není, můžeš ho vybrat i z kompletního seznamu všech obrázků.
-  </p>
+        <div>
+          <label for="{{ subform.url.id_for_label }}">Odkaz</label>
+          {{ subform.url }}
+        </div>
 
-  {% for e in form.poster_image.errors %}
-    <div class="form-errors">{{ e }}</div>
+        <div>
+          <label for="{{ subform.photo_image.id_for_label }}">Fotka</label>
+          {{ subform.photo_image }}
+          <p class="small muted">Vyber z obrázků nahraných v galerii.</p>
+        </div>
+
+        <div>
+          <label for="{{ subform.photo_position.id_for_label }}">Pozice fotky</label>
+          {{ subform.photo_position }}
+        </div>
+
+        <div class="delete-cell">
+          <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
+          {{ subform.DELETE }}
+        </div>
+      </div>
+
+      {% if subform.errors %}
+        <div class="form-errors formset-errors">
+          {% for field in subform %}
+            {% for error in field.errors %}
+              <div>{{ field.label }}: {{ error }}</div>
+            {% endfor %}
+          {% endfor %}
+          {% for error in subform.non_field_errors %}
+            <div>{{ error }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
   {% endfor %}
 </div>
 
-<div class="image-panel" style="margin-top: 20px;">
-  <h3>Poslední nahrané obrázky</h3>
+  <div class="content-section">
+    <h3>Odkazy „Zjistit více“</h3>
+    <p class="section-intro">Např. Wikipedia, článek, playlist, video nebo jiný odkaz.</p>
 
+    {% for subform in resource_formset %}
+      <div class="inline-formset-card">
+        {{ subform.id }}
 
-  {% if recent_images %}
-    <div class="recent-images-grid">
-      {% for img in recent_images %}
-        <div class="recent-image-card selectable-image-card {% if form.instance.poster_image and form.instance.poster_image.id == img.id %}selected{% endif %}"
-             data-image-id="{{ img.id }}">
-          <div class="recent-image-thumb-wrap">
-            <img src="{{ img.image.url }}" alt="{{ img.title }}" class="recent-image-thumb">
+        <div class="form-grid formset-grid-resource">
+          <div>
+            <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
+            {{ subform.sort_order }}
           </div>
 
-          <div class="recent-image-meta">
-            <span class="title">{{ img.title|default:"Bez názvu" }}</span>
-            <span class="muted small">
-              {{ img.file_size|filesizeformat }} | {{ img.uploaded_at|date:"d.m.Y H:i" }}
-            </span>
+          <div>
+            <label for="{{ subform.title.id_for_label }}">Název odkazu</label>
+            {{ subform.title }}
           </div>
 
-          <div class="form-actions">
-            <button type="button" class="select-image-button">
-              Vybrat tento obrázek
-            </button>
+          <div>
+            <label for="{{ subform.url.id_for_label }}">URL</label>
+            {{ subform.url }}
+          </div>
+
+          <div>
+            <label for="{{ subform.resource_type.id_for_label }}">Typ</label>
+            {{ subform.resource_type }}
+          </div>
+
+          <div class="delete-cell">
+            <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
+            {{ subform.DELETE }}
           </div>
         </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p class="muted">Zatím nejsou nahrané žádné obrázky.</p>
-  {% endif %}
-</div>
 
-<div class="template-form-row poster-select-row">
-  <label for="{{ form.poster_image.id_for_label }}">Nebo vyber z celého seznamu obrázků</label>
-  {{ form.poster_image }}
-</div>
+        {% if subform.errors %}
+          <div class="form-errors formset-errors">
+            {% for field in subform %}
+              {% for error in field.errors %}
+                <div>{{ field.label }}: {{ error }}</div>
+              {% endfor %}
+            {% endfor %}
+            {% for error in subform.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
 
-  <p class="muted">
-    <a href="{% url 'rozesilac:images' %}" class="btn-link">Otevřít galerii všech obrázků</a>
-  </p>
-  
-  <div class="checkboxes-inline-row">
-    <div class="template-form-row checkbox-row">
-      <label for="{{ form.vip_enabled.id_for_label }}">Povolit VIP rezervace</label>
-      {{ form.vip_enabled }}
-      {% for e in form.vip_enabled.errors %}
+  <div class="content-section">
+    <h3>Praktické info</h3>
+    <p class="section-intro">Krátké boxy typu „nápoje do sálu“, „mobily na silent“ apod.</p>
+
+    {% for subform in practical_info_formset %}
+      <div class="inline-formset-card">
+        {{ subform.id }}
+
+        <div class="form-grid formset-grid-practical">
+          <div>
+            <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
+            {{ subform.sort_order }}
+          </div>
+
+          <div>
+            <label for="{{ subform.info_type.id_for_label }}">Typ</label>
+            {{ subform.info_type }}
+          </div>
+
+          <div>
+            <label for="{{ subform.title.id_for_label }}">Nadpis</label>
+            {{ subform.title }}
+          </div>
+
+          <div>
+            <label for="{{ subform.text.id_for_label }}">Text</label>
+            {{ subform.text }}
+          </div>
+
+          <div class="delete-cell">
+            <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
+            {{ subform.DELETE }}
+          </div>
+        </div>
+
+        {% if subform.errors %}
+          <div class="form-errors formset-errors">
+            {% for field in subform %}
+              {% for error in field.errors %}
+                <div>{{ field.label }}: {{ error }}</div>
+              {% endfor %}
+            {% endfor %}
+            {% for error in subform.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="content-section">
+    <h3>Sponzoři / partneři</h3>
+    <p class="section-intro">Volitelně jméno, logo a odkaz.</p>
+
+    {% for subform in sponsor_formset %}
+      <div class="inline-formset-card">
+        {{ subform.id }}
+
+        <div class="form-grid formset-grid-sponsor">
+          <div>
+            <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
+            {{ subform.sort_order }}
+          </div>
+
+          <div>
+            <label for="{{ subform.name.id_for_label }}">Jméno</label>
+            {{ subform.name }}
+          </div>
+
+          <div>
+            <label for="{{ subform.logo_image.id_for_label }}">Logo</label>
+            {{ subform.logo_image }}
+          </div>
+
+          <div>
+            <label for="{{ subform.url.id_for_label }}">Odkaz</label>
+            {{ subform.url }}
+          </div>
+
+          <div class="delete-cell">
+            <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
+            {{ subform.DELETE }}
+          </div>
+        </div>
+
+        {% if subform.errors %}
+          <div class="form-errors formset-errors">
+            {% for field in subform %}
+              {% for error in field.errors %}
+                <div>{{ field.label }}: {{ error }}</div>
+              {% endfor %}
+            {% endfor %}
+            {% for error in subform.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="content-section">
+    <h3>Vstupenky a publikace</h3>
+
+    <div class="template-form-row">
+      <label for="{{ form.tickets_url.id_for_label }}">URL pro nákup vstupenek</label>
+      {{ form.tickets_url }}
+      {% for e in form.tickets_url.errors %}
         <div class="form-errors">{{ e }}</div>
       {% endfor %}
     </div>
 
-    <div class="template-form-row checkbox-row">
-      <label for="{{ form.is_published.id_for_label }}">Publikováno</label>
-      {{ form.is_published }}
-      {% for e in form.is_published.errors %}
+    <div class="template-form-row">
+      <label for="{{ form.tickets_label.id_for_label }}">Text tlačítka vstupenek</label>
+      {{ form.tickets_label }}
+      {% for e in form.tickets_label.errors %}
         <div class="form-errors">{{ e }}</div>
       {% endfor %}
     </div>
-  <div/>
+
+    <div class="checkboxes-inline-row">
+      <div class="template-form-row checkbox-row">
+        <label for="{{ form.vip_enabled.id_for_label }}">Povolit VIP rezervace</label>
+        {{ form.vip_enabled }}
+        {% for e in form.vip_enabled.errors %}
+          <div class="form-errors">{{ e }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="template-form-row checkbox-row">
+        <label for="{{ form.is_published.id_for_label }}">Publikováno</label>
+        {{ form.is_published }}
+        {% for e in form.is_published.errors %}
+          <div class="form-errors">{{ e }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
 
   <div class="form-actions">
     <button type="submit">Uložit</button>
@@ -152,17 +590,44 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (!select) return;
 
+  function syncSelectedCard() {
+    const currentValue = select.value;
+    cards.forEach(card => {
+      card.classList.toggle("selected", card.dataset.imageId === currentValue);
+    });
+  }
+
+  function chooseImage(imageId) {
+    select.value = imageId;
+    syncSelectedCard();
+  }
+
   cards.forEach(card => {
     const button = card.querySelector(".select-image-button");
     const imageId = card.dataset.imageId;
 
-    button.addEventListener("click", function () {
-      select.value = imageId;
+    if (button) {
+      button.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        chooseImage(imageId);
+      });
+    }
 
-      cards.forEach(c => c.classList.remove("selected"));
-      card.classList.add("selected");
+    card.addEventListener("click", function () {
+      chooseImage(imageId);
+    });
+
+    card.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        chooseImage(imageId);
+      }
     });
   });
+
+  select.addEventListener("change", syncSelectedCard);
+  syncSelectedCard();
 });
 </script>
 {% endblock rozesilac_content %}

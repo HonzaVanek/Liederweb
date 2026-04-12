@@ -8,7 +8,28 @@
 {% block rozesilac_content %}
 <div class="event-detail-page">
   <div class="event-detail-header">
-    <h2>{{ event.title }}</h2>
+    <div>
+      <h2>{{ event.title }}</h2>
+
+      {% if event.subtitle %}
+        <p class="muted" style="margin-top: -8px; margin-bottom: 0;">{{ event.subtitle }}</p>
+      {% endif %}
+
+      <div style="margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px;">
+        <span class="contact-group-badge">
+          {% if event.is_published %}Publikováno{% else %}Nepublikováno{% endif %}
+        </span>
+        <span class="contact-group-badge">
+          VIP rezervace: {% if event.vip_enabled %}povoleny{% else %}zakázány{% endif %}
+        </span>
+        <span class="contact-group-badge">
+          Program: {{ event.program_items.count }}
+        </span>
+        <span class="contact-group-badge">
+          Interpreti: {{ event.artists.count }}
+        </span>
+      </div>
+    </div>
 
     <div class="event-detail-actions">
       <a href="{% url 'events:event_edit' event.pk %}" class="button-like">Upravit koncert</a>
@@ -22,6 +43,10 @@
         <h3>Základní informace</h3>
 
         <p><strong>Název:</strong> {{ event.title }}</p>
+
+        {% if event.subtitle %}
+          <p><strong>Podtitul:</strong> {{ event.subtitle }}</p>
+        {% endif %}
 
         <p>
           <strong>Datum:</strong>
@@ -42,8 +67,53 @@
         </p>
 
         <p>
+          <strong>Adresa místa:</strong>
+          {% if event.venue_address %}
+            {{ event.venue_address }}
+          {% else %}
+            <span class="muted">Není vyplněno</span>
+          {% endif %}
+        </p>
+
+        <p>
+          <strong>Odkaz na mapu:</strong>
+          {% if event.venue_map_url %}
+            <a href="{{ event.venue_map_url }}" target="_blank" rel="noopener">{{ event.venue_map_url }}</a>
+          {% else %}
+            <span class="muted">Není vyplněno</span>
+          {% endif %}
+        </p>
+
+        <p>
+          <strong>Délka večera:</strong>
+          {% if event.duration_text %}
+            {{ event.duration_text }}
+          {% else %}
+            <span class="muted">Není vyplněno</span>
+          {% endif %}
+        </p>
+
+        <p>
           <strong>Slug:</strong>
           <code>{{ event.slug }}</code>
+        </p>
+
+        <p>
+          <strong>Barva koncertu:</strong>
+          <span style="display:inline-flex; align-items:center; gap:8px;">
+            <span style="display:inline-block; width:18px; height:18px; border-radius:999px; border:1px solid #bbb; background: {{ event.theme_color }};"></span>
+            <code>{{ event.theme_color }}</code>
+          </span>
+        </p>
+
+        <p>
+          <strong>Hero pozice:</strong>
+          {{ event.get_hero_image_position_display|default:"—" }}
+        </p>
+
+        <p>
+          <strong>Hero parallax:</strong>
+          {% if event.hero_parallax_enabled %}Ano{% else %}Ne{% endif %}
         </p>
 
         <p>
@@ -57,81 +127,371 @@
         </p>
 
         <p>
+          <strong>URL vstupenek:</strong>
+          {% if event.tickets_url %}
+            <a href="{{ event.tickets_url }}" target="_blank" rel="noopener">{{ event.tickets_url }}</a>
+          {% else %}
+            <span class="muted">Není vyplněno</span>
+          {% endif %}
+        </p>
+
+        <p>
+          <strong>Text tlačítka vstupenek:</strong>
+          {% if event.tickets_label %}
+            {{ event.tickets_label }}
+          {% else %}
+            <span class="muted">Není vyplněno</span>
+          {% endif %}
+        </p>
+
+        <p>
+          <strong>YouTube URL:</strong>
+          {% if event.youtube_url %}
+            <a href="{{ event.youtube_url }}" target="_blank" rel="noopener">{{ event.youtube_url }}</a>
+          {% else %}
+            <span class="muted">Není vyplněno</span>
+          {% endif %}
+        </p>
+
+        <p>
           <strong>Vytvořeno:</strong> {{ event.created_at|date:"d.m.Y H:i" }}<br>
           <strong>Upraveno:</strong> {{ event.updated_at|date:"d.m.Y H:i" }}
         </p>
-        <p>
-          <a href="{% url 'events:public_event_detail' event.slug %}" target="_blank">
+
+        <div class="form-actions">
+          <a href="{% url 'events:public_event_detail' event.slug %}" target="_blank" class="btn-link">
             Otevřít veřejnou stránku koncertu
           </a>
-        </p>
+        </div>
       </div>
 
       <div class="detail-card">
-        <h3>Text veřejné stránky koncertu</h3>
+        <h3>Texty pro veřejnou stránku</h3>
 
+        <h4 style="margin-bottom: 8px;">Úvodní text</h4>
         {% if event.public_text %}
           <div class="event-public-text">
             {{ event.public_text|linebreaks }}
           </div>
         {% else %}
-          <p class="muted">Zatím není vyplněn žádný text veřejné stránky.</p>
+          <p class="muted">Zatím není vyplněn žádný úvodní text.</p>
+        {% endif %}
+
+        <h4 style="margin: 22px 0 8px;">Úvod k programu</h4>
+        {% if event.program_intro %}
+          <div class="event-public-text">
+            {{ event.program_intro|linebreaks }}
+          </div>
+        {% else %}
+          <p class="muted">Zatím není vyplněn žádný úvod k programu.</p>
+        {% endif %}
+
+        <h4 style="margin: 22px 0 8px;">O hudbě / doprovodný text</h4>
+        {% if event.educational_text %}
+          <div class="event-public-text">
+            {{ event.educational_text|linebreaks }}
+          </div>
+        {% else %}
+          <p class="muted">Zatím není vyplněn žádný doprovodný text.</p>
+        {% endif %}
+      </div>
+
+      <div class="detail-card">
+        <h3>Obrázky a média</h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px;">
+          <div>
+            <h4 style="margin-bottom: 10px;">Plakát</h4>
+            {% if event.poster_image %}
+              <div class="event-poster-wrap">
+                <img
+                  src="{{ event.poster_image.image.url }}"
+                  alt="{{ event.poster_image.title|default:event.title }}"
+                  class="event-poster"
+                >
+              </div>
+              <p class="muted small" style="margin-top: 8px;">{{ event.poster_image.title|default:"Bez názvu" }}</p>
+            {% else %}
+              <p class="muted">Není vybrán.</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <h4 style="margin-bottom: 10px;">Hero fotka</h4>
+            {% if event.hero_image %}
+              <div class="event-poster-wrap">
+                <img
+                  src="{{ event.hero_image.image.url }}"
+                  alt="{{ event.hero_image.title|default:event.title }}"
+                  class="event-poster"
+                >
+              </div>
+              <p class="muted small" style="margin-top: 8px;">
+                {{ event.hero_image.title|default:"Bez názvu" }}
+              </p>
+            {% else %}
+              <p class="muted">Není vybrána.</p>
+            {% endif %}
+          </div>
+
+          <div>
+            <h4 style="margin-bottom: 10px;">Sekundární fotka</h4>
+            {% if event.secondary_image %}
+              <div class="event-poster-wrap">
+                <img
+                  src="{{ event.secondary_image.image.url }}"
+                  alt="{{ event.secondary_image.title|default:event.title }}"
+                  class="event-poster"
+                >
+              </div>
+              <p class="muted small" style="margin-top: 8px;">
+                {{ event.secondary_image.title|default:"Bez názvu" }}
+              </p>
+            {% else %}
+              <p class="muted">Není vybrána.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <h3>Program koncertu</h3>
+
+        {% if event.program_items.exists %}
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Pořadí</th>
+                  <th>Skladatel</th>
+                  <th>Název</th>
+                  <th>Poznámka</th>
+                  <th>Odkaz</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in event.program_items.all %}
+                  <tr>
+                    <td>{{ item.sort_order }}</td>
+                    <td>{% if item.composer %}{{ item.composer }}{% else %}<span class="muted">—</span>{% endif %}</td>
+                    <td>{{ item.work_title }}</td>
+                    <td>{% if item.note %}{{ item.note }}{% else %}<span class="muted">—</span>{% endif %}</td>
+                    <td>
+                      {% if item.info_url %}
+                        <a href="{{ item.info_url }}" target="_blank" rel="noopener">Otevřít</a>
+                      {% else %}
+                        <span class="muted">—</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="muted">Zatím nejsou přidané žádné položky programu.</p>
+        {% endif %}
+      </div>
+
+      <div class="detail-card">
+        <h3>Interpreti</h3>
+
+        {% if event.artists.exists %}
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px;">
+            {% for artist in event.artists.all %}
+              <div class="content-section-soft" style="padding: 14px; border: 1px solid #ddd; border-radius: 10px;">
+                {% if artist.photo_image %}
+                  <div style="margin-bottom: 12px;">
+                    <img
+                      src="{{ artist.photo_image.image.url }}"
+                      alt="{{ artist.name }}"
+                      style="display:block; width:100%; aspect-ratio:4/3; object-fit:cover; object-position:center {{ artist.photo_position|default:'center' }}; border-radius:8px;"
+                    >
+                  </div>
+                {% endif %}
+
+                <p style="margin-bottom: 8px;"><strong>{{ artist.name }}</strong></p>
+
+                <p style="margin-bottom: 8px;">
+                  <strong>Role:</strong>
+                  {% if artist.role %}
+                    {{ artist.role }}
+                  {% else %}
+                    <span class="muted">Není vyplněno</span>
+                  {% endif %}
+                </p>
+
+                <p style="margin-bottom: 8px;">
+                  <strong>Pozice fotky:</strong>
+                  {{ artist.get_photo_position_display|default:"—" }}
+                </p>
+
+                <p style="margin-bottom: 0;">
+                  <strong>Odkaz:</strong>
+                  {% if artist.url %}
+                    <a href="{{ artist.url }}" target="_blank" rel="noopener">{{ artist.url }}</a>
+                  {% else %}
+                    <span class="muted">Není vyplněno</span>
+                  {% endif %}
+                </p>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">Zatím nejsou přidaní žádní interpreti.</p>
+        {% endif %}
+      </div>
+
+      <div class="detail-card">
+        <h3>Odkazy „Zjistit více“</h3>
+
+        {% if event.resources.exists %}
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Pořadí</th>
+                  <th>Název</th>
+                  <th>Typ</th>
+                  <th>URL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for resource in event.resources.all %}
+                  <tr>
+                    <td>{{ resource.sort_order }}</td>
+                    <td>{{ resource.title }}</td>
+                    <td>{{ resource.get_resource_type_display }}</td>
+                    <td><a href="{{ resource.url }}" target="_blank" rel="noopener">{{ resource.url }}</a></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="muted">Zatím nejsou přidané žádné doplňkové odkazy.</p>
+        {% endif %}
+      </div>
+
+      <div class="detail-card">
+        <h3>Praktické informace</h3>
+
+        {% if event.practical_infos.exists %}
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Pořadí</th>
+                  <th>Typ</th>
+                  <th>Nadpis</th>
+                  <th>Text</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for info in event.practical_infos.all %}
+                  <tr>
+                    <td>{{ info.sort_order }}</td>
+                    <td>{{ info.get_info_type_display }}</td>
+                    <td>{{ info.title }}</td>
+                    <td>{% if info.text %}{{ info.text }}{% else %}<span class="muted">—</span>{% endif %}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="muted">Zatím nejsou přidané žádné praktické informace.</p>
+        {% endif %}
+      </div>
+
+      <div class="detail-card">
+        <h3>Partneři a sponzoři</h3>
+
+        {% if event.sponsors.exists %}
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px;">
+            {% for sponsor in event.sponsors.all %}
+              <div class="content-section-soft" style="padding: 14px; border: 1px solid #ddd; border-radius: 10px;">
+                {% if sponsor.logo_image %}
+                  <div style="margin-bottom: 12px; text-align: center;">
+                    <img
+                      src="{{ sponsor.logo_image.image.url }}"
+                      alt="{{ sponsor.name }}"
+                      style="max-width:100%; max-height:70px; width:auto; height:auto; object-fit:contain;"
+                    >
+                  </div>
+                {% endif %}
+
+                <p style="margin-bottom: 8px;"><strong>{{ sponsor.name }}</strong></p>
+
+                <p style="margin-bottom: 8px;">
+                  <strong>Pořadí:</strong> {{ sponsor.sort_order }}
+                </p>
+
+                <p style="margin-bottom: 0;">
+                  <strong>Odkaz:</strong>
+                  {% if sponsor.url %}
+                    <a href="{{ sponsor.url }}" target="_blank" rel="noopener">{{ sponsor.url }}</a>
+                  {% else %}
+                    <span class="muted">Není vyplněno</span>
+                  {% endif %}
+                </p>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="muted">Zatím nejsou přidaní žádní partneři ani sponzoři.</p>
         {% endif %}
       </div>
     </section>
 
     <aside class="event-detail-side">
       <div class="detail-card">
-        <h3>Plakát</h3>
+        <h3>Rychlý přehled</h3>
 
-        {% if event.poster_image %}
-          <div class="event-poster-wrap">
-            <img src="{{ event.poster_image.image.url }}"
-                 alt="{{ event.poster_image.title|default:event.title }}"
-                 class="event-poster">
-          </div>
-
-          <p class="muted small">
-            {{ event.poster_image.title|default:"Bez názvu" }}
-          </p>
-        {% else %}
-          <p class="muted">Ke koncertu zatím není vybraný žádný plakát.</p>
-        {% endif %}
+        <p><strong>Kampaně:</strong> {{ campaigns|length }}</p>
+        <p><strong>VIP rezervace:</strong> {{ vip_reservations|length }}</p>
+        <p><strong>Položky programu:</strong> {{ event.program_items.count }}</p>
+        <p><strong>Interpreti:</strong> {{ event.artists.count }}</p>
+        <p><strong>Odkazy:</strong> {{ event.resources.count }}</p>
+        <p><strong>Praktické info:</strong> {{ event.practical_infos.count }}</p>
+        <p><strong>Sponzoři:</strong> {{ event.sponsors.count }}</p>
       </div>
 
-        <div class="detail-card">
+      <div class="detail-card">
         <h3>Kampaně</h3>
 
         {% if campaigns %}
-            <ul class="event-related-list">
+          <ul class="event-related-list">
             {% for campaign in campaigns %}
-                <li>
+              <li>
                 <a href="{% url 'rozesilac:campaign_detail' campaign.id %}">
-                    {{ campaign.subject }}
+                  {{ campaign.subject }}
                 </a>
                 <span class="muted small">
-                    | {{ campaign.created_at|date:"d.m.Y H:i" }}
-                    | {{ campaign.get_status_display }}
+                  | {{ campaign.created_at|date:"d.m.Y H:i" }}
+                  | {{ campaign.get_status_display }}
                 </span>
-                </li>
+              </li>
             {% endfor %}
-            </ul>
+          </ul>
         {% else %}
-            <p class="muted">Zatím k tomuto koncertu není navázaná žádná kampaň.</p>
+          <p class="muted">Zatím k tomuto koncertu není navázaná žádná kampaň.</p>
         {% endif %}
-        </div>
+      </div>
 
-        <div class="detail-card">
-
-          <a href="{% url 'events:event_export_vip_xlsx' event.pk %}" class="button-like">
+      <div class="detail-card">
+        <div class="form-actions" style="margin-top: 0; margin-bottom: 16px;">
+          <a href="{% url 'events:event_export_vip_xlsx' event.pk %}" class="btn-link">
             Exportovat seznam VIP rezervací
           </a>
+        </div>
 
-          <h3>VIP rezervace</h3>
+        <h3>VIP rezervace</h3>
 
-          {% if vip_reservations %}
-            <p><strong>Počet rezervací:</strong> {{ vip_reservations|length }}</p>
+        {% if vip_reservations %}
+          <p><strong>Počet rezervací:</strong> {{ vip_reservations|length }}</p>
 
+          <div class="table-responsive">
             <table class="event-reservations-table">
               <thead>
                 <tr>
@@ -168,10 +528,11 @@
                 {% endfor %}
               </tbody>
             </table>
-          {% else %}
-            <p class="muted">Zatím nejsou žádné VIP rezervace.</p>
-          {% endif %}
-        </div>
+          </div>
+        {% else %}
+          <p class="muted">Zatím nejsou žádné VIP rezervace.</p>
+        {% endif %}
+      </div>
     </aside>
   </div>
 </div>

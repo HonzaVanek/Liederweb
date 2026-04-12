@@ -1,40 +1,60 @@
-.selectable-image-card {
-    border: 2px solid transparent;
+/* =========================================================
+   EVENT FORM
+   ========================================================= */
+
+.form-errors-top {
+    margin-bottom: 18px;
+}
+
+/* ---------------------------------------------------------
+   SEKCE FORMULÁŘE
+   --------------------------------------------------------- */
+
+.content-section {
+    margin-bottom: 28px;
+}
+
+.content-section h3 {
+    margin-bottom: 12px;
+}
+
+.section-intro {
+    margin-bottom: 18px;
+    color: #666;
+    line-height: 1.55;
+}
+
+.template-form-row textarea {
+    line-height: 1.55;
+}
+
+.rozesilac-main input[type="color"] {
+    width: 96px;
+    min-width: 96px;
+    height: 46px;
+    padding: 4px;
     border-radius: 8px;
-    padding: 10px;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
 }
 
-.selectable-image-card.selected {
-    border-color: #000;
-    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
-}
+/* ---------------------------------------------------------
+   IMAGE PANEL / VÝBĚR OBRÁZKŮ
+   --------------------------------------------------------- */
 
-.select-image-button {
+.image-panel {
     width: 100%;
+    margin-bottom: 22px;
+    padding: 22px;
+    background: #fafafa;
+    border: 1px solid #dddddd;
+    border-radius: 12px;
 }
 
-.recent-image-thumb-wrap {
-    width: 100%;
-    height: 140px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    background: #f5f5f5;
-    border-radius: 6px;
-}
-
-.recent-image-thumb {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
-
-.recent-images-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 15px;
+.image-panel h3 {
+    margin-top: 0;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e4e4e4;
 }
 
 .poster-help-text {
@@ -49,7 +69,95 @@
     margin-top: 22px;
 }
 
-/* dva checkboxy vedle sebe */
+.gallery-link-wrap {
+    margin-top: 18px;
+    margin-bottom: 0;
+}
+
+.recent-images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.recent-image-card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #d8d8d8;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.recent-image-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.08);
+    border-color: #bfbfbf;
+}
+
+.selectable-image-card {
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 10px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    outline: none;
+}
+
+.selectable-image-card:focus-visible {
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.12);
+}
+
+.selectable-image-card.selected {
+    border-color: #000;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+.recent-image-thumb-wrap {
+    width: 100%;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.recent-image-thumb {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.recent-image-meta {
+    padding: 12px 4px 0;
+}
+
+.recent-image-meta .title {
+    display: block;
+    margin-bottom: 5px;
+    color: #111;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.recent-image-actions {
+    margin-top: auto;
+}
+
+.select-image-button {
+    width: 100%;
+}
+
+/* ---------------------------------------------------------
+   CHECKBOXY
+   --------------------------------------------------------- */
+
 .checkboxes-inline-row {
     display: flex;
     flex-wrap: wrap;
@@ -59,6 +167,8 @@
 
 .checkbox-row {
     display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
     align-items: center;
     gap: 10px;
     margin-bottom: 0;
@@ -82,13 +192,104 @@
     margin-top: 6px;
 }
 
-/* když Django vyrenderuje checkbox před labelem, srovnáme to */
-.checkbox-row {
-    flex-direction: row-reverse;
+/* ---------------------------------------------------------
+   FORMSET KARTY
+   --------------------------------------------------------- */
+
+.inline-formset-card {
+    margin-bottom: 16px;
+    padding: 16px 18px;
+    background: #fff;
+    border: 1px solid #dddddd;
+    border-radius: 12px;
+}
+
+.inline-formset-card:last-child {
+    margin-bottom: 0;
+}
+
+.formset-grid-program,
+.formset-grid-resource,
+.formset-grid-practical,
+.formset-grid-sponsor {
+    grid-template-columns: 90px 1fr 1fr 1fr 120px;
+}
+
+.formset-grid-artist {
+    grid-template-columns: 90px 1fr 1fr 1fr 1fr 120px;
+}
+
+.formset-grid-program > div,
+.formset-grid-artist > div,
+.formset-grid-resource > div,
+.formset-grid-practical > div,
+.formset-grid-sponsor > div {
+    min-width: 0;
+}
+
+.delete-cell {
+    display: flex;
+    flex-direction: column;
     justify-content: flex-end;
 }
 
+.delete-cell input[type="checkbox"] {
+    width: auto;
+    align-self: flex-start;
+    transform: scale(1.1);
+    margin-top: 8px;
+}
+
+.formset-errors {
+    margin-top: 14px;
+}
+
+/* ---------------------------------------------------------
+   HELP / DROB NOSTI
+   --------------------------------------------------------- */
+
+.template-form-row .small.muted {
+    margin-top: 6px;
+    display: block;
+    line-height: 1.45;
+}
+
+.content-section > .small.muted {
+    margin-bottom: 14px;
+    display: block;
+}
+
+/* ---------------------------------------------------------
+   RESPONSIVE
+   --------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+    .formset-grid-program,
+    .formset-grid-artist,
+    .formset-grid-resource,
+    .formset-grid-practical,
+    .formset-grid-sponsor {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .formset-grid-program > div:last-child,
+    .formset-grid-artist > div:last-child,
+    .formset-grid-resource > div:last-child,
+    .formset-grid-practical > div:last-child,
+    .formset-grid-sponsor > div:last-child {
+        grid-column: 1 / -1;
+    }
+}
+
 @media (max-width: 700px) {
+    .image-panel {
+        padding: 16px;
+    }
+
+    .recent-images-grid {
+        grid-template-columns: 1fr;
+    }
+
     .checkboxes-inline-row {
         flex-direction: column;
         gap: 14px;
@@ -97,10 +298,52 @@
     .checkbox-row {
         justify-content: flex-start;
     }
+
+    .formset-grid-program,
+    .formset-grid-artist,
+    .formset-grid-resource,
+    .formset-grid-practical,
+    .formset-grid-sponsor {
+        grid-template-columns: 1fr;
+    }
+
+    .inline-formset-card {
+        padding: 14px;
+    }
 }
 
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+body.dark-mode .section-intro,
 body.dark-mode .poster-help-text {
     color: #b5b5b5;
+}
+
+body.dark-mode .image-panel {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .image-panel h3 {
+    color: #fff;
+    border-bottom-color: #3a3a3a;
+}
+
+body.dark-mode .recent-image-card,
+body.dark-mode .inline-formset-card {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .recent-image-card:hover {
+    border-color: #666;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
+}
+
+body.dark-mode .selectable-image-card:focus-visible {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
 }
 
 body.dark-mode .selectable-image-card.selected {
@@ -112,6 +355,20 @@ body.dark-mode .recent-image-thumb-wrap {
     background: #1a1a1a;
 }
 
+body.dark-mode .recent-image-meta .title {
+    color: #fff;
+}
+
 body.dark-mode .checkbox-row label {
     color: #f1f1f1;
+}
+
+.single-checkbox-row {
+    margin-top: 10px;
+    margin-bottom: 20px;
+    
+}
+
+.single-checkbox-row input[type="checkbox"] {
+    width: auto;
 }

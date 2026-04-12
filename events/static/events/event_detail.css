@@ -1,15 +1,19 @@
 .event-detail-page {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 22px;
 }
 
 .event-detail-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 16px;
+    align-items: flex-start;
+    gap: 18px;
     flex-wrap: wrap;
+}
+
+.event-detail-header h2 {
+    margin-bottom: 10px;
 }
 
 .event-detail-actions {
@@ -20,16 +24,60 @@
 
 .event-detail-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px;
+    grid-template-columns: minmax(0, 1.9fr) minmax(300px, 0.95fr);
+    gap: 22px;
+    align-items: start;
+}
+
+.event-detail-main,
+.event-detail-side {
+    min-width: 0;
+}
+
+.event-detail-side {
+    position: sticky;
+    top: 18px;
+    align-self: start;
 }
 
 .detail-card {
     background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    padding: 18px;
-    margin-bottom: 20px;
+    border: 1px solid #dcdcdc;
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+.detail-card:last-child {
+    margin-bottom: 0;
+}
+
+.detail-card h3 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ececec;
+    font-size: 1.18rem;
+}
+
+.detail-card h4 {
+    margin-top: 0;
+    color: #222;
+    font-size: 1rem;
+}
+
+.detail-card p {
+    line-height: 1.6;
+}
+
+.detail-card code {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #f3f3f3;
+    border: 1px solid #e2e2e2;
+    font-size: 0.92em;
 }
 
 .event-poster-wrap {
@@ -37,20 +85,29 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #f5f5f5;
-    border-radius: 8px;
+    background: #f6f6f6;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
     overflow: hidden;
-    padding: 10px;
+    padding: 12px;
 }
 
 .event-poster {
+    display: block;
     max-width: 100%;
     max-height: 420px;
+    width: auto;
+    height: auto;
     object-fit: contain;
 }
 
 .event-public-text {
-    line-height: 1.6;
+    line-height: 1.7;
+    color: #333;
+}
+
+.event-public-text p:last-child {
+    margin-bottom: 0;
 }
 
 .event-related-list {
@@ -58,18 +115,31 @@
     padding-left: 18px;
 }
 
+.event-related-list li + li {
+    margin-top: 10px;
+}
+
 .button-like {
     display: inline-block;
-    padding: 10px 14px;
+    padding: 10px 16px;
     text-decoration: none;
-    border: 1px solid #000;
-    border-radius: 6px;
+    border: 2px solid #000;
+    border-radius: 8px;
     color: #000;
     background: #fff;
+    font-weight: 700;
+    transition: background-color 0.22s ease, color 0.22s ease, transform 0.15s ease;
+}
+
+.button-like:hover {
+    background: #000;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
 }
 
 .button-secondary {
-    opacity: 0.85;
+    opacity: 0.88;
 }
 
 .muted {
@@ -77,19 +147,20 @@
 }
 
 .small {
-    font-size: 13px;
+    font-size: 0.84rem;
 }
 
-@media (max-width: 900px) {
-    .event-detail-grid {
-        grid-template-columns: 1fr;
-    }
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
 }
 
 .event-reservations-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 12px;
+    background: #fff;
+    font-size: 0.92rem;
 }
 
 .event-reservations-table th,
@@ -102,5 +173,145 @@
 
 .event-reservations-table th {
     font-weight: 700;
-    background: #f7f7f7;
+    background: #f3f3f3;
+    color: #222;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+}
+
+.event-reservations-table tbody tr:hover {
+    background: #fafafa;
+}
+
+/* jemné dorovnání boxů s quick přehledem / kartami v side */
+.event-detail-side .detail-card p:last-child {
+    margin-bottom: 0;
+}
+
+/* karty s interprety a sponzory, i když jsou zatím částečně inline stylem */
+.detail-card .content-section-soft {
+    background: #fafafa;
+}
+
+/* odkazy v detailu */
+.event-detail-page a:not(.button-like):not(.btn-link) {
+    word-break: break-word;
+}
+
+/* responsivita */
+@media (max-width: 1100px) {
+    .event-detail-grid {
+        grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+    }
+
+    .detail-card {
+        padding: 20px 20px;
+    }
+}
+
+@media (max-width: 900px) {
+    .event-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .event-detail-side {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+    .event-detail-header {
+        align-items: stretch;
+    }
+
+    .event-detail-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .event-detail-actions .button-like {
+        width: 100%;
+        text-align: center;
+    }
+
+    .detail-card {
+        padding: 18px 16px;
+        border-radius: 12px;
+    }
+
+    .detail-card h3 {
+        font-size: 1.08rem;
+    }
+
+    .event-reservations-table th,
+    .event-reservations-table td {
+        padding: 9px 10px;
+    }
+}
+
+/* dark mode */
+body.dark-mode .detail-card {
+    background: #1b1b1b;
+    border-color: #444;
+    box-shadow: none;
+}
+
+body.dark-mode .detail-card h3 {
+    border-bottom-color: #363636;
+    color: #f2f2f2;
+}
+
+body.dark-mode .detail-card h4 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .detail-card p,
+body.dark-mode .event-public-text {
+    color: #d3d3d3;
+}
+
+body.dark-mode .detail-card code {
+    background: #151515;
+    border-color: #444;
+    color: #f0f0f0;
+}
+
+body.dark-mode .event-poster-wrap {
+    background: #161616;
+    border-color: #333;
+}
+
+body.dark-mode .event-reservations-table {
+    background: #1b1b1b;
+}
+
+body.dark-mode .event-reservations-table th,
+body.dark-mode .event-reservations-table td {
+    border-bottom-color: #3a3a3a;
+    color: #eee;
+}
+
+body.dark-mode .event-reservations-table th {
+    background: #242424;
+}
+
+body.dark-mode .event-reservations-table tbody tr:hover {
+    background: #232323;
+}
+
+body.dark-mode .button-like {
+    background: #1b1b1b;
+    color: #eee;
+    border-color: #555;
+}
+
+body.dark-mode .button-like:hover {
+    background: #eee;
+    color: #111;
+}
+
+body.dark-mode .muted,
+body.dark-mode .small {
+    color: #aaa;
 }
