@@ -1,0 +1,24 @@
+.event-title-link {
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.event-title-link:hover {
+    text-decoration-thickness: 2px;
+}
+
+.event-title-link {
+    color: #000;
+    font-weight: 700;
+    font-style: normal;
+    text-decoration: underline;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.35s ease, color 0.35s ease;
+}
+
+.event-title-link:hover {
+    background-color: #000;
+    color: #fff;
+}

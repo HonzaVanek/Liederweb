@@ -18,6 +18,12 @@ p {
     margin-right: auto;
 }
 
+@media (max-width: 768px) {
+    p {
+        max-width: 90%;
+    }
+}
+
 body {
     background:
         repeating-linear-gradient(

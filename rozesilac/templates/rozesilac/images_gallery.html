@@ -75,10 +75,38 @@
           <img src="{{ img.image.url }}" alt="{{ img.title }}" class="image-thumb">
         </div>
 
-        <div class="image-meta">
-          <strong>{{ img.title|default:"Bez názvu" }}</strong><br>
-          <span class="muted">{{ img.file_size|filesizeformat }} | {{ img.uploaded_at|date:"d.m.Y H:i" }}</span>
+      <div class="image-meta">
+        <button
+          type="button"
+          class="image-title-toggle"
+          data-target="rename-form-{{ img.id }}"
+          title="Kliknutím upravíš interní název obrázku"
+          aria-expanded="false"
+          aria-controls="rename-form-{{ img.id }}"
+        >
+          {{ img.title|default:"Bez názvu" }}
+        </button>
+        <span class="image-title-hint">Klikni pro úpravu názvu</span><br>
+
+        <span class="muted">{{ img.file_size|filesizeformat }} | {{ img.uploaded_at|date:"d.m.Y H:i" }}</span>
+      </div>
+
+      <form method="post" class="rename-form" id="rename-form-{{ img.id }}" hidden>
+        {% csrf_token %}
+        <input type="hidden" name="action" value="rename">
+        <input type="hidden" name="image_id" value="{{ img.id }}">
+
+        <div class="rename-form-row">
+          <input
+            type="text"
+            name="title"
+            value="{{ img.title }}"
+            placeholder="Bez názvu"
+            maxlength="255"
+          >
+          <button type="submit">Uložit</button>
         </div>
+      </form>
 
         <div class="image-url-box">
           <input type="text" readonly value="{{ request.scheme }}://{{ request.get_host }}{{ img.image.url }}" id="img-url-{{ img.id }}">
@@ -114,5 +142,44 @@ function copyImageUrl(inputId, button) {
     }, 1200);
   });
 }
+
+
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll(".image-title-toggle").forEach(button => {
+    button.addEventListener("click", function () {
+      const targetId = button.dataset.target;
+      const form = document.getElementById(targetId);
+      if (!form) return;
+
+      const isHidden = form.hasAttribute("hidden");
+
+      document.querySelectorAll(".rename-form").forEach(f => {
+        if (f !== form) {
+          f.setAttribute("hidden", "");
+        }
+      });
+
+      document.querySelectorAll(".image-title-toggle").forEach(btn => {
+        if (btn !== button) {
+          btn.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      if (isHidden) {
+        form.removeAttribute("hidden");
+        button.setAttribute("aria-expanded", "true");
+
+        const input = form.querySelector('input[name="title"]');
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      } else {
+        form.setAttribute("hidden", "");
+        button.setAttribute("aria-expanded", "false");
+      }
+    });
+  });
+});
 </script>
 {% endblock rozesilac_content %}

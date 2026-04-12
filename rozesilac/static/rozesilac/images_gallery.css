@@ -52,7 +52,6 @@
     border-bottom: 1px solid #e4e4e4;
 }
 
-/* formulář přes celou šířku, žádné sloupce vedle sebe */
 .image-upload-form {
     width: 100%;
 }
@@ -66,7 +65,7 @@
 }
 
 /* ---------------------------------------------------------
-   FILE INPUT – zkultivovaný vzhled
+   FILE INPUT
    --------------------------------------------------------- */
 
 .rozesilac-main input[type="file"] {
@@ -126,7 +125,10 @@
     border-color: #bfbfbf;
 }
 
-/* náhled – celý obrázek, bez ořezu */
+/* ---------------------------------------------------------
+   NÁHLED OBRÁZKU
+   --------------------------------------------------------- */
+
 .image-thumb-wrap {
     height: 220px;
     display: flex;
@@ -164,11 +166,129 @@
     word-break: break-word;
 }
 
-.image-meta .muted,
-.image-meta span {
+.image-meta .muted {
+    display: block;
+    margin-top: 6px;
     font-size: 0.88rem;
     color: #666;
     line-height: 1.4;
+}
+
+/* ---------------------------------------------------------
+   KLIKACÍ NÁZEV OBRÁZKU
+   --------------------------------------------------------- */
+
+.image-meta .image-title-toggle {
+    display: inline;
+    width: auto;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    color: #111;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+    text-align: left;
+    vertical-align: baseline;
+    cursor: pointer;
+    box-shadow: none;
+    transform: none;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.image-meta .image-title-toggle:hover,
+.image-meta .image-title-toggle:active {
+    background: transparent;
+    color: #111;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    box-shadow: none;
+    transform: none;
+}
+
+.image-meta .image-title-toggle:focus-visible {
+    outline: 2px solid #000;
+    outline-offset: 3px;
+    border-radius: 3px;
+}
+
+.image-title-hint {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 0.8rem;
+    color: #777;
+    opacity: 0;
+    transition: opacity 0.18s ease;
+}
+
+.image-title-hint::before {
+    content: "✎ ";
+}
+
+.image-card:hover .image-title-hint,
+.image-meta .image-title-toggle:hover + .image-title-hint,
+.image-meta .image-title-toggle:focus-visible + .image-title-hint {
+    opacity: 1;
+}
+
+/* ---------------------------------------------------------
+   INLINE RENAME FORM
+   --------------------------------------------------------- */
+
+.rename-form {
+    margin: 10px 16px 12px;
+}
+
+.rename-form[hidden] {
+    display: none !important;
+}
+
+.rename-form-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.rename-form-row input[type="text"] {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding: 10px 12px;
+    font-size: 0.94rem;
+    color: #222;
+    background: #fff;
+    border: 1px solid #000;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.rename-form-row button[type="submit"] {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 96px;
+    padding: 10px 14px;
+    font-size: 0.84rem;
+    line-height: 1.2;
+    border: 1px solid #000;
+    background: #fff;
+    color: #000;
+    border-radius: 6px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.rename-form-row button[type="submit"]:hover {
+    background: #000;
+    color: #fff;
+    transform: none;
 }
 
 /* ---------------------------------------------------------
@@ -197,6 +317,7 @@
 
 .image-url-box button {
     flex-shrink: 0;
+    width: auto;
     padding: 8px 12px;
     font-size: 0.83rem;
     line-height: 1.2;
@@ -206,15 +327,16 @@
 }
 
 /* ---------------------------------------------------------
-   DELETE BUTTON
+   DELETE FORM / BUTTON
+   Důležité: nesmí sahat na rename-form
    --------------------------------------------------------- */
 
-.image-card form {
+.image-card > form:not(.rename-form) {
     margin: 0;
     padding: 0 16px 16px;
 }
 
-.image-card form button[type="submit"] {
+.image-card > form:not(.rename-form) button[type="submit"] {
     width: 100%;
     padding: 8px 12px;
     font-size: 0.84rem;
@@ -226,7 +348,7 @@
     font-weight: 700;
 }
 
-.image-card form button[type="submit"]:hover {
+.image-card > form:not(.rename-form) button[type="submit"]:hover {
     background: #c62828;
     color: #fff;
     transform: none;
@@ -281,13 +403,19 @@
         height: 220px;
     }
 
-    .image-url-box {
+    .image-url-box,
+    .rename-form-row {
         flex-direction: column;
     }
 
     .image-url-box button,
-    .image-card form button[type="submit"] {
+    .rename-form-row button[type="submit"],
+    .image-card > form:not(.rename-form) button[type="submit"] {
         width: 100%;
+    }
+
+    .image-title-hint {
+        opacity: 1;
     }
 }
 
@@ -322,7 +450,6 @@ body.dark-mode .image-empty {
     border-color: #444;
 }
 
-/* galerie karty */
 body.dark-mode .image-card {
     background: #1b1b1b;
     border-color: #444;
@@ -338,13 +465,43 @@ body.dark-mode .image-thumb-wrap {
     border-bottom-color: #333;
 }
 
-body.dark-mode .image-meta strong {
+body.dark-mode .image-meta strong,
+body.dark-mode .image-meta .image-title-toggle {
     color: #fff;
 }
 
-body.dark-mode .image-meta .muted,
-body.dark-mode .image-meta span {
+body.dark-mode .image-meta .image-title-toggle:hover,
+body.dark-mode .image-meta .image-title-toggle:active {
+    color: #fff;
+}
+
+body.dark-mode .image-meta .muted {
     color: #aaa;
+}
+
+body.dark-mode .image-title-hint {
+    color: #aaa;
+}
+
+body.dark-mode .image-meta .image-title-toggle:focus-visible {
+    outline-color: #eee;
+}
+
+body.dark-mode .rename-form-row input[type="text"] {
+    background: #121212;
+    color: #e6e6e6;
+    border-color: #555;
+}
+
+body.dark-mode .rename-form-row button[type="submit"] {
+    background: #1b1b1b;
+    color: #eee;
+    border-color: #555;
+}
+
+body.dark-mode .rename-form-row button[type="submit"]:hover {
+    background: #eee;
+    color: #111;
 }
 
 body.dark-mode .image-url-box input[type="text"] {
@@ -364,14 +521,13 @@ body.dark-mode .image-url-box button:hover {
     color: #111;
 }
 
-/* mazací tlačítko */
-body.dark-mode .image-card form button[type="submit"] {
+body.dark-mode .image-card > form:not(.rename-form) button[type="submit"] {
     background: #1b1b1b;
     color: #ff8a8a;
     border-color: #a94444;
 }
 
-body.dark-mode .image-card form button[type="submit"]:hover {
+body.dark-mode .image-card > form:not(.rename-form) button[type="submit"]:hover {
     background: #c62828;
     color: #fff;
     border-color: #c62828;

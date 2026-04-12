@@ -499,6 +499,18 @@ def images(request):
 
                 messages.success(request, "Obrázek byl nahrán.")
                 return redirect("rozesilac:images")
+            
+        elif request.POST.get("action") == "rename":
+            image_id = request.POST.get("image_id")
+            new_title = (request.POST.get("title") or "").strip()
+
+            image = get_object_or_404(EmailImage, pk=image_id)
+            image.title = new_title
+            image.save(update_fields=["title"])
+
+            messages.success(request, "Název obrázku byl upraven.")
+            return redirect("rozesilac:images")
+        
 
         elif request.POST.get("action") == "delete":
             image_id = request.POST.get("image_id")

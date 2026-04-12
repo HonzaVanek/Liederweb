@@ -36,7 +36,18 @@
     <tbody>
       {% for t in templates %}
         <tr>
-          <td>{{ t.name }}</td>
+          <td class="template-name-cell">
+            <span class="template-name-text">{{ t.name }}</span>
+            <button
+              type="button"
+              class="template-preview-trigger"
+              data-template-id="{{ t.id }}"
+              aria-label="Zobrazit náhled šablony {{ t.name }}"
+              title="Zobrazit náhled šablony"
+            >
+              Náhled
+            </button>
+          </td>
           <td>{{ t.subject }}</td>
           <td>{{ t.updated_at|date:"d.m.Y H:i" }}</td>
             <td class="actions">
@@ -50,7 +61,140 @@
       {% endfor %}
     </tbody>
   </table>
+
+<div id="template-preview-modal" class="template-preview-modal" hidden>
+  <div class="template-preview-backdrop"></div>
+
+  <div class="template-preview-dialog">
+    <div class="template-preview-header">
+      <h3>Náhled šablony</h3>
+      <button type="button" id="close-preview-btn" class="template-preview-close" aria-label="Zavřít náhled">×</button>
+    </div>
+
+    <div class="template-preview-subject">
+      <strong>Předmět:</strong>
+      <span id="preview-subject"></span>
+    </div>
+
+    <iframe id="template-preview-iframe" class="template-preview-iframe"></iframe>
+  </div>
+</div>
+
+<div id="template-preview-data" hidden>
+  {% for t in templates %}
+    <div
+      class="template-preview-item"
+      data-template-id="{{ t.id }}"
+      data-template-subject="{{ t.subject|escape }}"
+    >{{ t.html_body|safe }}</div>
+  {% endfor %}
+</div>
 {% else %}
   <p class="muted">Zatím nejsou vytvořené žádné šablony.</p>
 {% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const previewModal = document.getElementById("template-preview-modal");
+  const closePreviewBtn = document.getElementById("close-preview-btn");
+  const previewSubject = document.getElementById("preview-subject");
+  const previewIframe = document.getElementById("template-preview-iframe");
+  const previewButtons = document.querySelectorAll(".template-preview-trigger");
+
+  function openPreviewModal(templateId) {
+    const previewItem = document.querySelector(
+      `.template-preview-item[data-template-id="${templateId}"]`
+    );
+
+    if (!previewItem) {
+      alert("Nepodařilo se načíst náhled šablony.");
+      return;
+    }
+
+    const subject = previewItem.dataset.templateSubject || "";
+    const html = previewItem.innerHTML || "";
+
+    previewSubject.textContent = subject;
+
+    previewIframe.srcdoc = `
+      <!DOCTYPE html>
+      <html lang="cs">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Náhled šablony</title>
+        <style>
+          html, body {
+            margin: 0;
+            padding: 0;
+            background: #f3f3f3;
+          }
+
+          body {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.4;
+            color: #222;
+          }
+
+          .preview-shell {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 24px;
+            background: #fff;
+            min-height: 100vh;
+            box-sizing: border-box;
+          }
+
+          img {
+            max-width: 100%;
+            height: auto;
+          }
+
+          table {
+            max-width: 100%;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="preview-shell">
+          ${html}
+        </div>
+      </body>
+      </html>
+    `;
+
+    previewModal.hidden = false;
+  }
+
+  function closePreviewModal() {
+    previewModal.hidden = true;
+    previewIframe.srcdoc = "";
+  }
+
+  previewButtons.forEach(button => {
+    button.addEventListener("click", function () {
+      openPreviewModal(button.dataset.templateId);
+    });
+  });
+
+  if (closePreviewBtn) {
+    closePreviewBtn.addEventListener("click", closePreviewModal);
+  }
+
+  if (previewModal) {
+    previewModal.addEventListener("click", function (e) {
+      if (e.target.classList.contains("template-preview-backdrop")) {
+        closePreviewModal();
+      }
+    });
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && previewModal && !previewModal.hidden) {
+      closePreviewModal();
+    }
+  });
+});
+</script>
 {% endblock rozesilac_content %}

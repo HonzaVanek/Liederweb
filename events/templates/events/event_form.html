@@ -62,16 +62,13 @@
     {% endfor %}
   </div>
 
-  <div class="template-form-row">
+<div class="template-form-row">
   <label>Plakát koncertu</label>
 
-  <div style="display:none;">
-    {{ form.poster_image }}
-  </div>
-
-  {% if form.poster_image.help_text %}
-    <div class="help-text">{{ form.poster_image.help_text }}</div>
-  {% endif %}
+  <p class="poster-help-text">
+    Vyber plakát kliknutím na některý z posledních nahraných obrázků níže.
+    Pokud tam není, můžeš ho vybrat i z kompletního seznamu všech obrázků.
+  </p>
 
   {% for e in form.poster_image.errors %}
     <div class="form-errors">{{ e }}</div>
@@ -79,11 +76,8 @@
 </div>
 
 <div class="image-panel" style="margin-top: 20px;">
-  <h3>Vyber plakát z posledních nahraných obrázků</h3>
+  <h3>Poslední nahrané obrázky</h3>
 
-  <p class="muted">
-    <a href="{% url 'rozesilac:images' %}">Otevřít galerii všech obrázků</a>
-  </p>
 
   {% if recent_images %}
     <div class="recent-images-grid">
@@ -114,28 +108,39 @@
   {% endif %}
 </div>
 
-  <div class="template-form-row checkbox-row">
-    <label for="{{ form.vip_enabled.id_for_label }}">Povolit VIP rezervace</label>
-    {{ form.vip_enabled }}
-    {% for e in form.vip_enabled.errors %}
-      <div class="form-errors">{{ e }}</div>
-    {% endfor %}
-  </div>
+<div class="template-form-row poster-select-row">
+  <label for="{{ form.poster_image.id_for_label }}">Nebo vyber z celého seznamu obrázků</label>
+  {{ form.poster_image }}
+</div>
 
-  <div class="template-form-row checkbox-row">
-    <label for="{{ form.is_published.id_for_label }}">Publikováno</label>
-    {{ form.is_published }}
-    {% for e in form.is_published.errors %}
-      <div class="form-errors">{{ e }}</div>
-    {% endfor %}
-  </div>
+  <p class="muted">
+    <a href="{% url 'rozesilac:images' %}" class="btn-link">Otevřít galerii všech obrázků</a>
+  </p>
+  
+  <div class="checkboxes-inline-row">
+    <div class="template-form-row checkbox-row">
+      <label for="{{ form.vip_enabled.id_for_label }}">Povolit VIP rezervace</label>
+      {{ form.vip_enabled }}
+      {% for e in form.vip_enabled.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="template-form-row checkbox-row">
+      <label for="{{ form.is_published.id_for_label }}">Publikováno</label>
+      {{ form.is_published }}
+      {% for e in form.is_published.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
+  <div/>
 
   <div class="form-actions">
     <button type="submit">Uložit</button>
     {% if event %}
-      <a href="{% url 'events:event_detail' event.pk %}" class="button-secondary">Zpět na detail</a>
+      <a href="{% url 'events:event_detail' event.pk %}" class="btn-link">Zpět na detail</a>
     {% else %}
-      <a href="{% url 'events:event_list' %}" class="button-secondary">Zpět na koncerty</a>
+      <a href="{% url 'events:event_list' %}" class="btn-link">Zpět na koncerty</a>
     {% endif %}
   </div>
 </form>

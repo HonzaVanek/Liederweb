@@ -7,7 +7,7 @@
 
 .selectable-image-card.selected {
     border-color: #000;
-    box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
 }
 
 .select-image-button {
@@ -16,12 +16,12 @@
 
 .recent-image-thumb-wrap {
     width: 100%;
-    height: 140px;           /* klidně uprav (120–180px podle vkusu) */
+    height: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    background: #f5f5f5;     /* decentní pozadí */
+    background: #f5f5f5;
     border-radius: 6px;
 }
 
@@ -35,4 +35,83 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 15px;
+}
+
+.poster-help-text {
+    margin-top: 6px;
+    margin-bottom: 0;
+    color: #666;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.poster-select-row {
+    margin-top: 22px;
+}
+
+/* dva checkboxy vedle sebe */
+.checkboxes-inline-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    margin-top: 10px;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0;
+}
+
+.checkbox-row label {
+    margin: 0;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    flex: 0 0 auto;
+    transform: scale(1.15);
+}
+
+.checkbox-row .form-errors {
+    width: 100%;
+    margin-top: 6px;
+}
+
+/* když Django vyrenderuje checkbox před labelem, srovnáme to */
+.checkbox-row {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+@media (max-width: 700px) {
+    .checkboxes-inline-row {
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .checkbox-row {
+        justify-content: flex-start;
+    }
+}
+
+body.dark-mode .poster-help-text {
+    color: #b5b5b5;
+}
+
+body.dark-mode .selectable-image-card.selected {
+    border-color: #eee;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .recent-image-thumb-wrap {
+    background: #1a1a1a;
+}
+
+body.dark-mode .checkbox-row label {
+    color: #f1f1f1;
 }

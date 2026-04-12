@@ -7,31 +7,48 @@
 
 {% block rozesilac_content %}
 <h2>Koncerty</h2>
-
-<a href="{% url 'events:event_create' %}">+ Nový koncert</a>
+<p class="top-action">
+  <a href="{% url 'events:event_create' %}">+ Nový koncert</a>
+</p>
 
 <table class="table">
   <thead>
     <tr>
       <th>Název</th>
+      <th>Publikováno</th>
       <th>Datum</th>
       <th>Místo</th>
+      <th>Slug (konec URL)</th>
+      <th>Vytvořeno</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
     {% for event in events %}
       <tr>
         <td>
-          <a href="{% url 'events:event_detail' event.pk %}">
+          <a href="{% url 'events:event_detail' event.pk %}" class="event-title-link">
             {{ event.title }}
           </a>
         </td>
+        <td>
+          {% if event.is_published %}
+            <span class="muted">Ano</span>
+          {% else %}
+            <span class="muted">Nepublikováno</span>
+          {% endif %}
+        </td>
         <td>{{ event.starts_at|date:"d.m.Y H:i" }}</td>
         <td>{{ event.venue }}</td>
+        <td>{{ event.slug }}</td>
+        <td>{{ event.created_at|date:"d.m.Y H:i" }}</td>
+        <td class="actions">
+          <a href="{% url 'events:event_detail' event.pk %}">Detail</a>
+        </td>
       </tr>
     {% empty %}
       <tr>
-        <td colspan="3">Zatím nebyly vytvořeny žádné koncerty</td>
+        <td colspan="7">Zatím nebyly vytvořeny žádné koncerty.</td>
       </tr>
     {% endfor %}
   </tbody>

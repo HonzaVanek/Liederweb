@@ -6,10 +6,19 @@
 
 .public-event-card {
     background: #ffffff;
+    color: #222;
     border: 1px solid #ddd;
     border-radius: 12px;
     padding: 28px;
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+}
+
+.public-event-card h1,
+.public-event-card h2,
+.public-event-card h3,
+.public-event-card p,
+.public-event-card label {
+    color: #222;
 }
 
 .public-event-card h1 {
@@ -20,6 +29,14 @@
 .public-event-card p {
     line-height: 1.6;
     margin-bottom: 16px;
+}
+
+.public-event-card a {
+    color: #1d4f91;
+}
+
+.muted {
+    color: #666;
 }
 
 .public-event-poster-wrap {
@@ -52,6 +69,7 @@
     border: 1px solid #e3d7dc;
     border-radius: 12px;
     background: #faf7f8;
+    color: #222;
 }
 
 .vip-box h2,
@@ -79,38 +97,18 @@
 
 .primary-action-button {
     background: #000;
-    color: #fff;
+    color: #fff !important;
 }
 
 .secondary-action-button {
     background: #f0f0f0;
-    color: #000;
+    color: #000 !important;
     border: 1px solid #ccc;
 }
 
 .primary-action-button:hover,
 .secondary-action-button:hover {
     opacity: 0.9;
-}
-
-.muted {
-    color: #666;
-}
-
-@media (max-width: 640px) {
-    .public-event-card {
-        padding: 20px;
-    }
-
-    .public-event-actions {
-        flex-direction: column;
-    }
-
-    .primary-action-button,
-    .secondary-action-button {
-        width: 100%;
-        text-align: center;
-    }
 }
 
 .vip-ticket-count-block {
@@ -129,4 +127,65 @@
 
 .vip-ticket-count-block label {
     cursor: pointer;
+}
+
+body.dark-mode .public-event-card {
+    background: #1b1b1b;
+    color: #eee;
+    border-color: #444;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+
+body.dark-mode .public-event-card h1,
+body.dark-mode .public-event-card h2,
+body.dark-mode .public-event-card h3,
+body.dark-mode .public-event-card p,
+body.dark-mode .public-event-card label {
+    color: #eee;
+}
+
+body.dark-mode .public-event-card a {
+    color: #9fc7ff;
+}
+
+body.dark-mode .muted {
+    color: #bbb;
+}
+
+body.dark-mode .public-event-poster-wrap {
+    background: #111;
+}
+
+body.dark-mode .vip-box,
+body.dark-mode .vip-followup-box {
+    background: #222;
+    color: #eee;
+    border-color: #444;
+}
+
+body.dark-mode .primary-action-button {
+    background: #eee;
+    color: #111 !important;
+}
+
+body.dark-mode .secondary-action-button {
+    background: #1b1b1b;
+    color: #eee !important;
+    border-color: #555;
+}
+
+@media (max-width: 640px) {
+    .public-event-card {
+        padding: 20px;
+    }
+
+    .public-event-actions {
+        flex-direction: column;
+    }
+
+    .primary-action-button,
+    .secondary-action-button {
+        width: 100%;
+        text-align: center;
+    }
 }
