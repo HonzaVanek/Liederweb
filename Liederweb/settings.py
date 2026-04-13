@@ -15,6 +15,9 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+import logging 
+import logging.handlers
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / "settings.env")
@@ -37,34 +40,82 @@ if not SECRET_KEY:
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
+
+SECURITY_LOG_FILE = "/srv/log/security.log"
 DEBUG = APP_ENV == "dev"
 
 if APP_ENV == "prod":
     LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "verbose": {
+                "format": "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+            },
         },
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": "INFO",
-    },
-    "loggers": {
-        "django.request": {
-            "handlers": ["console"],
-            "level": "ERROR",
-            "propagate": False,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "verbose",
+            },
+            "security_file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": SECURITY_LOG_FILE,
+                "maxBytes": 1024 * 1024 * 5,  # 5 MB
+                "backupCount": 5,
+                "formatter": "verbose",
+                "encoding": "utf-8",
+            },
         },
-        "django": {
+        "root": {
             "handlers": ["console"],
             "level": "INFO",
-            "propagate": True,
         },
-    },
-}
+        "loggers": {
+            "django.request": {
+                "handlers": ["console"],
+                "level": "ERROR",
+                "propagate": False,
+            },
+            "django": {
+                "handlers": ["console"],
+                "level": "INFO",
+                "propagate": True,
+            },
+            "liederweb.security": {
+                "handlers": ["security_file", "console"],
+                "level": "WARNING",
+                "propagate": False,
+            },
+        },
+    }
+else:
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "simple": {
+                "format": "%(levelname)s | %(name)s | %(message)s",
+            },
+        },
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "simple",
+            },
+        },
+        "root": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "loggers": {
+            "liederweb.security": {
+                "handlers": ["console"],
+                "level": "WARNING",
+                "propagate": False,
+            },
+        },
+    }
 
 # na Produkci - nastavené ALLOWED_HOSTS
 if APP_ENV == "prod":

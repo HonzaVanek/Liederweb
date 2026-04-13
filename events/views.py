@@ -25,6 +25,14 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 from datetime import datetime
 
+import logging
+
+security_logger = logging.getLogger("liederweb.security")
+
+
+def _token_prefix(token):
+    return str(token)[:8] if token else "-"
+
 
 def _build_event_formsets(data=None, instance=None):
     return {
@@ -244,17 +252,40 @@ def public_event_detail(request, slug):
     )
 
 def vip_event_detail(request, token):
-    delivery = get_object_or_404(
-        EmailDelivery.objects.select_related("campaign__event", "contact"),
-        tracking_token=token,
+    delivery = (
+        EmailDelivery.objects
+        .select_related("campaign__event", "contact")
+        .filter(tracking_token=token)
+        .first()
     )
+
+    if not delivery:
+        security_logger.warning(
+            "Invalid VIP token on detail | token_prefix=%s | path=%s",
+            _token_prefix(token),
+            request.path,
+        )
+        raise Http404("VIP pozvánka nebyla nalezena.")
 
     event = delivery.campaign.event
 
     if not event:
+        security_logger.warning(
+            "VIP token without event | token_prefix=%s | delivery_id=%s | path=%s",
+            _token_prefix(token),
+            delivery.id,
+            request.path,
+        )
         raise Http404("Tato VIP pozvánka není navázaná na žádný koncert.")
 
     if not event.is_published:
+        security_logger.warning(
+            "VIP token for unpublished event | token_prefix=%s | delivery_id=%s | event_id=%s | path=%s",
+            _token_prefix(token),
+            delivery.id,
+            event.id,
+            request.path,
+        )
         raise Http404("Tento koncert není veřejně dostupný.")
 
     reservation = None
@@ -281,22 +312,54 @@ def vip_reserve(request, token):
     if request.method != "POST":
         raise Http404()
 
-    delivery = get_object_or_404(
-        EmailDelivery.objects.select_related("campaign__event", "contact"),
-        tracking_token=token,
+    delivery = (
+        EmailDelivery.objects
+        .select_related("campaign__event", "contact")
+        .filter(tracking_token=token)
+        .first()
     )
+
+    if not delivery:
+        security_logger.warning(
+            "Invalid VIP token on reserve | token_prefix=%s | path=%s",
+            _token_prefix(token),
+            request.path,
+        )
+        raise Http404("VIP pozvánka nebyla nalezena.")
 
     event = delivery.campaign.event
     contact = delivery.contact
     campaign = delivery.campaign
 
     if not event:
+        security_logger.warning(
+            "VIP reserve without event | token_prefix=%s | delivery_id=%s | path=%s",
+            _token_prefix(token),
+            delivery.id,
+            request.path,
+        )
         raise Http404("Tato VIP pozvánka není navázaná na žádný koncert.")
 
     if not event.is_published or not event.vip_enabled:
+        security_logger.warning(
+            "VIP reserve denied for unavailable event | token_prefix=%s | delivery_id=%s | event_id=%s | published=%s | vip_enabled=%s | path=%s",
+            _token_prefix(token),
+            delivery.id,
+            event.id,
+            event.is_published,
+            event.vip_enabled,
+            request.path,
+        )
         raise Http404("VIP rezervace pro tento koncert nejsou dostupné.")
 
     if not contact:
+        security_logger.warning(
+            "VIP reserve without contact | token_prefix=%s | delivery_id=%s | event_id=%s | path=%s",
+            _token_prefix(token),
+            delivery.id,
+            event.id,
+            request.path,
+        )
         raise Http404("Tato VIP rezervace není navázaná na konkrétní kontakt.")
 
     form = VipReservationForm(request.POST)
@@ -368,19 +431,41 @@ def vip_reserve(request, token):
                 fail_silently=False,
             )
         except Exception:
-            pass
+            security_logger.exception(
+                "VIP reservation notification email failed | token_prefix=%s | delivery_id=%s | event_id=%s | reservation_id=%s",
+                _token_prefix(token),
+                delivery.id,
+                event.id,
+                reservation.id,
+            )
 
     return redirect("events:vip_reservation_done", token=token)
 
 def vip_reservation_done(request, token):
-    delivery = get_object_or_404(
-        EmailDelivery.objects.select_related("campaign__event", "contact"),
-        tracking_token=token,
+    delivery = (
+        EmailDelivery.objects
+        .select_related("campaign__event", "contact")
+        .filter(tracking_token=token)
+        .first()
     )
+
+    if not delivery:
+        security_logger.warning(
+            "Invalid VIP token on reservation_done | token_prefix=%s | path=%s",
+            _token_prefix(token),
+            request.path,
+        )
+        raise Http404("VIP pozvánka nebyla nalezena.")
 
     event = delivery.campaign.event
 
     if not event:
+        security_logger.warning(
+            "VIP reservation_done without event | token_prefix=%s | delivery_id=%s | path=%s",
+            _token_prefix(token),
+            delivery.id,
+            request.path,
+        )
         raise Http404("Tato VIP pozvánka není navázaná na žádný koncert.")
 
     reservation = VipReservation.objects.filter(
