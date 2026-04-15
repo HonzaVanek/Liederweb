@@ -29,6 +29,13 @@
   {{ sponsor_formset.management_form }}
 
   <div class="content-section">
+    {% if messages %}
+      <ul class="messages">
+        {% for m in messages %}
+          <li class="{{ m.tags }}">{{ m }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
     <h3>Základní informace</h3>
     <p class="section-intro">
       Základ koncertu: název, datum, místo a údaje pro pravý informační panel na veřejné stránce.
@@ -172,7 +179,7 @@
       <label for="{{ form.hero_image.id_for_label }}">Cover fotka do hlavičky</label>
       {{ form.hero_image }}
       <p class="small muted">
-        Velká fotka na pozadí horní části veřejné stránky. Překryje ji barva koncertu.
+        Velká fotka na pozadí horní části veřejné stránky. Průsvitně ji překryje barva koncertu.
       </p>
       {% for e in form.hero_image.errors %}
         <div class="form-errors">{{ e }}</div>
@@ -183,7 +190,7 @@
       <label for="{{ form.hero_image_position.id_for_label }}">Která část cover fotky se má zvýraznit</label>
       {{ form.hero_image_position }}
       <p class="small muted">
-        Určuje, jestli se na veřejné stránce preferuje horní, střední nebo dolní část fotky.
+        Určuje, jestli se na veřejné stránce na širokých obrazovkách preferuje horní, střední nebo dolní část fotky.
       </p>
       {% for e in form.hero_image_position.errors %}
         <div class="form-errors">{{ e }}</div>
@@ -191,7 +198,7 @@
     </div>
 
     <div class="template-form-row checkbox-row single-checkbox-row">
-      <label for="{{ form.hero_parallax_enabled.id_for_label }}">Zapnout jemný parallax hero fotky</label>
+      <label for="{{ form.hero_parallax_enabled.id_for_label }}">Zapnout jemný parallax cover fotky (může vypadat dobře u některých fotek)</label>
       {{ form.hero_parallax_enabled }}
       {% for e in form.hero_parallax_enabled.errors %}
         <div class="form-errors">{{ e }}</div>
@@ -221,7 +228,7 @@
     </p>
 
     <div class="template-form-row">
-      <label for="{{ form.public_text.id_for_label }}">Úvodní text koncertu</label>
+      <label for="{{ form.public_text.id_for_label }}">Úvodní text koncertu (zobrazí se nahoře přes cover fotku)</label>
       {{ form.public_text }}
       {% for e in form.public_text.errors %}
         <div class="form-errors">{{ e }}</div>

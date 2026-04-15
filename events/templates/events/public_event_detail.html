@@ -33,7 +33,7 @@
 
         <div class="public-event-meta-inline">
           {% if event.starts_at %}
-            <span>{{ event.starts_at|date:"d.m.Y H:i" }}</span>
+            <span>{{ event.starts_at|date:"d. m. Y H:i" }}</span>
           {% endif %}
           {% if event.venue %}
             <span>{{ event.venue }}</span>
@@ -252,7 +252,7 @@
           {% if event.starts_at %}
             <div class="event-info-row">
               <div class="event-info-label">Datum a čas</div>
-              <div class="event-info-value">{{ event.starts_at|date:"d.m.Y H:i" }}</div>
+              <div class="event-info-value">{{ event.starts_at|date:"d. m. Y H:i" }}</div>
             </div>
           {% endif %}
 

@@ -109,7 +109,7 @@ def event_create(request):
     context = {
         "form": form,
         "page_title": "Nový koncert",
-        "recent_images": EmailImage.objects.order_by("-uploaded_at")[:8],
+        "recent_images": EmailImage.objects.order_by("-uploaded_at")[:10],
         "event": None,
         **formsets,
     }
@@ -155,7 +155,7 @@ def event_edit(request, pk):
     context = {
         "form": form,
         "page_title": "Upravit koncert",
-        "recent_images": EmailImage.objects.order_by("-uploaded_at")[:8],
+        "recent_images": EmailImage.objects.order_by("-uploaded_at")[:10],
         "event": event,
         **formsets,
     }

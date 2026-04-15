@@ -39,6 +39,13 @@
 
   <div class="event-detail-grid">
     <section class="event-detail-main">
+      {% if messages %}
+        <ul class="messages">
+          {% for m in messages %}
+            <li class="{{ m.tags }}">{{ m }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
       <div class="detail-card">
         <h3>Základní informace</h3>
 
@@ -51,7 +58,7 @@
         <p>
           <strong>Datum:</strong>
           {% if event.starts_at %}
-            {{ event.starts_at|date:"d.m.Y H:i" }}
+            {{ event.starts_at|date:"d. m. Y H:i" }}
           {% else %}
             <span class="muted">Není vyplněno</span>
           {% endif %}
@@ -154,15 +161,19 @@
         </p>
 
         <p>
-          <strong>Vytvořeno:</strong> {{ event.created_at|date:"d.m.Y H:i" }}<br>
-          <strong>Upraveno:</strong> {{ event.updated_at|date:"d.m.Y H:i" }}
+          <strong>Vytvořeno:</strong> {{ event.created_at|date:"d. m. Y H:i" }}<br>
+          <strong>Upraveno:</strong> {{ event.updated_at|date:"d. m. Y H:i" }}
         </p>
 
+          {% if event.is_published %}
         <div class="form-actions">
           <a href="{% url 'events:public_event_detail' event.slug %}" target="_blank" class="btn-link">
             Otevřít veřejnou stránku koncertu
           </a>
         </div>
+        {% else %}
+          <p class="help-text">Koncert není dosud publikován, nemůžeš si tedy zatím zobrazit jeho veřejnou stránku. Když dáš upravit koncert -> zaškrtneš publikovat, objeví se tu tlačítko.</p>
+        {% endif %}
       </div>
 
       <div class="detail-card">
