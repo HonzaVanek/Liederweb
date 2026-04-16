@@ -1,4 +1,5 @@
 from django.core.validators import RegexValidator
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.text import slugify
 
@@ -217,3 +218,171 @@ class VipReservation(models.Model):
 
     def __str__(self):
         return f"{self.contact.email} – {self.event.title}"
+    
+
+
+class EventTicketSettings(models.Model):
+    TICKETS_PER_PAGE_CHOICES = [(4, "4 vstupenky na A4"), (5, "5 vstupenek na A4"),]
+
+    event = models.OneToOneField(Event, on_delete=models.CASCADE, related_name="ticket_settings")
+    enabled = models.BooleanField(default=False, verbose_name="Generování vstupenek povoleno")
+
+    logo_image = models.ForeignKey(
+        EmailImage,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="events_as_ticket_logo",
+        verbose_name="Logo LS na vstupence",
+        help_text="Když nevyplníš, může se při generování použít výchozí logo.",
+    )
+
+    header_text = models.CharField(
+        max_length=80,
+        default="VSTUPENKA",
+        verbose_name="Nadpis na vstupence (defaultně prostě 'VSTUPENKA')",
+    )
+
+    ticket_title = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Název akce na vstupence",
+        help_text="Finální text pro tisk. Při založení se může předvyplnit z názvu koncertu.",
+    )
+
+    ticket_artists_text = models.TextField(
+        blank=True,
+        verbose_name="Interpreti na vstupence",
+        help_text="Finální text pro tisk. Může být na jeden nebo dva řádky",
+    )
+
+    ticket_venue_text = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Místo na vstupence",
+        help_text="Např. „Muzeum Bedřicha Smetany“",
+    )
+
+    ticket_datetime_text = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Datum a čas na vstupence",
+        help_text="Např. „15. března 2026 od 18:00 hod“",
+    )
+
+    default_tickets_per_page = models.PositiveSmallIntegerField(
+        choices=TICKETS_PER_PAGE_CHOICES,
+        default=5,
+        verbose_name="Výchozí počet vstupenek na stránku (podle počtu řádku interpretů)",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Nastavení vstupenek koncertu"
+        verbose_name_plural = "Nastavení vstupenek koncertů"
+
+    def __str__(self):
+        return f"Vstupenky – {self.event.title}"
+
+    def clean(self):
+        errors = {}
+
+        if self.enabled:
+            if not (self.ticket_title or "").strip():
+                errors["ticket_title"] = "Vyplň název koncertu na vstupence."
+
+            if not (self.ticket_venue_text or "").strip():
+                errors["ticket_venue_text"] = "Vyplň místo konání."
+
+            if not (self.ticket_datetime_text or "").strip():
+                errors["ticket_datetime_text"] = "Vyplň datum a čas akce."
+
+        if errors:
+            raise ValidationError(errors)
+        
+
+
+class EventTicketVariant(models.Model):
+    VARIANT_CODE_CHOICES = [
+        ("discounted", "Zlevněná"),
+        ("full", "Plná"),
+        ("honorary", "Čestná"),
+    ]
+
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="ticket_variants",
+    )
+
+    code = models.CharField(
+        max_length=20,
+        choices=VARIANT_CODE_CHOICES,
+        verbose_name="Typ vstupenky",
+    )
+
+    name = models.CharField(
+        max_length=100,
+        verbose_name="Název varianty",
+        help_text="Např. „Zlevněné vstupné“, „Plné vstupné“, „Čestná vstupenka“.",
+    )
+
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Cena",
+        help_text="Volitelné. U čestné vstupenky může zůstat prázdné.",
+    )
+
+    ticket_price_text = models.CharField(
+        max_length=120,
+        blank=True,
+        verbose_name="Text na vstupence",
+        help_text="Např. „Cena: 150 Kč“ nebo „Čestná vstupenka“.",
+    )
+
+    allow_personalization = models.BooleanField(
+        default=False,
+        verbose_name="Povolit personalizaci",
+        help_text="Zapni u varianty, která se může generovat se jménem hosta.",
+    )
+
+    sort_order = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name="Pořadí",
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Aktivní",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["event", "code"],
+                name="unique_ticket_variant_per_event_code",
+            )
+        ]
+        verbose_name = "Varianta vstupenky"
+        verbose_name_plural = "Varianty vstupenek"
+
+    def __str__(self):
+        return f"{self.event.title} – {self.name}"
+
+    def clean(self):
+        errors = {}
+
+        if not (self.ticket_price_text or "").strip():
+            errors["ticket_price_text"] = "Vyplň text, který se má tisknout na vstupence."
+
+        if errors:
+            raise ValidationError(errors)

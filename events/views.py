@@ -2,6 +2,7 @@ from django.http import Http404, HttpResponse
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.db.models import Prefetch
+from django.db import transaction
 
 from core.decorators import staff_required
 
@@ -12,11 +13,24 @@ from .models import (
     EventPracticalInfo,
     EventResource,
     EventSponsor,
+    EventTicketVariant,
     VipReservation,
 )
 
 from rozesilac.models import EmailImage, EmailDelivery, EmailCampaign
-from .forms import (EventForm,EventProgramItemFormSet, EventArtistFormSet, EventResourceFormSet, EventPracticalInfoFormSet, EventSponsorFormSet, VipReservationForm,)
+from .forms import (
+    EventForm,
+    EventProgramItemFormSet,
+    EventArtistFormSet,
+    EventResourceFormSet,
+    EventPracticalInfoFormSet,
+    EventSponsorFormSet,
+    VipReservationForm,
+    EventTicketSettingsForm,
+    EventTicketVariantFormSet,
+    InitialEventTicketVariantFormSet,
+    get_default_ticket_variant_initials,
+)
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -169,6 +183,7 @@ def event_detail(request, pk):
             "poster_image",
             "hero_image",
             "secondary_image",
+            "ticket_settings",
         ).prefetch_related(
             Prefetch(
                 "campaigns",
@@ -202,12 +217,18 @@ def event_detail(request, pk):
                 "sponsors",
                 queryset=EventSponsor.objects.select_related("logo_image").order_by("sort_order", "id"),
             ),
+            Prefetch(
+                "ticket_variants",
+                queryset=EventTicketVariant.objects.order_by("sort_order", "id"),
+            ),
         ),
         pk=pk,
     )
 
     campaigns = event.campaigns.all()
     vip_reservations = event.vip_reservations.all()
+    ticket_settings = event.ticket_settings if hasattr(event, "ticket_settings") else None
+    ticket_variants = event.ticket_variants.all()
 
     return render(
         request,
@@ -216,6 +237,8 @@ def event_detail(request, pk):
             "event": event,
             "campaigns": campaigns,
             "vip_reservations": vip_reservations,
+            "ticket_settings": ticket_settings,
+            "ticket_variants": ticket_variants,
         },
     )
 
@@ -530,3 +553,90 @@ def event_export_vip_xlsx(request, pk):
 
     wb.save(response)
     return response
+
+@staff_required
+def event_tickets(request, pk):
+    event = get_object_or_404(
+        Event.objects.select_related("ticket_settings").prefetch_related(
+            Prefetch(
+                "artists",
+                queryset=EventArtist.objects.order_by("sort_order", "id"),
+            ),
+            Prefetch(
+                "ticket_variants",
+                queryset=EventTicketVariant.objects.order_by("sort_order", "id"),
+            ),
+        ),
+        pk=pk,
+    )
+
+    settings_instance = getattr(event, "ticket_settings", None)
+    variant_queryset = event.ticket_variants.all()
+    has_existing_variants = variant_queryset.exists()
+
+    VariantFormSetClass = (
+        EventTicketVariantFormSet
+        if has_existing_variants
+        else InitialEventTicketVariantFormSet
+    )
+
+    if request.method == "POST":
+        settings_form = EventTicketSettingsForm(
+            request.POST,
+            request.FILES,
+            instance=settings_instance,
+            event=event,
+            prefix="ticket_settings",
+        )
+        variant_formset = VariantFormSetClass(
+            request.POST,
+            instance=event,
+            queryset=variant_queryset,
+            prefix="variants",
+        )
+
+        if settings_form.is_valid() and variant_formset.is_valid():
+            with transaction.atomic():
+                ticket_settings = settings_form.save(commit=False)
+                ticket_settings.event = event
+                ticket_settings.save()
+
+                variant_formset.instance = event
+                variant_formset.save()
+
+            messages.success(request, "Nastavení vstupenek bylo uloženo.")
+            return redirect("events:event_tickets", pk=event.pk)
+
+        messages.error(request, "Formulář se nepodařilo uložit. Zkontroluj chyby níže.")
+
+    else:
+        settings_form = EventTicketSettingsForm(
+            instance=settings_instance,
+            event=event,
+            prefix="ticket_settings",
+        )
+
+        if has_existing_variants:
+            variant_formset = VariantFormSetClass(
+                instance=event,
+                queryset=variant_queryset,
+                prefix="variants",
+            )
+        else:
+            variant_formset = VariantFormSetClass(
+                instance=event,
+                queryset=variant_queryset,
+                initial=get_default_ticket_variant_initials(),
+                prefix="variants",
+            )
+
+    return render(
+        request,
+        "events/event_tickets.html",
+        {
+            "event": event,
+            "settings_form": settings_form,
+            "variant_formset": variant_formset,
+            "recent_images": EmailImage.objects.order_by("-uploaded_at")[:10],
+        },
+    )

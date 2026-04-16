@@ -492,6 +492,97 @@
 
       <div class="detail-card">
         <div class="form-actions" style="margin-top: 0; margin-bottom: 16px;">
+          <a href="{% url 'events:event_tickets' event.pk %}" class="btn-link">
+            Upravit vstupenky
+          </a>
+        </div>
+
+        <h3>Vstupenky</h3>
+
+        {% if ticket_settings %}
+          <p>
+            <strong>Generování povoleno:</strong>
+            {% if ticket_settings.enabled %}Ano{% else %}Ne{% endif %}
+          </p>
+
+          <p>
+            <strong>Nadpis:</strong>
+            {% if ticket_settings.header_text %}
+              {{ ticket_settings.header_text }}
+            {% else %}
+              <span class="muted">Není vyplněno</span>
+            {% endif %}
+          </p>
+
+          <p>
+            <strong>Název na vstupence:</strong>
+            {% if ticket_settings.ticket_title %}
+              {{ ticket_settings.ticket_title }}
+            {% else %}
+              <span class="muted">Není vyplněno</span>
+            {% endif %}
+          </p>
+
+          <p>
+            <strong>Místo na vstupence:</strong>
+            {% if ticket_settings.ticket_venue_text %}
+              {{ ticket_settings.ticket_venue_text }}
+            {% else %}
+              <span class="muted">Není vyplněno</span>
+            {% endif %}
+          </p>
+
+          <p>
+            <strong>Datum a čas na vstupence:</strong>
+            {% if ticket_settings.ticket_datetime_text %}
+              {{ ticket_settings.ticket_datetime_text }}
+            {% else %}
+              <span class="muted">Není vyplněno</span>
+            {% endif %}
+          </p>
+
+          <p>
+            <strong>Vstupenek na stránku:</strong>
+            {{ ticket_settings.default_tickets_per_page }}
+          </p>
+
+          <p>
+            <strong>Varianty:</strong> {{ ticket_variants|length }}
+          </p>
+
+          {% if ticket_variants %}
+            <ul class="event-related-list">
+              {% for variant in ticket_variants %}
+                <li>
+                  <strong>{{ variant.name }}</strong>
+                  {% if not variant.is_active %}
+                    <span class="muted small">| neaktivní</span>
+                  {% endif %}
+                  <br>
+                  <span class="muted small">
+                    {{ variant.ticket_price_text }}
+                    {% if variant.allow_personalization %} | personalizace povolena{% endif %}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="muted">Zatím nejsou založené žádné varianty vstupenek.</p>
+          {% endif %}
+
+        {% else %}
+          <p class="muted">
+            Zatím není vyplněné nastavení vstupenek pro tento koncert.
+          </p>
+          <p class="muted small">
+            Otevři správu vstupenek a předvyplň si údaje z koncertu.
+          </p>
+        {% endif %}
+      </div>
+
+
+      <div class="detail-card">
+        <div class="form-actions" style="margin-top: 0; margin-bottom: 16px;">
           <a href="{% url 'events:event_export_vip_xlsx' event.pk %}" class="btn-link">
             Exportovat seznam VIP rezervací
           </a>

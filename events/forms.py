@@ -1,7 +1,7 @@
 from django import forms
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, BaseInlineFormSet
 from django.utils import timezone
-from .models import (Event, EventArtist, EventProgramItem, EventPracticalInfo, EventResource, EventSponsor)
+from .models import (Event, EventArtist, EventProgramItem, EventPracticalInfo, EventResource, EventSponsor, EventTicketSettings, EventTicketVariant)
 from rozesilac.models import EmailImage
 
 
@@ -135,3 +135,203 @@ class VipReservationForm(forms.Form):
         label="Počet vstupenek",
         widget=forms.RadioSelect,
     )
+
+
+
+#vstupenky:
+
+def build_ticket_title_from_event(event):
+    return (event.title or "").strip()
+
+
+def build_ticket_artists_text_from_event(event):
+    artist_names = [
+        artist.name.strip()
+        for artist in event.artists.all().order_by("sort_order", "id")
+        if (artist.name or "").strip()
+    ]
+    return ", ".join(artist_names)
+
+
+def build_ticket_venue_text_from_event(event):
+    return (event.venue or "").strip()
+
+
+def build_ticket_datetime_text_from_event(event):
+    if not event.starts_at:
+        return ""
+
+    dt = timezone.localtime(event.starts_at)
+    return f"{dt.day}. {dt.month}. {dt.year} od {dt:%H:%M}"
+
+
+def get_default_ticket_variant_initials():
+    return [
+        {
+            "code": "discounted",
+            "name": "Zlevněné vstupné",
+            "price": 150,
+            "ticket_price_text": "Cena: 150 Kč",
+            "allow_personalization": False,
+            "sort_order": 10,
+            "is_active": True,
+        },
+        {
+            "code": "full",
+            "name": "Plné vstupné",
+            "price": 300,
+            "ticket_price_text": "Cena: 300 Kč",
+            "allow_personalization": False,
+            "sort_order": 20,
+            "is_active": True,
+        },
+        {
+            "code": "honorary",
+            "name": "Čestná vstupenka",
+            "price": "",
+            "ticket_price_text": "Čestná vstupenka",
+            "allow_personalization": True,
+            "sort_order": 30,
+            "is_active": True,
+        },
+    ]
+
+
+class EventTicketSettingsForm(forms.ModelForm):
+    class Meta:
+        model = EventTicketSettings
+        fields = [
+            "enabled",
+            "logo_image",
+            "header_text",
+            "ticket_title",
+            "ticket_artists_text",
+            "ticket_venue_text",
+            "ticket_datetime_text",
+            "default_tickets_per_page",
+        ]
+        widgets = {
+            "header_text": forms.TextInput(attrs={"placeholder": "Např. VSTUPENKA"}),
+            "ticket_title": forms.TextInput(attrs={"placeholder": "Název akce pro tisk na vstupenku"}),
+            "ticket_artists_text": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": "Např. Tamara Morozová | Demian Ewig | Adam Born",
+                }
+            ),
+            "ticket_venue_text": forms.TextInput(attrs={"placeholder": "Např. Muzeum Bedřicha Smetany"}),
+            "ticket_datetime_text": forms.TextInput(attrs={"placeholder": "Např. 15. 3. 2026 od 18:00"}),
+        }
+
+    def __init__(self, *args, event=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.event = event
+        self.fields["logo_image"].queryset = EmailImage.objects.all().order_by("-uploaded_at")
+        self.fields["logo_image"].required = False
+
+        # Předvyplnění jen při prvním založení.
+        # Jakmile záznam existuje, nic automaticky nepřepisujeme.
+        if event and not (self.instance and self.instance.pk):
+            self.initial.setdefault("enabled", True)
+            self.initial.setdefault("header_text", "VSTUPENKA")
+            self.initial.setdefault("ticket_title", build_ticket_title_from_event(event))
+            self.initial.setdefault("ticket_artists_text", build_ticket_artists_text_from_event(event))
+            self.initial.setdefault("ticket_venue_text", build_ticket_venue_text_from_event(event))
+            self.initial.setdefault("ticket_datetime_text", build_ticket_datetime_text_from_event(event))
+
+    def clean_ticket_title(self):
+        return (self.cleaned_data.get("ticket_title") or "").strip()
+
+    def clean_ticket_artists_text(self):
+        return (self.cleaned_data.get("ticket_artists_text") or "").strip()
+
+    def clean_ticket_venue_text(self):
+        return (self.cleaned_data.get("ticket_venue_text") or "").strip()
+
+    def clean_ticket_datetime_text(self):
+        return (self.cleaned_data.get("ticket_datetime_text") or "").strip()
+
+
+class EventTicketVariantForm(forms.ModelForm):
+    class Meta:
+        model = EventTicketVariant
+        fields = [
+            "code",
+            "name",
+            "price",
+            "ticket_price_text",
+            "allow_personalization",
+            "sort_order",
+            "is_active",
+        ]
+        widgets = {
+            "name": forms.TextInput(attrs={"placeholder": "Např. Zlevněné vstupné"}),
+            "price": forms.NumberInput(attrs={"step": "0.01", "placeholder": "Např. 150"}),
+            "ticket_price_text": forms.TextInput(
+                attrs={"placeholder": "Např. Cena: 150 Kč nebo Čestná vstupenka"}
+            ),
+        }
+
+    def clean_name(self):
+        return (self.cleaned_data.get("name") or "").strip()
+
+    def clean_ticket_price_text(self):
+        return (self.cleaned_data.get("ticket_price_text") or "").strip()
+
+
+class BaseEventTicketVariantFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+
+        used_codes = set()
+
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data"):
+                continue
+
+            if not form.cleaned_data or form.cleaned_data.get("DELETE"):
+                continue
+
+            code = form.cleaned_data.get("code")
+            if code in used_codes:
+                raise forms.ValidationError("Každý typ varianty může být u koncertu jen jednou.")
+            if code:
+                used_codes.add(code)
+
+
+EventTicketVariantFormSet = inlineformset_factory(
+    Event,
+    EventTicketVariant,
+    form=EventTicketVariantForm,
+    formset=BaseEventTicketVariantFormSet,
+    fields=[
+        "code",
+        "name",
+        "price",
+        "ticket_price_text",
+        "allow_personalization",
+        "sort_order",
+        "is_active",
+    ],
+    extra=0,
+    can_delete=True,
+)
+
+InitialEventTicketVariantFormSet = inlineformset_factory(
+    Event,
+    EventTicketVariant,
+    form=EventTicketVariantForm,
+    formset=BaseEventTicketVariantFormSet,
+    fields=[
+        "code",
+        "name",
+        "price",
+        "ticket_price_text",
+        "allow_personalization",
+        "sort_order",
+        "is_active",
+    ],
+    extra=3,
+    can_delete=True,
+)

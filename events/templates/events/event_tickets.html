@@ -1,0 +1,356 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'events/event_detail.css' %}">
+{% endblock %}
+
+{% block title %}Vstupenky | {{ event.title }}{% endblock title %}
+
+{% block rozesilac_content %}
+<div class="event-detail-page">
+  <div class="event-detail-header">
+    <div>
+      <h2>Vstupenky – {{ event.title }}</h2>
+
+      {% if event.subtitle %}
+        <p class="muted" style="margin-top: -8px; margin-bottom: 0;">{{ event.subtitle }}</p>
+      {% endif %}
+
+      <div style="margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px;">
+        <span class="contact-group-badge">
+          {% if settings_form.instance.pk %}
+            Nastavení existuje
+          {% else %}
+            Nové nastavení
+          {% endif %}
+        </span>
+        <span class="contact-group-badge">
+          Varianty: {{ variant_formset.forms|length }}
+        </span>
+        <span class="contact-group-badge">
+          {% if event.starts_at %}
+            {{ event.starts_at|date:"d. m. Y H:i" }}
+          {% else %}
+            Bez data
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    <div class="event-detail-actions">
+      <a href="{% url 'events:event_detail' event.pk %}" class="button-like button-secondary">Zpět na detail koncertu</a>
+      <a href="{% url 'events:event_edit' event.pk %}" class="button-like">Upravit koncert</a>
+    </div>
+  </div>
+
+  {% if messages %}
+    <ul class="messages">
+      {% for m in messages %}
+        <li class="{{ m.tags }}">{{ m }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <div class="event-detail-grid">
+      <section class="event-detail-main">
+        <div class="detail-card">
+          <h3>Nastavení vstupenek</h3>
+
+          {% if settings_form.non_field_errors %}
+            <div class="form-errors" style="margin-bottom: 16px;">
+              {% for err in settings_form.non_field_errors %}
+                <div>{{ err }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <div class="form-row">
+            <label for="{{ settings_form.enabled.id_for_label }}">{{ settings_form.enabled.label }}</label>
+            {{ settings_form.enabled }}
+            {% if settings_form.enabled.errors %}
+              <div class="form-errors">{{ settings_form.enabled.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ settings_form.logo_image.id_for_label }}">{{ settings_form.logo_image.label }}</label>
+            {{ settings_form.logo_image }}
+            {% if settings_form.logo_image.help_text %}
+              <div class="help-text">{{ settings_form.logo_image.help_text }}</div>
+            {% endif %}
+            {% if settings_form.logo_image.errors %}
+              <div class="form-errors">{{ settings_form.logo_image.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ settings_form.header_text.id_for_label }}">{{ settings_form.header_text.label }}</label>
+            {{ settings_form.header_text }}
+            {% if settings_form.header_text.errors %}
+              <div class="form-errors">{{ settings_form.header_text.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ settings_form.ticket_title.id_for_label }}">{{ settings_form.ticket_title.label }}</label>
+            {{ settings_form.ticket_title }}
+            {% if settings_form.ticket_title.help_text %}
+              <div class="help-text">{{ settings_form.ticket_title.help_text }}</div>
+            {% endif %}
+            {% if settings_form.ticket_title.errors %}
+              <div class="form-errors">{{ settings_form.ticket_title.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ settings_form.ticket_artists_text.id_for_label }}">{{ settings_form.ticket_artists_text.label }}</label>
+            {{ settings_form.ticket_artists_text }}
+            {% if settings_form.ticket_artists_text.help_text %}
+              <div class="help-text">{{ settings_form.ticket_artists_text.help_text }}</div>
+            {% endif %}
+            {% if settings_form.ticket_artists_text.errors %}
+              <div class="form-errors">{{ settings_form.ticket_artists_text.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ settings_form.ticket_venue_text.id_for_label }}">{{ settings_form.ticket_venue_text.label }}</label>
+            {{ settings_form.ticket_venue_text }}
+            {% if settings_form.ticket_venue_text.help_text %}
+              <div class="help-text">{{ settings_form.ticket_venue_text.help_text }}</div>
+            {% endif %}
+            {% if settings_form.ticket_venue_text.errors %}
+              <div class="form-errors">{{ settings_form.ticket_venue_text.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ settings_form.ticket_datetime_text.id_for_label }}">{{ settings_form.ticket_datetime_text.label }}</label>
+            {{ settings_form.ticket_datetime_text }}
+            {% if settings_form.ticket_datetime_text.help_text %}
+              <div class="help-text">{{ settings_form.ticket_datetime_text.help_text }}</div>
+            {% endif %}
+            {% if settings_form.ticket_datetime_text.errors %}
+              <div class="form-errors">{{ settings_form.ticket_datetime_text.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ settings_form.default_tickets_per_page.id_for_label }}">{{ settings_form.default_tickets_per_page.label }}</label>
+            {{ settings_form.default_tickets_per_page }}
+            {% if settings_form.default_tickets_per_page.errors %}
+              <div class="form-errors">{{ settings_form.default_tickets_per_page.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="detail-card">
+          <h3>Varianty vstupenek</h3>
+
+          {% if variant_formset.non_form_errors %}
+            <div class="form-errors" style="margin-bottom: 16px;">
+              {% for err in variant_formset.non_form_errors %}
+                <div>{{ err }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {{ variant_formset.management_form }}
+
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Typ</th>
+                  <th>Název</th>
+                  <th>Cena</th>
+                  <th>Text na vstupence</th>
+                  <th>Personalizace</th>
+                  <th>Pořadí</th>
+                  <th>Aktivní</th>
+                  <th>Smazat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for form in variant_formset %}
+                  <tr>
+                    {% for hidden in form.hidden_fields %}
+                      {{ hidden }}
+                    {% endfor %}
+
+                    <td>
+                      {{ form.code }}
+                      {% if form.code.errors %}
+                        <div class="form-errors">{{ form.code.errors }}</div>
+                      {% endif %}
+                    </td>
+
+                    <td>
+                      {{ form.name }}
+                      {% if form.name.errors %}
+                        <div class="form-errors">{{ form.name.errors }}</div>
+                      {% endif %}
+                    </td>
+
+                    <td>
+                      {{ form.price }}
+                      {% if form.price.errors %}
+                        <div class="form-errors">{{ form.price.errors }}</div>
+                      {% endif %}
+                    </td>
+
+                    <td>
+                      {{ form.ticket_price_text }}
+                      {% if form.ticket_price_text.errors %}
+                        <div class="form-errors">{{ form.ticket_price_text.errors }}</div>
+                      {% endif %}
+                    </td>
+
+                    <td style="text-align: center;">
+                      {{ form.allow_personalization }}
+                      {% if form.allow_personalization.errors %}
+                        <div class="form-errors">{{ form.allow_personalization.errors }}</div>
+                      {% endif %}
+                    </td>
+
+                    <td>
+                      {{ form.sort_order }}
+                      {% if form.sort_order.errors %}
+                        <div class="form-errors">{{ form.sort_order.errors }}</div>
+                      {% endif %}
+                    </td>
+
+                    <td style="text-align: center;">
+                      {{ form.is_active }}
+                      {% if form.is_active.errors %}
+                        <div class="form-errors">{{ form.is_active.errors }}</div>
+                      {% endif %}
+                    </td>
+
+                    <td style="text-align: center;">
+                      {% if form.instance.pk %}
+                        {{ form.DELETE }}
+                      {% else %}
+                        <span class="muted">—</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+
+                  {% if form.non_field_errors %}
+                    <tr>
+                      <td colspan="8">
+                        <div class="form-errors">
+                          {% for err in form.non_field_errors %}
+                            <div>{{ err }}</div>
+                          {% endfor %}
+                        </div>
+                      </td>
+                    </tr>
+                  {% endif %}
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <p class="help-text" style="margin-top: 12px;">
+            Zatím se tu zobrazují jen existující nebo předvyplněné varianty. Dynamické přidávání dalších řádků můžeme doplnit později.
+          </p>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Uložit nastavení vstupenek</button>
+          <a href="{% url 'events:event_detail' event.pk %}" class="button-like button-secondary">Zrušit</a>
+        </div>
+      </section>
+
+      <aside class="event-detail-side">
+        <div class="detail-card">
+          <h3>Přehled koncertu</h3>
+
+          <p>
+            <strong>Název:</strong> {{ event.title }}
+          </p>
+
+          <p>
+            <strong>Datum:</strong>
+            {% if event.starts_at %}
+              {{ event.starts_at|date:"d. m. Y H:i" }}
+            {% else %}
+              <span class="muted">Není vyplněno</span>
+            {% endif %}
+          </p>
+
+          <p>
+            <strong>Místo:</strong>
+            {% if event.venue %}
+              {{ event.venue }}
+            {% else %}
+              <span class="muted">Není vyplněno</span>
+            {% endif %}
+          </p>
+
+          <p>
+            <strong>Interpreti v koncertu:</strong> {{ event.artists.count }}
+          </p>
+
+          <p class="help-text" style="margin-top: 14px;">
+            Pole pro vstupenky jsou samostatná. To znamená, že si můžeš texty upravit jinak než v detailu koncertu.
+          </p>
+        </div>
+
+        <div class="detail-card">
+          <h3>Doporučení</h3>
+
+          <p class="help-text">
+            Název, místo i datum na vstupence mají být finální tisková verze. Neber to jako technická data koncertu.
+          </p>
+
+          <p class="help-text">
+            U interpretů může být klidně kratší výběr než na veřejné stránce koncertu.
+          </p>
+
+          <p class="help-text">
+            Čestná vstupenka má mít zapnutou personalizaci. Ostatní varianty většinou ne.
+          </p>
+
+          <p class="help-text">
+            Pokud se text interpretů nevejde, zkrať ho ručně. To je správně, ne chyba.
+          </p>
+        </div>
+
+        {% if recent_images %}
+          <div class="detail-card">
+            <h3>Poslední nahrané obrázky</h3>
+
+            <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+              {% for image in recent_images %}
+                <div class="content-section-soft" style="padding: 10px; border: 1px solid #ddd; border-radius: 10px;">
+                  <div style="margin-bottom: 8px;">
+                    <img
+                      src="{{ image.image.url }}"
+                      alt="{{ image.title|default:'Obrázek' }}"
+                      style="display:block; width:100%; max-height:120px; object-fit:contain; border-radius:8px;"
+                    >
+                  </div>
+                  <div class="small muted">
+                    {{ image.title|default:"Bez názvu" }}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+
+            <p class="help-text" style="margin-top: 12px;">
+              Tahle sekce je jen orientační, ať máš po ruce poslední loga a obrázky.
+            </p>
+          </div>
+        {% endif %}
+      </aside>
+    </div>
+  </form>
+</div>
+{% endblock rozesilac_content %}
