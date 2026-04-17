@@ -150,7 +150,7 @@ def build_ticket_artists_text_from_event(event):
         for artist in event.artists.all().order_by("sort_order", "id")
         if (artist.name or "").strip()
     ]
-    return ", ".join(artist_names)
+    return " | ".join(artist_names)
 
 
 def build_ticket_venue_text_from_event(event):
