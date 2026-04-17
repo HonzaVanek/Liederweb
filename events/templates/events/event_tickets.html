@@ -304,6 +304,49 @@
         </div>
 
         <div class="detail-card">
+          <h3>PDF pro tisk</h3>
+
+          {% if not settings_form.instance.pk %}
+            <p class="muted">
+              Nejdřív ulož nastavení vstupenek a varianty. Teprve potom půjde generovat PDF.
+            </p>
+
+          {% elif not settings_form.instance.enabled %}
+            <p class="muted">
+              Generování vstupenek je momentálně vypnuté. Zapni ho a ulož změny.
+            </p>
+
+          {% else %}
+            {% with saved_variants=variant_formset.forms %}
+              {% if saved_variants %}
+                <div class="form-actions" style="display: grid; gap: 10px; margin-top: 0;">
+                  {% for form in saved_variants %}
+                    {% if form.instance.pk and form.instance.is_active and form.instance.code %}
+                      <a
+                        href="{% url 'events:event_ticket_pdf' event.pk form.instance.code %}"
+                        class="btn-link"
+                        target="_blank"
+                      >
+                        Stáhnout PDF – {{ form.instance.name }}
+                      </a>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+
+                <p class="help-text" style="margin-top: 14px;">
+                  Každé tlačítko vygeneruje jednostránkové PDF s jednou variantou vstupenek.
+                </p>
+              {% else %}
+                <p class="muted">
+                  Zatím nejsou uložené žádné varianty vstupenek.
+                </p>
+              {% endif %}
+            {% endwith %}
+          {% endif %}
+        </div>
+
+
+        <div class="detail-card">
           <h3>Doporučení</h3>
 
           <p class="help-text">

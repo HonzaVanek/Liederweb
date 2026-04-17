@@ -32,6 +32,8 @@ from .forms import (
     get_default_ticket_variant_initials,
 )
 
+from .services.ticket_pdf import build_event_ticket_pdf, build_ticket_pdf_filename
+
 from django.conf import settings
 from django.core.mail import send_mail
 
@@ -640,3 +642,51 @@ def event_tickets(request, pk):
             "recent_images": EmailImage.objects.order_by("-uploaded_at")[:10],
         },
     )
+
+@staff_required
+def event_ticket_pdf(request, pk, variant_code):
+    event = get_object_or_404(
+        Event.objects.select_related("ticket_settings").prefetch_related(
+            Prefetch(
+                "ticket_variants",
+                queryset=EventTicketVariant.objects.order_by("sort_order", "id"),
+            ),
+            Prefetch(
+                "artists",
+                queryset=EventArtist.objects.order_by("sort_order", "id"),
+            ),
+        ),
+        pk=pk,
+    )
+
+    ticket_settings = getattr(event, "ticket_settings", None)
+    if not ticket_settings:
+        messages.error(request, "Tento koncert ještě nemá nastavení vstupenek.")
+        return redirect("events:event_tickets", pk=event.pk)
+
+    variant = event.ticket_variants.filter(code=variant_code).first()
+    if not variant:
+        messages.error(request, "Požadovaná varianta vstupenky nebyla nalezena.")
+        return redirect("events:event_tickets", pk=event.pk)
+
+    if not variant.is_active:
+        messages.error(request, "Tato varianta vstupenky není aktivní.")
+        return redirect("events:event_tickets", pk=event.pk)
+
+    try:
+        pdf_bytes = build_event_ticket_pdf(event=event, variant=variant)
+    except Exception:
+        security_logger.exception(
+            "Ticket PDF generation failed | event_id=%s | variant_code=%s | user_id=%s",
+            event.id,
+            variant_code,
+            request.user.id if request.user.is_authenticated else None,
+        )
+        messages.error(request, "PDF vstupenek se nepodařilo vygenerovat.")
+        return redirect("events:event_tickets", pk=event.pk)
+
+    filename = build_ticket_pdf_filename(event, variant)
+
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response

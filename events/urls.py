@@ -9,6 +9,7 @@ urlpatterns = [
     path("<int:pk>/", views.event_detail, name="event_detail"),
     path("<int:pk>/edit/", views.event_edit, name="event_edit"),
     path("<int:pk>/tickets/", views.event_tickets, name="event_tickets"),
+    path("<int:pk>/tickets/pdf/<str:variant_code>/", views.event_ticket_pdf, name="event_ticket_pdf"),
     
     path("vip/<str:token>/", views.vip_event_detail, name="vip_event_detail"),
     path("vip/<str:token>/reserve/", views.vip_reserve, name="vip_reserve"),
