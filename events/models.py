@@ -233,8 +233,8 @@ class EventTicketSettings(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="events_as_ticket_logo",
-        verbose_name="Logo LS na vstupence",
-        help_text="Když nevyplníš, může se při generování použít výchozí logo.",
+        verbose_name="Logo na vstupence",
+        help_text="Když nevyplníš, při generování se použije výchozí logo LS (takže asi nevyplňuj - jenom kdybys chtěla jiné logo).",
     )
 
     header_text = models.CharField(
@@ -247,7 +247,7 @@ class EventTicketSettings(models.Model):
         max_length=255,
         blank=True,
         verbose_name="Název akce na vstupence",
-        help_text="Finální text pro tisk. Při založení se může předvyplnit z názvu koncertu.",
+        # help_text="Finální text pro tisk. Při založení se může předvyplnit z názvu koncertu.",
     )
 
     ticket_artists_text = models.TextField(
@@ -259,7 +259,7 @@ class EventTicketSettings(models.Model):
     ticket_venue_text = models.CharField(
         max_length=255,
         blank=True,
-        verbose_name="Místo na vstupence",
+        verbose_name="Místo konání koncertu na vstupence",
         help_text="Např. „Muzeum Bedřicha Smetany“",
     )
 
@@ -273,7 +273,7 @@ class EventTicketSettings(models.Model):
     default_tickets_per_page = models.PositiveSmallIntegerField(
         choices=TICKETS_PER_PAGE_CHOICES,
         default=5,
-        verbose_name="Výchozí počet vstupenek na stránku (podle počtu řádku interpretů)",
+        verbose_name="Výchozí počet vstupenek na stránku (asi podle počtu řádku interpretů aby se to vešlo na A4)",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

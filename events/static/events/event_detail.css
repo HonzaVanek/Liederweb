@@ -34,10 +34,45 @@
     min-width: 0;
 }
 
+.ticket-help-inline {
+    margin-top: 8px;
+    margin-bottom: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #666;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    font-style: italic;
+    text-align: left;
+}
+
 .event-detail-side {
     position: sticky;
     top: 18px;
     align-self: start;
+    max-height: calc(100vh - 36px);
+    overflow-y: auto;
+    padding-right: 6px;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+}
+
+.event-detail-side::-webkit-scrollbar {
+    width: 10px;
+}
+
+.event-detail-side::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.event-detail-side::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.22);
+    border-radius: 999px;
+}
+
+.event-detail-side::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.34);
 }
 
 .detail-card {
@@ -180,6 +215,18 @@
     letter-spacing: 0.03em;
 }
 
+.ticket-help-side {
+    margin: 0 0 18px 0;
+    padding: 14px 16px;
+    border-left: 4px solid #000;
+    background: #f7f7f7;
+    border-radius: 6px;
+    color: #555;
+    line-height: 1.6;
+    font-style: italic;
+    text-align: left;
+}
+
 .event-reservations-table tbody tr:hover {
     background: #fafafa;
 }
@@ -197,6 +244,42 @@
 /* odkazy v detailu */
 .event-detail-page a:not(.button-like):not(.btn-link) {
     word-break: break-word;
+}
+
+
+.ticket-variants-table-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 8px;
+}
+
+.ticket-variants-table {
+    min-width: 1150px;
+    table-layout: auto;
+}
+
+.ticket-variants-table th {
+    white-space: nowrap;
+}
+
+.ticket-variants-table td {
+    vertical-align: top;
+}
+
+.ticket-variants-table input[type="text"],
+.ticket-variants-table input[type="number"],
+.ticket-variants-table select {
+    width: 100%;
+    min-width: 0;
+}
+
+.ticket-variants-table td:nth-child(5),
+.ticket-variants-table td:nth-child(7),
+.ticket-variants-table td:nth-child(8),
+.ticket-variants-table th:nth-child(5),
+.ticket-variants-table th:nth-child(7),
+.ticket-variants-table th:nth-child(8) {
+    text-align: center;
 }
 
 /* responsivita */
@@ -217,6 +300,9 @@
 
     .event-detail-side {
         position: static;
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
     }
 }
 
@@ -262,6 +348,11 @@ body.dark-mode .detail-card h3 {
     color: #f2f2f2;
 }
 
+body.dark-mode .detail-card li a, 
+body.dark-mode .detail-card p a { 
+    color: #f2f2f2;
+}
+
 body.dark-mode .detail-card h4 {
     color: #f0f0f0;
 }
@@ -287,7 +378,8 @@ body.dark-mode .event-reservations-table {
 }
 
 body.dark-mode .event-reservations-table th,
-body.dark-mode .event-reservations-table td {
+body.dark-mode .event-reservations-table td,
+body.dark-mode .event-reservations-table tbody td a {
     border-bottom-color: #3a3a3a;
     color: #eee;
 }
@@ -314,4 +406,44 @@ body.dark-mode .button-like:hover {
 body.dark-mode .muted,
 body.dark-mode .small {
     color: #aaa;
+}
+
+body.dark-mode .event-detail-side::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+body.dark-mode .event-detail-side::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.36);
+}
+
+body.dark-mode .detail-card .content-section-soft {
+    background: #232323;
+    border-color: #444 !important;
+}
+
+body.dark-mode .detail-card .content-section-soft p,
+body.dark-mode .detail-card .content-section-soft strong {
+    color: #e8e8e8;
+}
+
+body.dark-mode .detail-card .content-section-soft a {
+    color: #f2f2f2;
+}
+
+body.dark-mode .detail-card .content-section-soft a:hover {
+    color: #ffffff;
+}
+
+body.dark-mode .detail-card .content-section-soft img {
+    background: transparent;
+}
+
+body.dark-mode .ticket-help-inline {
+    color: #b5b5b5;
+}
+
+body.dark-mode .ticket-help-side {
+    background: #1f1f1f;
+    color: #d0d0d0;
+    border-left-color: #eee;
 }

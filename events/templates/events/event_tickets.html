@@ -81,14 +81,14 @@
             <label for="{{ settings_form.logo_image.id_for_label }}">{{ settings_form.logo_image.label }}</label>
             {{ settings_form.logo_image }}
             {% if settings_form.logo_image.help_text %}
-              <div class="help-text">{{ settings_form.logo_image.help_text }}</div>
+              <div class="ticket-help-inline">{{ settings_form.logo_image.help_text }}</div>
             {% endif %}
             {% if settings_form.logo_image.errors %}
               <div class="form-errors">{{ settings_form.logo_image.errors }}</div>
             {% endif %}
           </div>
 
-          <div class="form-row">
+          <div class="form-row" style="margin-top: 20px;">
             <label for="{{ settings_form.header_text.id_for_label }}">{{ settings_form.header_text.label }}</label>
             {{ settings_form.header_text }}
             {% if settings_form.header_text.errors %}
@@ -96,7 +96,7 @@
             {% endif %}
           </div>
 
-          <div class="form-row">
+          <div class="form-row" style="margin-top: 15px;">
             <label for="{{ settings_form.ticket_title.id_for_label }}">{{ settings_form.ticket_title.label }}</label>
             {{ settings_form.ticket_title }}
             {% if settings_form.ticket_title.help_text %}
@@ -107,40 +107,40 @@
             {% endif %}
           </div>
 
-          <div class="form-row">
+          <div class="form-row" style="margin-top: 15px;">
             <label for="{{ settings_form.ticket_artists_text.id_for_label }}">{{ settings_form.ticket_artists_text.label }}</label>
             {{ settings_form.ticket_artists_text }}
             {% if settings_form.ticket_artists_text.help_text %}
-              <div class="help-text">{{ settings_form.ticket_artists_text.help_text }}</div>
+              <div class="ticket-help-inline">{{ settings_form.ticket_artists_text.help_text }}</div>
             {% endif %}
             {% if settings_form.ticket_artists_text.errors %}
               <div class="form-errors">{{ settings_form.ticket_artists_text.errors }}</div>
             {% endif %}
           </div>
 
-          <div class="form-row">
+          <div class="form-row" style="margin-top: 20px;">
             <label for="{{ settings_form.ticket_venue_text.id_for_label }}">{{ settings_form.ticket_venue_text.label }}</label>
             {{ settings_form.ticket_venue_text }}
             {% if settings_form.ticket_venue_text.help_text %}
-              <div class="help-text">{{ settings_form.ticket_venue_text.help_text }}</div>
+              <div class="ticket-help-inline">{{ settings_form.ticket_venue_text.help_text }}</div>
             {% endif %}
             {% if settings_form.ticket_venue_text.errors %}
               <div class="form-errors">{{ settings_form.ticket_venue_text.errors }}</div>
             {% endif %}
           </div>
 
-          <div class="form-row">
+          <div class="form-row" style="margin-top: 20px;">
             <label for="{{ settings_form.ticket_datetime_text.id_for_label }}">{{ settings_form.ticket_datetime_text.label }}</label>
             {{ settings_form.ticket_datetime_text }}
             {% if settings_form.ticket_datetime_text.help_text %}
-              <div class="help-text">{{ settings_form.ticket_datetime_text.help_text }}</div>
+              <div class="ticket-help-inline">{{ settings_form.ticket_datetime_text.help_text }}</div>
             {% endif %}
             {% if settings_form.ticket_datetime_text.errors %}
               <div class="form-errors">{{ settings_form.ticket_datetime_text.errors }}</div>
             {% endif %}
           </div>
 
-          <div class="form-row">
+          <div class="form-row" style="margin-top: 20px;">
             <label for="{{ settings_form.default_tickets_per_page.id_for_label }}">{{ settings_form.default_tickets_per_page.label }}</label>
             {{ settings_form.default_tickets_per_page }}
             {% if settings_form.default_tickets_per_page.errors %}
@@ -162,15 +162,15 @@
 
           {{ variant_formset.management_form }}
 
-          <div class="table-responsive">
-            <table class="table">
+          <div class="table-responsive ticket-variants-table-wrap">
+            <table class="table ticket-variants-table">
               <thead>
                 <tr>
                   <th>Typ</th>
                   <th>Název</th>
                   <th>Cena</th>
                   <th>Text na vstupence</th>
-                  <th>Personalizace</th>
+                  <th>Se jménem hosta</th>
                   <th>Pořadí</th>
                   <th>Aktivní</th>
                   <th>Smazat</th>
@@ -257,8 +257,8 @@
             </table>
           </div>
 
-          <p class="help-text" style="margin-top: 12px;">
-            Zatím se tu zobrazují jen existující nebo předvyplněné varianty. Dynamické přidávání dalších řádků můžeme doplnit později.
+          <p class="ticket-help-side" style="margin-top: 12px;">
+            Se jménem hosta bude asi jen ta čestná vstupenka (zatím to ale nic nedělá). Zatím se tu zobrazují jen existující nebo předvyplněné varianty. Dynamické přidávání dalších řádků můžeme doplnit později.
           </p>
         </div>
 
@@ -271,6 +271,10 @@
       <aside class="event-detail-side">
         <div class="detail-card">
           <h3>Přehled koncertu</h3>
+
+          <p class="ticket-help-side" style="margin-top: 14px;">
+            Pole pro vstupenky jsou samostatná. To znamená, že si můžeš texty co se objeví na vstupence upravit a můžou být jinak než v detailu koncertu.
+          </p>
 
           <p>
             <strong>Název:</strong> {{ event.title }}
@@ -298,9 +302,7 @@
             <strong>Interpreti v koncertu:</strong> {{ event.artists.count }}
           </p>
 
-          <p class="help-text" style="margin-top: 14px;">
-            Pole pro vstupenky jsou samostatná. To znamená, že si můžeš texty upravit jinak než v detailu koncertu.
-          </p>
+
         </div>
 
         <div class="detail-card">
@@ -333,7 +335,7 @@
                   {% endfor %}
                 </div>
 
-                <p class="help-text" style="margin-top: 14px;">
+                <p class="ticket-help-side" style="margin-top: 14px;">
                   Každé tlačítko vygeneruje jednostránkové PDF s jednou variantou vstupenek.
                 </p>
               {% else %}
@@ -349,20 +351,20 @@
         <div class="detail-card">
           <h3>Doporučení</h3>
 
-          <p class="help-text">
+          <p class="ticket-help-side">
             Název, místo i datum na vstupence mají být finální tisková verze. Neber to jako technická data koncertu.
           </p>
 
-          <p class="help-text">
+          <p class="ticket-help-side">
             U interpretů může být klidně kratší výběr než na veřejné stránce koncertu.
           </p>
 
-          <p class="help-text">
+          <p class="ticket-help-side">
             Čestná vstupenka má mít zapnutou personalizaci. Ostatní varianty většinou ne.
           </p>
 
-          <p class="help-text">
-            Pokud se text interpretů nevejde, zkrať ho ručně. To je správně, ne chyba.
+          <p class="ticket-help-side">
+            Pokud se text interpretů nebo místa / času nevejde, zkrať ho ručně. To je správně, ne chyba. Nebo si to prostě zkus vygenerovat a uvidíš jak to vypadá, lze vždy upravit.
           </p>
         </div>
 
@@ -387,8 +389,8 @@
               {% endfor %}
             </div>
 
-            <p class="help-text" style="margin-top: 12px;">
-              Tahle sekce je jen orientační, ať máš po ruce poslední loga a obrázky.
+            <p class="ticket-help-side" style="margin-top: 12px;">
+              Tahle sekce s obrázkyje jen orientační, ať máš po ruce poslední loga a obrázky.
             </p>
           </div>
         {% endif %}

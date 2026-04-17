@@ -981,3 +981,30 @@ body.dark-mode .rozesilac-main .contacts-box label {
     color: #e6e6e6;
 }
 
+body.dark-mode .messages li.success,
+body.dark-mode .messages .success {
+    background-color: #203424;
+    color: #b9efc0;
+    border: 1px solid #3f6a45;
+}
+
+body.dark-mode .messages li.error,
+body.dark-mode .messages .error {
+    background-color: #3a1f22;
+    color: #ffb8c0;
+    border: 1px solid #7a3a42;
+}
+
+body.dark-mode .messages li.warning,
+body.dark-mode .messages .warning {
+    background-color: #3a3120;
+    color: #f3dd9b;
+    border: 1px solid #7d6940;
+}
+
+body.dark-mode .messages li.info,
+body.dark-mode .messages .info {
+    background-color: #242424;
+    color: #d8d8d8;
+    border: 1px solid #4a4a4a;
+}
