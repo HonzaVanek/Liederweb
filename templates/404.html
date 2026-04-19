@@ -1,8 +1,57 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Chyba 404 - stránka nenalezena{% endblock title %}
+{% block title %}Stránka nenalezena (404) | Lieder Society{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'errors/404.css' %}">
+{% endblock %}
 
 {% block content %}
-    <h1 style="margin: 20px auto; text-align: center;">Tato stránka neexistuje (404)</h1>
-    <p style="margin: 20px auto; text-align: center;">Nechci se s 404 stránkou moc crcat, jde o to jí hlavně mít :)</p>
+<section class="error-page error-page-404">
+  <div class="error-page-shell">
+    <div class="error-page-card">
+      <p class="error-page-code">404</p>
+
+      <h1>Tato stránka neexistuje</h1>
+
+      <p class="error-page-lead">
+        Požadovanou stránku se nepodařilo najít. Je možné, že odkaz už není platný,
+        stránka byla přesunuta nebo v adrese vznikla chyba.
+      </p>
+
+      <div class="error-page-panel">
+        <h2>Co můžete zkusit</h2>
+        <ul class="error-page-list">
+          <li>Zkontrolovat, jestli je adresa napsaná správně.</li>
+          <li>Vrátit se na hlavní web Lieder Society.</li>
+          <li>Otevřít rozcestí rozesílače, pokud jste mířili do interní části.</li>
+          <li>Napsat nám, pokud jste se sem dostali přes nefunkční odkaz.</li>
+        </ul>
+      </div>
+
+      <div class="error-page-actions">
+        <a href="https://lieder-society.cz/" target="_blank" rel="noopener" class="error-page-button error-page-button-primary">
+          Hlavní web Lieder Society
+        </a>
+
+        <a href="/rozesilac/" class="error-page-button error-page-button-secondary">
+          Přejít do rozesílače
+        </a>
+      </div>
+
+      <div class="error-page-contact">
+        <h2>Narazili jste na chybný odkaz?</h2>
+        <p>
+          Napište nám na
+          <a href="mailto:info@liedersociety.cz?subject=Nefunk%C4%8Dn%C3%AD%20odkaz%20na%20webu%20Lieder%20Society">
+            info@liedersociety.cz
+          </a>
+          a pokud můžete, pošlete i adresu stránky nebo krátce popište, co zobrazení této chyby předcházelo.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
 {% endblock content %}

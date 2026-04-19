@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Došlo k chybě serveru (500) | Lieder Society{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'errors/500.css' %}">
+{% endblock %}
+
+{% block content %}
+<section class="error-page error-page-500">
+  <div class="error-page-shell">
+    <div class="error-page-card">
+      <p class="error-page-code">500</p>
+
+      <h1>Došlo k chybě serveru</h1>
+
+      <p class="error-page-lead">
+        Omlouváme se, při zpracování požadavku nastala neočekávaná chyba.
+        Problém je na naší straně.
+      </p>
+
+      <div class="error-page-panel">
+        <h2>Co můžete zkusit</h2>
+        <ul class="error-page-list">
+          <li>Obnovit stránku za chvíli znovu.</li>
+          <li>Vrátit se na hlavní web nebo na předchozí stránku.</li>
+          <li>Napsat nám, pokud se chyba opakuje.</li>
+        </ul>
+      </div>
+
+      <div class="error-page-actions">
+        <a href="https://lieder-society.cz/" target="_blank" rel="noopener" class="error-page-button error-page-button-primary">
+          Hlavní web Lieder Society
+        </a>
+
+        <a href="javascript:history.back()" class="error-page-button error-page-button-secondary">
+          Zpět na předchozí stránku
+        </a>
+      </div>
+
+      <div class="error-page-contact">
+        <h2>Chyba se opakuje?</h2>
+        <p>
+          Napište nám na
+          <a href="mailto:info@liedersociety.cz?subject=Chyba%20500%20na%20webu%20Lieder%20Society">
+            info@liedersociety.cz
+          </a>
+          a pokud můžete, připojte adresu stránky nebo stručný popis toho, co se stalo těsně před chybou.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock content %}
