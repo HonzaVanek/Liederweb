@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Lidé | Lieder Society{% endblock %}
+
+{% block content %}
+<section class="people-page">
+    <div class="people-page-inner">
+        <header class="people-page-header">
+            <h1>Lidé</h1>
+            <p>
+                Seznam osobností spojených s Lieder Society.
+            </p>
+
+            {% if request.user.is_staff %}
+                <div class="people-page-actions">
+                    <a href="{% url 'core:person_admin_list' %}">Správa profilů</a>
+                    <a href="{% url 'core:person_create' %}">Nový profil</a>
+                </div>
+            {% endif %}
+        </header>
+
+        {% if people %}
+            <div class="people-grid">
+                {% for person in people %}
+                    <article class="person-card">
+                        <a href="{{ person.get_absolute_url }}" class="person-card-link">
+                            <div class="person-card-photo-wrap">
+                                {% if person.photo %}
+                                    <img src="{{ person.photo.url }}" alt="{{ person.name }}" class="person-card-photo">
+                                {% else %}
+                                    <div class="person-card-photo person-card-photo--placeholder">
+                                        Bez fotografie
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="person-card-body">
+                                <h2>{{ person.name }}</h2>
+
+                                {% if person.role_short %}
+                                    <p class="person-card-role">{{ person.role_short }}</p>
+                                {% endif %}
+                            </div>
+                        </a>
+
+                        {% if request.user.is_staff %}
+                            <div class="person-card-staff-actions">
+                                <a href="{% url 'core:person_update' slug=person.slug %}">Upravit</a>
+                            </div>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Zatím tu není žádný publikovaný profil.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

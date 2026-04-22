@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}{{ person.name }} | Lidé | Lieder Society{% endblock %}
+
+{% block content %}
+<section class="person-detail-page">
+    <div class="person-detail-inner">
+
+        <div class="person-detail-top">
+            <p class="person-detail-back">
+                <a href="{% url 'core:person_list' %}">← Zpět na seznam lidí</a>
+            </p>
+
+            {% if request.user.is_staff %}
+                <p class="person-detail-edit">
+                    <a href="{% url 'core:person_update' slug=person.slug %}">Upravit profil</a>
+                </p>
+            {% endif %}
+        </div>
+
+        <article class="person-detail-card">
+            <div class="person-detail-main">
+                <div class="person-detail-photo-col">
+                    {% if person.photo %}
+                        <img src="{{ person.photo.url }}" alt="{{ person.name }}" class="person-detail-photo">
+                    {% else %}
+                        <div class="person-detail-photo person-detail-photo--placeholder">
+                            Bez fotografie
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="person-detail-content-col">
+                    <header class="person-detail-header">
+                        <h1>{{ person.name }}</h1>
+
+                        {% if person.role_short %}
+                            <p class="person-detail-role">{{ person.role_short }}</p>
+                        {% endif %}
+                    </header>
+
+                    {% if person.bio %}
+                        <div class="person-detail-bio">
+                            {{ person.bio|linebreaks }}
+                        </div>
+                    {% endif %}
+
+                    {% if person.contact_email or person.website_url %}
+                        <section class="person-detail-contact">
+                            <h2>Kontakt</h2>
+
+                            <ul>
+                                {% if person.contact_email %}
+                                    <li>
+                                        E-mail:
+                                        <a href="mailto:{{ person.contact_email }}">{{ person.contact_email }}</a>
+                                    </li>
+                                {% endif %}
+
+                                {% if person.website_url %}
+                                    <li>
+                                        Web:
+                                        <a href="{{ person.website_url }}" target="_blank" rel="noopener noreferrer">
+                                            {{ person.website_url }}
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </section>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

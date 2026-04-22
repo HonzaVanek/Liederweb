@@ -53,12 +53,12 @@
                     </button>
 
                     <a href="/rozesilac/" class="nav-button nav-rozesilac">
-                        Rozesílač <span>→</span>
+                        Admin panel <span>→</span>
                     </a>
 
                     <span class="logged-user">{{ request.user.username }}</span>
 
-                    <form method="post" action="{% url 'logout' %}" class="logout-form">
+                    <form method="post" action="{% url 'core:logout' %}" class="logout-form">
                         {% csrf_token %}
                         <button type="submit" class="logout-button">
                             Odhlásit

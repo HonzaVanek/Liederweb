@@ -1,3 +1,88 @@
 from django.db import models
+from django.urls import reverse
+from django.utils.text import slugify
 
-# Create your models here.
+
+
+def person_photo_upload_to(instance, filename):
+    return f"people/{instance.slug or 'unsorted'}/{filename}"
+
+
+class Person(models.Model):
+    name = models.CharField(
+        max_length=200,
+        verbose_name="Jméno",
+    )
+    slug = models.SlugField(
+        max_length=220,
+        unique=True,
+        blank=True,
+        verbose_name="Slug",
+        help_text="Nech prázdné pro automatické vytvoření z jména.",
+    )
+    photo = models.ImageField(
+        upload_to=person_photo_upload_to,
+        blank=True,
+        null=True,
+        verbose_name="Fotografie",
+    )
+    role_short = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Role / krátký popis",
+        help_text="Např. sopranistka, klavírista, dramaturgyně, produkce…",
+    )
+    bio = models.TextField(
+        blank=True,
+        verbose_name="Text profilu",
+    )
+    contact_email = models.EmailField(
+        blank=True,
+        verbose_name="Kontaktní e-mail",
+    )
+    website_url = models.URLField(
+        blank=True,
+        verbose_name="Osobní web",
+    )
+    sort_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Pořadí",
+        help_text="Nižší číslo = zobrazí se dříve.",
+    )
+    is_published = models.BooleanField(
+        default=True,
+        verbose_name="Publikováno",
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Vytvořeno",
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Naposledy upraveno",
+    )
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+        verbose_name = "Osoba"
+        verbose_name_plural = "Lidé"
+
+    def __str__(self):
+        return self.name
+
+    def get_absolute_url(self):
+        return reverse("core:person_detail", kwargs={"slug": self.slug})
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 2
+
+            while Person.objects.exclude(pk=self.pk).filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)

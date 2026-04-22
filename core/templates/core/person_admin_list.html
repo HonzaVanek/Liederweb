@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Správa profilů | Lidé | Lieder Society{% endblock %}
+
+{% block content %}
+<section class="person-admin-page">
+    <div class="person-admin-inner">
+        <header class="person-admin-header">
+            <h1>Správa profilů</h1>
+            <p>Interní přehled všech profilů osob.</p>
+
+            <div class="person-admin-actions">
+                <a href="{% url 'core:person_create' %}">+ Nový profil</a>
+                <a href="{% url 'core:person_list' %}">Zobrazit veřejný seznam</a>
+            </div>
+        </header>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for m in messages %}
+                    <li class="{{ m.tags }}">{{ m }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if people %}
+            <div class="person-admin-table-wrap">
+                <table class="person-admin-table">
+                    <thead>
+                        <tr>
+                            <th>Pořadí</th>
+                            <th>Jméno</th>
+                            <th>Role</th>
+                            <th>Stav</th>
+                            <th>Akce</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for person in people %}
+                            <tr>
+                                <td>{{ person.sort_order }}</td>
+                                <td>{{ person.name }}</td>
+                                <td>{{ person.role_short|default:"—" }}</td>
+                                <td>
+                                    {% if person.is_published %}
+                                        Publikováno
+                                    {% else %}
+                                        Skryto
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'core:person_update' slug=person.slug %}">Upravit</a>
+                                    {% if person.is_published %}
+                                        |
+                                        <a href="{{ person.get_absolute_url }}">Detail</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>Zatím tu nejsou žádné profily.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

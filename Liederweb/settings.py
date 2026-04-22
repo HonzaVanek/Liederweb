@@ -248,9 +248,9 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 
-LOGIN_URL = 'login'
+LOGIN_URL = 'core:login'
 LOGIN_REDIRECT_URL = '/rozesilac/'
-LOGOUT_REDIRECT_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/core:login/'
 
 
 # na produkci mailgun pro registraci, Brevo pro rozesilac, na dev emaily do konzole

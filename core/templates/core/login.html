@@ -13,7 +13,7 @@
 
     <p>
         Pro přístup k rozesílači je nutné se přihlásit. Pokud ještě nemáte účet,
-        <a href="{% url 'registrace' %}">zaregistrujte se</a> — zadejte platný e-mail,
+        <a href="{% url 'core:registrace' %}">zaregistrujte se</a> — zadejte platný e-mail,
         na který bude zaslán registrační odkaz. Poté je ještě potřeba napsat Vaňkovi,
         aby vašemu účtu povolil přístup k rozesílači.
     </p>
@@ -42,7 +42,7 @@
         <button type="submit" class="btn">Přihlásit se</button>
 
         <div class="password-reset">
-            <a href="{% url 'password_reset' %}">Mám účet, ale zapomněl(a) jsem heslo</a>
+            <a href="{% url 'core:password_reset' %}">Mám účet, ale zapomněl(a) jsem heslo</a>
         </div>
     </form>
 </div>
