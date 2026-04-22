@@ -114,12 +114,12 @@
         </p>
 
         <p>
-          <strong>Hero pozice:</strong>
+          <strong>Pozice cover fotky:</strong>
           {{ event.get_hero_image_position_display|default:"—" }}
         </p>
 
         <p>
-          <strong>Hero parallax:</strong>
+          <strong>Parallax efekt cover fotky:</strong>
           {% if event.hero_parallax_enabled %}Ano{% else %}Ne{% endif %}
         </p>
 
@@ -228,7 +228,7 @@
           </div>
 
           <div>
-            <h4 style="margin-bottom: 10px;">Hero fotka</h4>
+            <h4 style="margin-bottom: 10px;">Cover fotka</h4>
             {% if event.hero_image %}
               <div class="event-poster-wrap">
                 <img

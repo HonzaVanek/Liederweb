@@ -6,41 +6,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Lieder Society{% endblock %}</title>
+
     <link rel="stylesheet" href="{% static 'style.css' %}">
     {% block extra_css %}{% endblock %}
+
     <link rel="icon" href="{% static 'Lieder-favicon.png' %}" type="image/png">
 </head>
-<body>
-    {% if not hide_header %}
-    <header>
-        <div class="nav-wrapper">
-            <nav>
-                <a href="https://lieder-society.cz/" target="_blank" class="nav-button nav-lieder">
-                    Lieder Society <span>→</span>
-                </a>
 
-                <a href="/rozesilac/" class="nav-button nav-rozesilac">
-                    Rozesílač <span>→</span>
-                </a>
+<body
+    class="
+        {% if request.user.is_authenticated %}is-authenticated{% endif %}
+        {% if request.resolver_match and request.resolver_match.namespace %}namespace-{{ request.resolver_match.namespace }}{% endif %}
+    "
+>
+    {% if not hide_header %}
+    <header class="site-header">
+        <div class="nav-wrapper">
+
+            <a href="/" class="site-logo-link" aria-label="Lieder Society – domovská stránka">
+                <img
+                    src="{% static 'LIEDER_society_logo_black_transparent_orez.png' %}"
+                    alt="Lieder Society"
+                    class="site-logo"
+                >
+            </a>
+
+            <nav class="public-nav" aria-label="Hlavní navigace">
+                <a href="https://lieder-society.cz/lide/" class="nav-button">Lidé</a>
+                <a href="https://eshop.lieder-society.cz/" class="nav-button">E-shop</a>
+                <a href="https://lieder-society.cz/kalendar/" class="nav-button">Koncerty</a>
+                <a href="https://lieder-society.cz/lieder-podcast/" class="nav-button">Média</a>
+                <a href="https://lieder-society.cz/foto/" class="nav-button">Galerie</a>
+                <a href="https://lieder-society.cz/kontakt/" class="nav-button">Kontakt</a>
             </nav>
 
-            {% if request.user.is_authenticated and request.resolver_match.namespace == 'rozesilac' or request.resolver_match.namespace == 'events' %}
-                <div class="nav-user-panel">
-                    <button type="button" id="dark-mode-toggle" class="dark-mode-toggle">
+            <div class="nav-user-panel">
+                {% if request.user.is_authenticated %}
+                    <button
+                        type="button"
+                        id="dark-mode-toggle"
+                        class="dark-mode-toggle"
+                        aria-label="Přepnout tmavý režim"
+                        title="Přepnout tmavý režim"
+                    >
                         🌛
                     </button>
-                    <span class="logged-user">
-                        {{ request.user.username }}
-                    </span>
 
-                    <form method="post" action="{% url 'logout' %}">
+                    <a href="/rozesilac/" class="nav-button nav-rozesilac">
+                        Rozesílač <span>→</span>
+                    </a>
+
+                    <span class="logged-user">{{ request.user.username }}</span>
+
+                    <form method="post" action="{% url 'logout' %}" class="logout-form">
                         {% csrf_token %}
                         <button type="submit" class="logout-button">
                             Odhlásit
                         </button>
                     </form>
-                </div>
-            {% endif %}
+                {% endif %}
+            </div>
+
         </div>
     </header>
     {% endif %}
@@ -53,7 +79,6 @@
     (function () {
         const btn = document.getElementById("dark-mode-toggle");
 
-        // načtení stavu
         if (localStorage.getItem("darkMode") === "on") {
             document.body.classList.add("dark-mode");
         }
