@@ -9,10 +9,7 @@ def person_photo_upload_to(instance, filename):
 
 
 class Person(models.Model):
-    name = models.CharField(
-        max_length=200,
-        verbose_name="Jméno",
-    )
+    name = models.CharField(max_length=200, verbose_name="Jméno",)
     slug = models.SlugField(
         max_length=220,
         unique=True,
@@ -20,47 +17,24 @@ class Person(models.Model):
         verbose_name="Slug",
         help_text="Nech prázdné pro automatické vytvoření z jména.",
     )
-    photo = models.ImageField(
-        upload_to=person_photo_upload_to,
-        blank=True,
-        null=True,
-        verbose_name="Fotografie",
-    )
+    photo = models.ImageField(upload_to=person_photo_upload_to, blank=True, null=True, verbose_name="Fotografie",)
     role_short = models.CharField(
         max_length=255,
         blank=True,
         verbose_name="Role / krátký popis",
         help_text="Např. sopranistka, klavírista, dramaturgyně, produkce…",
     )
-    bio = models.TextField(
-        blank=True,
-        verbose_name="Text profilu",
-    )
-    contact_email = models.EmailField(
-        blank=True,
-        verbose_name="Kontaktní e-mail",
-    )
-    website_url = models.URLField(
-        blank=True,
-        verbose_name="Osobní web",
-    )
-    sort_order = models.PositiveIntegerField(
-        default=0,
-        verbose_name="Pořadí",
-        help_text="Nižší číslo = zobrazí se dříve.",
-    )
-    is_published = models.BooleanField(
-        default=True,
-        verbose_name="Publikováno",
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Vytvořeno",
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Naposledy upraveno",
-    )
+    bio = models.TextField(blank=True, verbose_name="Text profilu",)
+    contact_email = models.EmailField(blank=True, verbose_name="Kontaktní e-mail",)
+    website_url = models.URLField(blank=True, verbose_name="Osobní web",)
+    facebook_url = models.URLField(blank=True, verbose_name="Facebook",)
+    instagram_url = models.URLField(blank=True, verbose_name="Instagram",)
+    linkedin_url = models.URLField(blank=True, verbose_name="LinkedIn",)
+    x_url = models.URLField(blank=True, verbose_name="X",) 
+    sort_order = models.PositiveIntegerField(default=0, verbose_name="Pořadí", help_text="Nižší číslo = zobrazí se dříve.",)
+    is_published = models.BooleanField(default=True, verbose_name="Publikováno",)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Vytvořeno",)
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Naposledy upraveno",)
 
     class Meta:
         ordering = ["sort_order", "name"]

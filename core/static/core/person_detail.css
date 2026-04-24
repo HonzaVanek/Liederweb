@@ -1,0 +1,472 @@
+/* =========================================================
+   PERSON DETAIL PAGE
+   ========================================================= */
+
+.person-detail-page {
+    padding: 52px 24px 78px;
+    background: #f7f7f5;
+    color: #111;
+}
+
+.person-detail-inner {
+    max-width: 1380px;
+    margin: 0 auto;
+}
+
+/* =========================================================
+   TOPBAR
+   ========================================================= */
+
+.person-detail-topbar {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.person-detail-back-link,
+.person-detail-edit-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1.5px solid #111;
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.person-detail-back-link:hover,
+.person-detail-edit-link:hover {
+    background: #111;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* =========================================================
+   MAIN CARD
+   ========================================================= */
+
+.person-detail-card {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.09);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+.person-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 400px) minmax(0, 1fr) minmax(260px, 320px);
+    align-items: start;
+}
+
+/* =========================================================
+   PHOTO COLUMN
+   ========================================================= */
+
+.person-detail-photo-column {
+    height: 100%;
+    background: linear-gradient(180deg, #ededeb 0%, #dfddd8 100%);
+}
+
+.person-detail-photo-wrap {
+    height: 100%;
+    min-height: 100%;
+    position: relative;
+}
+
+.person-detail-photo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 620px;
+    object-fit: cover;
+    filter: grayscale(6%);
+}
+
+.person-detail-photo--placeholder {
+    min-height: 620px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    text-align: center;
+    color: #555;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background:
+        repeating-linear-gradient(
+            135deg,
+            #ececeb 0,
+            #ececeb 18px,
+            #e2e0db 18px,
+            #e2e0db 36px
+        );
+}
+
+/* =========================================================
+   CONTENT COLUMN
+   ========================================================= */
+
+.person-detail-content-column {
+    padding: 42px 42px 48px;
+    min-width: 0;
+}
+
+.person-detail-header {
+    margin-bottom: 26px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.person-detail-header h1 {
+    margin: 0 0 12px;
+    font-size: clamp(2.1rem, 4vw, 3.6rem);
+    line-height: 0.96;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #111;
+}
+
+.person-detail-role {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.person-detail-bio {
+    font-size: 1.02rem;
+    line-height: 1.85;
+    color: #262626;
+}
+
+.person-detail-bio p {
+    margin: 0 0 1.15em;
+}
+
+.person-detail-bio p:last-child {
+    margin-bottom: 0;
+}
+
+.person-detail-bio--empty {
+    color: #666;
+    font-style: italic;
+}
+
+/* =========================================================
+   ASIDE
+   ========================================================= */
+
+.person-detail-aside {
+    height: 100%;
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fbfbfa;
+}
+
+.person-contact-panel {
+    padding: 38px 28px 40px;
+    position: sticky;
+    top: 92px;
+}
+
+.person-contact-panel h2 {
+    margin: 0 0 20px;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    color: #111;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+}
+
+.person-contact-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.person-contact-link {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    padding: 12px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease,
+        background-color 0.25s ease,
+        color 0.25s ease;
+}
+
+.person-contact-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.16);
+}
+
+.person-contact-icon {
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(0, 0, 0, 0.11);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f4f2;
+    color: #111;
+    flex-shrink: 0;
+}
+
+.person-contact-icon svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+.person-contact-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.person-contact-text strong {
+    font-size: 0.77rem;
+    text-transform: uppercase;
+    letter-spacing: 0.11em;
+    line-height: 1.2;
+}
+
+.person-contact-text span {
+    font-size: 0.9rem;
+    line-height: 1.35;
+    color: #555;
+    word-break: break-word;
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+.person-detail-back-link:focus-visible,
+.person-detail-edit-link:focus-visible,
+.person-contact-link:focus-visible {
+    outline: 2px solid #111;
+    outline-offset: 4px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1180px) {
+    .person-detail-layout {
+        grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+    }
+
+    .person-detail-aside {
+        grid-column: 1 / -1;
+        border-left: 0;
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .person-contact-panel {
+        position: static;
+    }
+
+    .person-contact-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 860px) {
+    .person-detail-page {
+        padding: 38px 16px 58px;
+    }
+
+    .person-detail-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .person-detail-photo {
+        min-height: 420px;
+        max-height: 620px;
+    }
+
+    .person-detail-photo--placeholder {
+        min-height: 420px;
+    }
+
+    .person-detail-content-column {
+        padding: 28px 22px 32px;
+    }
+
+    .person-detail-aside {
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .person-contact-panel {
+        padding: 24px 22px 28px;
+    }
+
+    .person-contact-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .person-detail-topbar {
+        align-items: stretch;
+    }
+
+    .person-detail-back-link,
+    .person-detail-edit-link {
+        width: 100%;
+    }
+
+    .person-detail-header h1 {
+        letter-spacing: 0.03em;
+    }
+
+    .person-detail-role {
+        font-size: 0.87rem;
+    }
+
+    .person-detail-bio {
+        font-size: 0.98rem;
+        line-height: 1.78;
+    }
+
+    .person-detail-photo {
+        min-height: 340px;
+    }
+
+    .person-detail-photo--placeholder {
+        min-height: 340px;
+    }
+}
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+body.dark-mode .person-detail-page {
+    background: #111;
+    color: #f0f0f0;
+}
+
+body.dark-mode .person-detail-card {
+    background: #181818;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 54px rgba(0, 0, 0, 0.28);
+}
+
+body.dark-mode .person-detail-back-link,
+body.dark-mode .person-detail-edit-link {
+    background: #1b1b1b;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .person-detail-back-link:hover,
+body.dark-mode .person-detail-edit-link:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .person-detail-photo-column {
+    background: linear-gradient(180deg, #232323 0%, #1b1b1b 100%);
+}
+
+body.dark-mode .person-detail-photo--placeholder {
+    color: #d0d0d0;
+    background:
+        repeating-linear-gradient(
+            135deg,
+            #262626 0,
+            #262626 18px,
+            #1f1f1f 18px,
+            #1f1f1f 36px
+        );
+}
+
+body.dark-mode .person-detail-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .person-detail-header h1 {
+    color: #f5f5f5;
+}
+
+body.dark-mode .person-detail-role {
+    color: #b9b9b9;
+}
+
+body.dark-mode .person-detail-bio {
+    color: #e2e2e2;
+}
+
+body.dark-mode .person-detail-bio--empty {
+    color: #b5b5b5;
+}
+
+body.dark-mode .person-detail-aside {
+    background: #141414;
+    border-left-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .person-contact-panel h2 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .person-contact-link {
+    background: #1b1b1b;
+    color: #f0f0f0;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .person-contact-link:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.24);
+}
+
+body.dark-mode .person-contact-icon {
+    background: #232323;
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #f0f0f0;
+}
+
+body.dark-mode .person-contact-text span {
+    color: #bdbdbd;
+}
+
+body.dark-mode .person-detail-back-link:focus-visible,
+body.dark-mode .person-detail-edit-link:focus-visible,
+body.dark-mode .person-contact-link:focus-visible {
+    outline-color: #f0f0f0;
+}

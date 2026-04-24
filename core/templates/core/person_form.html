@@ -1,8 +1,14 @@
-{% extends "base.html" %}
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'core/person_form.css' %}">
+{% endblock %}
 
 {% block title %}{{ page_title }} | Lidé | Lieder Society{% endblock %}
 
-{% block content %}
+{% block rozesilac_content %}
 <section class="person-form-page">
     <div class="person-form-inner">
         <header class="person-form-header">
@@ -30,7 +36,12 @@
                 Oprav prosím chyby ve formuláři.
             </div>
         {% endif %}
-
+                {% if person and person.photo %}
+                    <div class="person-current-photo">
+                        <h2>Aktuální fotografie</h2>
+                        <img src="{{ person.photo.url }}" alt="{{ person.name }}">
+                    </div>
+                {% endif %}
         <form method="post" enctype="multipart/form-data" class="person-form">
             {% csrf_token %}
 
@@ -43,7 +54,6 @@
             {% for field in form %}
                 <div class="form-row">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-
                     {{ field }}
 
                     {% if field.help_text %}

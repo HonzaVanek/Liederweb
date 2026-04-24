@@ -141,6 +141,10 @@ class PersonCreateView(CreateView):
         "bio",
         "contact_email",
         "website_url",
+        "facebook_url",
+        "instagram_url",
+        "linkedin_url",
+        "x_url",
         "sort_order",
         "is_published",
     ]
@@ -176,6 +180,10 @@ class PersonUpdateView(UpdateView):
         "bio",
         "contact_email",
         "website_url",
+        "facebook_url",
+        "instagram_url",
+        "linkedin_url",
+        "x_url",
         "sort_order",
         "is_published",
     ]

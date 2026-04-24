@@ -1,0 +1,413 @@
+/* =========================================================
+   PEOPLE LIST PAGE
+   ========================================================= */
+
+.people-page {
+    padding: 56px 24px 72px;
+    background: #f7f7f5;
+}
+
+.people-page-inner {
+    max-width: 1380px;
+    margin: 0 auto;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.people-page-header {
+    margin-bottom: 42px;
+    text-align: center;
+}
+
+.people-page-header h1 {
+    margin: 0 0 14px;
+    font-size: clamp(2.2rem, 4vw, 3.6rem);
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #111;
+}
+
+.people-page-header p {
+    max-width: 760px;
+    margin: 0 auto;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #444;
+}
+
+.people-page-actions {
+    margin-top: 22px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.people-page-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1.5px solid #111;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.people-page-actions a:hover {
+    background: #111;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+/* =========================================================
+   GRID
+   ========================================================= */
+
+.people-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 30px 26px;
+    align-items: start;
+}
+
+/* =========================================================
+   CARD
+   ========================================================= */
+
+.person-card {
+    position: relative;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.09);
+    overflow: hidden;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        border-color 0.3s ease;
+}
+
+.person-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 38px rgba(0, 0, 0, 0.12);
+    border-color: rgba(0, 0, 0, 0.18);
+}
+
+.person-card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* =========================================================
+   PHOTO
+   ========================================================= */
+
+.person-card-photo-wrap {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background:
+        linear-gradient(180deg, #ececeb 0%, #deddda 100%);
+}
+
+.person-card-photo-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(
+            to top,
+            rgba(0, 0, 0, 0.08) 0%,
+            rgba(0, 0, 0, 0.00) 35%
+        );
+    pointer-events: none;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.person-card-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: grayscale(10%);
+    transform: scale(1);
+    transition:
+        transform 0.45s ease,
+        filter 0.35s ease;
+}
+
+.person-card:hover .person-card-photo {
+    transform: scale(1.035);
+    filter: grayscale(0%);
+}
+
+.person-card:hover .person-card-photo-wrap::after {
+    opacity: 0.45;
+}
+
+.person-card-photo--placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+    color: #555;
+    font-size: 0.95rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background:
+        repeating-linear-gradient(
+            135deg,
+            #ececeb 0,
+            #ececeb 16px,
+            #e4e3df 16px,
+            #e4e3df 32px
+        );
+}
+
+/* =========================================================
+   BODY
+   ========================================================= */
+
+.person-card-body {
+    padding: 22px 22px 24px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.person-card-body h2 {
+    margin: 0;
+    font-size: 1.28rem;
+    line-height: 1.22;
+    font-weight: 600;
+    color: #111;
+}
+
+.person-card-role {
+    margin: 10px 0 0;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* =========================================================
+   STAFF ACTIONS
+   ========================================================= */
+
+.person-card-staff-actions {
+    padding: 0 22px 22px;
+}
+
+.person-card-staff-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 8px 13px;
+    border: 1px solid #111;
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+    font-size: 0.76rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.25s ease;
+}
+
+.person-card-staff-actions a:hover {
+    background: #111;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.people-empty-state {
+    margin: 30px auto 0;
+    max-width: 640px;
+    padding: 26px 28px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: #fff;
+    text-align: center;
+    font-size: 1rem;
+    color: #444;
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+.person-card-link:focus-visible,
+.people-page-actions a:focus-visible,
+.person-card-staff-actions a:focus-visible {
+    outline: 2px solid #111;
+    outline-offset: 4px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1100px) {
+    .people-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .people-page {
+        padding: 40px 16px 56px;
+    }
+
+    .people-page-header {
+        margin-bottom: 30px;
+    }
+
+    .people-page-header p {
+        font-size: 0.98rem;
+    }
+
+    .people-grid {
+        gap: 22px 18px;
+    }
+
+    .person-card-body {
+        padding: 18px 18px 20px;
+    }
+
+    .person-card-staff-actions {
+        padding: 0 18px 18px;
+    }
+}
+
+@media (max-width: 560px) {
+    .people-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .people-page-header h1 {
+        letter-spacing: 0.06em;
+    }
+
+    .person-card-body h2 {
+        font-size: 1.16rem;
+    }
+
+    .person-card-role {
+        font-size: 0.84rem;
+    }
+}
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+body.dark-mode .people-page {
+    background: #111;
+}
+
+body.dark-mode .people-page-header h1 {
+    color: #f1f1f1;
+}
+
+body.dark-mode .people-page-header p {
+    color: #c7c7c7;
+}
+
+body.dark-mode .people-page-actions a {
+    background: #1b1b1b;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .people-page-actions a:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .person-card {
+    background: #181818;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .person-card:hover {
+    box-shadow: 0 20px 38px rgba(0, 0, 0, 0.34);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+
+body.dark-mode .person-card-photo-wrap {
+    background: linear-gradient(180deg, #262626 0%, #1d1d1d 100%);
+}
+
+body.dark-mode .person-card-photo--placeholder {
+    color: #cfcfcf;
+    background:
+        repeating-linear-gradient(
+            135deg,
+            #242424 0,
+            #242424 16px,
+            #1f1f1f 16px,
+            #1f1f1f 32px
+        );
+}
+
+body.dark-mode .person-card-body {
+    border-top-color: rgba(255, 255, 255, 0.07);
+}
+
+body.dark-mode .person-card-body h2 {
+    color: #f3f3f3;
+}
+
+body.dark-mode .person-card-role {
+    color: #bababa;
+}
+
+body.dark-mode .person-card-staff-actions a {
+    background: #1b1b1b;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .person-card-staff-actions a:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .people-empty-state {
+    background: #181818;
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #c9c9c9;
+}
+
+body.dark-mode .person-card-link:focus-visible,
+body.dark-mode .people-page-actions a:focus-visible,
+body.dark-mode .person-card-staff-actions a:focus-visible {
+    outline-color: #f0f0f0;
+}

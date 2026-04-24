@@ -1,0 +1,414 @@
+/* =========================================================
+   PERSON FORM
+   ========================================================= */
+
+.person-form-page {
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.person-form-inner {
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.person-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px 24px;
+    flex-wrap: wrap;
+    margin-bottom: 26px;
+}
+
+.person-form-header h1 {
+    margin: 0;
+    text-align: left;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-style: normal;
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #111;
+}
+
+.person-form-header-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.person-form-header-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1.5px solid #111;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.78rem;
+    font-weight: 700;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease,
+        transform 0.2s ease,
+        box-shadow 0.25s ease;
+}
+
+.person-form-header-links a:hover {
+    background: #111;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+}
+
+/* =========================================================
+   CARD
+   ========================================================= */
+
+.person-form {
+    background: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 14px;
+    padding: 28px;
+    box-shadow: 0 18px 36px rgba(0, 0, 0, 0.05);
+}
+
+/* =========================================================
+   ROWS
+   ========================================================= */
+
+.form-row {
+    margin-bottom: 22px;
+}
+
+.form-row:last-of-type {
+    margin-bottom: 0;
+}
+
+.form-row > label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111;
+    letter-spacing: 0.01em;
+}
+
+/* delší texty */
+.form-row textarea {
+    min-height: 220px;
+}
+
+/* URL a emaily působí líp trochu menší */
+.form-row input[type="url"],
+.form-row input[type="email"] {
+    font-size: 0.95rem;
+}
+
+/* checkbox */
+.form-row input[type="checkbox"] {
+    width: auto;
+    min-width: 18px;
+    min-height: 18px;
+    margin-top: 4px;
+}
+
+/* file input */
+.form-row input[type="file"] {
+    padding: 12px;
+    background: #fafafa;
+    border: 1px dashed #999;
+    border-radius: 8px;
+}
+
+.form-row input[type="file"]:hover {
+    background: #f2f2f2;
+}
+
+/* =========================================================
+   HELP / ERRORS
+   ========================================================= */
+
+.person-form .help-text {
+    margin: 8px 0 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    font-style: normal;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: #666;
+    text-align: left;
+}
+
+.person-form .help-text a {
+    padding: 0;
+    font-weight: 700;
+    border-radius: 0;
+}
+
+.person-form .help-text a:hover {
+    background: transparent;
+    color: #000;
+    text-decoration: underline;
+}
+
+.field-errors {
+    margin-top: 8px;
+}
+
+.field-errors .errorlist {
+    margin: 0;
+}
+
+.form-errors {
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #fdecea;
+    border: 1px solid #f5c6cb;
+    color: #8c1d1d;
+    font-size: 0.95rem;
+    text-align: left;
+}
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+
+.person-form .form-actions {
+    margin-top: 30px;
+    padding-top: 22px;
+    border-top: 1px solid #e8e8e8;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.person-form .form-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 16px;
+    border: 1.5px solid #111;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.2s ease,
+        box-shadow 0.25s ease;
+}
+
+.person-form .form-actions a:hover {
+    background: #111;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+}
+
+/* submit necháme dědit z base_rozesilac, jen lehce dorovnáme */
+.person-form .form-actions button,
+.person-form .form-actions input[type="submit"] {
+    min-height: 44px;
+    padding-left: 18px;
+    padding-right: 18px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.82rem;
+}
+
+/* =========================================================
+   OPTIONAL IMAGE PREVIEW BLOCK
+   ========================================================= */
+
+.person-current-photo {
+    margin-bottom: 24px;
+    padding: 18px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #fafafa;
+}
+
+.person-current-photo h2 {
+    margin: 0 0 14px;
+    text-align: left;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-style: normal;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #111;
+}
+
+.person-current-photo img {
+    width: 180px;
+    max-width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid #d2d2d2;
+    background: #fff;
+}
+
+/* =========================================================
+   FOCUS
+   ========================================================= */
+
+.person-form-header-links a:focus-visible,
+.person-form .form-actions a:focus-visible,
+.person-form input:focus-visible,
+.person-form textarea:focus-visible,
+.person-form select:focus-visible,
+.person-form button:focus-visible {
+    outline: 2px solid #111;
+    outline-offset: 3px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+    .person-form {
+        padding: 22px;
+    }
+}
+
+@media (max-width: 700px) {
+    .person-form-header {
+        align-items: stretch;
+    }
+
+    .person-form-header-links {
+        flex-direction: column;
+    }
+
+    .person-form-header-links a {
+        width: 100%;
+    }
+
+    .person-form {
+        padding: 18px;
+        border-radius: 12px;
+    }
+
+    .person-form .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .person-form .form-actions a,
+    .person-form .form-actions button,
+    .person-form .form-actions input[type="submit"] {
+        width: 100%;
+    }
+
+    .person-current-photo img {
+        width: 150px;
+    }
+}
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+body.dark-mode .person-form-header h1 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .person-form-header-links a {
+    background: #1b1b1b;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .person-form-header-links a:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .person-form {
+    background: #181818;
+    border-color: #444;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+body.dark-mode .form-row > label {
+    color: #f1f1f1;
+}
+
+body.dark-mode .person-form .help-text {
+    color: #b9b9b9;
+}
+
+body.dark-mode .form-row input[type="file"] {
+    background: #1f1f1f;
+    border-color: #666;
+}
+
+body.dark-mode .form-row input[type="file"]:hover {
+    background: #252525;
+}
+
+body.dark-mode .person-form .form-actions {
+    border-top-color: #333;
+}
+
+body.dark-mode .person-form .form-actions a {
+    background: #1b1b1b;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .person-form .form-actions a:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .person-current-photo {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .person-current-photo h2 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .person-current-photo img {
+    border-color: #444;
+}
+
+body.dark-mode .person-form-header-links a:focus-visible,
+body.dark-mode .person-form .form-actions a:focus-visible,
+body.dark-mode .person-form input:focus-visible,
+body.dark-mode .person-form textarea:focus-visible,
+body.dark-mode .person-form select:focus-visible,
+body.dark-mode .person-form button:focus-visible {
+    outline-color: #f0f0f0;
+}

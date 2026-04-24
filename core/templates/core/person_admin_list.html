@@ -1,17 +1,28 @@
-{% extends "base.html" %}
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'core/person_admin_list.css' %}">
+{% endblock %}
 
 {% block title %}Správa profilů | Lidé | Lieder Society{% endblock %}
 
-{% block content %}
+{% block rozesilac_content %}
 <section class="person-admin-page">
     <div class="person-admin-inner">
         <header class="person-admin-header">
-            <h1>Správa profilů</h1>
-            <p>Interní přehled všech profilů osob.</p>
+            <div class="person-admin-header-text">
+                <h1>Správa profilů</h1>
+                <p>
+                    Interní přehled všech profilů osob. Zde můžeš zakládat nové profily,
+                    upravovat existující a kontrolovat, co je publikované na veřejném webu.
+                </p>
+            </div>
 
-            <div class="person-admin-actions">
+            <div class="person-admin-actions top-action">
                 <a href="{% url 'core:person_create' %}">+ Nový profil</a>
-                <a href="{% url 'core:person_list' %}">Zobrazit veřejný seznam</a>
+                <a href="{% url 'core:person_list' %}">Veřejný seznam</a>
             </div>
         </header>
 
@@ -24,34 +35,76 @@
         {% endif %}
 
         {% if people %}
-            <div class="person-admin-table-wrap">
-                <table class="person-admin-table">
+            <div class="person-admin-summary">
+                Celkem profilů: <strong>{{ people|length }}</strong>
+            </div>
+
+            <div class="table-responsive person-admin-table-wrap">
+                <table class="table person-admin-table">
                     <thead>
                         <tr>
+                            <th>Foto</th>
                             <th>Pořadí</th>
                             <th>Jméno</th>
                             <th>Role</th>
                             <th>Stav</th>
+                            <th>Kontakt</th>
                             <th>Akce</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for person in people %}
                             <tr>
-                                <td>{{ person.sort_order }}</td>
-                                <td>{{ person.name }}</td>
-                                <td>{{ person.role_short|default:"—" }}</td>
-                                <td>
-                                    {% if person.is_published %}
-                                        Publikováno
+                                <td class="person-admin-photo-cell">
+                                    {% if person.photo %}
+                                        <img
+                                            src="{{ person.photo.url }}"
+                                            alt="{{ person.name }}"
+                                            class="person-admin-thumb"
+                                        >
                                     {% else %}
-                                        Skryto
+                                        <div class="person-admin-thumb person-admin-thumb--placeholder">
+                                            —
+                                        </div>
                                     {% endif %}
                                 </td>
+
+                                <td>{{ person.sort_order }}</td>
+
+                                <td class="person-admin-name-cell">
+                                    <strong>{{ person.name }}</strong>
+                                </td>
+
+                                <td>{{ person.role_short|default:"—" }}</td>
+
                                 <td>
-                                    <a href="{% url 'core:person_update' slug=person.slug %}">Upravit</a>
                                     {% if person.is_published %}
-                                        |
+                                        <span class="person-status-badge is-published">Publikováno</span>
+                                    {% else %}
+                                        <span class="person-status-badge is-hidden">Skryto</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="person-admin-contact-cell">
+                                    {% if person.contact_email %}
+                                        <div>{{ person.contact_email }}</div>
+                                    {% endif %}
+                                    {% if person.website_url %}
+                                        <div>
+                                            <a href="{{ person.website_url }}" target="_blank" rel="noopener noreferrer">
+                                                Web
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                    {% if not person.contact_email and not person.website_url %}
+                                        —
+                                    {% endif %}
+                                </td>
+
+                                <td class="actions">
+                                    <a href="{% url 'core:person_update' slug=person.slug %}">Upravit</a>
+
+                                    {% if person.is_published %}
                                         <a href="{{ person.get_absolute_url }}">Detail</a>
                                     {% endif %}
                                 </td>
@@ -61,7 +114,15 @@
                 </table>
             </div>
         {% else %}
-            <p>Zatím tu nejsou žádné profily.</p>
+            <div class="content-section person-admin-empty">
+                <h3>Zatím tu nejsou žádné profily</h3>
+                <p>
+                    Začni vytvořením prvního profilu osoby pro sekci Lidé.
+                </p>
+                <div class="top-action">
+                    <a href="{% url 'core:person_create' %}">+ Vytvořit první profil</a>
+                </div>
+            </div>
         {% endif %}
     </div>
 </section>

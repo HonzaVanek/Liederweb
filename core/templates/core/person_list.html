@@ -1,4 +1,10 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'core/person_list.css' %}">
+{% endblock %}
 
 {% block title %}Lidé | Lieder Society{% endblock %}
 
@@ -52,7 +58,7 @@
                 {% endfor %}
             </div>
         {% else %}
-            <p>Zatím tu není žádný publikovaný profil.</p>
+            <p class="people-empty-state">Zatím tu není žádný publikovaný profil.</p>
         {% endif %}
     </div>
 </section>

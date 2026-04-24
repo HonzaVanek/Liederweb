@@ -1,0 +1,240 @@
+/* =========================================================
+   PERSON ADMIN LIST
+   ========================================================= */
+
+.person-admin-page {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.person-admin-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.person-admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px 24px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.person-admin-header-text {
+    max-width: 760px;
+}
+
+.person-admin-header h1 {
+    margin: 0 0 12px;
+    text-align: left;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-style: normal;
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #111;
+}
+
+.person-admin-header p {
+    margin: 0;
+    color: #555;
+    line-height: 1.65;
+}
+
+.person-admin-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+/* =========================================================
+   SUMMARY
+   ========================================================= */
+
+.person-admin-summary {
+    margin: 0 0 14px;
+    color: #444;
+    font-size: 0.95rem;
+}
+
+/* =========================================================
+   TABLE TWEAKS
+   ========================================================= */
+
+.person-admin-table-wrap {
+    margin-top: 8px;
+}
+
+.person-admin-table {
+    min-width: 1080px;
+}
+
+.person-admin-table th,
+.person-admin-table td {
+    vertical-align: middle;
+}
+
+.person-admin-photo-cell {
+    width: 78px;
+}
+
+.person-admin-thumb {
+    width: 52px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #d8d8d8;
+    background: #fff;
+}
+
+.person-admin-thumb--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+    font-weight: 700;
+    background:
+        repeating-linear-gradient(
+            135deg,
+            #ededed 0,
+            #ededed 12px,
+            #e3e3e3 12px,
+            #e3e3e3 24px
+        );
+}
+
+.person-admin-name-cell strong {
+    font-size: 1rem;
+    color: #111;
+}
+
+.person-admin-contact-cell {
+    min-width: 150px;
+    line-height: 1.45;
+}
+
+.person-admin-contact-cell div + div {
+    margin-top: 4px;
+}
+
+/* =========================================================
+   STATUS BADGES
+   ========================================================= */
+
+.person-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+
+.person-status-badge.is-published {
+    background: #edf7ed;
+    border: 1px solid #cfe3cf;
+    color: #245c24;
+}
+
+.person-status-badge.is-hidden {
+    background: #f3f3f3;
+    border: 1px solid #d6d6d6;
+    color: #555;
+}
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.person-admin-empty {
+    max-width: 760px;
+    padding: 28px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+    .person-admin-header {
+        align-items: stretch;
+    }
+
+    .person-admin-actions {
+        width: 100%;
+    }
+
+    .person-admin-actions a {
+        flex: 1 1 auto;
+        text-align: center;
+    }
+}
+
+@media (max-width: 700px) {
+    .person-admin-summary {
+        font-size: 0.9rem;
+    }
+
+    .person-admin-thumb {
+        width: 44px;
+        height: 56px;
+    }
+}
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+body.dark-mode .person-admin-header h1 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .person-admin-header p,
+body.dark-mode .person-admin-summary {
+    color: #bdbdbd;
+}
+
+body.dark-mode .person-admin-thumb {
+    border-color: #444;
+    background: #181818;
+}
+
+body.dark-mode .person-admin-thumb--placeholder {
+    color: #bbb;
+    background:
+        repeating-linear-gradient(
+            135deg,
+            #252525 0,
+            #252525 12px,
+            #1f1f1f 12px,
+            #1f1f1f 24px
+        );
+}
+
+body.dark-mode .person-admin-name-cell strong {
+    color: #f3f3f3;
+}
+
+body.dark-mode .person-status-badge.is-published {
+    background: #203424;
+    border-color: #3f6a45;
+    color: #b9efc0;
+}
+
+body.dark-mode .person-status-badge.is-hidden {
+    background: #242424;
+    border-color: #4a4a4a;
+    color: #d0d0d0;
+}
