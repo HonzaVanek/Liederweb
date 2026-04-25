@@ -140,6 +140,7 @@ INSTALLED_APPS = [
     'rozesilac',
     'core',
     'events',
+    'media_assets',
     'anymail'
 ]
 

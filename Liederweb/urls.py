@@ -23,7 +23,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include(("core.urls", "core"), namespace="core")),
     path('rozesilac/', include('rozesilac.urls', namespace='rozesilac')),
-    path("events/", include("events.urls"))
+    path("events/", include("events.urls")),
+    path("media-assets/", include(("media_assets.urls", "media_assets"), namespace="media_assets")),
 ]
 
 if settings.DEBUG:

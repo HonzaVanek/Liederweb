@@ -1,0 +1,196 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'media_assets/media_asset_form.css' %}">
+{% endblock %}
+
+{% block title %}{{ page_title }} | Lieder Society{% endblock %}
+
+{% block rozesilac_content %}
+<section class="media-asset-form-page">
+    <div class="media-asset-form-inner">
+
+        <header class="media-asset-form-header">
+            <h1>{{ page_title }}</h1>
+
+            <div class="media-asset-form-header-links">
+                <a href="{% url 'media_assets:asset_list' %}">← Zpět na knihovnu</a>
+
+                {% if asset and asset.file %}
+                    <a href="{{ asset.file.url }}" target="_blank" rel="noopener noreferrer">Otevřít soubor</a>
+                {% endif %}
+            </div>
+        </header>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for m in messages %}
+                    <li class="{{ m.tags }}">{{ m }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if asset %}
+            <section class="content-section media-asset-meta-panel">
+                <h3>Metadata souboru</h3>
+
+                <div class="media-asset-meta-grid">
+                    <div class="media-asset-meta-item">
+                        <span class="media-asset-meta-label">Typ</span>
+                        <strong>{{ asset.get_asset_type_display }}</strong>
+                    </div>
+
+                    <div class="media-asset-meta-item">
+                        <span class="media-asset-meta-label">Soubor</span>
+                        <strong>{{ asset.filename }}</strong>
+                    </div>
+
+                    <div class="media-asset-meta-item">
+                        <span class="media-asset-meta-label">Velikost</span>
+                        <strong>{{ asset.file_size|filesizeformat }}</strong>
+                    </div>
+
+                    <div class="media-asset-meta-item">
+                        <span class="media-asset-meta-label">MIME typ</span>
+                        <strong>{{ asset.mime_type|default:"—" }}</strong>
+                    </div>
+
+                    <div class="media-asset-meta-item">
+                        <span class="media-asset-meta-label">Nahrál</span>
+                        <strong>{{ asset.uploaded_by|default:"—" }}</strong>
+                    </div>
+
+                    <div class="media-asset-meta-item">
+                        <span class="media-asset-meta-label">Nahráno</span>
+                        <strong>{{ asset.uploaded_at|date:"d.m.Y H:i" }}</strong>
+                    </div>
+
+                    {% if asset.is_image and asset.image_width and asset.image_height %}
+                        <div class="media-asset-meta-item">
+                            <span class="media-asset-meta-label">Rozměry</span>
+                            <strong>{{ asset.image_width }} × {{ asset.image_height }} px</strong>
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+        {% endif %}
+
+        {% if asset and asset.is_image and asset.file %}
+            <section class="content-section media-asset-preview-panel">
+                <h3>Náhled obrázku</h3>
+                <div class="media-asset-image-preview-wrap">
+                    <img
+                        src="{{ asset.file.url }}"
+                        alt="{{ asset.alt_text|default:asset.title|default:asset.filename }}"
+                        class="media-asset-image-preview"
+                    >
+                </div>
+            </section>
+        {% endif %}
+
+        {% if form.errors %}
+            <div class="form-errors">
+                Oprav prosím chyby ve formuláři.
+            </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="media-asset-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <section class="content-section">
+                <h3>Základní informace</h3>
+
+                <div class="form-row">
+                    <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+                    {{ form.title }}
+                    {% if form.title.help_text %}
+                        <div class="help-text">{{ form.title.help_text }}</div>
+                    {% endif %}
+                    {% if form.title.errors %}
+                        <div class="field-errors">{{ form.title.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-row">
+                    <label for="{{ form.file.id_for_label }}">{{ form.file.label }}</label>
+                    {{ form.file }}
+                    {% if asset and asset.file %}
+                        <div class="help-text">
+                            Aktuální soubor: <a href="{{ asset.file.url }}" target="_blank" rel="noopener noreferrer">{{ asset.filename }}</a>
+                        </div>
+                    {% endif %}
+                    {% if form.file.help_text %}
+                        <div class="help-text">{{ form.file.help_text }}</div>
+                    {% endif %}
+                    {% if form.file.errors %}
+                        <div class="field-errors">{{ form.file.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-row form-row-checkbox">
+                    <label for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+                    <div class="checkbox-field-wrap">
+                        {{ form.is_active }}
+                    </div>
+                    {% if form.is_active.help_text %}
+                        <div class="help-text">{{ form.is_active.help_text }}</div>
+                    {% endif %}
+                    {% if form.is_active.errors %}
+                        <div class="field-errors">{{ form.is_active.errors }}</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="content-section">
+                <h3>Popisky a použití</h3>
+
+                <div class="form-row">
+                    <label for="{{ form.alt_text.id_for_label }}">{{ form.alt_text.label }}</label>
+                    {{ form.alt_text }}
+                    {% if form.alt_text.help_text %}
+                        <div class="help-text">{{ form.alt_text.help_text }}</div>
+                    {% endif %}
+                    {% if form.alt_text.errors %}
+                        <div class="field-errors">{{ form.alt_text.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-row">
+                    <label for="{{ form.credit.id_for_label }}">{{ form.credit.label }}</label>
+                    {{ form.credit }}
+                    {% if form.credit.help_text %}
+                        <div class="help-text">{{ form.credit.help_text }}</div>
+                    {% endif %}
+                    {% if form.credit.errors %}
+                        <div class="field-errors">{{ form.credit.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-row">
+                    <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                    {{ form.description }}
+                    {% if form.description.help_text %}
+                        <div class="help-text">{{ form.description.help_text }}</div>
+                    {% endif %}
+                    {% if form.description.errors %}
+                        <div class="field-errors">{{ form.description.errors }}</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <div class="form-actions media-asset-form-actions">
+                <button type="submit">{{ submit_label }}</button>
+                <a href="{% url 'media_assets:asset_list' %}" class="btn-link">Zpět na seznam</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

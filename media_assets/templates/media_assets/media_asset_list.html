@@ -1,0 +1,195 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'media_assets/media_asset_list.css' %}">
+{% endblock %}
+
+{% block title %}{{ page_title }} | Lieder Society{% endblock %}
+
+{% block rozesilac_content %}
+<section class="media-assets-page">
+    <div class="media-assets-inner">
+
+        <header class="media-assets-header">
+            <div class="media-assets-header-text">
+                <h1>{{ page_title }}</h1>
+                <p>
+                    Centrální knihovna souborů pro celý projekt. Nahraješ sem obrázky, dokumenty,
+                    audio, video i tabulky a později je můžeš používat napříč webem.
+                </p>
+            </div>
+
+            <div class="media-assets-header-actions top-action">
+                <a href="{% url 'media_assets:asset_create' %}">+ Nahrát nový asset</a>
+            </div>
+        </header>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for m in messages %}
+                    <li class="{{ m.tags }}">{{ m }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <section class="media-assets-filters content-section">
+            <h3>Filtry</h3>
+
+            <form method="get" class="media-assets-filter-form">
+                <div class="media-assets-filter-grid">
+                    <div class="media-assets-filter-field">
+                        <label for="id_q">Hledat</label>
+                        <input
+                            type="search"
+                            name="q"
+                            id="id_q"
+                            value="{{ current_q }}"
+                            placeholder="Název, soubor, popis, kredit…"
+                        >
+                    </div>
+
+                    <div class="media-assets-filter-field">
+                        <label for="id_type">Typ</label>
+                        <select name="type" id="id_type">
+                            <option value="">Všechny typy</option>
+                            {% for value, label in asset_type_choices %}
+                                <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="media-assets-filter-field">
+                        <label for="id_status">Stav</label>
+                        <select name="status" id="id_status">
+                            <option value="">Všechny</option>
+                            <option value="active" {% if current_status == "active" %}selected{% endif %}>Aktivní</option>
+                            <option value="inactive" {% if current_status == "inactive" %}selected{% endif %}>Neaktivní</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions media-assets-filter-actions">
+                    <button type="submit">Filtrovat</button>
+                    <a href="{% url 'media_assets:asset_list' %}" class="btn-link">Reset</a>
+                </div>
+            </form>
+        </section>
+
+        {% if assets %}
+            <div class="media-assets-summary">
+                Zobrazeno assetů: <strong>{{ page_obj.paginator.count }}</strong>
+            </div>
+
+            <div class="table-responsive media-assets-table-wrap">
+                <table class="table media-assets-table">
+                    <thead>
+                        <tr>
+                            <th>Náhled</th>
+                            <th>Název</th>
+                            <th>Typ</th>
+                            <th>Soubor</th>
+                            <th>Velikost</th>
+                            <th>Stav</th>
+                            <th>Nahrál</th>
+                            <th>Akce</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for asset in assets %}
+                            <tr>
+                                <td class="media-assets-preview-cell">
+                                    {% if asset.is_image %}
+                                        <a href="{{ asset.file.url }}" target="_blank" rel="noopener noreferrer" class="media-assets-preview-link">
+                                            <img src="{{ asset.file.url }}" alt="{{ asset.alt_text|default:asset.title|default:asset.filename }}" class="media-assets-thumb">
+                                        </a>
+                                    {% else %}
+                                        <div class="media-assets-file-icon media-assets-file-icon--{{ asset.asset_type }}">
+                                            {{ asset.extension|upper|default:"FILE" }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+
+                                <td class="media-assets-title-cell">
+                                    <strong>{{ asset.title|default:asset.filename }}</strong>
+                                    {% if asset.description %}
+                                        <div class="media-assets-meta-subline">{{ asset.description|truncatechars:90 }}</div>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <span class="asset-type-badge asset-type-badge--{{ asset.asset_type }}">
+                                        {{ asset.get_asset_type_display }}
+                                    </span>
+                                </td>
+
+                                <td class="media-assets-file-cell">
+                                    <div>{{ asset.filename }}</div>
+                                    {% if asset.mime_type %}
+                                        <div class="media-assets-meta-subline">{{ asset.mime_type }}</div>
+                                    {% endif %}
+                                </td>
+
+                                <td>{{ asset.file_size|filesizeformat }}</td>
+
+                                <td>
+                                    {% if asset.is_active %}
+                                        <span class="asset-status-badge is-active">Aktivní</span>
+                                    {% else %}
+                                        <span class="asset-status-badge is-inactive">Neaktivní</span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if asset.uploaded_by %}
+                                        <div>{{ asset.uploaded_by }}</div>
+                                    {% else %}
+                                        <div>—</div>
+                                    {% endif %}
+                                    <div class="media-assets-meta-subline">{{ asset.uploaded_at|date:"d.m.Y H:i" }}</div>
+                                </td>
+
+                                <td class="actions">
+                                    <a href="{% url 'media_assets:asset_update' pk=asset.pk %}">Upravit</a>
+                                    <a href="{{ asset.file.url }}" target="_blank" rel="noopener noreferrer">Otevřít</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if is_paginated %}
+                <nav class="media-assets-pagination" aria-label="Stránkování assetů">
+                    {% if page_obj.has_previous %}
+                        <a href="?q={{ current_q|urlencode }}&type={{ current_type|urlencode }}&status={{ current_status|urlencode }}&page={{ page_obj.previous_page_number }}">
+                            ← Předchozí
+                        </a>
+                    {% endif %}
+
+                    <span>Strana {{ page_obj.number }} z {{ page_obj.paginator.num_pages }}</span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?q={{ current_q|urlencode }}&type={{ current_type|urlencode }}&status={{ current_status|urlencode }}&page={{ page_obj.next_page_number }}">
+                            Další →
+                        </a>
+                    {% endif %}
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="content-section media-assets-empty">
+                <h3>Zatím tu nejsou žádné assety</h3>
+                <p>
+                    Nahraj první soubor do centrální knihovny.
+                </p>
+                <div class="top-action">
+                    <a href="{% url 'media_assets:asset_create' %}">+ Nahrát první asset</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

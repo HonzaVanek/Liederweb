@@ -1,0 +1,383 @@
+/* =========================================================
+   MEDIA ASSET FORM
+   ========================================================= */
+
+.media-asset-form-page {
+    max-width: 1040px;
+    margin: 0 auto;
+}
+
+.media-asset-form-inner {
+    max-width: 1040px;
+    margin: 0 auto;
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.media-asset-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px 24px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.media-asset-form-header h1 {
+    margin: 0;
+    text-align: left;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-style: normal;
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #111;
+}
+
+.media-asset-form-header-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.media-asset-form-header-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1.5px solid #111;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.78rem;
+    font-weight: 700;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        border-color 0.25s ease,
+        transform 0.2s ease,
+        box-shadow 0.25s ease;
+}
+
+.media-asset-form-header-links a:hover {
+    background: #111;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+}
+
+/* =========================================================
+   META PANEL
+   ========================================================= */
+
+.media-asset-meta-panel {
+    margin-bottom: 20px;
+}
+
+.media-asset-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.media-asset-meta-item {
+    padding: 14px 16px;
+    border: 1px solid #dddddd;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.media-asset-meta-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #666;
+}
+
+.media-asset-meta-item strong {
+    font-size: 0.98rem;
+    line-height: 1.45;
+    color: #111;
+    word-break: break-word;
+}
+
+/* =========================================================
+   PREVIEW
+   ========================================================= */
+
+.media-asset-preview-panel {
+    margin-bottom: 20px;
+}
+
+.media-asset-image-preview-wrap {
+    max-width: 360px;
+}
+
+.media-asset-image-preview {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid #d8d8d8;
+    background: #fff;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
+.media-asset-form {
+    margin-top: 0;
+}
+
+.media-asset-form .content-section {
+    margin-bottom: 18px;
+}
+
+.media-asset-form .content-section h3 {
+    margin-top: 0;
+}
+
+.media-asset-form .form-row {
+    margin-bottom: 20px;
+}
+
+.media-asset-form .form-row:last-child {
+    margin-bottom: 0;
+}
+
+.media-asset-form .form-row > label {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111;
+}
+
+.media-asset-form textarea {
+    min-height: 180px;
+}
+
+.media-asset-form input[type="file"] {
+    padding: 12px;
+    background: #fafafa;
+    border: 1px dashed #999;
+    border-radius: 8px;
+}
+
+.media-asset-form input[type="file"]:hover {
+    background: #f2f2f2;
+}
+
+.media-asset-form .help-text {
+    margin: 8px 0 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    font-style: normal;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: #666;
+    text-align: left;
+}
+
+.media-asset-form .help-text a {
+    padding: 0;
+    font-weight: 700;
+    border-radius: 0;
+}
+
+.media-asset-form .help-text a:hover {
+    background: transparent;
+    color: #000;
+    text-decoration: underline;
+}
+
+.media-asset-form .field-errors {
+    margin-top: 8px;
+}
+
+.media-asset-form .form-row-checkbox label {
+    margin-bottom: 10px;
+}
+
+.media-asset-form .checkbox-field-wrap {
+    display: flex;
+    align-items: center;
+    min-height: 20px;
+}
+
+.media-asset-form .checkbox-field-wrap input[type="checkbox"] {
+    width: auto;
+    min-width: 18px;
+    min-height: 18px;
+}
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+
+.media-asset-form-actions {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid #e5e5e5;
+}
+
+.media-asset-form .form-actions a.btn-link {
+    min-height: 44px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.82rem;
+}
+
+.media-asset-form .form-actions button,
+.media-asset-form .form-actions input[type="submit"] {
+    min-height: 44px;
+    padding-left: 18px;
+    padding-right: 18px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.82rem;
+}
+
+/* =========================================================
+   FOCUS
+   ========================================================= */
+
+.media-asset-form-header-links a:focus-visible,
+.media-asset-form input:focus-visible,
+.media-asset-form textarea:focus-visible,
+.media-asset-form select:focus-visible,
+.media-asset-form button:focus-visible,
+.media-asset-form .form-actions a:focus-visible {
+    outline: 2px solid #111;
+    outline-offset: 3px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+    .media-asset-meta-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .media-asset-form-header {
+        align-items: stretch;
+    }
+
+    .media-asset-form-header-links {
+        flex-direction: column;
+    }
+
+    .media-asset-form-header-links a {
+        width: 100%;
+    }
+
+    .media-asset-meta-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .media-asset-image-preview-wrap {
+        max-width: 260px;
+    }
+
+    .media-asset-form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .media-asset-form .form-actions a.btn-link,
+    .media-asset-form .form-actions button,
+    .media-asset-form .form-actions input[type="submit"] {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+body.dark-mode .media-asset-form-header h1 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .media-asset-form-header-links a {
+    background: #1b1b1b;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .media-asset-form-header-links a:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .media-asset-meta-item {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .media-asset-meta-label {
+    color: #b5b5b5;
+}
+
+body.dark-mode .media-asset-meta-item strong {
+    color: #f0f0f0;
+}
+
+body.dark-mode .media-asset-image-preview {
+    border-color: #444;
+    background: #181818;
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.24);
+}
+
+body.dark-mode .media-asset-form .form-row > label {
+    color: #f1f1f1;
+}
+
+body.dark-mode .media-asset-form .help-text {
+    color: #b9b9b9;
+}
+
+body.dark-mode .media-asset-form input[type="file"] {
+    background: #1f1f1f;
+    border-color: #666;
+}
+
+body.dark-mode .media-asset-form input[type="file"]:hover {
+    background: #252525;
+}
+
+body.dark-mode .media-asset-form-actions {
+    border-top-color: #333;
+}
+
+body.dark-mode .media-asset-form-header-links a:focus-visible,
+body.dark-mode .media-asset-form input:focus-visible,
+body.dark-mode .media-asset-form textarea:focus-visible,
+body.dark-mode .media-asset-form select:focus-visible,
+body.dark-mode .media-asset-form button:focus-visible,
+body.dark-mode .media-asset-form .form-actions a:focus-visible {
+    outline-color: #f0f0f0;
+}

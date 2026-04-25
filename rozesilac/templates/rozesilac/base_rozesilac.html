@@ -65,6 +65,11 @@
            class="{% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'person_admin_list' or request.resolver_match.url_name == 'person_create' or request.resolver_match.url_name == 'person_update' %}active{% endif %}">
            Lidé
         </a>
+        
+        <a href="{% url 'media_assets:asset_list' %}"
+           class="{% if request.resolver_match.namespace == 'media_assets' and request.resolver_match.url_name == 'asset_list' or request.resolver_match.namespace == 'media_assets' and request.resolver_match.url_name == 'asset_create' or request.resolver_match.namespace == 'media_assets' and request.resolver_match.url_name == 'asset_update' %}active{% endif %}">
+           Mediální knihovna
+        </a>
       </nav>
     </div>
   </aside>
