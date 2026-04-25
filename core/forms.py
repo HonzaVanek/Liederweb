@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from media_assets.models import MediaAsset
+from .models import Person
 
 class VlastniLoginForm(AuthenticationForm):
     username = forms.CharField(label="Uživatelské jméno")
@@ -30,3 +32,32 @@ class RegistraceForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
+
+class PersonForm(forms.ModelForm):
+    photo_asset = forms.ModelChoiceField(
+        queryset=MediaAsset.objects.filter(
+            asset_type=MediaAsset.AssetType.IMAGE,
+            is_active=True,
+        ).order_by("-uploaded_at"),
+        required=False,
+        label="Fotografie z mediální knihovny",
+        empty_label="— Bez fotografie —",
+    )
+
+    class Meta:
+        model = Person
+        fields = [
+            "name",
+            "slug",
+            "photo_asset",
+            "role_short",
+            "bio",
+            "contact_email",
+            "website_url",
+            "facebook_url",
+            "instagram_url",
+            "linkedin_url",
+            "x_url",
+            "sort_order",
+            "is_published",
+        ]

@@ -31,8 +31,8 @@
                     <article class="person-card">
                         <a href="{{ person.get_absolute_url }}" class="person-card-link">
                             <div class="person-card-photo-wrap">
-                                {% if person.photo %}
-                                    <img src="{{ person.photo.url }}" alt="{{ person.name }}" class="person-card-photo">
+                                {% if person.photo_url %}
+                                    <img src="{{ person.photo_url }}" alt="{{ person.name }}" class="person-card-photo">
                                 {% else %}
                                     <div class="person-card-photo person-card-photo--placeholder">
                                         Bez fotografie

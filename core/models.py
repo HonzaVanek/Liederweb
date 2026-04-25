@@ -3,13 +3,12 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 
-
 def person_photo_upload_to(instance, filename):
     return f"people/{instance.slug or 'unsorted'}/{filename}"
 
 
 class Person(models.Model):
-    name = models.CharField(max_length=200, verbose_name="Jméno",)
+    name = models.CharField(max_length=200, verbose_name="Jméno")
     slug = models.SlugField(
         max_length=220,
         unique=True,
@@ -17,24 +16,47 @@ class Person(models.Model):
         verbose_name="Slug",
         help_text="Nech prázdné pro automatické vytvoření z jména.",
     )
-    photo = models.ImageField(upload_to=person_photo_upload_to, blank=True, null=True, verbose_name="Fotografie",)
+
+    # staré pole zatím ponecháme
+    photo = models.ImageField(
+        upload_to=person_photo_upload_to,
+        blank=True,
+        null=True,
+        verbose_name="Fotografie (staré)",
+    )
+
+    # nové pole do centrální knihovny
+    photo_asset = models.ForeignKey(
+        "media_assets.MediaAsset",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="person_profiles",
+        limit_choices_to={"asset_type": "image", "is_active": True},
+        verbose_name="Fotografie z mediální knihovny",
+    )
+
     role_short = models.CharField(
         max_length=255,
         blank=True,
         verbose_name="Role / krátký popis",
         help_text="Např. sopranistka, klavírista, dramaturgyně, produkce…",
     )
-    bio = models.TextField(blank=True, verbose_name="Text profilu",)
-    contact_email = models.EmailField(blank=True, verbose_name="Kontaktní e-mail",)
-    website_url = models.URLField(blank=True, verbose_name="Osobní web",)
-    facebook_url = models.URLField(blank=True, verbose_name="Facebook",)
-    instagram_url = models.URLField(blank=True, verbose_name="Instagram",)
-    linkedin_url = models.URLField(blank=True, verbose_name="LinkedIn",)
-    x_url = models.URLField(blank=True, verbose_name="X",) 
-    sort_order = models.PositiveIntegerField(default=0, verbose_name="Pořadí", help_text="Nižší číslo = zobrazí se dříve.",)
-    is_published = models.BooleanField(default=True, verbose_name="Publikováno",)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Vytvořeno",)
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Naposledy upraveno",)
+    bio = models.TextField(blank=True, verbose_name="Text profilu")
+    contact_email = models.EmailField(blank=True, verbose_name="Kontaktní e-mail")
+    website_url = models.URLField(blank=True, verbose_name="Osobní web")
+    facebook_url = models.URLField(blank=True, verbose_name="Facebook")
+    instagram_url = models.URLField(blank=True, verbose_name="Instagram")
+    linkedin_url = models.URLField(blank=True, verbose_name="LinkedIn")
+    x_url = models.URLField(blank=True, verbose_name="X")
+    sort_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Pořadí",
+        help_text="Nižší číslo = zobrazí se dříve.",
+    )
+    is_published = models.BooleanField(default=True, verbose_name="Publikováno")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Vytvořeno")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Naposledy upraveno")
 
     class Meta:
         ordering = ["sort_order", "name"]
@@ -46,6 +68,17 @@ class Person(models.Model):
 
     def get_absolute_url(self):
         return reverse("core:person_detail", kwargs={"slug": self.slug})
+
+    @property
+    def primary_photo(self):
+        if self.photo_asset and self.photo_asset.file:
+            return self.photo_asset.file
+        return self.photo
+
+    @property
+    def photo_url(self):
+        photo = self.primary_photo
+        return photo.url if photo else ""
 
     def save(self, *args, **kwargs):
         if not self.slug:

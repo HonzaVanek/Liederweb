@@ -13,7 +13,7 @@ from django.template.loader import render_to_string
 from django.core.mail import EmailMessage, send_mail
 from django.utils.decorators import method_decorator
 
-from .forms import VlastniLoginForm, RegistraceForm
+from .forms import VlastniLoginForm, RegistraceForm, PersonForm
 from .models import Person
 from .decorators import staff_required
 
@@ -132,22 +132,8 @@ class PersonAdminListView(ListView):
 @method_decorator(staff_required, name="dispatch")
 class PersonCreateView(CreateView):
     model = Person
+    form_class = PersonForm
     template_name = "core/person_form.html"
-    fields = [
-        "name",
-        "slug",
-        "photo",
-        "role_short",
-        "bio",
-        "contact_email",
-        "website_url",
-        "facebook_url",
-        "instagram_url",
-        "linkedin_url",
-        "x_url",
-        "sort_order",
-        "is_published",
-    ]
 
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -168,25 +154,11 @@ class PersonCreateView(CreateView):
 @method_decorator(staff_required, name="dispatch")
 class PersonUpdateView(UpdateView):
     model = Person
+    form_class = PersonForm
     template_name = "core/person_form.html"
     context_object_name = "person"
     slug_field = "slug"
     slug_url_kwarg = "slug"
-    fields = [
-        "name",
-        "slug",
-        "photo",
-        "role_short",
-        "bio",
-        "contact_email",
-        "website_url",
-        "facebook_url",
-        "instagram_url",
-        "linkedin_url",
-        "x_url",
-        "sort_order",
-        "is_published",
-    ]
 
     def form_valid(self, form):
         response = super().form_valid(form)

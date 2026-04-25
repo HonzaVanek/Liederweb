@@ -56,9 +56,9 @@
                         {% for person in people %}
                             <tr>
                                 <td class="person-admin-photo-cell">
-                                    {% if person.photo %}
+                                    {% if person.photo_url %}
                                         <img
-                                            src="{{ person.photo.url }}"
+                                            src="{{ person.photo_url }}"
                                             alt="{{ person.name }}"
                                             class="person-admin-thumb"
                                         >

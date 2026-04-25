@@ -36,10 +36,10 @@
                 Oprav prosím chyby ve formuláři.
             </div>
         {% endif %}
-                {% if person and person.photo %}
+                {% if person and person.photo_url %}
                     <div class="person-current-photo">
                         <h2>Aktuální fotografie</h2>
-                        <img src="{{ person.photo.url }}" alt="{{ person.name }}">
+                        <img src="{{ person.photo_url }}" alt="{{ person.name }}">
                     </div>
                 {% endif %}
         <form method="post" enctype="multipart/form-data" class="person-form">
