@@ -52,20 +52,82 @@
             {% endif %}
 
             {% for field in form %}
-                <div class="form-row">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
+                {% if field.name == "photo_asset" %}
+                    <div class="form-row person-photo-asset-row">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
 
-                    {% if field.help_text %}
-                        <div class="help-text">{{ field.help_text }}</div>
-                    {% endif %}
+                        <div class="person-photo-picker">
+                            <div class="person-photo-picker-topbar">
+                                <input
+                                    type="search"
+                                    class="person-photo-picker-search"
+                                    placeholder="Filtrovat fotky podle názvu…"
+                                    autocomplete="off"
+                                >
+                                <button type="button" class="person-photo-picker-clear">
+                                    Zrušit výběr
+                                </button>
+                            </div>
 
-                    {% if field.errors %}
-                        <div class="field-errors">
-                            {{ field.errors }}
+                            <div class="person-form-native-asset-select-wrap">
+                                {{ field }}
+                            </div>
+
+                            {% if recent_image_assets %}
+                                <div class="person-photo-picker-grid">
+                                    {% for asset in recent_image_assets %}
+                                        <button
+                                            type="button"
+                                            class="person-photo-picker-card{% if selected_photo_asset_id == asset.pk|stringformat:'s' %} is-selected{% endif %}"
+                                            data-asset-id="{{ asset.pk }}"
+                                            data-search="{{ asset.title|default:''|lower }} {{ asset.original_filename|default:''|lower }} {{ asset.credit|default:''|lower }}"
+                                        >
+                                            <span class="person-photo-picker-thumb-wrap">
+                                                <img
+                                                    src="{{ asset.file.url }}"
+                                                    alt="{{ asset.alt_text|default:asset.title|default:asset.filename }}"
+                                                    class="person-photo-picker-thumb"
+                                                >
+                                                <span class="person-photo-picker-selected-badge">Vybráno</span>
+                                            </span>
+
+                                            <span class="person-photo-picker-meta">
+                                                <strong>{{ asset.title|default:asset.filename }}</strong>
+                                                <span>{{ asset.uploaded_at|date:"d.m.Y" }}</span>
+                                            </span>
+                                        </button>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="person-photo-picker-empty">
+                                    V mediální knihovně zatím nejsou žádné aktivní obrázky.
+                                    <a href="{% url 'media_assets:asset_create' %}">Nahrát nový asset</a>
+                                </div>
+                            {% endif %}
                         </div>
-                    {% endif %}
-                </div>
+
+                        {% if field.help_text %}
+                            <div class="help-text">{{ field.help_text }}</div>
+                        {% endif %}
+
+                        {% if field.errors %}
+                            <div class="field-errors">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="form-row">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+
+                        {% if field.help_text %}
+                            <div class="help-text">{{ field.help_text }}</div>
+                        {% endif %}
+
+                        {% if field.errors %}
+                            <div class="field-errors">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
             {% endfor %}
 
             <div class="form-actions">
@@ -78,4 +140,55 @@
         </form>
     </div>
 </section>
+
+<script>
+document.documentElement.classList.add("js-enabled");
+
+document.addEventListener("DOMContentLoaded", function () {
+    const picker = document.querySelector(".person-photo-picker");
+    if (!picker) return;
+
+    const select = picker.querySelector("select");
+    const searchInput = picker.querySelector(".person-photo-picker-search");
+    const clearButton = picker.querySelector(".person-photo-picker-clear");
+    const cards = Array.from(picker.querySelectorAll(".person-photo-picker-card"));
+
+    function updateSelectedState(selectedId) {
+        cards.forEach((card) => {
+            card.classList.toggle("is-selected", card.dataset.assetId === selectedId);
+        });
+    }
+
+    function filterCards() {
+        const query = (searchInput.value || "").trim().toLowerCase();
+
+        cards.forEach((card) => {
+            const haystack = card.dataset.search || "";
+            const visible = !query || haystack.includes(query);
+            card.style.display = visible ? "" : "none";
+        });
+    }
+
+    cards.forEach((card) => {
+        card.addEventListener("click", function () {
+            const assetId = this.dataset.assetId;
+            select.value = assetId;
+            updateSelectedState(assetId);
+        });
+    });
+
+    if (clearButton) {
+        clearButton.addEventListener("click", function () {
+            select.value = "";
+            updateSelectedState("");
+        });
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener("input", filterCards);
+    }
+
+    updateSelectedState(select.value || "");
+});
+</script>
 {% endblock %}

@@ -17,6 +17,8 @@ from .forms import VlastniLoginForm, RegistraceForm, PersonForm
 from .models import Person
 from .decorators import staff_required
 
+from media_assets.models import MediaAsset
+
 
 def home(request):
     return render(request, "core/home.html")
@@ -119,6 +121,19 @@ class PersonDetailView(DetailView):
         return Person.objects.filter(is_published=True)
 
 
+def get_recent_person_image_assets(selected_asset=None, limit=24):
+    assets = list(
+        MediaAsset.objects.filter(
+            asset_type=MediaAsset.AssetType.IMAGE,
+            is_active=True,
+        ).order_by("-uploaded_at")[:limit]
+    )
+
+    if selected_asset and all(asset.pk != selected_asset.pk for asset in assets):
+        assets.insert(0, selected_asset)
+
+    return assets
+
 @method_decorator(staff_required, name="dispatch")
 class PersonAdminListView(ListView):
     model = Person
@@ -148,6 +163,8 @@ class PersonCreateView(CreateView):
         context["page_title"] = "Nový profil"
         context["submit_label"] = "Vytvořit profil"
         context["person"] = None
+        context["recent_image_assets"] = get_recent_person_image_assets()
+        context["selected_photo_asset_id"] = ""
         return context
 
 
@@ -173,4 +190,6 @@ class PersonUpdateView(UpdateView):
         context["page_title"] = f"Upravit profil: {self.object.name}"
         context["submit_label"] = "Uložit změny"
         context["public_url"] = self.object.get_absolute_url() if self.object.is_published else None
+        context["recent_image_assets"] = get_recent_person_image_assets(self.object.photo_asset)
+        context["selected_photo_asset_id"] = str(self.object.photo_asset_id or "")
         return context

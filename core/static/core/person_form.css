@@ -412,3 +412,268 @@ body.dark-mode .person-form select:focus-visible,
 body.dark-mode .person-form button:focus-visible {
     outline-color: #f0f0f0;
 }
+
+/* =========================================================
+   PHOTO ASSET PICKER
+   ========================================================= */
+
+.js-enabled .person-form-native-asset-select-wrap {
+    display: none;
+}
+
+.person-photo-picker {
+    display: grid;
+    gap: 14px;
+}
+
+.person-photo-picker-topbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.person-photo-picker-search {
+    flex: 1 1 260px;
+}
+
+.person-photo-picker-clear {
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1.5px solid #111;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.2s ease,
+        box-shadow 0.25s ease;
+}
+
+.person-photo-picker-clear:hover {
+    background: #111;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
+}
+
+.person-photo-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.person-photo-picker-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #d8d8d8;
+    border-radius: 12px;
+    background: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        transform 0.22s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease,
+        background-color 0.25s ease;
+}
+
+.person-photo-picker-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 26px rgba(0, 0, 0, 0.1);
+    border-color: #111;
+}
+
+.person-photo-picker-card.is-selected {
+    border-color: #111;
+    background: #f3f3f3;
+    box-shadow:
+        0 0 0 3px rgba(0, 0, 0, 0.14),
+        0 16px 30px rgba(0, 0, 0, 0.12);
+}
+
+.person-photo-picker-thumb-wrap {
+    position: relative;
+    display: block;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #f2f2f2;
+}
+
+.person-photo-picker-selected-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #111;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.person-photo-picker-card.is-selected .person-photo-picker-selected-badge {
+    display: inline-flex;
+}
+
+.person-photo-picker-card.is-selected .person-photo-picker-thumb-wrap {
+    box-shadow: inset 0 0 0 3px #111;
+}
+
+.person-photo-picker-card.is-selected .person-photo-picker-meta strong {
+    color: #000;
+}
+
+.person-photo-picker-thumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.person-photo-picker-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.person-photo-picker-meta strong {
+    font-size: 0.9rem;
+    line-height: 1.3;
+    color: #111;
+    word-break: break-word;
+}
+
+.person-photo-picker-meta span {
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: #666;
+}
+
+.person-photo-picker-empty {
+    padding: 16px 18px;
+    border: 1px dashed #bdbdbd;
+    border-radius: 12px;
+    background: #fafafa;
+    color: #555;
+    line-height: 1.55;
+}
+
+.person-photo-picker-empty a {
+    font-weight: 700;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1000px) {
+    .person-photo-picker-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .person-photo-picker-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 560px) {
+    .person-photo-picker-topbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .person-photo-picker-clear {
+        width: 100%;
+    }
+
+    .person-photo-picker-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+body.dark-mode .person-photo-picker-clear {
+    background: #1b1b1b;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .person-photo-picker-clear:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .person-photo-picker-card {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .person-photo-picker-card:hover {
+    border-color: #777;
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.24);
+}
+
+body.dark-mode .person-photo-picker-card.is-selected {
+    background: #232323;
+    border-color: #f0f0f0;
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.14),
+        0 16px 30px rgba(0, 0, 0, 0.24);
+}
+
+body.dark-mode .person-photo-picker-thumb-wrap {
+    background: #252525;
+}
+
+body.dark-mode .person-photo-picker-meta strong {
+    color: #f0f0f0;
+}
+
+body.dark-mode .person-photo-picker-meta span,
+body.dark-mode .person-photo-picker-empty {
+    color: #b9b9b9;
+}
+
+body.dark-mode .person-photo-picker-empty {
+    background: #1b1b1b;
+    border-color: #555;
+}
+
+body.dark-mode .person-photo-picker-selected-badge {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .person-photo-picker-card.is-selected .person-photo-picker-thumb-wrap {
+    box-shadow: inset 0 0 0 3px #f0f0f0;
+}
+
+body.dark-mode .person-photo-picker-card.is-selected .person-photo-picker-meta strong {
+    color: #fff;
+}
