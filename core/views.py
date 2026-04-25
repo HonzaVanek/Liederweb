@@ -121,7 +121,7 @@ class PersonDetailView(DetailView):
         return Person.objects.filter(is_published=True)
 
 
-def get_recent_person_image_assets(selected_asset=None, limit=24):
+def get_recent_person_image_assets(selected_asset=None, limit=16):
     assets = list(
         MediaAsset.objects.filter(
             asset_type=MediaAsset.AssetType.IMAGE,
