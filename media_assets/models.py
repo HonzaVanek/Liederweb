@@ -157,6 +157,10 @@ class MediaAsset(models.Model):
         return self.title or self.original_filename or Path(self.file.name).name
 
     @property
+    def image(self):
+        return self.file
+        
+    @property
     def filename(self):
         return Path(self.file.name).name if self.file else ""
 
