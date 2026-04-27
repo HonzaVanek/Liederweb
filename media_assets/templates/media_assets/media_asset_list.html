@@ -26,6 +26,26 @@
             </div>
         </header>
 
+        <section class="media-assets-storage content-section">
+            <h3>Využití mediální knihovny</h3>
+
+            <div class="media-assets-storage-topline">
+                <strong>{{ total_size|filesizeformat }}</strong>
+                <span>z {{ limit_size|filesizeformat }}</span>
+                <span class="media-assets-storage-remaining">
+                    zbývá {{ remaining_size|filesizeformat }}
+                </span>
+            </div>
+
+            <div class="media-assets-storage-bar">
+                <div class="media-assets-storage-bar-fill" style="width: {{ storage_percent }}%;"></div>
+            </div>
+
+            <p class="small muted" style="margin-top: 10px;">
+                Tohle je součet souborů v mediální knihovně, ne celkové obsazení celého serverového disku.
+            </p>
+        </section>
+
         {% if messages %}
             <ul class="messages">
                 {% for m in messages %}
@@ -155,6 +175,16 @@
                                 <td class="actions">
                                     <a href="{% url 'media_assets:asset_update' pk=asset.pk %}">Upravit</a>
                                     <a href="{{ asset.file.url }}" target="_blank" rel="noopener noreferrer">Otevřít</a>
+
+                                    <form
+                                        method="post"
+                                        action="{% url 'media_assets:asset_delete' pk=asset.pk %}"
+                                        class="inline-form"
+                                        onsubmit="return confirm('Opravdu chceš tento asset smazat? Pokud je použitý jinde, mazání se neprovede.');"
+                                    >
+                                        {% csrf_token %}
+                                        <button type="submit">Smazat</button>
+                                    </form>
                                 </td>
                             </tr>
                         {% endfor %}

@@ -96,6 +96,35 @@
             </div>
         {% endif %}
 
+
+            {% if asset %}
+                <section class="content-section media-asset-usage-panel">
+                    <h3>Použití na webu</h3>
+
+                    {% if asset_usage.is_used %}
+                        <p>Tento asset se aktuálně používá na webu, proto ho nelze smazat.</p>
+                        <ul class="media-asset-usage-list">
+                            {% for label, count in asset_usage.usage_rows %}
+                                <li>{{ label }}: {{ count }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="muted">Tento asset se nikde nepoužívá a lze ho bezpečně smazat.</p>
+
+                        <form
+                            method="post"
+                            action="{% url 'media_assets:asset_delete' pk=asset.pk %}"
+                            onsubmit="return confirm('Opravdu chceš tento asset smazat?');"
+                        >
+                            {% csrf_token %}
+                            <div class="form-actions">
+                                <button type="submit">Smazat asset</button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </section>
+            {% endif %}
+
         <form method="post" enctype="multipart/form-data" class="media-asset-form">
             {% csrf_token %}
 

@@ -381,3 +381,21 @@ body.dark-mode .media-asset-form button:focus-visible,
 body.dark-mode .media-asset-form .form-actions a:focus-visible {
     outline-color: #f0f0f0;
 }
+
+
+.media-asset-usage-panel {
+    margin-bottom: 20px;
+}
+
+.media-asset-usage-list {
+    margin: 12px 0 0 18px;
+    padding: 0;
+}
+
+.media-asset-usage-list li {
+    margin-bottom: 6px;
+}
+
+body.dark-mode .media-asset-usage-list li {
+    color: #ddd;
+}
