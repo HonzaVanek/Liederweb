@@ -213,54 +213,54 @@
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px;">
           <div>
             <h4 style="margin-bottom: 10px;">Plakát</h4>
-            {% if event.poster_image %}
-              <div class="event-poster-wrap">
-                <img
-                  src="{{ event.poster_image.image.url }}"
-                  alt="{{ event.poster_image.title|default:event.title }}"
-                  class="event-poster"
-                >
-              </div>
-              <p class="muted small" style="margin-top: 8px;">{{ event.poster_image.title|default:"Bez názvu" }}</p>
-            {% else %}
-              <p class="muted">Není vybrán.</p>
-            {% endif %}
+              {% if event.poster_media %}
+                <div class="event-poster-wrap">
+                  <img
+                    src="{{ event.poster_media.image.url }}"
+                    alt="{{ event.poster_media.title|default:event.title }}"
+                    class="event-poster"
+                  >
+                </div>
+                <p class="muted small" style="margin-top: 8px;">{{ event.poster_media.title|default:"Bez názvu" }}</p>
+              {% else %}
+                <p class="muted">Není vybrán.</p>
+              {% endif %}
           </div>
 
           <div>
             <h4 style="margin-bottom: 10px;">Cover fotka</h4>
-            {% if event.hero_image %}
-              <div class="event-poster-wrap">
-                <img
-                  src="{{ event.hero_image.image.url }}"
-                  alt="{{ event.hero_image.title|default:event.title }}"
-                  class="event-poster"
-                >
-              </div>
-              <p class="muted small" style="margin-top: 8px;">
-                {{ event.hero_image.title|default:"Bez názvu" }}
-              </p>
-            {% else %}
-              <p class="muted">Není vybrána.</p>
-            {% endif %}
+              {% if event.hero_media %}
+                <div class="event-poster-wrap">
+                  <img
+                    src="{{ event.hero_media.image.url }}"
+                    alt="{{ event.hero_media.title|default:event.title }}"
+                    class="event-poster"
+                  >
+                </div>
+                <p class="muted small" style="margin-top: 8px;">
+                  {{ event.hero_media.title|default:"Bez názvu" }}
+                </p>
+              {% else %}
+                <p class="muted">Není vybrána.</p>
+              {% endif %}
           </div>
 
           <div>
             <h4 style="margin-bottom: 10px;">Sekundární fotka</h4>
-            {% if event.secondary_image %}
-              <div class="event-poster-wrap">
-                <img
-                  src="{{ event.secondary_image.image.url }}"
-                  alt="{{ event.secondary_image.title|default:event.title }}"
-                  class="event-poster"
-                >
-              </div>
-              <p class="muted small" style="margin-top: 8px;">
-                {{ event.secondary_image.title|default:"Bez názvu" }}
-              </p>
-            {% else %}
-              <p class="muted">Není vybrána.</p>
-            {% endif %}
+              {% if event.secondary_media %}
+                <div class="event-poster-wrap">
+                  <img
+                    src="{{ event.secondary_media.image.url }}"
+                    alt="{{ event.secondary_media.title|default:event.title }}"
+                    class="event-poster"
+                  >
+                </div>
+                <p class="muted small" style="margin-top: 8px;">
+                  {{ event.secondary_media.title|default:"Bez názvu" }}
+                </p>
+              {% else %}
+                <p class="muted">Není vybrána.</p>
+              {% endif %}
           </div>
         </div>
       </div>
@@ -311,10 +311,10 @@
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px;">
             {% for artist in event.artists.all %}
               <div class="content-section-soft" style="padding: 14px; border: 1px solid #ddd; border-radius: 10px;">
-                {% if artist.photo_image %}
+                {% if artist.photo_media %}
                   <div style="margin-bottom: 12px;">
                     <img
-                      src="{{ artist.photo_image.image.url }}"
+                      src="{{ artist.photo_media.image.url }}"
                       alt="{{ artist.name }}"
                       style="display:block; width:100%; aspect-ratio:4/3; object-fit:cover; object-position:center {{ artist.photo_position|default:'center' }}; border-radius:8px;"
                     >
@@ -422,15 +422,15 @@
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px;">
             {% for sponsor in event.sponsors.all %}
               <div class="content-section-soft" style="padding: 14px; border: 1px solid #ddd; border-radius: 10px;">
-                {% if sponsor.logo_image %}
-                  <div style="margin-bottom: 12px; text-align: center;">
-                    <img
-                      src="{{ sponsor.logo_image.image.url }}"
-                      alt="{{ sponsor.name }}"
-                      style="max-width:100%; max-height:70px; width:auto; height:auto; object-fit:contain;"
-                    >
-                  </div>
-                {% endif %}
+                  {% if sponsor.logo_media %}
+                    <div style="margin-bottom: 12px; text-align: center;">
+                      <img
+                        src="{{ sponsor.logo_media.image.url }}"
+                        alt="{{ sponsor.name }}"
+                        style="max-width:100%; max-height:70px; width:auto; height:auto; object-fit:contain;"
+                      >
+                    </div>
+                  {% endif %}
 
                 <p style="margin-bottom: 8px;"><strong>{{ sponsor.name }}</strong></p>
 

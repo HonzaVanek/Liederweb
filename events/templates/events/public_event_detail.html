@@ -10,12 +10,12 @@
 
 {% block content %}
 <div class="public-event-page" style="--event-color: {{ event.theme_color|default:'#7B2738' }};">
-  <section class="public-event-hero {% if event.hero_image %}has-hero-image{% endif %} {% if event.hero_parallax_enabled %}hero-parallax-enabled{% endif %}">
-    {% if event.hero_image %}
+  <section class="public-event-hero {% if event.hero_media %}has-hero-image{% endif %} {% if event.hero_parallax_enabled %}hero-parallax-enabled{% endif %}">
+    {% if event.hero_media %}
       <div
         class="public-event-hero-bg"
         style="
-          background-image: url('{{ event.hero_image.image.url }}');
+          background-image: url('{{ event.hero_media.image.url }}');
           background-position: center {{ event.hero_image_position|default:'center' }};
         "
       ></div>
@@ -47,7 +47,7 @@
         {% endif %}
       </div>
 
-      {% if event.poster_image %}
+      {% if event.poster_media %}
         <div class="public-event-poster-card">
           <button
             type="button"
@@ -56,8 +56,8 @@
             aria-label="Zvětšit plakát koncertu"
           >
             <img
-              src="{{ event.poster_image.image.url }}"
-              alt="{{ event.poster_image.title|default:event.title }}"
+              src="{{ event.poster_media.image.url }}"
+              alt="{{ event.poster_media.title|default:event.title }}"
               class="public-event-poster"
             >
           </button>
@@ -111,10 +111,10 @@
           <div class="artist-list">
             {% for artist in event.artists.all %}
               <div class="artist-item">
-                {% if artist.photo_image %}
+                {% if artist.photo_media %}
                   <div class="artist-photo-wrap">
                     <img
-                      src="{{ artist.photo_image.image.url }}"
+                      src="{{ artist.photo_media.image.url }}"
                       alt="{{ artist.name }}"
                       class="artist-photo"
                       style="object-position: center {{ artist.photo_position|default:'center' }};"
@@ -139,11 +139,11 @@
         </section>
       {% endif %}
 
-      {% if event.secondary_image %}
+      {% if event.secondary_media %}
         <section class="public-event-section public-event-photo-section">
           <img
-            src="{{ event.secondary_image.image.url }}"
-            alt="{{ event.secondary_image.title|default:event.title }}"
+            src="{{ event.secondary_media.image.url }}"
+            alt="{{ event.secondary_media.title|default:event.title }}"
             class="public-event-secondary-image"
           >
         </section>
@@ -224,15 +224,15 @@
               <div class="sponsor-item">
                 {% if sponsor.url %}
                   <a href="{{ sponsor.url }}" target="_blank" rel="noopener">
-                    {% if sponsor.logo_image %}
-                      <img src="{{ sponsor.logo_image.image.url }}" alt="{{ sponsor.name }}">
+                    {% if sponsor.logo_media %}
+                      <img src="{{ sponsor.logo_media.image.url }}" alt="{{ sponsor.name }}">
                     {% else %}
                       <span>{{ sponsor.name }}</span>
                     {% endif %}
                   </a>
                 {% else %}
-                  {% if sponsor.logo_image %}
-                    <img src="{{ sponsor.logo_image.image.url }}" alt="{{ sponsor.name }}">
+                  {% if sponsor.logo_media %}
+                    <img src="{{ sponsor.logo_media.image.url }}" alt="{{ sponsor.name }}">
                   {% else %}
                     <span>{{ sponsor.name }}</span>
                   {% endif %}
@@ -337,14 +337,14 @@
   </div>
 </div>
 
-{% if event.poster_image %}
+{% if event.poster_media %}
   <div id="poster-modal" class="poster-modal" hidden>
     <div class="poster-modal-backdrop"></div>
     <div class="poster-modal-dialog">
       <button type="button" class="poster-modal-close" id="close-poster-modal" aria-label="Zavřít plakát">×</button>
       <img
-        src="{{ event.poster_image.image.url }}"
-        alt="{{ event.poster_image.title|default:event.title }}"
+        src="{{ event.poster_media.image.url }}"
+        alt="{{ event.poster_media.title|default:event.title }}"
         class="poster-modal-image"
       >
     </div>

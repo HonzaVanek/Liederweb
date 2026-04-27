@@ -7,6 +7,9 @@ from events.models import Event
 from django.conf import settings
 from django.db.models import Sum
 
+from pathlib import Path
+from media_assets.models import MediaAsset
+
 
 #přepis html emailu do plaintextu:
 def html_to_plain_text(html: str) -> str:
@@ -101,6 +104,72 @@ class EmailImageUploadForm(forms.ModelForm):
                 )
 
         return cleaned_data
+    
+
+# přechod na MediaAsset pro správu obrázků v rozesílači:
+EMAIL_IMAGE_ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif"}
+EMAIL_IMAGE_MAX_SIZE = 3 * 1024 * 1024
+EMAIL_IMAGE_TOTAL_LIMIT = 500 * 1024 * 1024
+
+class NewsletterImageUploadForm(forms.Form):
+    title = forms.CharField(
+        required=False,
+        max_length=255,
+        widget=forms.TextInput(attrs={"placeholder": "Volitelný název obrázku"}),
+        label="Název",
+    )
+    image = forms.ImageField(label="Obrázek")
+
+    def clean_image(self):
+        image = self.cleaned_data.get("image")
+        if not image:
+            return image
+
+        ext = Path(image.name).suffix.lower().lstrip(".")
+        if ext not in EMAIL_IMAGE_ALLOWED_EXTENSIONS:
+            raise ValidationError(
+                "Povolené formáty jsou pouze JPG, JPEG, PNG, WEBP a GIF."
+            )
+
+        if image.size > EMAIL_IMAGE_MAX_SIZE:
+            raise ValidationError(
+                "Maximální povolená velikost obrázku je pouze 3 MB."
+            )
+
+        return image
+
+    def clean(self):
+        cleaned_data = super().clean()
+        image = cleaned_data.get("image")
+
+        if image:
+            current_total = (
+                MediaAsset.objects.filter(asset_type=MediaAsset.AssetType.IMAGE)
+                .aggregate(total=Sum("file_size"))["total"]
+                or 0
+            )
+
+            if current_total + image.size > EMAIL_IMAGE_TOTAL_LIMIT:
+                raise ValidationError(
+                    "Nelze nahrát další obrázek. Úložiště pro obrázky překročilo limit 500 MB. "
+                    "Nejdříve je potřeba z galerie smazat alespoň pár nepotřebných obrázků."
+                )
+
+        return cleaned_data
+
+    def save(self, uploaded_by=None):
+        image = self.cleaned_data["image"]
+        title = (self.cleaned_data.get("title") or "").strip()
+
+        asset = MediaAsset(
+            title=title,
+            file=image,
+            alt_text=title,
+            uploaded_by=uploaded_by,
+            is_active=True,
+        )
+        asset.save()
+        return asset
     
 class ContactGroupForm(forms.ModelForm):
     class Meta:

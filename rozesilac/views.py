@@ -9,7 +9,8 @@ from core.decorators import staff_required
 from .models import Contact, EmailCampaign, EmailDelivery, EmailClickEvent, EmailTemplate, EmailImage, ContactGroup, EmailCampaignTrackedLink
 from django.db.models import OuterRef, Sum, Exists, Prefetch
 from django.db.models.deletion import ProtectedError
-from .forms import EmailTemplateForm, EmailImageUploadForm, ContactForm, ContactImportForm, ContactGroupForm, SendCampaignForm
+from media_assets.models import MediaAsset
+from .forms import EmailTemplateForm, EmailImageUploadForm, ContactForm, ContactImportForm, ContactGroupForm, SendCampaignForm, NewsletterImageUploadForm
 from django.contrib import messages
 from django.shortcuts import redirect
 from openpyxl import load_workbook
@@ -152,6 +153,18 @@ def dashboard(request):
     )
 
 
+# přechod na media assets pro správu obrázků v rozesílači:
+
+def get_newsletter_image_assets():
+    return MediaAsset.objects.filter(
+        asset_type=MediaAsset.AssetType.IMAGE,
+    ).order_by("-uploaded_at")
+
+
+def get_newsletter_image_total_size():
+    return get_newsletter_image_assets().aggregate(total=Sum("file_size"))["total"] or 0
+
+
 @staff_required
 def templates(request):
     templates = EmailTemplate.objects.order_by("-updated_at", "name")
@@ -168,12 +181,15 @@ def template_create(request):
     else:
         form = EmailTemplateForm()
 
-    recent_images = EmailImage.objects.all()[:4]
-    total_size = EmailImage.objects.aggregate(total=Sum("file_size"))["total"] or 0
-    limit_size = 100 * 1024 * 1024
-    image_upload_form = EmailImageUploadForm()
+    recent_images = get_newsletter_image_assets()[:4]
+    total_size = get_newsletter_image_total_size()
+    limit_size = 500 * 1024 * 1024
+    image_upload_form = NewsletterImageUploadForm()
 
-    return render(request, "rozesilac/template_create.html", {
+    return render(
+        request,
+        "rozesilac/template_create.html",
+        {
             "form": form,
             "page_title": "Nová šablona",
             "submit_label": "Vytvořit šablonu",
@@ -181,7 +197,8 @@ def template_create(request):
             "total_size": total_size,
             "limit_size": limit_size,
             "image_upload_form": image_upload_form,
-        },)
+        },
+    )
 
 @staff_required
 def template_edit(request, template_id):
@@ -196,21 +213,25 @@ def template_edit(request, template_id):
     else:
         form = EmailTemplateForm(instance=template_obj)
 
-    recent_images = EmailImage.objects.all()[:4]
-    total_size = EmailImage.objects.aggregate(total=Sum("file_size"))["total"] or 0
-    limit_size = 100 * 1024 * 1024
-    image_upload_form = EmailImageUploadForm()
-    return render(request, "rozesilac/template_edit.html",
-                    {
-                    "form": form,
-                    "page_title": f"Upravit šablonu: {template_obj.name}",
-                    "submit_label": "Uložit změny",
-                    "template_obj": template_obj,
-                    "recent_images": recent_images,
-                    "total_size": total_size,
-                    "limit_size": limit_size,
-                    "image_upload_form": image_upload_form,
-                    },)
+    recent_images = get_newsletter_image_assets()[:4]
+    total_size = get_newsletter_image_total_size()
+    limit_size = 500 * 1024 * 1024
+    image_upload_form = NewsletterImageUploadForm()
+
+    return render(
+        request,
+        "rozesilac/template_edit.html",
+        {
+            "form": form,
+            "page_title": f"Upravit šablonu: {template_obj.name}",
+            "submit_label": "Uložit změny",
+            "template_obj": template_obj,
+            "recent_images": recent_images,
+            "total_size": total_size,
+            "limit_size": limit_size,
+            "image_upload_form": image_upload_form,
+        },
+    )
 
 @staff_required
 def template_duplicate(request, template_id):
@@ -485,47 +506,42 @@ def contact_edit(request, contact_id):
 
 @staff_required
 def images(request):
-    upload_form = EmailImageUploadForm()
+    upload_form = NewsletterImageUploadForm()
 
     if request.method == "POST":
         if request.POST.get("action") == "upload":
-            upload_form = EmailImageUploadForm(request.POST, request.FILES)
+            upload_form = NewsletterImageUploadForm(request.POST, request.FILES)
 
             if upload_form.is_valid():
-                obj = upload_form.save(commit=False)
-                obj.uploaded_by = request.user
-                obj.file_size = obj.image.size
-                obj.save()
-
+                upload_form.save(uploaded_by=request.user)
                 messages.success(request, "Obrázek byl nahrán.")
                 return redirect("rozesilac:images")
-            
+
         elif request.POST.get("action") == "rename":
             image_id = request.POST.get("image_id")
             new_title = (request.POST.get("title") or "").strip()
 
-            image = get_object_or_404(EmailImage, pk=image_id)
+            image = get_object_or_404(MediaAsset, pk=image_id)
             image.title = new_title
             image.save(update_fields=["title"])
 
             messages.success(request, "Název obrázku byl upraven.")
             return redirect("rozesilac:images")
-        
 
         elif request.POST.get("action") == "delete":
             image_id = request.POST.get("image_id")
-            obj = get_object_or_404(EmailImage, id=image_id)
+            obj = get_object_or_404(MediaAsset, id=image_id)
 
-            if obj.image:
-                obj.image.delete(save=False)
+            if obj.file:
+                obj.file.delete(save=False)
             obj.delete()
 
             messages.success(request, "Obrázek byl smazán.")
             return redirect("rozesilac:images")
 
-    images = EmailImage.objects.all()
-    total_size = EmailImage.objects.aggregate(total=Sum("file_size"))["total"] or 0
-    limit_size = 100 * 1024 * 1024
+    images = get_newsletter_image_assets()
+    total_size = get_newsletter_image_total_size()
+    limit_size = 500 * 1024 * 1024
 
     return render(
         request,
@@ -543,19 +559,16 @@ def image_upload(request):
     if request.method != "POST":
         return HttpResponseForbidden("Pouze POST.")
 
-    form = EmailImageUploadForm(request.POST, request.FILES)
+    form = NewsletterImageUploadForm(request.POST, request.FILES)
     next_url = request.POST.get("next") or "rozesilac:templates"
 
     if form.is_valid():
-        obj = form.save(commit=False)
-        obj.uploaded_by = request.user
-        obj.file_size = obj.image.size
-        obj.save()
+        form.save(uploaded_by=request.user)
         messages.success(request, "Obrázek byl nahrán.")
     else:
         for error in form.non_field_errors():
             messages.error(request, error)
-            
+
         for field_name, errors in form.errors.items():
             if field_name == "__all__":
                 continue

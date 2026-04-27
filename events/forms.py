@@ -3,7 +3,15 @@ from django.forms import inlineformset_factory, BaseInlineFormSet
 from django.utils import timezone
 from .models import (Event, EventArtist, EventProgramItem, EventPracticalInfo, EventResource, EventSponsor, EventTicketSettings, EventTicketVariant)
 from rozesilac.models import EmailImage
+from media_assets.models import MediaAsset
 
+
+
+def get_event_image_assets_queryset():
+    return MediaAsset.objects.filter(
+        asset_type=MediaAsset.AssetType.IMAGE,
+        is_active=True,
+    ).order_by("-uploaded_at")
 
 class EventForm(forms.ModelForm):
     starts_at = forms.DateTimeField(
@@ -27,11 +35,11 @@ class EventForm(forms.ModelForm):
             "venue_map_url",
             "duration_text",
             "theme_color",
-            "poster_image",
-            "hero_image",
+            "poster_asset",
+            "hero_asset",
             "hero_image_position",
             "hero_parallax_enabled",
-            "secondary_image",
+            "secondary_asset",
             "public_text",
             "program_intro",
             "educational_text",
@@ -62,11 +70,14 @@ class EventForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        image_qs = EmailImage.objects.all().order_by("-uploaded_at")
+        image_qs = get_event_image_assets_queryset()
 
-        for field_name in ["poster_image", "hero_image", "secondary_image"]:
+        for field_name in ["poster_asset", "hero_asset", "secondary_asset"]:
             self.fields[field_name].queryset = image_qs
             self.fields[field_name].required = False
+            self.fields["poster_asset"].label = "Poster Image"
+            self.fields["hero_asset"].label = "Hero Image"
+            self.fields["secondary_asset"].label = "Secondary Image"
 
         if self.instance and self.instance.pk and self.instance.starts_at:
             self.initial["starts_at"] = timezone.localtime(
@@ -91,7 +102,7 @@ EventProgramItemFormSet = inlineformset_factory(
 EventArtistFormSet = inlineformset_factory(
     Event,
     EventArtist,
-    fields=["sort_order", "name", "role", "url", "photo_image", "photo_position"],
+    fields=["sort_order", "name", "role", "url", "photo_asset", "photo_position"],
     extra=3,
     can_delete=True,
 )
@@ -115,7 +126,7 @@ EventPracticalInfoFormSet = inlineformset_factory(
 EventSponsorFormSet = inlineformset_factory(
     Event,
     EventSponsor,
-    fields=["sort_order", "name", "logo_image", "url"],
+    fields=["sort_order", "name", "logo_asset", "url"],
     extra=3,
     can_delete=True,
 )
@@ -202,7 +213,7 @@ class EventTicketSettingsForm(forms.ModelForm):
         model = EventTicketSettings
         fields = [
             "enabled",
-            "logo_image",
+            "logo_asset",
             "header_text",
             "ticket_title",
             "ticket_artists_text",
@@ -227,8 +238,9 @@ class EventTicketSettingsForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         self.event = event
-        self.fields["logo_image"].queryset = EmailImage.objects.all().order_by("-uploaded_at")
-        self.fields["logo_image"].required = False
+        self.fields["logo_asset"].queryset = get_event_image_assets_queryset()
+        self.fields["logo_asset"].required = False
+        self.fields["logo_asset"].label = "Logo pro vstupenky"
 
         # Předvyplnění jen při prvním založení.
         # Jakmile záznam existuje, nic automaticky nepřepisujeme.

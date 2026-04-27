@@ -127,7 +127,7 @@
       <p class="poster-help-text">
         Kliknutím na kartu níže vybereš plakát rychle. Pokud tam obrázek není, vyber ho ze seznamu všech obrázků.
       </p>
-      {% for e in form.poster_image.errors %}
+      {% for e in form.poster_asset.errors %}
         <div class="form-errors">{{ e }}</div>
       {% endfor %}
     </div>
@@ -139,7 +139,7 @@
         <div class="recent-images-grid">
           {% for img in recent_images %}
             <div
-              class="recent-image-card selectable-image-card {% if form.instance.poster_image and form.instance.poster_image.id == img.id %}selected{% endif %}"
+              class="recent-image-card selectable-image-card {% if form.instance.poster_asset and form.instance.poster_asset.id == img.id %}selected{% endif %}"
               data-image-id="{{ img.id }}"
               tabindex="0"
               role="button"
@@ -168,20 +168,20 @@
     </div>
 
     <div class="template-form-row poster-select-row">
-      <label for="{{ form.poster_image.id_for_label }}">Nebo vyber plakát z celého seznamu obrázků</label>
-      {{ form.poster_image }}
-      {% for e in form.poster_image.errors %}
+      <label for="{{ form.poster_asset.id_for_label }}">Nebo vyber plakát z celého seznamu obrázků</label>
+      {{ form.poster_asset }}
+      {% for e in form.poster_asset.errors %}
         <div class="form-errors">{{ e }}</div>
       {% endfor %}
     </div>
 
     <div class="template-form-row">
-      <label for="{{ form.hero_image.id_for_label }}">Cover fotka do hlavičky</label>
-      {{ form.hero_image }}
+      <label for="{{ form.hero_asset.id_for_label }}">Cover fotka do hlavičky</label>
+      {{ form.hero_asset }}
       <p class="small muted">
         Velká fotka na pozadí horní části veřejné stránky. Průsvitně ji překryje barva koncertu.
       </p>
-      {% for e in form.hero_image.errors %}
+      {% for e in form.hero_asset.errors %}
         <div class="form-errors">{{ e }}</div>
       {% endfor %}
     </div>
@@ -206,12 +206,12 @@
     </div>
 
     <div class="template-form-row">
-      <label for="{{ form.secondary_image.id_for_label }}">Další fotka do obsahu stránky</label>
-      {{ form.secondary_image }}
+      <label for="{{ form.secondary_asset.id_for_label }}">Další fotka do obsahu stránky</label>
+      {{ form.secondary_asset }}
       <p class="small muted">
         Volitelná druhá fotka, která se může zobrazit níže mezi texty.
       </p>
-      {% for e in form.secondary_image.errors %}
+      {% for e in form.secondary_asset.errors %}
         <div class="form-errors">{{ e }}</div>
       {% endfor %}
     </div>
@@ -357,8 +357,8 @@
         </div>
 
         <div>
-          <label for="{{ subform.photo_image.id_for_label }}">Fotka</label>
-          {{ subform.photo_image }}
+          <label for="{{ subform.photo_asset.id_for_label }}">Fotka</label>
+          {{ subform.photo_asset }}
           <p class="small muted">Vyber z obrázků nahraných v galerii.</p>
         </div>
 
@@ -511,8 +511,8 @@
           </div>
 
           <div>
-            <label for="{{ subform.logo_image.id_for_label }}">Logo</label>
-            {{ subform.logo_image }}
+            <label for="{{ subform.logo_asset.id_for_label }}">Logo</label>
+            {{ subform.logo_asset }}
           </div>
 
           <div>
@@ -592,7 +592,7 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  const select = document.getElementById("{{ form.poster_image.id_for_label }}");
+  const select = document.getElementById("{{ form.poster_asset.id_for_label }}");
   const cards = document.querySelectorAll(".selectable-image-card");
 
   if (!select) return;

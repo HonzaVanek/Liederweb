@@ -32,6 +32,8 @@ from .forms import (
     get_default_ticket_variant_initials,
 )
 
+from media_assets.models import MediaAsset
+
 from .services.ticket_pdf import build_event_ticket_pdf, build_ticket_pdf_filename
 
 from django.conf import settings
@@ -125,7 +127,7 @@ def event_create(request):
     context = {
         "form": form,
         "page_title": "Nový koncert",
-        "recent_images": EmailImage.objects.order_by("-uploaded_at")[:10],
+        "recent_images": MediaAsset.objects.filter(asset_type=MediaAsset.AssetType.IMAGE, is_active=True,).order_by("-uploaded_at")[:10],
         "event": None,
         **formsets,
     }

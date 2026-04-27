@@ -78,13 +78,13 @@
           </div>
 
           <div class="form-row">
-            <label for="{{ settings_form.logo_image.id_for_label }}">{{ settings_form.logo_image.label }}</label>
-            {{ settings_form.logo_image }}
-            {% if settings_form.logo_image.help_text %}
-              <div class="ticket-help-inline">{{ settings_form.logo_image.help_text }}</div>
+            <label for="{{ settings_form.logo_asset.id_for_label }}">{{ settings_form.logo_asset.label }}</label>
+            {{ settings_form.logo_asset }}
+            {% if settings_form.logo_asset.help_text %}
+              <div class="ticket-help-inline">{{ settings_form.logo_asset.help_text }}</div>
             {% endif %}
-            {% if settings_form.logo_image.errors %}
-              <div class="form-errors">{{ settings_form.logo_image.errors }}</div>
+            {% if settings_form.logo_asset.errors %}
+              <div class="form-errors">{{ settings_form.logo_asset.errors }}</div>
             {% endif %}
           </div>
 

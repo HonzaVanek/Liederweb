@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.text import slugify
 
 from rozesilac.models import EmailImage, EmailCampaign, Contact
+from media_assets.models import MediaAsset
 
 
 
@@ -49,12 +50,50 @@ class Event(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    poster_asset = models.ForeignKey(
+        MediaAsset,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="events_as_poster_asset",
+        limit_choices_to={"asset_type": "image", "is_active": True},
+    )
+
+    hero_asset = models.ForeignKey(
+        MediaAsset,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="events_as_hero_asset",
+        limit_choices_to={"asset_type": "image", "is_active": True},
+    )
+
+    secondary_asset = models.ForeignKey(
+        MediaAsset,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="events_as_secondary_asset",
+        limit_choices_to={"asset_type": "image", "is_active": True},
+    )
 
     class Meta:
         ordering = ["-starts_at", "-created_at"]
 
     def __str__(self):
         return self.title
+    
+    @property
+    def poster_media(self):
+        return self.poster_asset or self.poster_image
+
+    @property
+    def hero_media(self):
+        return self.hero_asset or self.hero_image
+
+    @property
+    def secondary_media(self):
+        return self.secondary_asset or self.secondary_image
 
     @property
     def youtube_embed_url(self):
@@ -117,11 +156,24 @@ class EventArtist(models.Model):
         default="center",
     )
 
+    photo_asset = models.ForeignKey(
+        MediaAsset,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="event_artist_photo_assets",
+        limit_choices_to={"asset_type": "image", "is_active": True},
+    )
+
     class Meta:
         ordering = ["sort_order", "id"]
 
     def __str__(self):
         return self.name
+    
+    @property
+    def photo_media(self):
+        return self.photo_asset or self.photo_image
 
 
 class EventResource(models.Model):
@@ -180,6 +232,16 @@ class EventSponsor(models.Model):
         on_delete=models.SET_NULL,
         related_name="event_sponsor_logos",
     )
+
+    logo_asset = models.ForeignKey(
+        MediaAsset,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="event_sponsor_logo_assets",
+        limit_choices_to={"asset_type": "image", "is_active": True},
+    )
+
     url = models.URLField(blank=True)
 
     class Meta:
@@ -187,6 +249,10 @@ class EventSponsor(models.Model):
 
     def __str__(self):
         return self.name
+    
+    @property
+    def logo_media(self):
+        return self.logo_asset or self.logo_image
     
 
 
@@ -233,6 +299,17 @@ class EventTicketSettings(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="events_as_ticket_logo",
+        verbose_name="Logo na vstupence",
+        help_text="Když nevyplníš, při generování se použije výchozí logo LS (takže asi nevyplňuj - jenom kdybys chtěla jiné logo).",
+    )
+
+    logo_asset = models.ForeignKey(
+        MediaAsset,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="events_as_ticket_logo_asset",
+        limit_choices_to={"asset_type": "image", "is_active": True},
         verbose_name="Logo na vstupence",
         help_text="Když nevyplníš, při generování se použije výchozí logo LS (takže asi nevyplňuj - jenom kdybys chtěla jiné logo).",
     )
@@ -285,6 +362,10 @@ class EventTicketSettings(models.Model):
 
     def __str__(self):
         return f"Vstupenky – {self.event.title}"
+    
+    @property
+    def logo_media(self):
+        return self.logo_asset or self.logo_image
 
     def clean(self):
         errors = {}
