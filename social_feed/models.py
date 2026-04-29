@@ -22,7 +22,7 @@ class SocialSource(models.Model):
         verbose_name="Externí ID účtu / stránky",
         help_text="Např. Facebook Page ID nebo Instagram User ID.",
     )
-    profile_url = models.URLField(blank=True, verbose_name="URL profilu / stránky")
+    profile_url = models.URLField(blank=True, max_length=1000, verbose_name="URL profilu / stránky")
     is_active = models.BooleanField(default=True, db_index=True, verbose_name="Aktivní")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Vytvořeno")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Upraveno")
@@ -50,19 +50,10 @@ class SocialPost(models.Model):
         related_name="posts",
         verbose_name="Zdroj",
     )
-    external_post_id = models.CharField(
-        max_length=255,
-        verbose_name="Externí ID postu",
-    )
+    external_post_id = models.CharField(max_length=255, verbose_name="Externí ID postu")
 
-    message = models.TextField(
-        blank=True,
-        verbose_name="Text postu",
-    )
-    permalink_url = models.URLField(
-        blank=True,
-        verbose_name="Odkaz na originální post",
-    )
+    message = models.TextField(blank=True, verbose_name="Text postu")
+    permalink_url = models.URLField(blank=True, max_length=1000, verbose_name="Odkaz na originální post")
 
     media_type = models.CharField(
         max_length=20,
@@ -70,8 +61,8 @@ class SocialPost(models.Model):
         default=MediaType.OTHER,
         verbose_name="Typ média",
     )
-    image_url = models.URLField(blank=True, verbose_name="URL náhledového obrázku")
-    thumbnail_url = models.URLField(blank=True, verbose_name="URL thumbnailu")
+    image_url = models.URLField(blank=True, max_length=1500, verbose_name="URL náhledového obrázku")
+    thumbnail_url = models.URLField(blank=True, max_length=1500, verbose_name="URL thumbnailu")
     published_at = models.DateTimeField(
         null=True,
         blank=True,
