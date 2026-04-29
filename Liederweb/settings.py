@@ -141,6 +141,7 @@ INSTALLED_APPS = [
     'core',
     'events',
     'media_assets',
+    'social_feed',
     'anymail'
 ]
 
@@ -283,3 +284,7 @@ else:
 
 #zatím jen mně, ale to se musí změnit :)
 VIP_NOTIFICATION_EMAILS = ["vanek.hv@gmail.com"]
+
+
+
+FACEBOOK_PAGE_ACCESS_TOKEN = os.getenv("FACEBOOK_PAGE_ACCESS_TOKEN", "")

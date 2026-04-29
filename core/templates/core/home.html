@@ -1,12 +1,259 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block extra_css %}{{ block.super }}<link rel="stylesheet" href="{% static 'core/home.css' %}">{% endblock %}
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'core/home.css' %}">
+{% endblock %}
 
 {% block title %}Nový web Lieder Society{% endblock %}
 
-
 {% block content %}
-    <h1>Interní (zatím) web <span>Lieder Society</span></h1>
-    <p>Toto je hlavní stránka, časem tu bude ukázka nového webu Lieder Society. Nyní si vyber z MENU nahoře - máme už připravenou stránku Lidé, ostatní vedou zatím na starý web. Do administrace (koncerty, newslettery apod.) se připojíš přes přihlašovací stránku.</p>
+<section class="home-carousel-section">
+  <div class="home-carousel-header">
+    <p class="home-carousel-kicker">Test homepage</p>
+    <h2>První návrh carouselu</h2>
+  </div>
+
+  <div class="home-carousel-shell">
+    <button type="button" class="home-carousel-nav home-carousel-nav-prev" aria-label="Předchozí slide">
+      ←
+    </button>
+
+    <div class="home-carousel-viewport" id="home-carousel-viewport">
+      <div class="home-carousel-track">
+        <article class="home-slide">
+          <div class="home-slide-grid">
+            {% if featured_facebook_post and featured_facebook_post.image_url %}
+              <div class="home-slide-image-wrap">
+                <img
+                  src="{{ featured_facebook_post.image_url }}"
+                  alt="Náhled Facebook postu"
+                  class="home-slide-image"
+                >
+              </div>
+            {% else %}
+              <div class="home-slide-image-wrap home-slide-image-wrap-empty">
+                <div class="home-slide-image-placeholder">Facebook</div>
+              </div>
+            {% endif %}
+
+            <div class="home-slide-content">
+              <p class="home-slide-eyebrow">Facebook / poslední post s obrázkem</p>
+              <h3>Poslední Facebook post</h3>
+
+              {% if featured_facebook_post %}
+                <div class="home-slide-meta">
+                  <span>{{ featured_facebook_post.source.name }}</span>
+                  {% if featured_facebook_post.published_at %}
+                    <span>{{ featured_facebook_post.published_at|date:"d. m. Y H:i" }}</span>
+                  {% endif %}
+                </div>
+
+                {% if featured_facebook_post.message %}
+                  <div class="home-slide-text home-slide-text-facebook">
+                    {{ featured_facebook_post.message|truncatechars:700 }}
+                  </div>
+                {% else %}
+                  <p class="muted">Tento post nemá textovou část.</p>
+                {% endif %}
+
+                {% if featured_facebook_post.permalink_url %}
+                  <div class="home-slide-actions">
+                    <a href="{{ featured_facebook_post.permalink_url }}" target="_blank" rel="noopener" class="home-slide-button">
+                      Otevřít originální post
+                    </a>
+                  </div>
+                {% endif %}
+              {% else %}
+                <p class="muted">Zatím tu není načtený žádný Facebook post s obrázkem.</p>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+
+        <article class="home-slide">
+          <div class="home-slide-grid home-slide-grid-feed">
+            <div class="home-slide-content home-slide-content-feed">
+              <p class="home-slide-eyebrow">Facebook / posledních 5 postů</p>
+              <h3>Scrollovatelný feed</h3>
+
+              {% if recent_facebook_posts %}
+                <div class="home-facebook-feed-list">
+                  {% for post in recent_facebook_posts %}
+                    <article class="home-facebook-feed-item">
+                      <div class="home-facebook-feed-meta">
+                        {% if post.published_at %}
+                          <span>{{ post.published_at|date:"d. m. Y H:i" }}</span>
+                        {% endif %}
+                      </div>
+
+                      <div class="home-facebook-feed-text">
+                        {% if post.message %}
+                          {{ post.message|truncatechars:320 }}
+                        {% else %}
+                          <span class="muted">Bez textu</span>
+                        {% endif %}
+                      </div>
+
+                      <div class="home-facebook-feed-actions">
+                        {% if post.permalink_url %}
+                          <a href="{{ post.permalink_url }}" target="_blank" rel="noopener">Otevřít post</a>
+                        {% endif %}
+                      </div>
+                    </article>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <p class="muted">Zatím tu nejsou načtené žádné Facebook posty.</p>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+
+        <article class="home-slide">
+          <div class="home-slide-grid">
+            {% if featured_event and featured_event.poster_media %}
+              <div class="home-slide-image-wrap home-slide-image-wrap-poster">
+                <img
+                  src="{{ featured_event.poster_media.image.url }}"
+                  alt="{{ featured_event.poster_media.title|default:featured_event.title }}"
+                  class="home-slide-image home-slide-image-poster"
+                >
+              </div>
+            {% else %}
+              <div class="home-slide-image-wrap home-slide-image-wrap-empty">
+                <div class="home-slide-image-placeholder">Koncert</div>
+              </div>
+            {% endif %}
+
+            <div class="home-slide-content">
+              <p class="home-slide-eyebrow">Events / plakát koncertu</p>
+              <h3>
+                {% if featured_event and featured_event.starts_at and featured_event.starts_at >= now %}
+                  Nejbližší koncert
+                {% else %}
+                  Poslední koncert
+                {% endif %}
+              </h3>
+
+              {% if featured_event %}
+                <div class="home-slide-meta">
+                  {% if featured_event.starts_at %}
+                    <span>{{ featured_event.starts_at|date:"d. m. Y H:i" }}</span>
+                  {% endif %}
+                  {% if featured_event.venue %}
+                    <span>{{ featured_event.venue }}</span>
+                  {% endif %}
+                </div>
+
+                <div class="home-slide-text">
+                  <strong>{{ featured_event.title }}</strong>
+                  {% if featured_event.subtitle %}
+                    <br>{{ featured_event.subtitle }}
+                  {% endif %}
+                </div>
+
+                <div class="home-slide-actions">
+                  {% if featured_event.is_published %}
+                    <a href="{% url 'events:public_event_detail' featured_event.slug %}" class="home-slide-button">
+                      Otevřít stránku koncertu
+                    </a>
+                  {% endif %}
+
+                  <a href="{% url 'events:event_detail' featured_event.pk %}" class="home-slide-button home-slide-button-secondary">
+                    Staff detail koncertu
+                  </a>
+                </div>
+              {% else %}
+                <p class="muted">Zatím tu není žádný publikovaný koncert.</p>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+
+        <article class="home-slide">
+          <div class="home-slide-grid">
+            {% if manual_home_asset %}
+              <div class="home-slide-image-wrap">
+                <img
+                  src="{{ manual_home_asset.file.url }}"
+                  alt="{{ manual_home_asset.alt_text|default:manual_home_asset.title|default:'Homepage foto' }}"
+                  class="home-slide-image"
+                >
+              </div>
+            {% else %}
+              <div class="home-slide-image-wrap home-slide-image-wrap-empty">
+                <div class="home-slide-image-placeholder">Foto</div>
+              </div>
+            {% endif %}
+
+            <div class="home-slide-content">
+              <p class="home-slide-eyebrow">Media assets / ruční foto</p>
+              <h3>Ruční homepage fotka</h3>
+
+              {% if manual_home_asset %}
+                <div class="home-slide-meta">
+                  <span>{{ manual_home_asset.title|default:"Bez názvu" }}</span>
+                  <span>{{ manual_home_asset.uploaded_at|date:"d. m. Y H:i" }}</span>
+                </div>
+
+                <div class="home-slide-text">
+                  Tohle je zatím ručně vybraný slide z mediální knihovny. Později to uděláme pořádně přes nějaké nastavení homepage, ale pro první prototyp to stačí.
+                </div>
+
+                <div class="home-slide-actions">
+                  <a href="{% url 'media_assets:asset_update' manual_home_asset.pk %}" class="home-slide-button">
+                    Otevřít asset
+                  </a>
+                </div>
+              {% else %}
+                <p class="muted">Zatím tu není žádný aktivní obrázek z mediální knihovny.</p>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <button type="button" class="home-carousel-nav home-carousel-nav-next" aria-label="Další slide">
+      →
+    </button>
+  </div>
+</section>
+
+<section class="home-intro">
+  <h1>Interní (zatím) web <span>Lieder Society</span></h1>
+  <p>
+    Toto je hlavní stránka, časem tu bude ukázka nového webu Lieder Society.
+    Nyní si vyber z MENU nahoře - máme už připravenou stránku Lidé, ostatní vedou zatím na starý web.
+    Do administrace (koncerty, newslettery apod.) se připojíš přes přihlašovací stránku.
+  </p>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const viewport = document.getElementById("home-carousel-viewport");
+  const prevBtn = document.querySelector(".home-carousel-nav-prev");
+  const nextBtn = document.querySelector(".home-carousel-nav-next");
+
+  if (!viewport || !prevBtn || !nextBtn) return;
+
+  function scrollBySlide(direction) {
+    const amount = viewport.clientWidth;
+    viewport.scrollBy({
+      left: direction * amount,
+      behavior: "smooth"
+    });
+  }
+
+  prevBtn.addEventListener("click", function () {
+    scrollBySlide(-1);
+  });
+
+  nextBtn.addEventListener("click", function () {
+    scrollBySlide(1);
+  });
+});
+</script>
 {% endblock %}

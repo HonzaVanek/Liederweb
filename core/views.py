@@ -4,6 +4,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
+from django.utils import timezone
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
@@ -15,14 +16,103 @@ from django.utils.decorators import method_decorator
 
 from .forms import VlastniLoginForm, RegistraceForm, PersonForm
 from .models import Person
+from events.models import Event
+from media_assets.models import MediaAsset
+from social_feed.models import SocialPost, SocialSource
 from .decorators import staff_required
 
-from media_assets.models import MediaAsset
 
+
+
+
+
+### hlavní landing page ####
 
 def home(request):
-    return render(request, "core/home.html")
+    now = timezone.now()
 
+    upcoming_event = (
+        Event.objects.filter(is_published=True, starts_at__gte=now)
+        .order_by("starts_at")
+        .first()
+    )
+
+    latest_past_event = (
+        Event.objects.filter(is_published=True, starts_at__lt=now)
+        .order_by("-starts_at")
+        .first()
+    )
+
+    featured_event = upcoming_event or latest_past_event
+
+    featured_facebook_post = (
+        SocialPost.objects.select_related("source")
+        .filter(
+            source__platform=SocialSource.Platform.FACEBOOK,
+            source__is_active=True,
+            is_visible=True,
+            image_url__gt="",
+        )
+        .order_by("-published_at", "-id")
+        .first()
+    )
+
+    recent_facebook_posts = (
+        SocialPost.objects.select_related("source")
+        .filter(
+            source__platform=SocialSource.Platform.FACEBOOK,
+            source__is_active=True,
+            is_visible=True,
+        )
+        .order_by("-published_at", "-id")[:5]
+    )
+
+    # Zatím jednoduché ruční řešení:
+    # sem si můžeš dát konkrétní ID assetu, který chceš na homepage.
+    MANUAL_HOME_ASSET_ID = None
+
+    manual_home_asset = None
+
+    if MANUAL_HOME_ASSET_ID:
+        manual_home_asset = (
+            MediaAsset.objects.filter(
+                pk=MANUAL_HOME_ASSET_ID,
+                asset_type=MediaAsset.AssetType.IMAGE,
+                is_active=True,
+            )
+            .first()
+        )
+
+    if not manual_home_asset:
+        manual_home_asset = (
+            MediaAsset.objects.filter(
+                asset_type=MediaAsset.AssetType.IMAGE,
+                is_active=True,
+            )
+            .order_by("-uploaded_at")
+            .first()
+        )
+
+    return render(
+        request,
+        "core/home.html",
+        {
+            "featured_event": featured_event,
+            "featured_facebook_post": featured_facebook_post,
+            "recent_facebook_posts": recent_facebook_posts,
+            "manual_home_asset": manual_home_asset,
+            "now": now,
+        },
+    )
+
+
+
+
+##### konec landing page ####
+
+
+
+#### LOGIN a REGISTRACE ####
 
 class VlastniLoginView(LoginView):
     template_name = "core/login.html"
@@ -84,6 +174,7 @@ def registrace(request):
 
     return render(request, "core/registrace.html", {"form": form})
 
+#### KONEC LOGIN a REGISTRACE ####
 
 def activate(request, uidb64, token):
     try:
@@ -100,6 +191,9 @@ def activate(request, uidb64, token):
 
     return render(request, "core/activation_invalid.html")
 
+
+
+###### stránka lidé  #######
 
 class PersonListView(ListView):
     model = Person
@@ -193,3 +287,6 @@ class PersonUpdateView(UpdateView):
         context["recent_image_assets"] = get_recent_person_image_assets(self.object.photo_asset)
         context["selected_photo_asset_id"] = str(self.object.photo_asset_id or "")
         return context
+    
+
+##### konec stránky lidé  #######
