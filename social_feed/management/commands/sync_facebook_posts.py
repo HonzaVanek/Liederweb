@@ -64,9 +64,14 @@ class Command(BaseCommand):
             with urlopen(url, timeout=30) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except HTTPError as exc:
+            try:
+                error_body = exc.read().decode("utf-8", errors="replace")
+            except Exception:
+                error_body = "<nepodařilo se přečíst tělo chyby>"
+
             self.stderr.write(
                 self.style.ERROR(
-                    f"[{source.name}] HTTP chyba {exc.code}: {exc.reason}"
+                    f"[{source.name}] HTTP chyba {exc.code}: {exc.reason} | {error_body}"
                 )
             )
             return 0, 0
