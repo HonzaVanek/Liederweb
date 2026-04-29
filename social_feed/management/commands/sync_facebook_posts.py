@@ -61,7 +61,7 @@ class Command(BaseCommand):
         url = f"https://graph.facebook.com/v25.0/{source.external_account_id}/posts?{urlencode(params)}"
 
         try:
-            with urlopen(url, timeout=20) as response:
+            with urlopen(url, timeout=30) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except HTTPError as exc:
             self.stderr.write(
