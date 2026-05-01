@@ -75,6 +75,61 @@
         {% block content %}{% endblock %}
     </main>
 
+    {% if not hide_header %}
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+
+            <div class="footer-brand">
+                <a href="/" class="footer-logo-link" aria-label="Lieder Society – domovská stránka">
+                    <img
+                        src="{% static 'LIEDER_society_logo_black_transparent_orez.png' %}"
+                        alt="Lieder Society"
+                        class="footer-logo"
+                    >
+                </a>
+
+                <div class="footer-brand-text">
+                    <strong>Lieder Society z.s.</strong>
+                    <span>Cílíme na píseň.</span>
+                </div>
+            </div>
+
+            <div class="footer-meta">
+                <a href="mailto:info@lieder-society.cz">info@lieder-society.cz</a>
+                <span>© {% now "Y" %} Lieder Society z.s.</span>
+                <span class="footer-credit">Web: Jan Vaněk</span>
+            </div>
+
+            <div class="footer-socials" aria-label="Sociální sítě">
+                <a href="https://www.youtube.com/channel/UCOBzc-a-yvCh-03bXUplTVw" target="_blank" rel="noopener" aria-label="YouTube">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8ZM9.6 15.6V8.4L15.8 12l-6.2 3.6Z"/>
+                    </svg>
+                </a>
+
+                <a href="https://soundcloud.com/tamara-morozova-308981497" target="_blank" rel="noopener" aria-label="SoundCloud">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9.8 18.2h10.1a4.1 4.1 0 0 0 .4-8.2 5.7 5.7 0 0 0-10.8-2.1.4.4 0 0 0-.1.3v9.6c0 .2.2.4.4.4ZM1.1 14.2l.4 2.1-.4 1.9-.4-1.9.4-2.1Zm1.7-1.4.5 3.5-.5 1.9-.5-1.9.5-3.5Zm1.7-.5.6 4-.6 1.9-.6-1.9.6-4Zm1.8.1.5 3.9-.5 1.9-.6-1.9.6-3.9Zm1.8-1.3.5 5.2-.5 1.9-.6-1.9.6-5.2Z"/>
+                    </svg>
+                </a>
+
+                <a href="https://www.facebook.com/liedersociety/" target="_blank" rel="noopener" aria-label="Facebook">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M24 12.1A12 12 0 1 0 10.1 24v-8.4H7.1v-3.5h3V9.5c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9v2.2h3.4l-.5 3.5h-2.9V24A12 12 0 0 0 24 12.1Z"/>
+                    </svg>
+                </a>
+
+                <a href="https://www.instagram.com/liedersociety/" target="_blank" rel="noopener" aria-label="Instagram">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.9.3 2.3.5.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1.1.5 2.3.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.3 1.9-.5 2.3-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1.1.4-2.3.5-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.9-.3-2.3-.5-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1.1-.5-2.3C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.3-1.9.5-2.3.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1.1-.4 2.3-.5C8.4 2.2 8.8 2.2 12 2.2Zm0 5.6A4.2 4.2 0 1 0 12 16.2 4.2 4.2 0 0 0 12 7.8Zm0 6.9A2.7 2.7 0 1 1 12 9.3a2.7 2.7 0 0 1 0 5.4Zm5.4-7.1a1 1 0 1 0-1-1 1 1 0 0 0 1 1Z"/>
+                    </svg>
+                </a>
+            </div>
+
+        </div>
+    </footer>
+    {% endif %}
+    
     <script>
     (function () {
         const btn = document.getElementById("dark-mode-toggle");
