@@ -298,7 +298,28 @@ def contacts(request):
 
     if request.method == "POST" and request.POST.get("action") == "delete_group":
         group_id = request.POST.get("group_id")
-        ContactGroup.objects.filter(id=group_id).delete()
+        group = ContactGroup.objects.filter(id=group_id).first()
+
+        if not group:
+            messages.error(request, "Skupina nebyla nalezena.")
+            return redirect("rozesilac:contacts")
+
+        if group.is_protected:
+            messages.error(
+                request,
+                "Tuto systémovou skupinu nelze smazat. Kontakty v ní ale mazat můžete."
+            )
+            return redirect("rozesilac:contacts")
+
+        try:
+            group.delete()
+        except ProtectedError:
+            messages.error(
+                request,
+                "Tuto skupinu nelze smazat, protože je systémově chráněná. Kontakty v ní ale mazat můžete."
+            )
+            return redirect("rozesilac:contacts")
+
         messages.success(request, "Skupina byla smazána.")
         return redirect("rozesilac:contacts")
 
