@@ -61,3 +61,12 @@ class PersonForm(forms.ModelForm):
             "sort_order",
             "is_published",
         ]
+
+
+class NewsletterSignupForm(forms.Form):
+    email = forms.EmailField(label="E-mail", max_length=254,)
+    name = forms.CharField(label="Jméno", max_length=200, required=False)
+    website = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    def clean_email(self):
+        return self.cleaned_data["email"].strip().lower()

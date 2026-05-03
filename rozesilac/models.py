@@ -1,15 +1,31 @@
 from django.db import models
 from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
+from django.db.models.deletion import ProtectedError
+from django.db.models.signals import pre_delete
 from django.conf import settings
+from django.dispatch import receiver
 import uuid
 import secrets
 
 # Create your models here.
 
+
+WEB_CONTACT_GROUP_CODE = "web_newsletter"
+WEB_CONTACT_GROUP_NAME = "Kontakty z webu"
+
 class ContactGroup(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Název skupiny")
     created_at = models.DateTimeField(auto_now_add=True)
+    system_code = models.SlugField(
+        max_length=80,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name="Systémový kód",
+        help_text="Interní kód pro systémové skupiny. Běžně nevyplňovat.",
+    )
+    is_protected = models.BooleanField(default=False, verbose_name="Chráněná skupina", help_text="Chráněnou skupinu nelze smazat.",)
 
     class Meta:
         ordering = ["name"]
@@ -18,7 +34,14 @@ class ContactGroup(models.Model):
 
     def __str__(self):
         return self.name
-    
+
+@receiver(pre_delete, sender=ContactGroup)
+def prevent_protected_contact_group_delete(sender, instance, **kwargs):
+    if instance.is_protected:
+        raise ProtectedError(
+            "Tuto systémovou skupinu nelze smazat.",
+            [instance],
+        )    
 
 class Contact(models.Model):
     email = models.EmailField(unique=True)

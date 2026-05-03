@@ -15,6 +15,7 @@ urlpatterns = [
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name="core/password_reset_done.html"), name="password_reset_done"),
     path("reset/<uidb64>/<token>/", auth_views.PasswordResetConfirmView.as_view(template_name="core/password_reset_confirm.html", success_url="/password-reset/complete/"), name="password_reset_confirm"),
     path("password-reset/complete/", auth_views.PasswordResetCompleteView.as_view(template_name="core/password_reset_complete.html"), name="password_reset_complete"),
+    path("newsletter/prihlaseni/", views.newsletter_signup, name="newsletter_signup"),
 
     path("lide/", views.PersonListView.as_view(), name="person_list"),
     path("lide/<slug:slug>/", views.PersonDetailView.as_view(), name="person_detail"),

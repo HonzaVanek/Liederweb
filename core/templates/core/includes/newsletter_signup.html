@@ -1,0 +1,61 @@
+<section id="newsletter-signup" class="newsletter-signup" aria-labelledby="newsletter-signup-title">
+  <div class="newsletter-signup__inner">
+    <div class="newsletter-signup__content">
+      <p class="newsletter-signup__eyebrow">Newsletter</p>
+      <h2 id="newsletter-signup-title">Zůstaňte v kontaktu s&nbsp;Lieder Society</h2>
+      <p>
+        Přihlaste se k odběru novinek o koncertech, projektech a dalších aktivitách Lieder Society.
+      </p>
+    </div>
+
+    <form class="newsletter-signup__form" method="post" action="{% url 'core:newsletter_signup' %}">
+      {% csrf_token %}
+
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+        {% if messages %}
+            <div class="newsletter-signup__messages" aria-live="polite">
+            {% for message in messages %}
+                {% if "newsletter" in message.tags %}
+                <div class="newsletter-signup__message newsletter-signup__message--{{ message.level_tag }}">
+                    {{ message }}
+                </div>
+                {% endif %}
+            {% endfor %}
+            </div>
+        {% endif %}
+
+      <div class="newsletter-signup__trap" aria-hidden="true">
+        <label for="newsletter-website">Web</label>
+        <input id="newsletter-website" type="text" name="website" tabindex="-1" autocomplete="off">
+      </div>
+
+      <div class="newsletter-signup__field">
+        <label for="newsletter-email">E-mail</label>
+        <input
+          id="newsletter-email"
+          type="email"
+          name="email"
+          required
+          autocomplete="email"
+          placeholder="vas@email.cz"
+        >
+      </div>
+
+      <div class="newsletter-signup__field">
+        <label for="newsletter-name">Jméno <span>nepovinné</span></label>
+        <input
+          id="newsletter-name"
+          type="text"
+          name="name"
+          autocomplete="name"
+          placeholder="Vaše jméno"
+        >
+      </div>
+
+      <button type="submit" class="newsletter-signup__button">
+        Přihlásit se
+      </button>
+    </form>
+  </div>
+</section>

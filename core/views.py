@@ -1,11 +1,13 @@
+from urllib.parse import urldefrag
 from django.shortcuts import render, redirect
 from django.contrib.auth.views import LoginView
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
+from django.views.decorators.http import require_POST
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.utils import timezone
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode, url_has_allowed_host_and_scheme
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
@@ -14,12 +16,14 @@ from django.template.loader import render_to_string
 from django.core.mail import EmailMessage, send_mail
 from django.utils.decorators import method_decorator
 
-from .forms import VlastniLoginForm, RegistraceForm, PersonForm
+from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm
 from .models import Person
 from events.models import Event
 from media_assets.models import MediaAsset
 from social_feed.models import SocialPost, SocialSource
 from .decorators import staff_required
+from rozesilac.models import Contact
+from rozesilac.services import get_web_contacts_group
 
 
 
@@ -105,10 +109,74 @@ def home(request):
         },
     )
 
+#newsletter signup view a pomocné funkce
+NEWSLETTER_ANCHOR = "newsletter-signup"
+
+def _add_newsletter_anchor(url):
+    url_without_fragment, _fragment = urldefrag(url)
+    return f"{url_without_fragment}#{NEWSLETTER_ANCHOR}"
+
+def _get_safe_redirect_url(request):
+    redirect_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
+
+    if redirect_url and url_has_allowed_host_and_scheme(
+        url=redirect_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return _add_newsletter_anchor(redirect_url)
+
+    return _add_newsletter_anchor(reverse("core:home"))
 
 
+@require_POST
+def newsletter_signup(request):
+    redirect_url = _get_safe_redirect_url(request)
+    form = NewsletterSignupForm(request.POST)
 
-##### konec landing page ####
+    if not form.is_valid():
+        messages.error(request, "Zkontrolujte prosím e-mail a zkuste to znovu.", extra_tags="newsletter")
+        return redirect(redirect_url)
+
+    # Honeypot – pokud je vyplněný, pravděpodobně bot.
+    # Nevracíme chybu, jen tiše přesměrujeme.
+    if form.cleaned_data.get("website"):
+        return redirect(redirect_url)
+
+    email = form.cleaned_data["email"]
+    name = form.cleaned_data.get("name", "").strip()
+
+    group = get_web_contacts_group()
+
+    contact, created = Contact.objects.get_or_create(
+        email=email,
+        defaults={
+            "name": name,
+            "is_active": True,
+        },
+    )
+
+    update_fields = []
+
+    if not contact.is_active:
+        contact.is_active = True
+        update_fields.append("is_active")
+
+    # Jméno bych nepřepisoval agresivně.
+    # Když už kontakt jméno má, nechal bych ho být.
+    if name and not contact.name:
+        contact.name = name
+        update_fields.append("name")
+
+    if update_fields:
+        contact.save(update_fields=update_fields)
+
+    contact.groups.add(group)
+
+    messages.success(request, "Děkujeme, přihlášení k newsletteru je zaznamenané.", extra_tags="newsletter")
+    return redirect(redirect_url)
+
+##### konec landing page #####
 
 
 
@@ -174,8 +242,6 @@ def registrace(request):
 
     return render(request, "core/registrace.html", {"form": form})
 
-#### KONEC LOGIN a REGISTRACE ####
-
 def activate(request, uidb64, token):
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
@@ -191,6 +257,7 @@ def activate(request, uidb64, token):
 
     return render(request, "core/activation_invalid.html")
 
+#### KONEC LOGIN a REGISTRACE ####
 
 
 ###### stránka lidé  #######

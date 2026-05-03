@@ -230,7 +230,6 @@
     Do administrace (koncerty, newslettery apod.) se připojíš přes přihlašovací stránku.
   </p>
 </section>
-
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const viewport = document.getElementById("home-carousel-viewport");
@@ -257,3 +256,8 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 {% endblock %}
+
+
+{% block newsletter_signup %}
+  {% include "core/includes/newsletter_signup.html" %}
+{% endblock newsletter_signup %}
