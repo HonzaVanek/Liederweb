@@ -32,7 +32,7 @@
                         <a href="{{ person.get_absolute_url }}" class="person-card-link">
                             <div class="person-card-photo-wrap">
                                 {% if person.photo_url %}
-                                    <img src="{{ person.photo_url }}" alt="{{ person.name }}" class="person-card-photo">
+                                    <img src="{{ person.photo_url }}" alt="{{ person.name }}" class="person-card-photo person-card-photo--position-{{ person.photo_list_position|default:'center' }}">
                                 {% else %}
                                     <div class="person-card-photo person-card-photo--placeholder">
                                         Bez fotografie

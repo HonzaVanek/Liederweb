@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static czech_typography %}
 
 {% block extra_css %}
     {{ block.super }}
@@ -13,17 +13,57 @@
     <div class="person-detail-inner">
 
         <div class="person-detail-topbar">
-            <a href="{% url 'core:person_list' %}" class="person-detail-back-link">← Zpět na seznam lidí</a>
-
-            {% if request.user.is_staff %}
-                <a href="{% url 'core:person_update' slug=person.slug %}" class="person-detail-edit-link">
-                    Upravit profil
+            <div class="person-detail-topbar-main">
+                <a href="{% url 'core:person_list' %}" class="person-detail-back-link">
+                    ← Zpět na seznam lidí
                 </a>
-            {% endif %}
+            </div>
+
+            <nav class="person-detail-neighbor-nav" aria-label="Přechod mezi profily osob">
+                {% if previous_person %}
+                    <a
+                        href="{{ previous_person.get_absolute_url }}"
+                        class="person-detail-neighbor-link person-detail-neighbor-link--prev"
+                        title="Předchozí profil: {{ previous_person.name }}"
+                    >
+                        <span aria-hidden="true">←</span>
+                        <span>Předchozí</span>
+                    </a>
+                {% else %}
+                    <span class="person-detail-neighbor-link person-detail-neighbor-link--disabled">
+                        <span aria-hidden="true">←</span>
+                        <span>Předchozí</span>
+                    </span>
+                {% endif %}
+
+                {% if next_person %}
+                    <a
+                        href="{{ next_person.get_absolute_url }}"
+                        class="person-detail-neighbor-link person-detail-neighbor-link--next"
+                        title="Další profil: {{ next_person.name }}"
+                    >
+                        <span>Další</span>
+                        <span aria-hidden="true">→</span>
+                    </a>
+                {% else %}
+                    <span class="person-detail-neighbor-link person-detail-neighbor-link--disabled">
+                        <span>Další</span>
+                        <span aria-hidden="true">→</span>
+                    </span>
+                {% endif %}
+            </nav>
+
+            <div class="person-detail-topbar-admin">
+                {% if request.user.is_staff %}
+                    <a href="{% url 'core:person_update' slug=person.slug %}" class="person-detail-edit-link">
+                        Upravit profil
+                    </a>
+                {% endif %}
+            </div>
         </div>
 
         <article class="person-detail-card">
-            <div class="person-detail-layout">
+            <div class="person-detail-layout{% if not person.contact_email and not person.website_url and not person.facebook_url and not person.instagram_url and not person.linkedin_url and not person.x_url %} person-detail-layout--no-aside{% endif %}">
 
                 <div class="person-detail-photo-column">
                     <div class="person-detail-photo-wrap">
@@ -48,7 +88,7 @@
 
                     {% if person.bio %}
                         <div class="person-detail-bio">
-                            {{ person.bio|linebreaks }}
+                            {{ person.bio|cz_nbsp|linebreaks }}
                         </div>
                     {% else %}
                         <div class="person-detail-bio person-detail-bio--empty">

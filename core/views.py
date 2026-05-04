@@ -268,7 +268,12 @@ class PersonListView(ListView):
     context_object_name = "people"
 
     def get_queryset(self):
-        return Person.objects.filter(is_published=True).order_by("sort_order", "name")
+        return (
+            Person.objects
+            .filter(is_published=True)
+            .select_related("photo_asset")
+            .order_by("sort_order", "name")
+        )
 
 
 class PersonDetailView(DetailView):
@@ -279,7 +284,42 @@ class PersonDetailView(DetailView):
     slug_url_kwarg = "slug"
 
     def get_queryset(self):
-        return Person.objects.filter(is_published=True)
+        return (
+            Person.objects
+            .filter(is_published=True)
+            .select_related("photo_asset")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        published_people = list(
+            Person.objects
+            .filter(is_published=True)
+            .only("id", "name", "slug", "sort_order")
+            .order_by("sort_order", "name", "id")
+        )
+
+        current_index = next(
+            (
+                index
+                for index, person in enumerate(published_people)
+                if person.pk == self.object.pk
+            ),
+            None,
+        )
+
+        context["previous_person"] = None
+        context["next_person"] = None
+
+        if current_index is not None:
+            if current_index > 0:
+                context["previous_person"] = published_people[current_index - 1]
+
+            if current_index < len(published_people) - 1:
+                context["next_person"] = published_people[current_index + 1]
+
+        return context
 
 
 def get_recent_person_image_assets(selected_asset=None, limit=16):
@@ -302,7 +342,12 @@ class PersonAdminListView(ListView):
     context_object_name = "people"
 
     def get_queryset(self):
-        return Person.objects.all().order_by("sort_order", "name")
+        return (
+            Person.objects
+            .all()
+            .select_related("photo_asset")
+            .order_by("sort_order", "name")
+        )
 
 
 @method_decorator(staff_required, name="dispatch")

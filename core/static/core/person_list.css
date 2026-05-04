@@ -3,12 +3,12 @@
    ========================================================= */
 
 .people-page {
-    padding: 56px 24px 72px;
+    padding: 44px 24px 72px;
     background: #f7f7f5;
 }
 
 .people-page-inner {
-    max-width: 1380px;
+    max-width: 1280px;
     margin: 0 auto;
 }
 
@@ -84,7 +84,7 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 30px 26px;
-    align-items: start;
+    align-items: stretch;
 }
 
 /* =========================================================
@@ -93,6 +93,9 @@
 
 .person-card {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
     background: #fff;
     border: 1px solid rgba(0, 0, 0, 0.09);
     overflow: hidden;
@@ -109,7 +112,9 @@
 }
 
 .person-card-link {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     text-decoration: none;
     color: inherit;
 }
@@ -120,7 +125,7 @@
 
 .person-card-photo-wrap {
     position: relative;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 4 / 4.55;
     overflow: hidden;
     background:
         linear-gradient(180deg, #ececeb 0%, #deddda 100%);
@@ -145,12 +150,25 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center center;
     display: block;
     filter: grayscale(10%);
     transform: scale(1);
     transition:
         transform 0.45s ease,
         filter 0.35s ease;
+}
+
+.person-card-photo--position-top {
+    object-position: center top;
+}
+
+.person-card-photo--position-center {
+    object-position: center center;
+}
+
+.person-card-photo--position-bottom {
+    object-position: center bottom;
 }
 
 .person-card:hover .person-card-photo {
@@ -189,6 +207,7 @@
    ========================================================= */
 
 .person-card-body {
+    flex: 1;
     padding: 22px 22px 24px;
     border-top: 1px solid rgba(0, 0, 0, 0.06);
 }

@@ -19,15 +19,27 @@
 
 .person-detail-topbar {
     margin-bottom: 24px;
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: center;
-    justify-content: space-between;
     gap: 14px;
-    flex-wrap: wrap;
+}
+
+.person-detail-topbar-main {
+    display: flex;
+    justify-content: flex-start;
+    min-width: 0;
+}
+
+.person-detail-topbar-admin {
+    display: flex;
+    justify-content: flex-end;
+    min-width: 0;
 }
 
 .person-detail-back-link,
-.person-detail-edit-link {
+.person-detail-edit-link,
+.person-detail-neighbor-link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -41,19 +53,42 @@
     letter-spacing: 0.08em;
     font-size: 0.8rem;
     font-weight: 600;
+    line-height: 1.1;
+    white-space: nowrap;
     transition:
         background-color 0.25s ease,
         color 0.25s ease,
         transform 0.25s ease,
-        box-shadow 0.25s ease;
+        box-shadow 0.25s ease,
+        opacity 0.25s ease;
 }
 
 .person-detail-back-link:hover,
-.person-detail-edit-link:hover {
+.person-detail-edit-link:hover,
+.person-detail-neighbor-link:hover {
     background: #111;
     color: #fff;
     transform: translateY(-1px);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.person-detail-neighbor-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.person-detail-neighbor-link {
+    gap: 8px;
+    padding-left: 14px;
+    padding-right: 14px;
+}
+
+.person-detail-neighbor-link--disabled {
+    opacity: 0.34;
+    cursor: default;
+    pointer-events: none;
 }
 
 /* =========================================================
@@ -71,6 +106,14 @@
     display: grid;
     grid-template-columns: minmax(280px, 400px) minmax(0, 1fr) minmax(260px, 320px);
     align-items: start;
+}
+
+.person-detail-layout--no-aside {
+    grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);
+}
+
+.person-detail-layout--no-aside .person-detail-content-column {
+    max-width: 860px;
 }
 
 /* =========================================================
@@ -275,6 +318,7 @@
 
 .person-detail-back-link:focus-visible,
 .person-detail-edit-link:focus-visible,
+.person-detail-neighbor-link:focus-visible,
 .person-contact-link:focus-visible {
     outline: 2px solid #111;
     outline-offset: 4px;
@@ -311,6 +355,29 @@
 
     .person-detail-layout {
         grid-template-columns: 1fr;
+    }
+
+    .person-detail-topbar {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+    }
+
+    .person-detail-topbar-main,
+    .person-detail-topbar-admin,
+    .person-detail-neighbor-nav {
+        justify-content: center;
+    }
+
+    .person-detail-neighbor-nav {
+        order: 2;
+    }
+
+    .person-detail-topbar-admin {
+        order: 3;
+    }
+
+    .person-detail-layout--no-aside .person-detail-content-column {
+        max-width: none;
     }
 
     .person-detail-photo {
@@ -369,6 +436,18 @@
     .person-detail-photo--placeholder {
         min-height: 340px;
     }
+
+    .person-detail-neighbor-nav {
+        width: 100%;
+    }
+
+    .person-detail-neighbor-link {
+        flex: 1 1 0;
+        min-width: 0;
+        padding-left: 10px;
+        padding-right: 10px;
+        font-size: 0.76rem;
+    }
 }
 
 /* =========================================================
@@ -387,14 +466,16 @@ body.dark-mode .person-detail-card {
 }
 
 body.dark-mode .person-detail-back-link,
-body.dark-mode .person-detail-edit-link {
+body.dark-mode .person-detail-edit-link,
+body.dark-mode .person-detail-neighbor-link {
     background: #1b1b1b;
     color: #f0f0f0;
     border-color: #555;
 }
 
 body.dark-mode .person-detail-back-link:hover,
-body.dark-mode .person-detail-edit-link:hover {
+body.dark-mode .person-detail-edit-link:hover,
+body.dark-mode .person-detail-neighbor-link:hover {
     background: #f0f0f0;
     color: #111;
 }
@@ -413,6 +494,10 @@ body.dark-mode .person-detail-photo--placeholder {
             #1f1f1f 18px,
             #1f1f1f 36px
         );
+}
+
+body.dark-mode .person-detail-neighbor-link--disabled {
+    opacity: 0.34;
 }
 
 body.dark-mode .person-detail-header {
@@ -467,6 +552,7 @@ body.dark-mode .person-contact-text span {
 
 body.dark-mode .person-detail-back-link:focus-visible,
 body.dark-mode .person-detail-edit-link:focus-visible,
+body.dark-mode .person-detail-neighbor-link:focus-visible,
 body.dark-mode .person-contact-link:focus-visible {
     outline-color: #f0f0f0;
 }

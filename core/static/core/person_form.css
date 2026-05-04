@@ -107,18 +107,15 @@
     letter-spacing: 0.01em;
 }
 
-/* delší texty */
 .form-row textarea {
     min-height: 220px;
 }
 
-/* URL a emaily působí líp trochu menší */
 .form-row input[type="url"],
 .form-row input[type="email"] {
     font-size: 0.95rem;
 }
 
-/* checkbox */
 .form-row input[type="checkbox"] {
     width: auto;
     min-width: 18px;
@@ -126,7 +123,6 @@
     margin-top: 4px;
 }
 
-/* file input */
 .form-row input[type="file"] {
     padding: 12px;
     background: #fafafa;
@@ -187,6 +183,92 @@
 }
 
 /* =========================================================
+   CURRENT PHOTO / LIST PREVIEW SETTINGS
+   ========================================================= */
+
+.person-photo-settings {
+    margin: 0 0 28px;
+    display: grid;
+    grid-template-columns: minmax(220px, 320px) minmax(260px, 1fr);
+    gap: 24px;
+    align-items: start;
+    padding: 20px;
+    border: 1px solid #d6d6d6;
+    border-radius: 14px;
+    background: #f7f7f7;
+}
+
+.person-current-photo {
+    margin: 0;
+    padding: 18px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.person-current-photo h2 {
+    margin: 0 0 14px;
+    text-align: left;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-style: normal;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #111;
+}
+
+.person-current-photo-preview-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 4.55;
+    overflow: hidden;
+    border-radius: 10px;
+    border: 1px solid #d2d2d2;
+    background: #f2f2f2;
+}
+
+.person-current-photo-preview {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+}
+
+.person-current-photo-empty {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: #f7f7f7;
+    color: #666;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.person-photo-position-row {
+    margin: 0;
+    padding: 18px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.person-photo-position-row select {
+    max-width: 320px;
+}
+
+.person-current-photo .is-hidden {
+    display: none;
+}
+
+/* =========================================================
    ACTIONS
    ========================================================= */
 
@@ -230,7 +312,6 @@
     box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
 }
 
-/* submit necháme dědit z base_rozesilac, jen lehce dorovnáme */
 .person-form .form-actions button,
 .person-form .form-actions input[type="submit"] {
     min-height: 44px;
@@ -240,40 +321,6 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     font-size: 0.82rem;
-}
-
-/* =========================================================
-   OPTIONAL IMAGE PREVIEW BLOCK
-   ========================================================= */
-
-.person-current-photo {
-    margin-bottom: 24px;
-    padding: 18px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    background: #fafafa;
-}
-
-.person-current-photo h2 {
-    margin: 0 0 14px;
-    text-align: left;
-    font-family: "Barlow", "Segoe UI", sans-serif;
-    font-style: normal;
-    font-size: 0.88rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: #111;
-}
-
-.person-current-photo img {
-    width: 180px;
-    max-width: 100%;
-    aspect-ratio: 4 / 5;
-    object-fit: cover;
-    border-radius: 10px;
-    border: 1px solid #d2d2d2;
-    background: #fff;
 }
 
 /* =========================================================
@@ -288,129 +335,6 @@
 .person-form button:focus-visible {
     outline: 2px solid #111;
     outline-offset: 3px;
-}
-
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
-
-@media (max-width: 900px) {
-    .person-form {
-        padding: 22px;
-    }
-}
-
-@media (max-width: 700px) {
-    .person-form-header {
-        align-items: stretch;
-    }
-
-    .person-form-header-links {
-        flex-direction: column;
-    }
-
-    .person-form-header-links a {
-        width: 100%;
-    }
-
-    .person-form {
-        padding: 18px;
-        border-radius: 12px;
-    }
-
-    .person-form .form-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .person-form .form-actions a,
-    .person-form .form-actions button,
-    .person-form .form-actions input[type="submit"] {
-        width: 100%;
-    }
-
-    .person-current-photo img {
-        width: 150px;
-    }
-}
-
-/* =========================================================
-   DARK MODE
-   ========================================================= */
-
-body.dark-mode .person-form-header h1 {
-    color: #f0f0f0;
-}
-
-body.dark-mode .person-form-header-links a {
-    background: #1b1b1b;
-    color: #f0f0f0;
-    border-color: #555;
-}
-
-body.dark-mode .person-form-header-links a:hover {
-    background: #f0f0f0;
-    color: #111;
-}
-
-body.dark-mode .person-form {
-    background: #181818;
-    border-color: #444;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-}
-
-body.dark-mode .form-row > label {
-    color: #f1f1f1;
-}
-
-body.dark-mode .person-form .help-text {
-    color: #b9b9b9;
-}
-
-body.dark-mode .form-row input[type="file"] {
-    background: #1f1f1f;
-    border-color: #666;
-}
-
-body.dark-mode .form-row input[type="file"]:hover {
-    background: #252525;
-}
-
-body.dark-mode .person-form .form-actions {
-    border-top-color: #333;
-}
-
-body.dark-mode .person-form .form-actions a {
-    background: #1b1b1b;
-    color: #f0f0f0;
-    border-color: #555;
-}
-
-body.dark-mode .person-form .form-actions a:hover {
-    background: #f0f0f0;
-    color: #111;
-}
-
-body.dark-mode .person-current-photo {
-    background: #1b1b1b;
-    border-color: #444;
-}
-
-body.dark-mode .person-current-photo h2 {
-    color: #f0f0f0;
-}
-
-body.dark-mode .person-current-photo img {
-    border-color: #444;
-}
-
-body.dark-mode .person-form-header-links a:focus-visible,
-body.dark-mode .person-form .form-actions a:focus-visible,
-body.dark-mode .person-form input:focus-visible,
-body.dark-mode .person-form textarea:focus-visible,
-body.dark-mode .person-form select:focus-visible,
-body.dark-mode .person-form button:focus-visible {
-    outline-color: #f0f0f0;
 }
 
 /* =========================================================
@@ -593,9 +517,51 @@ body.dark-mode .person-form button:focus-visible {
     }
 }
 
+@media (max-width: 900px) {
+    .person-form {
+        padding: 22px;
+    }
+}
+
 @media (max-width: 760px) {
+    .person-photo-settings {
+        grid-template-columns: 1fr;
+        padding: 16px;
+        gap: 16px;
+    }
+
     .person-photo-picker-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .person-form-header {
+        align-items: stretch;
+    }
+
+    .person-form-header-links {
+        flex-direction: column;
+    }
+
+    .person-form-header-links a {
+        width: 100%;
+    }
+
+    .person-form {
+        padding: 18px;
+        border-radius: 12px;
+    }
+
+    .person-form .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .person-form .form-actions a,
+    .person-form .form-actions button,
+    .person-form .form-actions input[type="submit"] {
+        width: 100%;
     }
 }
 
@@ -617,6 +583,93 @@ body.dark-mode .person-form button:focus-visible {
 /* =========================================================
    DARK MODE
    ========================================================= */
+
+body.dark-mode .person-form-header h1 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .person-form-header-links a {
+    background: #1b1b1b;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .person-form-header-links a:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .person-form {
+    background: #181818;
+    border-color: #444;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+}
+
+body.dark-mode .form-row > label {
+    color: #f1f1f1;
+}
+
+body.dark-mode .person-form .help-text {
+    color: #b9b9b9;
+}
+
+body.dark-mode .form-row input[type="file"] {
+    background: #1f1f1f;
+    border-color: #666;
+}
+
+body.dark-mode .form-row input[type="file"]:hover {
+    background: #252525;
+}
+
+body.dark-mode .person-photo-settings {
+    background: #141414;
+    border-color: #444;
+}
+
+body.dark-mode .person-current-photo,
+body.dark-mode .person-photo-position-row {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .person-current-photo h2 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .person-current-photo-preview-wrap {
+    border-color: #444;
+    background: #252525;
+}
+
+body.dark-mode .person-current-photo-empty {
+    background: #181818;
+    color: #b9b9b9;
+}
+
+body.dark-mode .person-form .form-actions {
+    border-top-color: #333;
+}
+
+body.dark-mode .person-form .form-actions a {
+    background: #1b1b1b;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .person-form .form-actions a:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .person-form-header-links a:focus-visible,
+body.dark-mode .person-form .form-actions a:focus-visible,
+body.dark-mode .person-form input:focus-visible,
+body.dark-mode .person-form textarea:focus-visible,
+body.dark-mode .person-form select:focus-visible,
+body.dark-mode .person-form button:focus-visible {
+    outline-color: #f0f0f0;
+}
 
 body.dark-mode .person-photo-picker-clear {
     background: #1b1b1b;

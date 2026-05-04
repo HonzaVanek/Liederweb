@@ -36,6 +36,19 @@ class Person(models.Model):
         verbose_name="Fotografie z mediální knihovny",
     )
 
+    class PhotoListPosition(models.TextChoices):
+        TOP = "top", "Nahoře"
+        CENTER = "center", "Uprostřed"
+        BOTTOM = "bottom", "Dole"
+
+    photo_list_position = models.CharField(
+        max_length=10,
+        choices=PhotoListPosition.choices,
+        default=PhotoListPosition.CENTER,
+        verbose_name="Zarovnání náhledu fotky",
+        help_text="Použije se ve veřejném výpisu lidí. Hodí se u fotek oříznutých moc vysoko nebo nízko.",
+    )
+
     role_short = models.CharField(
         max_length=255,
         blank=True,

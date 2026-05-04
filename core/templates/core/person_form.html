@@ -36,23 +36,64 @@
                 Oprav prosím chyby ve formuláři.
             </div>
         {% endif %}
-                {% if person and person.photo_url %}
-                    <div class="person-current-photo">
-                        <h2>Aktuální fotografie</h2>
-                        <img src="{{ person.photo_url }}" alt="{{ person.name }}">
+
+            <form method="post" enctype="multipart/form-data" class="person-form">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="form-errors">
+                        {{ form.non_field_errors }}
                     </div>
                 {% endif %}
-        <form method="post" enctype="multipart/form-data" class="person-form">
-            {% csrf_token %}
 
-            {% if form.non_field_errors %}
-                <div class="form-errors">
-                    {{ form.non_field_errors }}
+                <div class="person-photo-settings">
+                    <div class="person-current-photo">
+                        <h2>Náhled výřezu ve výpisu lidí</h2>
+
+                        <div class="person-current-photo-preview-wrap">
+                            {% if person and person.photo_url %}
+                                <img
+                                    src="{{ person.photo_url }}"
+                                    alt="{{ person.name }}"
+                                    class="person-current-photo-preview"
+                                >
+                                <div class="person-current-photo-empty is-hidden">
+                                    Vyber fotografii z mediální knihovny.
+                                </div>
+                            {% else %}
+                                <img
+                                    src=""
+                                    alt=""
+                                    class="person-current-photo-preview is-hidden"
+                                >
+                                <div class="person-current-photo-empty">
+                                    Vyber fotografii z mediální knihovny.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-row person-photo-position-row">
+                        <label for="{{ form.photo_list_position.id_for_label }}">
+                            {{ form.photo_list_position.label }}
+                        </label>
+
+                        {{ form.photo_list_position }}
+
+                        {% if form.photo_list_position.help_text %}
+                            <div class="help-text">{{ form.photo_list_position.help_text }}</div>
+                        {% endif %}
+
+                        {% if form.photo_list_position.errors %}
+                            <div class="field-errors">{{ form.photo_list_position.errors }}</div>
+                        {% endif %}
+                    </div>
                 </div>
-            {% endif %}
 
             {% for field in form %}
-                {% if field.name == "photo_asset" %}
+                {% if field.name == "photo_list_position" %}
+                {# vykresleno nahoře u aktuální fotografie #}
+                {% elif field.name == "photo_asset" %}
                     <div class="form-row person-photo-asset-row">
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
 
@@ -76,12 +117,14 @@
                             {% if recent_image_assets %}
                                 <div class="person-photo-picker-grid">
                                     {% for asset in recent_image_assets %}
-                                        <button
-                                            type="button"
-                                            class="person-photo-picker-card{% if selected_photo_asset_id == asset.pk|stringformat:'s' %} is-selected{% endif %}"
-                                            data-asset-id="{{ asset.pk }}"
-                                            data-search="{{ asset.title|default:''|lower }} {{ asset.original_filename|default:''|lower }} {{ asset.credit|default:''|lower }}"
-                                        >
+                                            <button
+                                                type="button"
+                                                class="person-photo-picker-card{% if selected_photo_asset_id == asset.pk|stringformat:'s' %} is-selected{% endif %}"
+                                                data-asset-id="{{ asset.pk }}"
+                                                data-image-url="{{ asset.file.url }}"
+                                                data-image-alt="{{ asset.alt_text|default:asset.title|default:asset.filename }}"
+                                                data-search="{{ asset.title|default:''|lower }} {{ asset.original_filename|default:''|lower }} {{ asset.credit|default:''|lower }}"
+                                            >
                                             <span class="person-photo-picker-thumb-wrap">
                                                 <img
                                                     src="{{ asset.file.url }}"
@@ -145,50 +188,89 @@
 document.documentElement.classList.add("js-enabled");
 
 document.addEventListener("DOMContentLoaded", function () {
+    const positionSelect = document.querySelector("#id_photo_list_position");
+    const currentPhotoPreview = document.querySelector(".person-current-photo-preview");
+    const currentPhotoEmpty = document.querySelector(".person-current-photo-empty");
+
+    function updatePhotoPreviewPosition() {
+        if (!positionSelect || !currentPhotoPreview) return;
+
+        const value = positionSelect.value || "center";
+        currentPhotoPreview.style.objectPosition = "center " + value;
+    }
+
+    function showPreviewImage(imageUrl, imageAlt) {
+        if (!currentPhotoPreview || !currentPhotoEmpty) return;
+
+        if (imageUrl) {
+            currentPhotoPreview.src = imageUrl;
+            currentPhotoPreview.alt = imageAlt || "";
+            currentPhotoPreview.classList.remove("is-hidden");
+            currentPhotoEmpty.classList.add("is-hidden");
+            updatePhotoPreviewPosition();
+        } else {
+            currentPhotoPreview.src = "";
+            currentPhotoPreview.alt = "";
+            currentPhotoPreview.classList.add("is-hidden");
+            currentPhotoEmpty.classList.remove("is-hidden");
+        }
+    }
+
+    if (positionSelect) {
+        positionSelect.addEventListener("change", updatePhotoPreviewPosition);
+        updatePhotoPreviewPosition();
+    }
+
     const picker = document.querySelector(".person-photo-picker");
-    if (!picker) return;
 
-    const select = picker.querySelector("select");
-    const searchInput = picker.querySelector(".person-photo-picker-search");
-    const clearButton = picker.querySelector(".person-photo-picker-clear");
-    const cards = Array.from(picker.querySelectorAll(".person-photo-picker-card"));
+    if (picker) {
+        const select = picker.querySelector("select");
+        const searchInput = picker.querySelector(".person-photo-picker-search");
+        const clearButton = picker.querySelector(".person-photo-picker-clear");
+        const cards = Array.from(picker.querySelectorAll(".person-photo-picker-card"));
 
-    function updateSelectedState(selectedId) {
+        function updateSelectedState(selectedId) {
+            cards.forEach((card) => {
+                card.classList.toggle("is-selected", card.dataset.assetId === selectedId);
+            });
+        }
+
+        function filterCards() {
+            const query = (searchInput.value || "").trim().toLowerCase();
+
+            cards.forEach((card) => {
+                const haystack = card.dataset.search || "";
+                const visible = !query || haystack.includes(query);
+                card.style.display = visible ? "" : "none";
+            });
+        }
+
         cards.forEach((card) => {
-            card.classList.toggle("is-selected", card.dataset.assetId === selectedId);
+            card.addEventListener("click", function () {
+                const assetId = this.dataset.assetId;
+                const imageUrl = this.dataset.imageUrl || "";
+                const imageAlt = this.dataset.imageAlt || "";
+
+                select.value = assetId;
+                updateSelectedState(assetId);
+                showPreviewImage(imageUrl, imageAlt);
+            });
         });
+
+        if (clearButton) {
+            clearButton.addEventListener("click", function () {
+                select.value = "";
+                updateSelectedState("");
+                showPreviewImage("", "");
+            });
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener("input", filterCards);
+        }
+
+        updateSelectedState(select.value || "");
     }
-
-    function filterCards() {
-        const query = (searchInput.value || "").trim().toLowerCase();
-
-        cards.forEach((card) => {
-            const haystack = card.dataset.search || "";
-            const visible = !query || haystack.includes(query);
-            card.style.display = visible ? "" : "none";
-        });
-    }
-
-    cards.forEach((card) => {
-        card.addEventListener("click", function () {
-            const assetId = this.dataset.assetId;
-            select.value = assetId;
-            updateSelectedState(assetId);
-        });
-    });
-
-    if (clearButton) {
-        clearButton.addEventListener("click", function () {
-            select.value = "";
-            updateSelectedState("");
-        });
-    }
-
-    if (searchInput) {
-        searchInput.addEventListener("input", filterCards);
-    }
-
-    updateSelectedState(select.value || "");
 });
 </script>
 {% endblock %}

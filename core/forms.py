@@ -50,6 +50,7 @@ class PersonForm(forms.ModelForm):
             "name",
             "slug",
             "photo_asset",
+            "photo_list_position",
             "role_short",
             "bio",
             "contact_email",
@@ -61,6 +62,12 @@ class PersonForm(forms.ModelForm):
             "sort_order",
             "is_published",
         ]
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["bio"].help_text = (
+            "V případě samotných předložek na konci řádku (například „a“, „i“, „s“ apod.) se nezlomitelná mezera doplní automaticky. Možná ale někdy bude potřeba i jinde - manuálně ji tedy lze vložit jako &nbsp;, například J.&nbsp;Křička."
+        )
 
 
 class NewsletterSignupForm(forms.Form):
