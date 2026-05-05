@@ -394,6 +394,86 @@
     gap: 14px;
 }
 
+.person-photo-picker-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.person-photo-picker-pagination.is-hidden {
+    display: none;
+}
+
+.person-photo-picker-page-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 8px 11px;
+    border: 1.5px solid #111;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.2s ease,
+        opacity 0.25s ease;
+}
+
+.person-photo-picker-page-button:hover {
+    background: #111;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.person-photo-picker-page-button.is-current {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+    cursor: default;
+    box-shadow:
+        0 0 0 3px rgba(0, 0, 0, 0.14),
+        0 8px 18px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+}
+
+.person-photo-picker-page-button.is-current:hover {
+    background: #111;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.person-photo-picker-page-button:disabled {
+    opacity: 0.34;
+    cursor: default;
+    transform: none;
+}
+
+.person-photo-picker-page-button:disabled:hover {
+    background: #fff;
+    color: #111;
+}
+
+.person-photo-picker-page-ellipsis {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    min-height: 38px;
+    color: #666;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
 .person-photo-picker-card {
     position: relative;
     display: flex;
@@ -729,4 +809,39 @@ body.dark-mode .person-photo-picker-card.is-selected .person-photo-picker-thumb-
 
 body.dark-mode .person-photo-picker-card.is-selected .person-photo-picker-meta strong {
     color: #fff;
+}
+
+body.dark-mode .person-photo-picker-page-button {
+    background: #1b1b1b;
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+body.dark-mode .person-photo-picker-page-button:hover,
+body.dark-mode .person-photo-picker-page-button.is-current {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .person-photo-picker-page-button:disabled:hover {
+    background: #1b1b1b;
+    color: #f0f0f0;
+}
+
+body.dark-mode .person-photo-picker-page-button.is-current {
+    background: #f0f0f0;
+    color: #111;
+    border-color: #f0f0f0;
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.16),
+        0 8px 18px rgba(0, 0, 0, 0.26);
+}
+
+body.dark-mode .person-photo-picker-page-button.is-current:hover {
+    background: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .person-photo-picker-page-ellipsis {
+    color: #aaa;
 }

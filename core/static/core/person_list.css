@@ -152,7 +152,7 @@
     object-fit: cover;
     object-position: center center;
     display: block;
-    filter: grayscale(10%);
+    filter: grayscale(25%);
     transform: scale(1);
     transition:
         transform 0.45s ease,

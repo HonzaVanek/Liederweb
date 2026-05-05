@@ -137,7 +137,28 @@
     height: 100%;
     min-height: 620px;
     object-fit: cover;
-    filter: grayscale(6%);
+    object-position: center center;
+    filter: grayscale(3%);
+}
+
+.person-detail-photo--position-left {
+    object-position: 0% center;
+}
+
+.person-detail-photo--position-center-left {
+    object-position: 25% center;
+}
+
+.person-detail-photo--position-center {
+    object-position: 50% center;
+}
+
+.person-detail-photo--position-center-right {
+    object-position: 75% center;
+}
+
+.person-detail-photo--position-right {
+    object-position: 100% center;
 }
 
 .person-detail-photo--placeholder {
@@ -159,6 +180,22 @@
             #e2e0db 18px,
             #e2e0db 36px
         );
+}
+
+.person-detail-layout--photo-contained .person-detail-photo-column {
+    align-self: start;
+    height: auto;
+}
+
+.person-detail-layout--photo-contained .person-detail-photo-wrap {
+    height: clamp(520px, 68vh, 760px);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.person-detail-layout--photo-contained .person-detail-photo {
+    height: 100%;
+    min-height: 0;
 }
 
 /* =========================================================

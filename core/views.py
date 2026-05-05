@@ -322,12 +322,12 @@ class PersonDetailView(DetailView):
         return context
 
 
-def get_recent_person_image_assets(selected_asset=None, limit=16):
+def get_recent_person_image_assets(selected_asset=None):
     assets = list(
         MediaAsset.objects.filter(
             asset_type=MediaAsset.AssetType.IMAGE,
             is_active=True,
-        ).order_by("-uploaded_at")[:limit]
+        ).order_by("-uploaded_at", "-id")
     )
 
     if selected_asset and all(asset.pk != selected_asset.pk for asset in assets):

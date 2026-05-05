@@ -46,7 +46,35 @@ class Person(models.Model):
         choices=PhotoListPosition.choices,
         default=PhotoListPosition.CENTER,
         verbose_name="Zarovnání náhledu fotky",
-        help_text="Použije se ve veřejném výpisu lidí. Hodí se u fotek oříznutých moc vysoko nebo nízko.",
+        help_text="Použije se ve veřejném výpisu umělců (ne na stránce s detailem umělce). Hodí se u fotek oříznutých moc vysoko nebo nízko.",
+    )
+
+
+    class PhotoDetailLayout(models.TextChoices):
+        STRETCH = "stretch", "Podle výšky textu"
+        CONTAINED = "contained", "Omezená výška"
+
+    class PhotoDetailPosition(models.TextChoices):
+        LEFT = "left", "Vlevo"
+        CENTER_LEFT = "center-left", "Mírně vlevo"
+        CENTER = "center", "Uprostřed"
+        CENTER_RIGHT = "center-right", "Mírně vpravo"
+        RIGHT = "right", "Vpravo"
+
+    photo_detail_layout = models.CharField(
+        max_length=20,
+        choices=PhotoDetailLayout.choices,
+        default=PhotoDetailLayout.STRETCH,
+        verbose_name="Chování detailové fotky",
+        help_text="Výchozí volba zachová na stránce s detailem umělce vysoký výřez fotky podle délky textu - vypadá to fakt dobře imho. Alternativně volbu \"omezená výška\" vyber u dlouhých profilů, kde je hodně textu a kde je tudíž fotka až příliš přiblížená a nevypadá to dobře. Ale dycky bych nejdřív zkusil tu první variantu.",
+    )
+
+    photo_detail_position = models.CharField(
+        max_length=20,
+        choices=PhotoDetailPosition.choices,
+        default=PhotoDetailPosition.CENTER,
+        verbose_name="Zarovnání detailové fotky",
+        help_text="Použije se na stránce s detailem umělce. Pomáhá u fotek, kde je obličej moc vlevo nebo vpravo. Pokud máš v poli výš vybráno \"podle výšky textu \" (což doporučuju), ale obličej není dobře vidět, tak tady můžeš zkusit nastavit zarovnání detailové fotky. Pokud ani to nepomůže, tak pak v tom poli výš holt vyber \"omezená výška\".",
     )
 
     role_short = models.CharField(
@@ -62,11 +90,7 @@ class Person(models.Model):
     instagram_url = models.URLField(blank=True, verbose_name="Instagram")
     linkedin_url = models.URLField(blank=True, verbose_name="LinkedIn")
     x_url = models.URLField(blank=True, verbose_name="X")
-    sort_order = models.PositiveIntegerField(
-        default=0,
-        verbose_name="Pořadí",
-        help_text="Nižší číslo = zobrazí se dříve.",
-    )
+    sort_order = models.PositiveIntegerField(default=0, verbose_name="Pořadí", help_text="Nižší číslo = zobrazí se dříve.")
     is_published = models.BooleanField(default=True, verbose_name="Publikováno")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Vytvořeno")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Naposledy upraveno")

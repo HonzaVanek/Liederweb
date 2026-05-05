@@ -63,12 +63,14 @@
         </div>
 
         <article class="person-detail-card">
-            <div class="person-detail-layout{% if not person.contact_email and not person.website_url and not person.facebook_url and not person.instagram_url and not person.linkedin_url and not person.x_url %} person-detail-layout--no-aside{% endif %}">
+            <div class="person-detail-layout{% if not person.contact_email and not person.website_url and not person.facebook_url and not person.instagram_url and not person.linkedin_url and not person.x_url %} person-detail-layout--no-aside{% endif %} person-detail-layout--photo-{{ person.photo_detail_layout|default:'stretch' }}">
 
                 <div class="person-detail-photo-column">
                     <div class="person-detail-photo-wrap">
                         {% if person.photo_url %}
-                            <img src="{{ person.photo_url }}" alt="{{ person.name }}" class="person-detail-photo">
+                            <img src="{{ person.photo_url }}" alt="{{ person.name }}"
+                                class="person-detail-photo person-detail-photo--position-{{ person.photo_detail_position|default:'center' }}"
+                            >
                         {% else %}
                             <div class="person-detail-photo person-detail-photo--placeholder">
                                 Bez fotografie

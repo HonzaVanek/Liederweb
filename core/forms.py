@@ -51,6 +51,8 @@ class PersonForm(forms.ModelForm):
             "slug",
             "photo_asset",
             "photo_list_position",
+            "photo_detail_layout",
+            "photo_detail_position",
             "role_short",
             "bio",
             "contact_email",

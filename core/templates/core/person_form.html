@@ -37,7 +37,7 @@
             </div>
         {% endif %}
 
-            <form method="post" enctype="multipart/form-data" class="person-form">
+        <form method="post" enctype="multipart/form-data" class="person-form">
                 {% csrf_token %}
 
                 {% if form.non_field_errors %}
@@ -122,14 +122,15 @@
                                                 class="person-photo-picker-card{% if selected_photo_asset_id == asset.pk|stringformat:'s' %} is-selected{% endif %}"
                                                 data-asset-id="{{ asset.pk }}"
                                                 data-image-url="{{ asset.file.url }}"
-                                                data-image-alt="{{ asset.alt_text|default:asset.title|default:asset.filename }}"
+                                                data-image-alt="{{ asset.alt_text|default:asset.title|default:asset.original_filename }}"
                                                 data-search="{{ asset.title|default:''|lower }} {{ asset.original_filename|default:''|lower }} {{ asset.credit|default:''|lower }}"
                                             >
                                             <span class="person-photo-picker-thumb-wrap">
                                                 <img
                                                     src="{{ asset.file.url }}"
-                                                    alt="{{ asset.alt_text|default:asset.title|default:asset.filename }}"
+                                                    alt="{{ asset.alt_text|default:asset.title|default:asset.original_filename }}"
                                                     class="person-photo-picker-thumb"
+                                                    loading="lazy"
                                                 >
                                                 <span class="person-photo-picker-selected-badge">Vybráno</span>
                                             </span>
@@ -141,6 +142,7 @@
                                         </button>
                                     {% endfor %}
                                 </div>
+                                <div class="person-photo-picker-pagination" aria-label="Stránkování fotografií"></div>
                             {% else %}
                                 <div class="person-photo-picker-empty">
                                     V mediální knihovně zatím nejsou žádné aktivní obrázky.
@@ -224,10 +226,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const picker = document.querySelector(".person-photo-picker");
 
     if (picker) {
+        const pageSize = 8;
+        let currentPage = 1;
+
         const select = picker.querySelector("select");
         const searchInput = picker.querySelector(".person-photo-picker-search");
         const clearButton = picker.querySelector(".person-photo-picker-clear");
         const cards = Array.from(picker.querySelectorAll(".person-photo-picker-card"));
+        const pagination = picker.querySelector(".person-photo-picker-pagination");
 
         function updateSelectedState(selectedId) {
             cards.forEach((card) => {
@@ -235,14 +241,129 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
 
-        function filterCards() {
-            const query = (searchInput.value || "").trim().toLowerCase();
+        function getFilteredCards() {
+            const query = searchInput ? (searchInput.value || "").trim().toLowerCase() : "";
+
+            return cards.filter((card) => {
+                const haystack = card.dataset.search || "";
+                return !query || haystack.includes(query);
+            });
+        }
+
+        function renderPagination(totalPages) {
+            if (!pagination) return;
+
+            pagination.innerHTML = "";
+
+            if (totalPages <= 1) {
+                pagination.classList.add("is-hidden");
+                return;
+            }
+
+            pagination.classList.remove("is-hidden");
+
+            function createButton(label, page, options) {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "person-photo-picker-page-button";
+                button.textContent = label;
+
+                if (options && options.current) {
+                    button.classList.add("is-current");
+                    button.setAttribute("aria-current", "page");
+                }
+
+                if (options && options.disabled) {
+                    button.disabled = true;
+                }
+
+                button.addEventListener("click", function () {
+                    if (button.disabled || currentPage === page) return;
+                    currentPage = page;
+                    renderCards();
+                });
+
+                pagination.appendChild(button);
+            }
+
+            function createEllipsis() {
+                const span = document.createElement("span");
+                span.className = "person-photo-picker-page-ellipsis";
+                span.textContent = "…";
+                span.setAttribute("aria-hidden", "true");
+                pagination.appendChild(span);
+            }
+
+            createButton("←", Math.max(1, currentPage - 1), {
+                disabled: currentPage === 1,
+            });
+
+            const siblingCount = 2;
+            const boundaryCount = 1;
+            let previousRenderedPage = 0;
+
+            for (let page = 1; page <= totalPages; page += 1) {
+                const isBoundaryStart = page <= boundaryCount;
+                const isBoundaryEnd = page > totalPages - boundaryCount;
+                const isNearCurrent = Math.abs(page - currentPage) <= siblingCount;
+
+                if (isBoundaryStart || isBoundaryEnd || isNearCurrent) {
+                    if (previousRenderedPage && page - previousRenderedPage > 1) {
+                        createEllipsis();
+                    }
+
+                    createButton(String(page), page, {
+                        current: page === currentPage,
+                    });
+
+                    previousRenderedPage = page;
+                }
+            }
+        
+            createButton("→", Math.min(totalPages, currentPage + 1), {
+                disabled: currentPage === totalPages,
+            });
+        }
+
+        function renderCards() {
+            const filteredCards = getFilteredCards();
+            const totalPages = Math.max(1, Math.ceil(filteredCards.length / pageSize));
+
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const visibleCards = filteredCards.slice(startIndex, endIndex);
 
             cards.forEach((card) => {
-                const haystack = card.dataset.search || "";
-                const visible = !query || haystack.includes(query);
-                card.style.display = visible ? "" : "none";
+                card.style.display = "none";
             });
+
+            visibleCards.forEach((card) => {
+                card.style.display = "";
+            });
+
+            renderPagination(totalPages);
+        }
+
+        function goToPageWithSelectedCard() {
+            if (!select || !select.value) {
+                currentPage = 1;
+                return;
+            }
+
+            const filteredCards = getFilteredCards();
+            const selectedIndex = filteredCards.findIndex((card) => {
+                return card.dataset.assetId === select.value;
+            });
+
+            if (selectedIndex >= 0) {
+                currentPage = Math.floor(selectedIndex / pageSize) + 1;
+            } else {
+                currentPage = 1;
+            }
         }
 
         cards.forEach((card) => {
@@ -251,7 +372,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 const imageUrl = this.dataset.imageUrl || "";
                 const imageAlt = this.dataset.imageAlt || "";
 
-                select.value = assetId;
+                if (select) {
+                    select.value = assetId;
+                }
+
                 updateSelectedState(assetId);
                 showPreviewImage(imageUrl, imageAlt);
             });
@@ -259,17 +383,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (clearButton) {
             clearButton.addEventListener("click", function () {
-                select.value = "";
+                if (select) {
+                    select.value = "";
+                }
+
                 updateSelectedState("");
                 showPreviewImage("", "");
+                currentPage = 1;
+                renderCards();
             });
         }
 
         if (searchInput) {
-            searchInput.addEventListener("input", filterCards);
+            searchInput.addEventListener("input", function () {
+                currentPage = 1;
+                renderCards();
+            });
         }
 
-        updateSelectedState(select.value || "");
+        updateSelectedState(select ? (select.value || "") : "");
+        goToPageWithSelectedCard();
+        renderCards();
     }
 });
 </script>
