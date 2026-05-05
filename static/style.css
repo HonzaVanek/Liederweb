@@ -228,14 +228,14 @@ main {
 
 .partners-section {
     margin-top: 56px;
-    background-color: #f7f7f5;
-    border-top: 2px solid #000;
+    background-color: #fff;
+    border-top: 1px solid #d8d8d0;
 }
 
 .partners-section__inner {
     max-width: 1460px;
     margin: 0 auto;
-    padding: 42px 28px 40px;
+    padding: 38px 28px 34px;
 }
 
 .partners-section__header {
@@ -243,7 +243,7 @@ main {
     align-items: flex-end;
     justify-content: space-between;
     gap: 24px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
 }
 
 .partners-section__eyebrow {
@@ -252,7 +252,7 @@ main {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.16em;
-    color: #555;
+    color: #666;
 }
 
 .partners-section h2 {
@@ -293,15 +293,15 @@ main {
 
 .partners-section__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 18px;
-    align-items: stretch;
+    grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+    gap: 10px 14px;
+    align-items: center;
 }
 
 .partners-section__item {
-    min-height: 96px;
-    border: 1.5px solid #000;
+    min-height: 82px;
     background-color: #fff;
+    transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .partners-section__logo-link {
@@ -309,24 +309,25 @@ main {
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 96px;
-    padding: 18px;
+    min-height: 82px;
+    padding: 10px 12px;
     text-decoration: none;
 }
 
 .partners-section__logo {
     max-width: 100%;
-    max-height: 58px;
+    max-height: 50px;
     object-fit: contain;
     filter: grayscale(1);
-    opacity: 0.86;
+    opacity: 0.72;
     transition:
         filter 0.25s ease,
         opacity 0.25s ease,
         transform 0.25s ease;
 }
 
-a.partners-section__logo-link:hover .partners-section__logo {
+/* Hover efekt poběží i u partnerů bez URL */
+.partners-section__item:hover .partners-section__logo {
     filter: grayscale(0);
     opacity: 1;
     transform: translateY(-1px);
@@ -348,7 +349,7 @@ a.partners-section__logo-link:hover .partners-section__logo {
 .newsletter-signup {
     margin-top: 56px;
     background-color: #fff;
-    border-top: 2px solid #000;
+    border-top: 1px solid #d8d8d0;
     border-bottom: 2px solid #000;
 }
 
@@ -768,31 +769,32 @@ a.partners-section__logo-link:hover .partners-section__logo {
     }
 
     .partners-section__inner {
-        padding: 34px 18px 32px;
+        padding: 30px 18px 28px;
     }
 
     .partners-section__header {
         align-items: flex-start;
         flex-direction: column;
-        gap: 16px;
+        gap: 14px;
+        margin-bottom: 18px;
     }
 
     .partners-section__grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+        gap: 8px 10px;
     }
 
     .partners-section__item,
     .partners-section__logo-link {
-        min-height: 84px;
+        min-height: 72px;
     }
 
     .partners-section__logo-link {
-        padding: 14px;
+        padding: 8px 10px;
     }
 
     .partners-section__logo {
-        max-height: 46px;
+        max-height: 42px;
     }
 
     .newsletter-signup {
@@ -922,16 +924,25 @@ a.partners-section__logo-link:hover .partners-section__logo {
     }
 
     .partners-section__inner {
-        padding: 30px 14px 28px;
+        padding: 26px 14px 24px;
     }
 
     .partners-section__grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
     }
 
     .partners-section__item,
     .partners-section__logo-link {
-        min-height: 82px;
+        min-height: 66px;
+    }
+
+    .partners-section__logo-link {
+        padding: 8px;
+    }
+
+    .partners-section__logo {
+        max-height: 34px;
     }
     
     .newsletter-signup {
@@ -1085,17 +1096,16 @@ body.dark-mode .partners-section__edit-link:hover {
 }
 
 body.dark-mode .partners-section__item {
-    background-color: #111;
-    border-color: #5a5a5a;
+    background-color: transparent;
 }
 
 body.dark-mode .partners-section__logo {
-    filter: grayscale(1) brightness(1.8);
-    opacity: 0.82;
+    filter: grayscale(1) brightness(1.7);
+    opacity: 0.78;
 }
 
-body.dark-mode a.partners-section__logo-link:hover .partners-section__logo {
-    filter: grayscale(0) brightness(1.4);
+body.dark-mode .partners-section__item:hover .partners-section__logo {
+    filter: grayscale(0) brightness(1.2);
     opacity: 1;
 }
 

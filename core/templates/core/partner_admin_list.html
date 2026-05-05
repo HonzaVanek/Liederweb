@@ -1,22 +1,36 @@
 {% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'core/partner_admin_list.css' %}">
+{% endblock %}
 
 {% block title %}Partneři | Lieder Society{% endblock %}
 
 {% block rozesilac_content %}
-<section class="person-form-page">
-  <div class="person-form-inner">
+<section class="partner-admin-page">
+  <div class="partner-admin-inner">
 
-    <header class="person-form-header">
-      <h1>Partneři</h1>
+    <header class="partner-admin-header">
+      <div>
+        <p class="partner-admin-kicker">Správa webu</p>
+        <h1>Partneři</h1>
+      </div>
 
-      <div class="person-form-header-links">
-        <a href="{% url 'core:partner_admin_create' %}">+ Přidat partnera</a>
-        <a href="{% url 'core:home' %}">Zpět na web</a>
+      <div class="partner-admin-header-actions">
+        <a href="{% url 'core:partner_admin_create' %}" class="partner-admin-button partner-admin-button-primary">
+          + Přidat partnera
+        </a>
+
+        <a href="{% url 'core:home' %}" class="partner-admin-button">
+          Zpět na web
+        </a>
       </div>
     </header>
 
     {% if messages %}
-      <ul class="messages">
+      <ul class="partner-admin-messages">
         {% for m in messages %}
           <li class="{{ m.tags }}">{{ m }}</li>
         {% endfor %}
@@ -24,64 +38,80 @@
     {% endif %}
 
     {% if partners %}
-      <div class="partner-admin-list">
+      <div class="partner-admin-table-wrap">
         <table class="partner-admin-table">
           <thead>
             <tr>
-              <th>Pořadí</th>
-              <th>Logo</th>
-              <th>Název</th>
-              <th>Web</th>
-              <th>Stav</th>
-              <th>Akce</th>
+              <th class="col-order">Pořadí</th>
+              <th class="col-logo">Logo</th>
+              <th class="col-name">Název</th>
+              <th class="col-web">Web</th>
+              <th class="col-status">Stav</th>
+              <th class="col-actions">Akce</th>
             </tr>
           </thead>
 
           <tbody>
             {% for partner in partners %}
               <tr>
-                <td>{{ partner.sort_order }}</td>
+                <td class="col-order">
+                  {{ partner.sort_order }}
+                </td>
 
-                <td>
+                <td class="col-logo">
                   {% if partner.logo and partner.logo.file %}
-                    <img
-                      src="{{ partner.logo.file.url }}"
-                      alt="{{ partner.effective_alt_text }}"
-                      style="max-width: 130px; max-height: 54px; object-fit: contain;"
-                    >
+                    <div class="partner-admin-logo-box">
+                      <img
+                        src="{{ partner.logo.file.url }}"
+                        alt="{{ partner.effective_alt_text }}"
+                        class="partner-admin-logo"
+                      >
+                    </div>
                   {% endif %}
                 </td>
 
-                <td>
+                <td class="col-name">
                   <strong>{{ partner.name }}</strong>
+
                   {% if partner.alt_text %}
-                    <br>
-                    <small>Alt: {{ partner.alt_text }}</small>
+                    <span class="partner-admin-alt">
+                      Alt: {{ partner.alt_text }}
+                    </span>
                   {% endif %}
                 </td>
 
-                <td>
+                <td class="col-web">
                   {% if partner.website_url %}
-                    <a href="{{ partner.website_url }}" target="_blank" rel="noopener">
+                    <a href="{{ partner.website_url }}" target="_blank" rel="noopener" class="partner-admin-url">
                       {{ partner.website_url }}
                     </a>
                   {% else %}
-                    —
+                    <span class="partner-admin-muted">—</span>
                   {% endif %}
                 </td>
 
-                <td>
+                <td class="col-status">
                   {% if partner.is_active %}
-                    Zobrazuje se
+                    <span class="partner-admin-status partner-admin-status-active">
+                      Zobrazuje se
+                    </span>
                   {% else %}
-                    Skryto
+                    <span class="partner-admin-status partner-admin-status-hidden">
+                      Skryto
+                    </span>
                   {% endif %}
                 </td>
 
-                <td>
-                  <a href="{% url 'core:partner_admin_update' partner.pk %}">Upravit</a>
-                  ·
-                  <a href="{% url 'core:partner_admin_delete' partner.pk %}">Smazat</a>
+                <td class="col-actions">
+                  <div class="partner-admin-row-actions">
+                    <a href="{% url 'core:partner_admin_update' partner.pk %}">
+                      Upravit
+                    </a>
+
+                    <a href="{% url 'core:partner_admin_delete' partner.pk %}" class="danger">
+                      Smazat
+                    </a>
+                  </div>
                 </td>
               </tr>
             {% endfor %}
@@ -89,7 +119,12 @@
         </table>
       </div>
     {% else %}
-      <p>Zatím nejsou přidaní žádní partneři.</p>
+      <div class="partner-admin-empty">
+        <p>Zatím nejsou přidaní žádní partneři.</p>
+        <a href="{% url 'core:partner_admin_create' %}" class="partner-admin-button partner-admin-button-primary">
+          Přidat prvního partnera
+        </a>
+      </div>
     {% endif %}
 
   </div>

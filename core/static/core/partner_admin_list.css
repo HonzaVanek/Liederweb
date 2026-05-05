@@ -1,0 +1,349 @@
+/* =========================================================
+   PARTNER ADMIN LIST
+   ========================================================= */
+
+.partner-admin-page {
+    width: 100%;
+}
+
+.partner-admin-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 34px 56px;
+}
+
+.partner-admin-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+}
+
+.partner-admin-kicker {
+    margin: 0 0 8px;
+    color: #666;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+}
+
+.partner-admin-header h1 {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.1rem, 4vw, 3.4rem);
+    font-weight: 700;
+    font-style: italic;
+    line-height: 1;
+}
+
+.partner-admin-header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.partner-admin-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 9px 15px;
+    border: 1.5px solid #000;
+    border-radius: 999px;
+    background-color: #fff;
+    color: #111;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.partner-admin-button:hover {
+    background-color: #111;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.partner-admin-button-primary {
+    background-color: #fff;
+    color: #111;
+    border-color: #000;
+    font-weight: 800;
+}
+
+.partner-admin-button-primary:hover {
+    background-color: #111;
+    color: #fff;
+}
+
+/* Messages */
+
+.partner-admin-messages {
+    list-style: none;
+    margin: 0 0 20px;
+    padding: 0;
+}
+
+.partner-admin-messages li {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border: 1.5px solid #000;
+    background-color: #fff;
+}
+
+.partner-admin-messages li.success {
+    background-color: #eef7f1;
+    border-color: #2f7d4f;
+    color: #195c35;
+}
+
+.partner-admin-messages li.error {
+    background-color: #fff2f2;
+    border-color: #9f2f2f;
+    color: #7a1f1f;
+}
+
+/* Table */
+
+.partner-admin-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    border: 1.5px solid #000;
+    background-color: #fff;
+}
+
+.partner-admin-table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 0.94rem;
+}
+
+.partner-admin-table th,
+.partner-admin-table td {
+    padding: 13px 14px;
+    border-bottom: 1px solid #ddd;
+    vertical-align: middle;
+    text-align: left;
+}
+
+.partner-admin-table th {
+    background-color: #f7f7f5;
+    color: #111;
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.11em;
+}
+
+.partner-admin-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.partner-admin-table tbody tr:hover {
+    background-color: #fbfbfa;
+}
+
+/* Columns */
+
+.partner-admin-table .col-order {
+    width: 76px;
+}
+
+.partner-admin-table .col-logo {
+    width: 150px;
+}
+
+.partner-admin-table .col-name {
+    width: 260px;
+}
+
+.partner-admin-table .col-web {
+    width: 300px;
+}
+
+.partner-admin-table .col-status {
+    width: 140px;
+}
+
+.partner-admin-table .col-actions {
+    width: 150px;
+}
+
+.partner-admin-logo-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 118px;
+    min-height: 58px;
+    padding: 7px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+}
+
+.partner-admin-logo {
+    max-width: 100%;
+    max-height: 46px;
+    object-fit: contain;
+}
+
+.partner-admin-alt {
+    display: block;
+    margin-top: 4px;
+    color: #666;
+    font-size: 0.8rem;
+    line-height: 1.35;
+}
+
+.partner-admin-url {
+    display: block;
+    max-width: 100%;
+    color: #111;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.partner-admin-muted {
+    color: #777;
+}
+
+.partner-admin-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 5px 10px;
+    border: 1px solid #000;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    white-space: nowrap;
+}
+
+.partner-admin-status-active {
+    background-color: #eef7f1;
+    border-color: #2f7d4f;
+    color: #195c35;
+}
+
+.partner-admin-status-hidden {
+    background-color: #f2f2f2;
+    border-color: #999;
+    color: #555;
+}
+
+.partner-admin-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    white-space: nowrap;
+}
+
+.partner-admin-row-actions a {
+    color: #111;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+}
+
+.partner-admin-row-actions a:hover {
+    opacity: 0.65;
+}
+
+.partner-admin-row-actions a.danger {
+    color: #8b1e1e;
+}
+
+/* Empty state */
+
+.partner-admin-empty {
+    padding: 26px;
+    border: 1.5px solid #000;
+    background-color: #fff;
+}
+
+.partner-admin-empty p {
+    margin: 0 0 16px;
+}
+
+.partner-admin-button,
+.partner-admin-button:visited {
+    color: #111;
+}
+
+.partner-admin-button:hover {
+    background-color: #111;
+    color: #fff;
+}
+
+.partner-admin-button-primary,
+.partner-admin-button-primary:visited {
+    background-color: #fff;
+    color: #111;
+    border-color: #000;
+    font-weight: 800;
+}
+
+.partner-admin-button-primary:hover {
+    background-color: #111;
+    color: #fff;
+}
+
+/* Responsive */
+
+@media (max-width: 980px) {
+    .partner-admin-inner {
+        padding: 24px 24px 48px;
+    }
+
+    .partner-admin-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .partner-admin-header-actions {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 760px) {
+    .partner-admin-inner {
+        padding: 22px 18px 42px;
+    }
+
+    .partner-admin-header h1 {
+        font-size: clamp(2rem, 10vw, 2.8rem);
+    }
+
+    .partner-admin-button {
+        width: 100%;
+    }
+
+    .partner-admin-header-actions {
+        width: 100%;
+    }
+
+    .partner-admin-table {
+        font-size: 0.9rem;
+    }
+}

@@ -1,46 +1,88 @@
 {% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'core/partner_admin_delete.css' %}">
+{% endblock %}
 
 {% block title %}{{ page_title }} | Partneři | Lieder Society{% endblock %}
 
 {% block rozesilac_content %}
-<section class="person-form-page">
-  <div class="person-form-inner">
+<section class="partner-delete-page">
+  <div class="partner-delete-inner">
 
-    <header class="person-form-header">
-      <h1>{{ page_title }}</h1>
+    <header class="partner-delete-header">
+      <div>
+        <p class="partner-delete-kicker">Správa webu</p>
+        <h1>{{ page_title }}</h1>
+      </div>
 
-      <div class="person-form-header-links">
-        <a href="{% url 'core:partner_admin_list' %}">← Zpět na partnery</a>
+      <div class="partner-delete-header-actions">
+        <a href="{% url 'core:partner_admin_list' %}" class="partner-delete-button">
+          ← Zpět na partnery
+        </a>
       </div>
     </header>
 
-    <p>
-      Opravdu chcete smazat partnera <strong>{{ partner.name }}</strong>?
-    </p>
-
-    {% if partner.logo and partner.logo.file %}
-      <p>
-        <img
-          src="{{ partner.logo.file.url }}"
-          alt="{{ partner.effective_alt_text }}"
-          style="max-width: 220px; max-height: 90px; object-fit: contain;"
-        >
-      </p>
-    {% endif %}
-
-    <form method="post" class="person-form">
-      {% csrf_token %}
-
-      <div class="person-form-actions">
-        <button type="submit">
-          Ano, smazat partnera
-        </button>
-
-        <a href="{% url 'core:partner_admin_list' %}">
-          Nechat být
-        </a>
+    <div class="partner-delete-card">
+      <div class="partner-delete-warning">
+        <p class="partner-delete-warning-label">Potvrzení smazání</p>
+        <p>
+          Opravdu chcete smazat partnera
+          <strong>{{ partner.name }}</strong>?
+        </p>
+        <p class="partner-delete-note">
+          Smaže se pouze položka partnera z veřejné sekce. Samotný mediální asset s logem v knihovně zůstane zachovaný.
+        </p>
       </div>
-    </form>
+
+      <div class="partner-delete-preview">
+        {% if partner.logo and partner.logo.file %}
+          <div class="partner-delete-logo-box">
+            <img
+              src="{{ partner.logo.file.url }}"
+              alt="{{ partner.effective_alt_text }}"
+              class="partner-delete-logo"
+            >
+          </div>
+        {% endif %}
+
+        <div class="partner-delete-meta">
+          <strong>{{ partner.name }}</strong>
+
+          {% if partner.website_url %}
+            <a href="{{ partner.website_url }}" target="_blank" rel="noopener">
+              {{ partner.website_url }}
+            </a>
+          {% else %}
+            <span>Bez odkazu na web</span>
+          {% endif %}
+
+          <span>Pořadí: {{ partner.sort_order }}</span>
+
+          {% if partner.is_active %}
+            <span class="partner-delete-status partner-delete-status-active">Zobrazuje se</span>
+          {% else %}
+            <span class="partner-delete-status partner-delete-status-hidden">Skryto</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <form method="post" class="partner-delete-form">
+        {% csrf_token %}
+
+        <div class="partner-delete-actions">
+          <button type="submit" class="partner-delete-submit">
+            Ano, smazat partnera
+          </button>
+
+          <a href="{% url 'core:partner_admin_list' %}" class="partner-delete-cancel">
+            Nechat být
+          </a>
+        </div>
+      </form>
+    </div>
 
   </div>
 </section>

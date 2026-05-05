@@ -1,64 +1,94 @@
 {% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'core/partner_admin_form.css' %}">
+{% endblock %}
 
 {% block title %}{{ page_title }} | Partneři | Lieder Society{% endblock %}
 
 {% block rozesilac_content %}
-<section class="person-form-page">
-  <div class="person-form-inner">
+<section class="partner-form-page">
+  <div class="partner-form-inner">
 
-    <header class="person-form-header">
-      <h1>{{ page_title }}</h1>
+    <header class="partner-form-header">
+      <div>
+        <p class="partner-form-kicker">Správa webu</p>
+        <h1>{{ page_title }}</h1>
+      </div>
 
-      <div class="person-form-header-links">
-        <a href="{% url 'core:partner_admin_list' %}">← Zpět na partnery</a>
+      <div class="partner-form-header-actions">
+        <a href="{% url 'core:partner_admin_list' %}" class="partner-form-button">
+          ← Zpět na partnery
+        </a>
       </div>
     </header>
 
     {% if messages %}
-      <ul class="messages">
+      <ul class="partner-form-messages">
         {% for m in messages %}
           <li class="{{ m.tags }}">{{ m }}</li>
         {% endfor %}
       </ul>
     {% endif %}
 
-    <form method="post" class="person-form">
+    <form method="post" class="partner-form">
       {% csrf_token %}
 
       {% if form.non_field_errors %}
-        <div class="form-errors">
+        <div class="partner-form-errors">
           {{ form.non_field_errors }}
         </div>
       {% endif %}
 
       {% for field in form %}
-        <div class="person-form-field {% if field.field.widget.input_type == 'checkbox' %}person-form-field-checkbox{% endif %}">
-          <label for="{{ field.id_for_label }}">
-            {{ field.label }}
-          </label>
-
-          {{ field }}
-
-          {% if field.help_text %}
-            <div class="helptext">{{ field.help_text }}</div>
-          {% endif %}
-
-          {% if field.errors %}
-            <div class="field-errors">
-              {{ field.errors }}
+        <div class="partner-form-field {% if field.field.widget.input_type == 'checkbox' %}partner-form-field-checkbox{% endif %}">
+          {% if field.field.widget.input_type == 'checkbox' %}
+            <div class="partner-form-checkbox-row">
+              {{ field }}
+              <label for="{{ field.id_for_label }}">
+                {{ field.label }}
+              </label>
             </div>
+
+            {% if field.help_text %}
+              <div class="partner-form-help">
+                {{ field.help_text }}
+              </div>
+            {% endif %}
+
+            {% if field.errors %}
+              <div class="partner-form-field-errors">
+                {{ field.errors }}
+              </div>
+            {% endif %}
+          {% else %}
+            <label for="{{ field.id_for_label }}">
+              {{ field.label }}
+            </label>
+
+            {{ field }}
+
+            {% if field.help_text %}
+              <div class="partner-form-help">
+                {{ field.help_text }}
+              </div>
+            {% endif %}
+
+            {% if field.errors %}
+              <div class="partner-form-field-errors">
+                {{ field.errors }}
+              </div>
+            {% endif %}
           {% endif %}
         </div>
       {% endfor %}
 
-      <div class="person-form-actions">
-        <button type="submit">
+      <div class="partner-form-actions">
+        <button type="submit" class="partner-form-submit">
           {{ submit_label }}
         </button>
-
-        <a href="{% url 'core:partner_admin_list' %}">
-          Zrušit
-        </a>
       </div>
     </form>
 

@@ -1,0 +1,311 @@
+/* =========================================================
+   PARTNER ADMIN DELETE
+   ========================================================= */
+
+.partner-delete-page {
+    width: 100%;
+}
+
+.partner-delete-inner {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 34px 36px 64px;
+}
+
+.partner-delete-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 34px;
+}
+
+.partner-delete-kicker {
+    margin: 0 0 8px;
+    color: #666;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+}
+
+.partner-delete-header h1 {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 700;
+    font-style: italic;
+    line-height: 1.05;
+}
+
+.partner-delete-header-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.partner-delete-button,
+.partner-delete-button:visited {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 9px 15px;
+    border: 1.5px solid #000;
+    border-radius: 999px;
+    background-color: #fff;
+    color: #111;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.partner-delete-button:hover {
+    background-color: #111;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* Card */
+
+.partner-delete-card {
+    padding: 28px;
+    border: 1.5px solid #000;
+    background-color: #fff;
+}
+
+.partner-delete-warning {
+    margin-bottom: 24px;
+    padding: 18px 20px;
+    border: 1.5px solid #9f2f2f;
+    background-color: #fff2f2;
+    color: #7a1f1f;
+}
+
+.partner-delete-warning-label {
+    margin: 0 0 8px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+.partner-delete-warning p {
+    margin: 0 0 8px;
+}
+
+.partner-delete-warning p:last-child {
+    margin-bottom: 0;
+}
+
+.partner-delete-note {
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+/* Preview */
+
+.partner-delete-preview {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 22px;
+    align-items: center;
+    margin-bottom: 28px;
+    padding: 18px;
+    border: 1px solid #ddd;
+    background-color: #f7f7f5;
+}
+
+.partner-delete-logo-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 86px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+}
+
+.partner-delete-logo {
+    max-width: 100%;
+    max-height: 68px;
+    object-fit: contain;
+}
+
+.partner-delete-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.partner-delete-meta strong {
+    font-size: 1.08rem;
+}
+
+.partner-delete-meta a {
+    color: #111;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    overflow-wrap: anywhere;
+}
+
+.partner-delete-meta span {
+    color: #555;
+}
+
+.partner-delete-status {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin-top: 6px;
+    padding: 5px 10px;
+    border: 1px solid #000;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.partner-delete-status-active {
+    background-color: #eef7f1;
+    border-color: #2f7d4f;
+    color: #195c35;
+}
+
+.partner-delete-status-hidden {
+    background-color: #f2f2f2;
+    border-color: #999;
+    color: #555;
+}
+
+/* Actions */
+
+.partner-delete-form {
+    margin: 0;
+}
+
+.partner-delete-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 22px;
+    border-top: 1px solid #ddd;
+}
+
+.partner-delete-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 1.5px solid #000;
+    border-radius: 999px;
+    background-color: #fff;
+    color: #8b1e1e;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: 0.86rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.partner-delete-submit:hover {
+    background-color: #8b1e1e;
+    color: #fff;
+    border-color: #8b1e1e;
+    transform: translateY(-1px);
+}
+
+.partner-delete-cancel,
+.partner-delete-cancel:visited {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 1.5px solid #000;
+    border-radius: 999px;
+    background-color: #fff;
+    color: #111;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: 0.86rem;
+    font-weight: 800;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.partner-delete-cancel:hover {
+    background-color: #111;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* Responsive */
+
+@media (max-width: 980px) {
+    .partner-delete-inner {
+        padding: 28px 24px 56px;
+    }
+
+    .partner-delete-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .partner-delete-header-actions {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 760px) {
+    .partner-delete-inner {
+        padding: 24px 18px 48px;
+    }
+
+    .partner-delete-card {
+        padding: 20px;
+    }
+
+    .partner-delete-header h1 {
+        font-size: clamp(2rem, 10vw, 2.7rem);
+    }
+
+    .partner-delete-preview {
+        grid-template-columns: 1fr;
+    }
+
+    .partner-delete-button,
+    .partner-delete-submit,
+    .partner-delete-cancel {
+        width: 100%;
+    }
+
+    .partner-delete-header-actions,
+    .partner-delete-actions {
+        width: 100%;
+    }
+}
