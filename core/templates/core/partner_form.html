@@ -1,0 +1,67 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}{{ page_title }} | Partneři | Lieder Society{% endblock %}
+
+{% block rozesilac_content %}
+<section class="person-form-page">
+  <div class="person-form-inner">
+
+    <header class="person-form-header">
+      <h1>{{ page_title }}</h1>
+
+      <div class="person-form-header-links">
+        <a href="{% url 'core:partner_admin_list' %}">← Zpět na partnery</a>
+      </div>
+    </header>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for m in messages %}
+          <li class="{{ m.tags }}">{{ m }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <form method="post" class="person-form">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="form-errors">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      {% for field in form %}
+        <div class="person-form-field {% if field.field.widget.input_type == 'checkbox' %}person-form-field-checkbox{% endif %}">
+          <label for="{{ field.id_for_label }}">
+            {{ field.label }}
+          </label>
+
+          {{ field }}
+
+          {% if field.help_text %}
+            <div class="helptext">{{ field.help_text }}</div>
+          {% endif %}
+
+          {% if field.errors %}
+            <div class="field-errors">
+              {{ field.errors }}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <div class="person-form-actions">
+        <button type="submit">
+          {{ submit_label }}
+        </button>
+
+        <a href="{% url 'core:partner_admin_list' %}">
+          Zrušit
+        </a>
+      </div>
+    </form>
+
+  </div>
+</section>
+{% endblock rozesilac_content %}

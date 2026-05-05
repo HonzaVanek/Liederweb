@@ -51,7 +51,7 @@ body {
     margin: 0;
     text-align: center;
     font-family: "Barlow", "Segoe UI", sans-serif;
-    font-size: clamp(2rem, 4vw, 4.2rem);
+    font-size: clamp(2rem, 4vw, 2.8rem);
     font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
@@ -185,7 +185,7 @@ body {
 .home-slide-content h3 {
     margin: 0 0 18px;
     font-family: "Barlow", "Segoe UI", sans-serif;
-    font-size: clamp(1.7rem, 3vw, 3.2rem);
+    font-size: clamp(1.7rem, 3vw, 2.2rem);
     font-weight: 700;
     line-height: 1.05;
     text-transform: uppercase;
@@ -317,7 +317,7 @@ body {
     margin: 0 0 18px;
     text-align: center;
     font-family: "Barlow", "Segoe UI", sans-serif;
-    font-size: clamp(2.3rem, 5vw, 4.6rem);
+    font-size: clamp(2.3rem, 5vw, 2.6rem);
     font-weight: 700;
     line-height: 1.02;
     text-transform: uppercase;

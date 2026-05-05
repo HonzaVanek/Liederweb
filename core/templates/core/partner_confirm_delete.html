@@ -1,0 +1,47 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}{{ page_title }} | Partneři | Lieder Society{% endblock %}
+
+{% block rozesilac_content %}
+<section class="person-form-page">
+  <div class="person-form-inner">
+
+    <header class="person-form-header">
+      <h1>{{ page_title }}</h1>
+
+      <div class="person-form-header-links">
+        <a href="{% url 'core:partner_admin_list' %}">← Zpět na partnery</a>
+      </div>
+    </header>
+
+    <p>
+      Opravdu chcete smazat partnera <strong>{{ partner.name }}</strong>?
+    </p>
+
+    {% if partner.logo and partner.logo.file %}
+      <p>
+        <img
+          src="{{ partner.logo.file.url }}"
+          alt="{{ partner.effective_alt_text }}"
+          style="max-width: 220px; max-height: 90px; object-fit: contain;"
+        >
+      </p>
+    {% endif %}
+
+    <form method="post" class="person-form">
+      {% csrf_token %}
+
+      <div class="person-form-actions">
+        <button type="submit">
+          Ano, smazat partnera
+        </button>
+
+        <a href="{% url 'core:partner_admin_list' %}">
+          Nechat být
+        </a>
+      </div>
+    </form>
+
+  </div>
+</section>
+{% endblock rozesilac_content %}

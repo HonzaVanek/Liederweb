@@ -130,3 +130,32 @@ class Person(models.Model):
             self.slug = slug
 
         super().save(*args, **kwargs)
+
+
+class Partner(models.Model):
+    name = models.CharField(max_length=160, verbose_name="Název partnera")
+    logo = models.ForeignKey(
+        "media_assets.MediaAsset",
+        on_delete=models.PROTECT,
+        related_name="partner_logos",
+        verbose_name="Logo",
+        help_text="Vyber logo z mediální knihovny.",
+    )
+    website_url = models.URLField(blank=True, verbose_name="Web partnera")
+    alt_text = models.CharField(max_length=200, blank=True, verbose_name="Alternativní text loga", help_text="Pokud zůstane prázdné, použije se název partnera.")
+    sort_order = models.PositiveIntegerField(default=0, db_index=True, verbose_name="Pořadí")
+    is_active = models.BooleanField(default=True, verbose_name="Zobrazovat na webu")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Vytvořeno")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Upraveno")
+
+    class Meta:
+        ordering = ["sort_order", "name", "id"]
+        verbose_name = "Partner"
+        verbose_name_plural = "Partneři"
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def effective_alt_text(self):
+        return self.alt_text or self.name

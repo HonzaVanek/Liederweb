@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load core_tags %}
 
 {% block extra_css %}
     {{ block.super }}
@@ -63,6 +64,11 @@
     </div>
 </section>
 {% endblock %}
+
+
+{% block partners_section %}
+  {% render_partners_section %}
+{% endblock partners_section %}
 
 {% block newsletter_signup %}
   {% include "core/includes/newsletter_signup.html" %}

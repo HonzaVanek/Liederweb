@@ -1,0 +1,97 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}Partneři | Lieder Society{% endblock %}
+
+{% block rozesilac_content %}
+<section class="person-form-page">
+  <div class="person-form-inner">
+
+    <header class="person-form-header">
+      <h1>Partneři</h1>
+
+      <div class="person-form-header-links">
+        <a href="{% url 'core:partner_admin_create' %}">+ Přidat partnera</a>
+        <a href="{% url 'core:home' %}">Zpět na web</a>
+      </div>
+    </header>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for m in messages %}
+          <li class="{{ m.tags }}">{{ m }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if partners %}
+      <div class="partner-admin-list">
+        <table class="partner-admin-table">
+          <thead>
+            <tr>
+              <th>Pořadí</th>
+              <th>Logo</th>
+              <th>Název</th>
+              <th>Web</th>
+              <th>Stav</th>
+              <th>Akce</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for partner in partners %}
+              <tr>
+                <td>{{ partner.sort_order }}</td>
+
+                <td>
+                  {% if partner.logo and partner.logo.file %}
+                    <img
+                      src="{{ partner.logo.file.url }}"
+                      alt="{{ partner.effective_alt_text }}"
+                      style="max-width: 130px; max-height: 54px; object-fit: contain;"
+                    >
+                  {% endif %}
+                </td>
+
+                <td>
+                  <strong>{{ partner.name }}</strong>
+                  {% if partner.alt_text %}
+                    <br>
+                    <small>Alt: {{ partner.alt_text }}</small>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if partner.website_url %}
+                    <a href="{{ partner.website_url }}" target="_blank" rel="noopener">
+                      {{ partner.website_url }}
+                    </a>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if partner.is_active %}
+                    Zobrazuje se
+                  {% else %}
+                    Skryto
+                  {% endif %}
+                </td>
+
+                <td>
+                  <a href="{% url 'core:partner_admin_update' partner.pk %}">Upravit</a>
+                  ·
+                  <a href="{% url 'core:partner_admin_delete' partner.pk %}">Smazat</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p>Zatím nejsou přidaní žádní partneři.</p>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock rozesilac_content %}

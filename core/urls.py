@@ -23,4 +23,9 @@ urlpatterns = [
     path("staff/lide/", views.PersonAdminListView.as_view(), name="person_admin_list"),
     path("staff/lide/novy/", views.PersonCreateView.as_view(), name="person_create"),
     path("staff/lide/<slug:slug>/upravit/", views.PersonUpdateView.as_view(), name="person_update"),
+
+    path("staff/partneri/", views.partner_admin_list, name="partner_admin_list"),
+    path("staff/partneri/novy/", views.partner_admin_create, name="partner_admin_create"),
+    path("staff/partneri/<int:pk>/upravit/", views.partner_admin_update, name="partner_admin_update"),
+    path("staff/partneri/<int:pk>/smazat/", views.partner_admin_delete, name="partner_admin_delete"),
 ]

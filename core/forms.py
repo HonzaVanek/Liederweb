@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from media_assets.models import MediaAsset
-from .models import Person
+from .models import Person, Partner
 
 class VlastniLoginForm(AuthenticationForm):
     username = forms.CharField(label="Uživatelské jméno")
@@ -79,3 +79,89 @@ class NewsletterSignupForm(forms.Form):
 
     def clean_email(self):
         return self.cleaned_data["email"].strip().lower()
+    
+class PartnerForm(forms.ModelForm):
+    logo = forms.ModelChoiceField(
+        queryset=MediaAsset.objects.filter(
+            asset_type=MediaAsset.AssetType.IMAGE,
+            is_active=True,
+        ).order_by("title", "-uploaded_at"),
+        label="Logo",
+        help_text="Vyber aktivní obrázek z mediální knihovny.",
+        empty_label="Vyber logo partnera",
+        widget=forms.Select(attrs={
+            "class": "form-control",
+        }),
+    )
+
+    class Meta:
+        model = Partner
+        fields = [
+            "name",
+            "logo",
+            "website_url",
+            "alt_text",
+            "sort_order",
+            "is_active",
+        ]
+
+        widgets = {
+            "name": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Např. Ministerstvo kultury",
+            }),
+            "website_url": forms.URLInput(attrs={
+                "class": "form-control",
+                "placeholder": "https://www.example.cz/",
+            }),
+            "alt_text": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Volitelné, jinak se použije název partnera",
+            }),
+            "sort_order": forms.NumberInput(attrs={
+                "class": "form-control",
+                "min": "0",
+            }),
+            "is_active": forms.CheckboxInput(attrs={
+                "class": "form-check-input",
+            }),
+        }
+
+        labels = {
+            "name": "Název partnera",
+            "website_url": "Web partnera",
+            "alt_text": "Alternativní text",
+            "sort_order": "Pořadí",
+            "is_active": "Zobrazovat na webu",
+        }
+
+        help_texts = {
+            "sort_order": "Nižší číslo znamená dřívější zobrazení.",
+            "alt_text": "Kvůli přístupnosti. Když zůstane prázdné, použije se název partnera.",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["logo"].label_from_instance = self.logo_label_from_instance
+
+    @staticmethod
+    def logo_label_from_instance(obj):
+        title = obj.title or obj.original_filename or obj.filename or str(obj)
+        dimensions = ""
+
+        if obj.image_width and obj.image_height:
+            dimensions = f" — {obj.image_width}×{obj.image_height}px"
+
+        return f"{title}{dimensions}"
+
+    def clean_logo(self):
+        logo = self.cleaned_data["logo"]
+
+        if logo.asset_type != MediaAsset.AssetType.IMAGE:
+            raise forms.ValidationError("Logo musí být obrázek.")
+
+        if not logo.is_active:
+            raise forms.ValidationError("Vybrané logo není aktivní.")
+
+        return logo

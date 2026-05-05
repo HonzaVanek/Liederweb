@@ -1,5 +1,5 @@
 from urllib.parse import urldefrag
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.views import LoginView
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.views.decorators.http import require_POST
@@ -16,8 +16,8 @@ from django.template.loader import render_to_string
 from django.core.mail import EmailMessage, send_mail
 from django.utils.decorators import method_decorator
 
-from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm
-from .models import Person
+from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm
+from .models import Person, Partner
 from events.models import Event
 from media_assets.models import MediaAsset
 from social_feed.models import SocialPost, SocialSource
@@ -175,6 +175,84 @@ def newsletter_signup(request):
 
     messages.success(request, "Děkujeme, přihlášení k newsletteru je zaznamenané.", extra_tags="newsletter")
     return redirect(redirect_url)
+
+
+
+#### Partneři ####
+
+
+@staff_required
+def partner_admin_list(request):
+    partners = (
+        Partner.objects
+        .select_related("logo")
+        .order_by("sort_order", "name", "id")
+    )
+
+    return render(request, "core/partner_admin_list.html", {
+        "partners": partners,
+    })
+
+
+@staff_required
+def partner_admin_create(request):
+    if request.method == "POST":
+        form = PartnerForm(request.POST)
+
+        if form.is_valid():
+            partner = form.save()
+            messages.success(request, f"Partner „{partner.name}“ byl vytvořen.")
+            return redirect("core:partner_admin_list")
+    else:
+        form = PartnerForm()
+
+    return render(request, "core/partner_form.html", {
+        "form": form,
+        "page_title": "Nový partner",
+        "submit_label": "Vytvořit partnera",
+    })
+
+
+@staff_required
+def partner_admin_update(request, pk):
+    partner = get_object_or_404(Partner, pk=pk)
+
+    if request.method == "POST":
+        form = PartnerForm(request.POST, instance=partner)
+
+        if form.is_valid():
+            partner = form.save()
+            messages.success(request, f"Partner „{partner.name}“ byl upraven.")
+            return redirect("core:partner_admin_list")
+    else:
+        form = PartnerForm(instance=partner)
+
+    return render(request, "core/partner_form.html", {
+        "form": form,
+        "partner": partner,
+        "page_title": f"Upravit partnera: {partner.name}",
+        "submit_label": "Uložit změny",
+    })
+
+
+@staff_required
+def partner_admin_delete(request, pk):
+    partner = get_object_or_404(Partner, pk=pk)
+
+    if request.method == "POST":
+        partner_name = partner.name
+        partner.delete()
+        messages.success(request, f"Partner „{partner_name}“ byl smazán.")
+        return redirect("core:partner_admin_list")
+
+    return render(request, "core/partner_confirm_delete.html", {
+        "partner": partner,
+        "page_title": f"Smazat partnera: {partner.name}",
+    })
+
+
+#### KONEC PARTNEŘI #####
+
 
 ##### konec landing page #####
 

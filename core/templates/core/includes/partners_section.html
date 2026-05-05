@@ -1,0 +1,58 @@
+{% if partners or request.user.is_authenticated and request.user.is_staff %}
+<section class="partners-section" aria-labelledby="partners-section-title">
+  <div class="partners-section__inner">
+
+    <div class="partners-section__header">
+      <div>
+        <p class="partners-section__eyebrow">Podporují nás</p>
+        <h2 id="partners-section-title">Partneři</h2>
+      </div>
+
+      {% if request.user.is_authenticated and request.user.is_staff %}
+        <a href="{% url 'core:partner_admin_list' %}" class="partners-section__edit-link">
+          Upravit partnery
+        </a>
+      {% endif %}
+    </div>
+
+    {% if partners %}
+      <div class="partners-section__grid">
+        {% for partner in partners %}
+          <div class="partners-section__item">
+            {% if partner.website_url %}
+              <a
+                href="{{ partner.website_url }}"
+                target="_blank"
+                rel="noopener"
+                class="partners-section__logo-link"
+                aria-label="{{ partner.name }}"
+              >
+                <img
+                  src="{{ partner.logo.file.url }}"
+                  alt="{{ partner.effective_alt_text }}"
+                  class="partners-section__logo"
+                >
+              </a>
+            {% else %}
+              <div class="partners-section__logo-link" aria-label="{{ partner.name }}">
+                <img
+                  src="{{ partner.logo.file.url }}"
+                  alt="{{ partner.effective_alt_text }}"
+                  class="partners-section__logo"
+                >
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      {% if request.user.is_authenticated and request.user.is_staff %}
+        <p class="partners-section__empty">
+          Zatím nejsou nastavení žádní aktivní partneři.
+        </p>
+      {% endif %}
+    {% endif %}
+
+  </div>
+</section>
+{% endif %}
