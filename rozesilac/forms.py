@@ -41,13 +41,14 @@ def html_to_plain_text(html: str) -> str:
 class EmailTemplateForm(forms.ModelForm):
     class Meta:
         model = EmailTemplate
-        fields = ["name", "subject", "preheader", "html_body", "text_body"]
+        fields = ["name", "subject", "preheader", "fallback_salutation", "html_body", "text_body"]
         widgets = {
             "name": forms.TextInput(attrs={"placeholder": "Např. Newsletter březen 2026"}),
             "subject": forms.TextInput(attrs={"placeholder": "Předmět emailu"}),
             "preheader": forms.Textarea(attrs={"rows": 1, "placeholder": "Krátký text náhledu emailu v inboxu"}),
             "html_body": forms.Textarea(attrs={"rows": 18, "required": False}),
             "text_body": forms.Textarea(attrs={"rows": 8}),
+            "fallback_salutation": forms.TextInput(attrs={"placeholder": "Např. Vážení přátelé písně, Dobrý den, Milí přátelé, apod."}),
         }
 
     def clean_html_body(self):
@@ -77,6 +78,14 @@ class EmailTemplateForm(forms.ModelForm):
             cleaned_data["text_body"] = html_to_plain_text(html_body)
 
         return cleaned_data
+    
+    def clean_fallback_salutation(self):
+        value = (self.cleaned_data.get("fallback_salutation") or "").strip()
+
+        if not value:
+            raise forms.ValidationError("Vyplň prosím fallback oslovení.")
+
+        return value
     
 
 # pro nahrávání obrázků na server v rozesílači emailů (aby šablony mohly používat obrázky, které jsou na našem serveru a ne někde jinde na internetu):

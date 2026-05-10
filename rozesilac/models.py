@@ -14,6 +14,8 @@ import secrets
 WEB_CONTACT_GROUP_CODE = "web_newsletter"
 WEB_CONTACT_GROUP_NAME = "Kontakty z webu"
 
+DEFAULT_FALLBACK_SALUTATION = "Vážení přátelé písně"
+
 class ContactGroup(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Název skupiny")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -72,7 +74,18 @@ class EmailTemplate(models.Model):
     text_body = models.TextField(blank=True, help_text="Volitelné: plain-text fallback.")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    preheader = models.CharField(max_length=200, blank=True, help_text="Krátký text zobrazovaný jako náhled emailu v inboxu")
+    preheader = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Krátký text zobrazovaný jako náhled emailu v inboxu",
+    )
+    fallback_salutation = models.CharField(
+        max_length=120,
+        default=DEFAULT_FALLBACK_SALUTATION,
+        verbose_name="Oslovení pro kontakty bez oslovení",
+        help_text="Použije se jako {{ osloveni }}, pokud kontakt nemá vlastní oslovení.",
+    )
+
     def __str__(self) -> str:
         return self.name
     
@@ -95,6 +108,7 @@ class EmailCampaign(models.Model):
     # co se poslalo (snapshot – ať to nezmění pozdější editace šablony)
     subject = models.CharField(max_length=250)
     preheader = models.CharField(max_length=200, blank=True)
+    fallback_salutation = models.CharField(max_length=120, default=DEFAULT_FALLBACK_SALUTATION, verbose_name="Oslovení pro kontakty bez oslovení")
     html_body = models.TextField()
     text_body = models.TextField(blank=True)
     from_email = models.EmailField(null=True, blank=True, verbose_name="Odesílatel")

@@ -118,7 +118,22 @@
     <div class="form-errors">{{ e }}</div>
   {% endfor %}
 </div>
-
+    <div class="template-form-row">
+      <label for="{{ form.fallback_salutation.id_for_label }}">
+        Oslovení pro kontakty bez vyplněného oslovení
+      </label>
+      {{ form.fallback_salutation }}
+      <p class="muted">
+        Použije se jako hodnota proměnné <code>{% verbatim %}{{ osloveni }}{% endverbatim %}</code>
+        u kontaktů, které nemají vlastní oslovení.
+        Do šablony pak stačí napsat například
+        <code>{% verbatim %}{{ osloveni }},{% endverbatim %}</code>.
+        Typická hodnota: <strong>Vážení přátelé písně</strong>.
+      </p>
+      {% for e in form.fallback_salutation.errors %}
+        <div class="form-errors">{{ e }}</div>
+      {% endfor %}
+    </div>
   <div class="template-form-row">
     <label for="{{ form.html_body.id_for_label }}">HTML tělo emailu</label>
     {{ form.html_body }}

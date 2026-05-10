@@ -6,7 +6,7 @@ from django.http import HttpResponseForbidden
 from django.urls import reverse
 from django.shortcuts import get_object_or_404, render
 from core.decorators import staff_required
-from .models import Contact, EmailCampaign, EmailDelivery, EmailClickEvent, EmailTemplate, EmailImage, ContactGroup, EmailCampaignTrackedLink
+from .models import Contact, EmailCampaign, EmailDelivery, EmailClickEvent, EmailTemplate, EmailImage, ContactGroup, EmailCampaignTrackedLink, DEFAULT_FALLBACK_SALUTATION
 from django.db.models import OuterRef, Sum, Exists, Prefetch
 from django.db.models.deletion import ProtectedError
 from media_assets.models import MediaAsset
@@ -246,7 +246,7 @@ def template_duplicate(request, template_id):
             new_name = f"{base_name} {counter}"
             counter += 1
 
-        new_template = EmailTemplate.objects.create(name=new_name, subject=template_obj.subject, preheader=template_obj.preheader, html_body=template_obj.html_body, text_body=template_obj.text_body,)
+        new_template = EmailTemplate.objects.create(name=new_name, subject=template_obj.subject, preheader=template_obj.preheader, html_body=template_obj.html_body, text_body=template_obj.text_body, fallback_salutation=template_obj.fallback_salutation)
 
         messages.success(request, f'Šablona byla zduplikována jako "{new_template.name}".')
         return redirect("rozesilac:templates")
@@ -271,12 +271,15 @@ def template_delete(request, template_id):
     return render(request, "rozesilac/template_delete.html", {"template_obj": template_obj},)
 
 
-def get_contact_salutation(contact):
-    if contact.salutation and contact.salutation.strip():
+def get_contact_salutation(contact, fallback_salutation=DEFAULT_FALLBACK_SALUTATION):
+    if contact and contact.salutation and contact.salutation.strip():
         return contact.salutation.strip()
-    if contact.name and contact.name.strip():
-        return contact.name.strip()
-    return contact.email
+
+    fallback_salutation = (fallback_salutation or "").strip()
+    if fallback_salutation:
+        return fallback_salutation
+
+    return DEFAULT_FALLBACK_SALUTATION
 
 
 @staff_required
@@ -832,7 +835,7 @@ def add_click_tracking_to_html(html_content: str, delivery, base_url: str):
 
 def send_single_delivery(campaign, delivery, base_url: str, from_email: str):
     contact = delivery.contact
-    osloveni = get_contact_salutation(contact) if contact else delivery.to_email
+    osloveni = get_contact_salutation(contact, fallback_salutation=getattr(campaign, "fallback_salutation", DEFAULT_FALLBACK_SALUTATION))
 
     if contact:
         unsubscribe_path = reverse("rozesilac:unsubscribe", args=[contact.unsubscribe_token])
@@ -1008,6 +1011,7 @@ def send(request):
                 preheader=template.preheader,
                 html_body=template.html_body,
                 text_body=template.text_body,
+                fallback_salutation=template.fallback_salutation,
                 is_test=is_test,
                 note=note,
                 event=event,
