@@ -11,6 +11,7 @@ from django.db.models import OuterRef, Sum, Exists, Prefetch
 from django.db.models.deletion import ProtectedError
 from media_assets.models import MediaAsset
 from .forms import EmailTemplateForm, EmailImageUploadForm, ContactForm, ContactImportForm, ContactGroupForm, SendCampaignForm, NewsletterImageUploadForm
+from .email_limits import get_daily_email_usage, get_email_count_for_send_form
 from django.contrib import messages
 from django.shortcuts import redirect
 from openpyxl import load_workbook
@@ -938,6 +939,7 @@ def send_single_delivery(campaign, delivery, base_url: str, from_email: str):
 def send_campaign_deliveries(campaign, base_url: str, from_email: str):
     sent_count = 0
     failed_count = 0
+    limit_reached = False
 
     campaign.status = "sending"
     campaign.started_at = timezone.now()
@@ -947,6 +949,12 @@ def send_campaign_deliveries(campaign, base_url: str, from_email: str):
     deliveries = campaign.deliveries.filter(status="queued").order_by("id")
 
     for delivery in deliveries:
+        daily_email_usage = get_daily_email_usage()
+
+        if daily_email_usage["remaining"] <= 0:
+            limit_reached = True
+            break
+
         try:
             send_single_delivery(
                 campaign=campaign,
@@ -970,18 +978,35 @@ def send_campaign_deliveries(campaign, base_url: str, from_email: str):
             failed_count += 1
 
     campaign.finished_at = timezone.now()
+    queued_count = campaign.deliveries.filter(status="queued").count()
 
-    if failed_count == 0:
+    if limit_reached and queued_count > 0:
+        tomorrow = timezone.localtime() + timedelta(days=1)
+        campaign.status = "scheduled"
+        campaign.scheduled_at = tomorrow.replace(hour=8, minute=0, second=0, microsecond=0)
+
+        limit_note = "Odesílání bylo přerušeno kvůli dennímu Brevo limitu. Zbytek zůstává ve frontě."
+
+        if limit_note not in campaign.note:
+            campaign.note = ((campaign.note + " | ") if campaign.note else "") + limit_note
+
+        campaign.save(update_fields=["status", "finished_at", "scheduled_at", "note"])
+
+    elif failed_count == 0 and queued_count == 0:
         campaign.status = "sent"
+        campaign.save(update_fields=["status", "finished_at"])
+
     else:
         campaign.status = "failed"
-
-    campaign.save(update_fields=["status", "finished_at"])
+        campaign.save(update_fields=["status", "finished_at"])
 
     return sent_count, failed_count
 
 @staff_required
 def send(request):
+    templates_for_preview = EmailTemplate.objects.all().order_by("name")
+    daily_email_usage = get_daily_email_usage()
+
     if request.method == "POST":
         form = SendCampaignForm(request.POST)
 
@@ -993,8 +1018,37 @@ def send(request):
             test_email = form.cleaned_data.get("test_email")
             contacts = form.cleaned_data.get("contacts")
             note = form.cleaned_data.get("note", "")
-            event=form.cleaned_data.get("event")
+            event = form.cleaned_data.get("event")
             from_email = form.cleaned_data.get("from_email") or settings.NEWSLETTER_DEFAULT_FROM_EMAIL
+
+            # --------------------------------------------------
+            # Brevo daily limit – kontrola před vytvořením kampaně
+            # --------------------------------------------------
+
+            daily_email_usage = get_daily_email_usage()
+            emails_to_send_count = get_email_count_for_send_form(form.cleaned_data)
+
+            if delivery_mode == "now" and emails_to_send_count > daily_email_usage["remaining"]:
+                form.add_error(
+                    None,
+                    (
+                        f"Denní limit Brevo by byl překročen. "
+                        f"Dnes už bylo odesláno {daily_email_usage['sent']} "
+                        f"z {daily_email_usage['limit']} e-mailů, "
+                        f"zbývá {daily_email_usage['remaining']}, "
+                        f"ale tahle rozesílka má {emails_to_send_count} příjemců."
+                    ),
+                )
+
+                return render(
+                    request,
+                    "rozesilac/send.html",
+                    {
+                        "form": form,
+                        "templates_for_preview": templates_for_preview,
+                        "daily_email_usage": daily_email_usage,
+                    },
+                )
 
             is_test = send_mode == "test"
 
@@ -1084,7 +1138,8 @@ def send(request):
         "rozesilac/send.html",
         {
             "form": form,
-            "templates_for_preview": EmailTemplate.objects.all().order_by("name"),
+            "templates_for_preview": templates_for_preview,
+            "daily_email_usage": daily_email_usage,
         },
     )
 

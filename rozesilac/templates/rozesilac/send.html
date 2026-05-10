@@ -10,6 +10,49 @@
 
 <p class="help-text">Tady už budem posílat připravené šablony (nebo to mu můžem říkat maily, kampaně, whatever). Vybereš kterou chceš poslat šablonu (finální mail), pak můžeš ještě zkontrolovat v náhledu že je to ta správná co chceš fakt poslat. Pak vybereš co má být jako email odesílatele - tam zatím sice lze vybrat info@liedersociety.cz nebo newsletter@liedersociety.cz, což je moje doména a funguje to z ní dobře. Na webu je to pak přesměrované, takže kdyby měl někdo potřebu zadat jako url liedersociety.cz tak nám to nevadí, protože ho to automaticky přesměruje na lieder-society.cz </br> Každopádně pak zvolíte režim odesílání - ten testovací je jenom když to chcete poslat fakt na jeden svůj mail, ale v podstatě lze dát rovnou ostré rozesílání a pak jako skupinu zvolit nějakou vlastní testovací skupinu, kde máte nějaký svoje maily třeba v různých klientech, abych mohl čeknout jak newsletter vypadá třeba na gmailu, jak na outlooku, jak na seznamu, etc. Když je to cajk tak pak zvolíte cílovou skupinu kontaktů, pak je ještě možné kdyžtak odškrtnout nějaký kontakt (zobrazí se jen ty aktivní, neaktivním mail poslat nelze), kdybyste mu to poslat nechtěly a pak Odeslat a bum. Zatím jsem teda nezkoušel to poslat na třeba 200 kontaktů, testoval jsem to tak do deseti, tak snad to bude fachat když jich bude hodně, musíme prostě vyzkoušet praxí. Imho se posílá tak 1-2 maily za sekundu, tzn. tipuju že 200 kontaktů se bude odesílat cca 3 minuty. Snad.</p>
 
+{% if daily_email_usage %}
+<section
+  class="daily-email-limit-card
+    {% if daily_email_usage.remaining <= 0 %}is-danger{% elif daily_email_usage.remaining <= 50 %}is-warning{% endif %}"
+  id="daily-email-limit-card"
+  data-limit="{{ daily_email_usage.limit }}"
+  data-sent="{{ daily_email_usage.sent }}"
+  data-remaining="{{ daily_email_usage.remaining }}"
+>
+  <div class="daily-email-limit-card__main">
+    <div>
+      <h3>Denní limit odesílání</h3>
+      <p>
+        Za den je možné přes Brevo poslat
+        <strong>{{ daily_email_usage.limit }}</strong> e-mailů.
+      </p>
+    </div>
+
+    <div class="daily-email-limit-card__numbers">
+      <div>
+        <span>Dnes odesláno</span>
+        <strong>{{ daily_email_usage.sent }}</strong>
+      </div>
+      <div>
+        <span>Dnes zbývá</span>
+        <strong>{{ daily_email_usage.remaining }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="daily-email-limit-card__bar">
+    <div
+      class="daily-email-limit-card__bar-fill"
+      style="width: {% widthratio daily_email_usage.sent daily_email_usage.limit 100 %}%;"
+    ></div>
+  </div>
+
+  <p class="daily-email-limit-card__note">
+    Počítadlo vychází z e-mailů odeslaných přes tuto aplikaci, ne přímo z administrace Brevo.
+  </p>
+</section>
+{% endif %}
+
 {% if messages %}
 <ul class="messages">
   {% for m in messages %}
@@ -21,6 +64,14 @@
 {% if form.errors %}
   <div class="form-errors" style="margin-bottom: 15px;">
     Oprav prosím chyby ve formuláři.
+
+    {% if form.non_field_errors %}
+      <ul style="margin: 8px 0 0 18px;">
+        {% for error in form.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
   </div>
 {% endif %}
 
