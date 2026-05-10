@@ -245,6 +245,89 @@
 }
 
 /* ---------------------------------------------------------
+   FORMSET TOOLBAR / DYNAMICKÉ PŘIDÁVÁNÍ ŘÁDKŮ
+   --------------------------------------------------------- */
+
+.formset-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    margin: 18px 0 20px;
+    padding: 14px 16px;
+    background: #fafafa;
+    border: 1px solid #dddddd;
+    border-radius: 12px;
+}
+
+.formset-toolbar label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    color: #333;
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.formset-toolbar input[type="number"] {
+    width: 140px;
+    max-width: 100%;
+    padding: 9px 10px;
+}
+
+.formset-toolbar button {
+    padding: 10px 15px;
+    border: 0;
+    border-radius: 999px;
+    background: #111;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.formset-toolbar button:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+.formset-toolbar button[data-formset-fill] {
+    background: #333;
+}
+
+@media (max-width: 700px) {
+    .formset-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .formset-toolbar input[type="number"],
+    .formset-toolbar button {
+        width: 100%;
+    }
+}
+
+body.dark-mode .formset-toolbar {
+    background: #1b1b1b;
+    border-color: #444;
+}
+
+body.dark-mode .formset-toolbar label {
+    color: #f1f1f1;
+}
+
+body.dark-mode .formset-toolbar button {
+    background: #eeeeee;
+    color: #111;
+}
+
+body.dark-mode .formset-toolbar button[data-formset-fill] {
+    background: #cfcfcf;
+}
+
+
+/* ---------------------------------------------------------
    HELP / DROB NOSTI
    --------------------------------------------------------- */
 

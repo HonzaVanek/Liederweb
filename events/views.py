@@ -82,6 +82,12 @@ def _build_event_formsets(data=None, instance=None):
     }
 
 
+def _get_recent_event_images():
+    return MediaAsset.objects.filter(
+        asset_type=MediaAsset.AssetType.IMAGE,
+        is_active=True,
+    ).order_by("-uploaded_at")[:10]
+
 @staff_required
 def event_list(request):
     events = Event.objects.order_by("-starts_at", "-created_at")
@@ -127,7 +133,7 @@ def event_create(request):
     context = {
         "form": form,
         "page_title": "Nový koncert",
-        "recent_images": MediaAsset.objects.filter(asset_type=MediaAsset.AssetType.IMAGE, is_active=True,).order_by("-uploaded_at")[:10],
+        "recent_images": _get_recent_event_images(),
         "event": None,
         **formsets,
     }
@@ -173,7 +179,7 @@ def event_edit(request, pk):
     context = {
         "form": form,
         "page_title": "Upravit koncert",
-        "recent_images": EmailImage.objects.order_by("-uploaded_at")[:10],
+        "recent_images": _get_recent_event_images(),
         "event": event,
         **formsets,
     }

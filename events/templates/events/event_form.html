@@ -36,6 +36,7 @@
         {% endfor %}
       </ul>
     {% endif %}
+
     <h3>Základní informace</h3>
     <p class="section-intro">
       Základ koncertu: název, datum, místo a údaje pro pravý informační panel na veřejné stránce.
@@ -263,131 +264,245 @@
     </div>
   </div>
 
-  <div class="content-section">
+  <div class="content-section js-formset" data-prefix="{{ program_formset.prefix }}">
     <h3>Program koncertu</h3>
     <p class="section-intro">Každý řádek představuje jednu položku programu.</p>
 
-    {% for subform in program_formset %}
+    <div class="formset-toolbar">
+      <label>
+        Počet zobrazených řádků programu
+        <input
+          type="number"
+          min="{{ program_formset.forms|length }}"
+          value="{{ program_formset.forms|length }}"
+          data-formset-target-count
+        >
+      </label>
+
+          <button type="button" data-formset-add>Přidat jeden řádek</button>
+    </div>
+
+    <div class="js-formset-list">
+      {% for subform in program_formset %}
+        <div class="inline-formset-card">
+          {{ subform.id }}
+
+          <div class="form-grid formset-grid-program">
+            <div>
+              <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
+              {{ subform.sort_order }}
+            </div>
+
+            <div>
+              <label for="{{ subform.composer.id_for_label }}">Skladatel</label>
+              {{ subform.composer }}
+            </div>
+
+            <div>
+              <label for="{{ subform.work_title.id_for_label }}">Název skladby / části</label>
+              {{ subform.work_title }}
+            </div>
+
+            <div>
+              <label for="{{ subform.note.id_for_label }}">Poznámka</label>
+              {{ subform.note }}
+            </div>
+
+            <div>
+              <label for="{{ subform.info_url.id_for_label }}">Odkaz na více informací</label>
+              {{ subform.info_url }}
+            </div>
+
+            <div class="delete-cell">
+              <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
+              {{ subform.DELETE }}
+            </div>
+          </div>
+
+          {% if subform.errors %}
+            <div class="form-errors formset-errors">
+              {% for field in subform %}
+                {% for error in field.errors %}
+                  <div>{{ field.label }}: {{ error }}</div>
+                {% endfor %}
+              {% endfor %}
+              {% for error in subform.non_field_errors %}
+                <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <template class="js-empty-form-template">
       <div class="inline-formset-card">
-        {{ subform.id }}
+        {{ program_formset.empty_form.id }}
 
         <div class="form-grid formset-grid-program">
           <div>
-            <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
-            {{ subform.sort_order }}
+            <label for="{{ program_formset.empty_form.sort_order.id_for_label }}">Pořadí</label>
+            {{ program_formset.empty_form.sort_order }}
           </div>
 
           <div>
-            <label for="{{ subform.composer.id_for_label }}">Skladatel</label>
-            {{ subform.composer }}
+            <label for="{{ program_formset.empty_form.composer.id_for_label }}">Skladatel</label>
+            {{ program_formset.empty_form.composer }}
           </div>
 
           <div>
-            <label for="{{ subform.work_title.id_for_label }}">Název skladby / části</label>
-            {{ subform.work_title }}
+            <label for="{{ program_formset.empty_form.work_title.id_for_label }}">Název skladby / části</label>
+            {{ program_formset.empty_form.work_title }}
           </div>
 
           <div>
-            <label for="{{ subform.note.id_for_label }}">Poznámka</label>
-            {{ subform.note }}
+            <label for="{{ program_formset.empty_form.note.id_for_label }}">Poznámka</label>
+            {{ program_formset.empty_form.note }}
           </div>
 
           <div>
-            <label for="{{ subform.info_url.id_for_label }}">Odkaz na více informací</label>
-            {{ subform.info_url }}
+            <label for="{{ program_formset.empty_form.info_url.id_for_label }}">Odkaz na více informací</label>
+            {{ program_formset.empty_form.info_url }}
           </div>
 
           <div class="delete-cell">
-            <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
-            {{ subform.DELETE }}
+            <label for="{{ program_formset.empty_form.DELETE.id_for_label }}">Smazat</label>
+            {{ program_formset.empty_form.DELETE }}
           </div>
         </div>
-
-        {% if subform.errors %}
-          <div class="form-errors formset-errors">
-            {% for field in subform %}
-              {% for error in field.errors %}
-                <div>{{ field.label }}: {{ error }}</div>
-              {% endfor %}
-            {% endfor %}
-            {% for error in subform.non_field_errors %}
-              <div>{{ error }}</div>
-            {% endfor %}
-          </div>
-        {% endif %}
       </div>
-    {% endfor %}
+    </template>
   </div>
-
 
   {% if artist_formset.non_form_errors %}
-  <div class="form-errors form-errors-top">
-    {% for error in artist_formset.non_form_errors %}
-      <div>{{ error }}</div>
-    {% endfor %}
-  </div>
+    <div class="form-errors form-errors-top">
+      {% for error in artist_formset.non_form_errors %}
+        <div>{{ error }}</div>
+      {% endfor %}
+    </div>
   {% endif %}
- <div class="content-section">
-  <h3>Interpreti</h3>
-  <p class="section-intro">Jméno, role, volitelný odkaz a volitelná fotka interpreta.</p>
 
-  {% for subform in artist_formset %}
-    <div class="inline-formset-card">
-      {{ subform.id }}
+  <div class="content-section js-formset" data-prefix="{{ artist_formset.prefix }}">
+    <h3>Interpreti</h3>
+    <p class="section-intro">Jméno, role, volitelný odkaz a volitelná fotka interpreta.</p>
 
-      <div class="form-grid formset-grid-artist">
-        <div>
-          <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
-          {{ subform.sort_order }}
+    <div class="formset-toolbar">
+      <label>
+        Počet zobrazených řádků interpretů
+        <input
+          type="number"
+          min="{{ artist_formset.forms|length }}"
+          value="{{ artist_formset.forms|length }}"
+          data-formset-target-count
+        >
+      </label>
+
+      <button type="button" data-formset-add>Přidat jeden řádek</button>
+    </div>
+
+    <div class="js-formset-list">
+      {% for subform in artist_formset %}
+        <div class="inline-formset-card">
+          {{ subform.id }}
+
+          <div class="form-grid formset-grid-artist">
+            <div>
+              <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
+              {{ subform.sort_order }}
+            </div>
+
+            <div>
+              <label for="{{ subform.name.id_for_label }}">Jméno</label>
+              {{ subform.name }}
+            </div>
+
+            <div>
+              <label for="{{ subform.role.id_for_label }}">Role</label>
+              {{ subform.role }}
+            </div>
+
+            <div>
+              <label for="{{ subform.url.id_for_label }}">Odkaz</label>
+              {{ subform.url }}
+            </div>
+
+            <div>
+              <label for="{{ subform.photo_asset.id_for_label }}">Fotka</label>
+              {{ subform.photo_asset }}
+              <p class="small muted">Vyber z obrázků nahraných v galerii.</p>
+            </div>
+
+            <div>
+              <label for="{{ subform.photo_position.id_for_label }}">Pozice fotky</label>
+              {{ subform.photo_position }}
+            </div>
+
+            <div class="delete-cell">
+              <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
+              {{ subform.DELETE }}
+            </div>
+          </div>
+
+          {% if subform.errors %}
+            <div class="form-errors formset-errors">
+              {% for field in subform %}
+                {% for error in field.errors %}
+                  <div>{{ field.label }}: {{ error }}</div>
+                {% endfor %}
+              {% endfor %}
+              {% for error in subform.non_field_errors %}
+                <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
         </div>
+      {% endfor %}
+    </div>
 
-        <div>
-          <label for="{{ subform.name.id_for_label }}">Jméno</label>
-          {{ subform.name }}
-        </div>
+    <template class="js-empty-form-template">
+      <div class="inline-formset-card">
+        {{ artist_formset.empty_form.id }}
 
-        <div>
-          <label for="{{ subform.role.id_for_label }}">Role</label>
-          {{ subform.role }}
-        </div>
+        <div class="form-grid formset-grid-artist">
+          <div>
+            <label for="{{ artist_formset.empty_form.sort_order.id_for_label }}">Pořadí</label>
+            {{ artist_formset.empty_form.sort_order }}
+          </div>
 
-        <div>
-          <label for="{{ subform.url.id_for_label }}">Odkaz</label>
-          {{ subform.url }}
-        </div>
+          <div>
+            <label for="{{ artist_formset.empty_form.name.id_for_label }}">Jméno</label>
+            {{ artist_formset.empty_form.name }}
+          </div>
 
-        <div>
-          <label for="{{ subform.photo_asset.id_for_label }}">Fotka</label>
-          {{ subform.photo_asset }}
-          <p class="small muted">Vyber z obrázků nahraných v galerii.</p>
-        </div>
+          <div>
+            <label for="{{ artist_formset.empty_form.role.id_for_label }}">Role</label>
+            {{ artist_formset.empty_form.role }}
+          </div>
 
-        <div>
-          <label for="{{ subform.photo_position.id_for_label }}">Pozice fotky</label>
-          {{ subform.photo_position }}
-        </div>
+          <div>
+            <label for="{{ artist_formset.empty_form.url.id_for_label }}">Odkaz</label>
+            {{ artist_formset.empty_form.url }}
+          </div>
 
-        <div class="delete-cell">
-          <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
-          {{ subform.DELETE }}
+          <div>
+            <label for="{{ artist_formset.empty_form.photo_asset.id_for_label }}">Fotka</label>
+            {{ artist_formset.empty_form.photo_asset }}
+            <p class="small muted">Vyber z obrázků nahraných v galerii.</p>
+          </div>
+
+          <div>
+            <label for="{{ artist_formset.empty_form.photo_position.id_for_label }}">Pozice fotky</label>
+            {{ artist_formset.empty_form.photo_position }}
+          </div>
+
+          <div class="delete-cell">
+            <label for="{{ artist_formset.empty_form.DELETE.id_for_label }}">Smazat</label>
+            {{ artist_formset.empty_form.DELETE }}
+          </div>
         </div>
       </div>
-
-      {% if subform.errors %}
-        <div class="form-errors formset-errors">
-          {% for field in subform %}
-            {% for error in field.errors %}
-              <div>{{ field.label }}: {{ error }}</div>
-            {% endfor %}
-          {% endfor %}
-          {% for error in subform.non_field_errors %}
-            <div>{{ error }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    </div>
-  {% endfor %}
-</div>
+    </template>
+  </div>
 
   <div class="content-section">
     <h3>Odkazy „Zjistit více“</h3>
@@ -491,55 +606,104 @@
     {% endfor %}
   </div>
 
-  <div class="content-section">
+  <div class="content-section js-formset" data-prefix="{{ sponsor_formset.prefix }}">
     <h3>Sponzoři / partneři</h3>
     <p class="section-intro">Volitelně jméno, logo a odkaz.</p>
 
-    {% for subform in sponsor_formset %}
+    <div class="formset-toolbar">
+      <label>
+        Počet zobrazených řádků partnerů
+        <input
+          type="number"
+          min="{{ sponsor_formset.forms|length }}"
+          value="{{ sponsor_formset.forms|length }}"
+          data-formset-target-count
+        >
+      </label>
+
+      <button type="button" data-formset-add>Přidat jeden řádek</button>
+    </div>
+
+    <div class="js-formset-list">
+      {% for subform in sponsor_formset %}
+        <div class="inline-formset-card">
+          {{ subform.id }}
+
+          <div class="form-grid formset-grid-sponsor">
+            <div>
+              <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
+              {{ subform.sort_order }}
+            </div>
+
+            <div>
+              <label for="{{ subform.name.id_for_label }}">Jméno</label>
+              {{ subform.name }}
+            </div>
+
+            <div>
+              <label for="{{ subform.logo_asset.id_for_label }}">Logo</label>
+              {{ subform.logo_asset }}
+            </div>
+
+            <div>
+              <label for="{{ subform.url.id_for_label }}">Odkaz</label>
+              {{ subform.url }}
+            </div>
+
+            <div class="delete-cell">
+              <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
+              {{ subform.DELETE }}
+            </div>
+          </div>
+
+          {% if subform.errors %}
+            <div class="form-errors formset-errors">
+              {% for field in subform %}
+                {% for error in field.errors %}
+                  <div>{{ field.label }}: {{ error }}</div>
+                {% endfor %}
+              {% endfor %}
+              {% for error in subform.non_field_errors %}
+                <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <template class="js-empty-form-template">
       <div class="inline-formset-card">
-        {{ subform.id }}
+        {{ sponsor_formset.empty_form.id }}
 
         <div class="form-grid formset-grid-sponsor">
           <div>
-            <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
-            {{ subform.sort_order }}
+            <label for="{{ sponsor_formset.empty_form.sort_order.id_for_label }}">Pořadí</label>
+            {{ sponsor_formset.empty_form.sort_order }}
           </div>
 
           <div>
-            <label for="{{ subform.name.id_for_label }}">Jméno</label>
-            {{ subform.name }}
+            <label for="{{ sponsor_formset.empty_form.name.id_for_label }}">Jméno</label>
+            {{ sponsor_formset.empty_form.name }}
           </div>
 
           <div>
-            <label for="{{ subform.logo_asset.id_for_label }}">Logo</label>
-            {{ subform.logo_asset }}
+            <label for="{{ sponsor_formset.empty_form.logo_asset.id_for_label }}">Logo</label>
+            {{ sponsor_formset.empty_form.logo_asset }}
           </div>
 
           <div>
-            <label for="{{ subform.url.id_for_label }}">Odkaz</label>
-            {{ subform.url }}
+            <label for="{{ sponsor_formset.empty_form.url.id_for_label }}">Odkaz</label>
+            {{ sponsor_formset.empty_form.url }}
           </div>
 
           <div class="delete-cell">
-            <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
-            {{ subform.DELETE }}
+            <label for="{{ sponsor_formset.empty_form.DELETE.id_for_label }}">Smazat</label>
+            {{ sponsor_formset.empty_form.DELETE }}
           </div>
         </div>
-
-        {% if subform.errors %}
-          <div class="form-errors formset-errors">
-            {% for field in subform %}
-              {% for error in field.errors %}
-                <div>{{ field.label }}: {{ error }}</div>
-              {% endfor %}
-            {% endfor %}
-            {% for error in subform.non_field_errors %}
-              <div>{{ error }}</div>
-            {% endfor %}
-          </div>
-        {% endif %}
       </div>
-    {% endfor %}
+    </template>
   </div>
 
   <div class="content-section">
@@ -595,46 +759,250 @@ document.addEventListener("DOMContentLoaded", function () {
   const select = document.getElementById("{{ form.poster_asset.id_for_label }}");
   const cards = document.querySelectorAll(".selectable-image-card");
 
-  if (!select) return;
-
-  function syncSelectedCard() {
-    const currentValue = select.value;
-    cards.forEach(card => {
-      card.classList.toggle("selected", card.dataset.imageId === currentValue);
-    });
-  }
-
-  function chooseImage(imageId) {
-    select.value = imageId;
-    syncSelectedCard();
-  }
-
-  cards.forEach(card => {
-    const button = card.querySelector(".select-image-button");
-    const imageId = card.dataset.imageId;
-
-    if (button) {
-      button.addEventListener("click", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        chooseImage(imageId);
+  if (select) {
+    function syncSelectedCard() {
+      const currentValue = select.value;
+      cards.forEach(card => {
+        card.classList.toggle("selected", card.dataset.imageId === currentValue);
       });
     }
 
-    card.addEventListener("click", function () {
-      chooseImage(imageId);
-    });
+    function chooseImage(imageId) {
+      select.value = imageId;
+      syncSelectedCard();
+    }
 
-    card.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        chooseImage(imageId);
+    cards.forEach(card => {
+      const button = card.querySelector(".select-image-button");
+      const imageId = card.dataset.imageId;
+
+      if (button) {
+        button.addEventListener("click", function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          chooseImage(imageId);
+        });
       }
-    });
-  });
 
-  select.addEventListener("change", syncSelectedCard);
-  syncSelectedCard();
+      card.addEventListener("click", function () {
+        chooseImage(imageId);
+      });
+
+      card.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          chooseImage(imageId);
+        }
+      });
+    });
+
+    select.addEventListener("change", syncSelectedCard);
+    syncSelectedCard();
+  }
+
+  function initDynamicFormset(root) {
+    const prefix = root.dataset.prefix;
+
+    const totalInput = document.getElementById(`id_${prefix}-TOTAL_FORMS`);
+    const initialInput = document.getElementById(`id_${prefix}-INITIAL_FORMS`);
+    const maxInput = document.getElementById(`id_${prefix}-MAX_NUM_FORMS`);
+
+    const list = root.querySelector(".js-formset-list");
+    const template = root.querySelector(".js-empty-form-template");
+
+    const addButton = root.querySelector("[data-formset-add]");
+    const targetCountInput = root.querySelector("[data-formset-target-count]");
+
+    if (!prefix || !totalInput || !list || !template || !targetCountInput) {
+      return;
+    }
+
+    const renderedInitialCount = list.children.length;
+    const savedInitialCount = initialInput ? (parseInt(initialInput.value, 10) || 0) : 0;
+
+    /*
+      U nového koncertu:
+      - INITIAL_FORMS bude 0
+      - Django ale zobrazí 3 extra řádky
+      - minimum tedy necháme na aktuálně vyrenderovaných řádcích
+
+      U existujícího koncertu:
+      - INITIAL_FORMS odpovídá už uloženým řádkům
+      - níž nepůjdeme, aby se uložené položky nemazaly potichu
+      - existující položky se mažou checkboxem "Smazat"
+    */
+    const minimumVisibleForms = savedInitialCount > 0 ? savedInitialCount : renderedInitialCount;
+
+    function getTotalForms() {
+      return parseInt(totalInput.value, 10) || 0;
+    }
+
+    function setTotalForms(value) {
+      totalInput.value = value;
+    }
+
+    function getMaxForms() {
+      if (!maxInput || !maxInput.value) {
+        return null;
+      }
+
+      const parsed = parseInt(maxInput.value, 10);
+      return Number.isNaN(parsed) ? null : parsed;
+    }
+
+    function clampTargetCount(rawValue) {
+      let targetCount = parseInt(rawValue, 10);
+
+      if (Number.isNaN(targetCount)) {
+        return null;
+      }
+
+      if (targetCount < minimumVisibleForms) {
+        targetCount = minimumVisibleForms;
+      }
+
+      const maxForms = getMaxForms();
+
+      if (maxForms !== null && targetCount > maxForms) {
+        targetCount = maxForms;
+      }
+
+      return targetCount;
+    }
+
+    function syncTargetInputValue() {
+      const currentTotal = getTotalForms();
+
+      targetCountInput.min = minimumVisibleForms;
+
+      const maxForms = getMaxForms();
+      if (maxForms !== null) {
+        targetCountInput.max = maxForms;
+      }
+
+      targetCountInput.value = currentTotal;
+    }
+
+    function addOneForm(options = {}) {
+      const shouldFocus = options.focus !== false;
+      const currentTotal = getTotalForms();
+      const maxForms = getMaxForms();
+
+      if (maxForms !== null && currentTotal >= maxForms) {
+        return false;
+      }
+
+      const html = template.innerHTML.replaceAll("__prefix__", currentTotal);
+      list.insertAdjacentHTML("beforeend", html);
+
+      setTotalForms(currentTotal + 1);
+
+      const newCard = list.lastElementChild;
+
+      if (newCard) {
+        const sortInput = newCard.querySelector('input[name$="-sort_order"]');
+
+        if (sortInput && !sortInput.value) {
+          sortInput.value = currentTotal + 1;
+        }
+
+        if (shouldFocus) {
+          const firstInput = newCard.querySelector("input:not([type='hidden']):not([type='checkbox']), textarea, select");
+
+          if (firstInput) {
+            firstInput.focus();
+          }
+        }
+      }
+
+      return true;
+    }
+
+    function removeOneForm() {
+      const currentTotal = getTotalForms();
+
+      if (currentTotal <= minimumVisibleForms) {
+        return false;
+      }
+
+      const lastCard = list.lastElementChild;
+
+      if (!lastCard) {
+        return false;
+      }
+
+      lastCard.remove();
+      setTotalForms(currentTotal - 1);
+
+      return true;
+    }
+
+    function syncVisibleFormsToInput() {
+      const targetCount = clampTargetCount(targetCountInput.value);
+
+      if (targetCount === null) {
+        return;
+      }
+
+      targetCountInput.value = targetCount;
+
+      while (getTotalForms() < targetCount) {
+        const added = addOneForm({ focus: false });
+
+        if (!added) {
+          break;
+        }
+      }
+
+      while (getTotalForms() > targetCount) {
+        const removed = removeOneForm();
+
+        if (!removed) {
+          break;
+        }
+      }
+
+      targetCountInput.value = getTotalForms();
+    }
+
+    if (addButton) {
+      addButton.addEventListener("click", function () {
+        const added = addOneForm({ focus: true });
+
+        if (added) {
+          targetCountInput.value = getTotalForms();
+        }
+      });
+    }
+
+    targetCountInput.addEventListener("input", function () {
+      /*
+        Když člověk číslo maže a pole je dočasně prázdné,
+        necháme ho dopsat hodnotu a nesaháme na řádky.
+      */
+      if (targetCountInput.value === "") {
+        return;
+      }
+
+      syncVisibleFormsToInput();
+    });
+
+    targetCountInput.addEventListener("change", function () {
+      /*
+        Když člověk pole opustí prázdné, vrátíme tam aktuální počet.
+      */
+      if (targetCountInput.value === "") {
+        targetCountInput.value = getTotalForms();
+        return;
+      }
+
+      syncVisibleFormsToInput();
+    });
+
+    syncTargetInputValue();
+  }
+
+  document.querySelectorAll(".js-formset").forEach(initDynamicFormset);
 });
 </script>
 {% endblock rozesilac_content %}
