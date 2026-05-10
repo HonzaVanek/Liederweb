@@ -19,7 +19,10 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from core.admin_log_views import system_logs_view
+
 urlpatterns = [
+    path("admin/system-logs/", system_logs_view, name="system_logs"),
     path('admin/', admin.site.urls),
     path("", include(("core.urls", "core"), namespace="core")),
     path('rozesilac/', include('rozesilac.urls', namespace='rozesilac')),

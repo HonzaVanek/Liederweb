@@ -1,0 +1,83 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+<p class="help">
+    Logy mohou obsahovat IP adresy, URL tokeny nebo technické údaje.
+    Stránka je dostupná pouze superuserovi.
+</p>
+<form method="get" style="margin: 0 0 20px 0;">
+    <label for="log">Log:</label>
+    <select name="log" id="log">
+        {% for key, path in available_logs.items %}
+            <option value="{{ key }}" {% if key == selected_log %}selected{% endif %}>
+                {{ key }} — {{ path }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <label for="lines" style="margin-left: 12px;">Počet řádků:</label>
+    <input
+        type="number"
+        name="lines"
+        id="lines"
+        value="{{ lines }}"
+        min="10"
+        max="{{ max_lines }}"
+        step="10"
+        style="width: 90px;"
+    >
+
+    <button type="submit" class="button">Zobrazit</button>
+</form>
+
+<p>
+    <strong>Soubor:</strong>
+    <code>{{ selected_path }}</code>
+</p>
+
+{% if error_message %}
+    <p class="errornote">{{ error_message }}</p>
+{% endif %}
+
+<pre style="
+    background: #111;
+    color: #eee;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    font-size: 13px;
+    line-height: 1.45;
+">{{ log_text }}</pre>
+
+<h2>Návštěvnost webu</h2>
+
+<p class="help">
+    Orientační denní statistika. Počítá unikátní kombinace IP adresy a prohlížeče,
+    uložené pouze jako hash. Nezahrnuje admin, static/media soubory a část botů.
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Den</th>
+            <th>Unikátní návštěvníci</th>
+            <th>Zobrazení stránek</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in daily_stats %}
+            <tr>
+                <td>{{ row.day }}</td>
+                <td>{{ row.unique_visitors }}</td>
+                <td>{{ row.pageviews|default:0 }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="3">Zatím nejsou žádná data.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

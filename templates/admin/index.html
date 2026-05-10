@@ -1,0 +1,22 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+<div class="module">
+    <table>
+        <caption>
+            Systém
+        </caption>
+        <tbody>
+            <tr>
+                <th scope="row">
+                    <a href="{% url 'system_logs' %}">Systémové logy</a>
+                </th>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+{{ block.super }}
+{% endblock %}

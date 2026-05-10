@@ -3,6 +3,12 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 
+import hashlib
+
+from django.conf import settings
+from django.db import models
+from django.utils import timezone
+
 def person_photo_upload_to(instance, filename):
     return f"people/{instance.slug or 'unsorted'}/{filename}"
 
@@ -159,3 +165,30 @@ class Partner(models.Model):
     @property
     def effective_alt_text(self):
         return self.alt_text or self.name
+    
+
+
+
+
+# statistiky přístupů na web:
+
+class DailySiteVisitor(models.Model):
+    day = models.DateField(db_index=True)
+    visitor_hash = models.CharField(max_length=64, db_index=True)
+
+    pageviews = models.PositiveIntegerField(default=0)
+
+    first_seen_at = models.DateTimeField(default=timezone.now)
+    last_seen_at = models.DateTimeField(default=timezone.now)
+
+    first_path = models.CharField(max_length=500, blank=True)
+    last_path = models.CharField(max_length=500, blank=True)
+
+    class Meta:
+        unique_together = ("day", "visitor_hash")
+        ordering = ["-day", "visitor_hash"]
+        verbose_name = "Denní návštěvník"
+        verbose_name_plural = "Denní návštěvníci"
+
+    def __str__(self):
+        return f"{self.day} — {self.visitor_hash[:8]} — {self.pageviews} views"
