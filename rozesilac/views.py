@@ -11,6 +11,7 @@ from django.db.models import OuterRef, Sum, Exists, Prefetch
 from django.db.models.deletion import ProtectedError
 from media_assets.models import MediaAsset
 from .forms import EmailTemplateForm, EmailImageUploadForm, ContactForm, ContactImportForm, ContactGroupForm, SendCampaignForm, NewsletterImageUploadForm
+from .scheduling import (find_scheduled_campaign_conflict, get_min_allowed_scheduled_at, get_scheduled_campaign_min_gap_minutes)
 from .email_limits import get_daily_email_usage, get_email_count_for_send_form
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -1007,6 +1008,13 @@ def send(request):
     templates_for_preview = EmailTemplate.objects.all().order_by("name")
     daily_email_usage = get_daily_email_usage()
 
+    running_campaign = (
+        EmailCampaign.objects
+        .filter(status="sending")
+        .order_by("-started_at", "-id")
+        .first()
+    )
+
     if request.method == "POST":
         form = SendCampaignForm(request.POST)
 
@@ -1020,6 +1028,39 @@ def send(request):
             note = form.cleaned_data.get("note", "")
             event = form.cleaned_data.get("event")
             from_email = form.cleaned_data.get("from_email") or settings.NEWSLETTER_DEFAULT_FROM_EMAIL
+
+            # --------------------------------------------------
+            # Zabránění více okamžitým odesíláním najednou
+            # --------------------------------------------------
+
+            if delivery_mode == "now" and running_campaign:
+                started_at_text = (
+                    timezone.localtime(running_campaign.started_at).strftime("%d.%m.%Y %H:%M")
+                    if running_campaign.started_at
+                    else "neznámý čas"
+                )
+
+                form.add_error(
+                    None,
+                    (
+                        f"Jiná kampaň (ID {running_campaign.id}) právě odesílá "
+                        f"a začala v {started_at_text}. "
+                        f"Abyste předešli problémům s Brevo limity, nelze spustit "
+                        f"více kampaní najednou. Zkuste to prosím později, až se "
+                        f"aktuální kampaň dokončí."
+                    ),
+                )
+
+                return render(
+                    request,
+                    "rozesilac/send.html",
+                    {
+                        "form": form,
+                        "templates_for_preview": templates_for_preview,
+                        "daily_email_usage": daily_email_usage,
+                        "running_campaign": running_campaign,
+                    },
+                )
 
             # --------------------------------------------------
             # Brevo daily limit – kontrola před vytvořením kampaně
@@ -1047,6 +1088,7 @@ def send(request):
                         "form": form,
                         "templates_for_preview": templates_for_preview,
                         "daily_email_usage": daily_email_usage,
+                        "running_campaign": running_campaign,
                     },
                 )
 
@@ -1074,7 +1116,7 @@ def send(request):
             )
 
             # --------------------------------------------------
-            # připravíme a uložíme seznam příjemců do deliveries
+            # Připravíme a uložíme seznam příjemců do deliveries
             # --------------------------------------------------
 
             if is_test:
@@ -1096,7 +1138,7 @@ def send(request):
                     )
 
             # --------------------------------------------------
-            # scheduled = jen uložit a skončit
+            # Scheduled = jen uložit a skončit
             # --------------------------------------------------
 
             if delivery_mode == "scheduled":
@@ -1107,10 +1149,11 @@ def send(request):
                 return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
 
             # --------------------------------------------------
-            # immediate send
+            # Immediate send
             # --------------------------------------------------
 
             base_url = f"{request.scheme}://{request.get_host()}"
+
             sent_count, failed_count = send_campaign_deliveries(
                 campaign=campaign,
                 base_url=base_url,
@@ -1140,6 +1183,7 @@ def send(request):
             "form": form,
             "templates_for_preview": templates_for_preview,
             "daily_email_usage": daily_email_usage,
+            "running_campaign": running_campaign,
         },
     )
 
@@ -1294,21 +1338,60 @@ def campaign_reschedule(request, campaign_id):
 
     try:
         parsed_dt = datetime.strptime(raw_scheduled_at, "%Y-%m-%dT%H:%M")
-        scheduled_at = timezone.make_aware(parsed_dt, timezone.get_current_timezone())
+        scheduled_at = timezone.make_aware(
+            parsed_dt,
+            timezone.get_current_timezone(),
+        )
     except ValueError:
         messages.error(request, "Neplatný formát data a času.")
         return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
 
-    if scheduled_at <= timezone.now():
-        messages.error(request, "Nový čas odeslání musí být v budoucnosti.")
+    min_gap_minutes = get_scheduled_campaign_min_gap_minutes()
+    min_allowed_scheduled_at = get_min_allowed_scheduled_at()
+
+    if scheduled_at < min_allowed_scheduled_at:
+        messages.error(
+            request,
+            f"Nový čas odeslání musí být alespoň {min_gap_minutes} minut v budoucnosti.",
+        )
         return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
 
-    campaign.scheduled_at = scheduled_at
-    campaign.save(update_fields=["scheduled_at"])
+    conflict = find_scheduled_campaign_conflict(
+        scheduled_at,
+        exclude_campaign_id=campaign.id,
+    )
+
+    if conflict:
+        conflict_time = timezone.localtime(conflict.scheduled_at).strftime("%d.%m.%Y %H:%M")
+
+        messages.error(
+            request,
+            (
+                f"V okolí tohoto času už je naplánovaná kampaň "
+                f"„{conflict.subject}“ na {conflict_time}. "
+                f"Mezi naplánovanými kampaněmi musí být aspoň "
+                f"{min_gap_minutes} minut rozdíl."
+            ),
+        )
+        return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
+
+    updated_count = EmailCampaign.objects.filter(
+        id=campaign.id,
+        status="scheduled",
+    ).update(
+        scheduled_at=scheduled_at,
+    )
+
+    if updated_count == 0:
+        messages.error(
+            request,
+            "Kampaň už nelze přeplánovat. Pravděpodobně už není naplánovaná nebo ji právě převzal cron a je zrovna odesílána.",
+        )
+        return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
 
     messages.success(
         request,
-        f"Kampaň byla přeplánována na {timezone.localtime(campaign.scheduled_at):%d.%m.%Y %H:%M}."
+        f"Kampaň byla přeplánována na {timezone.localtime(scheduled_at):%d.%m.%Y %H:%M}.",
     )
     return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
 

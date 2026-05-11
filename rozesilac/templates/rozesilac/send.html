@@ -53,6 +53,15 @@
 </section>
 {% endif %}
 
+
+{% if running_campaign %}
+  <div class="form-errors" style="margin-bottom: 15px;">
+    Právě se odesílá kampaň
+    <strong>{{ running_campaign.subject }}</strong>.
+    Okamžité odeslání další kampaně je dočasně zablokované.
+  </div>
+{% endif %}
+
 {% if messages %}
 <ul class="messages">
   {% for m in messages %}
@@ -160,7 +169,7 @@
     <label for="{{ form.scheduled_at.id_for_label }}">Naplánovat na</label>
     {{ form.scheduled_at }}
     <p class="small muted" style="margin-top: 6px;">
-      Čas se bere podle lokálního času serveru / aplikace. Takže radši se v tom nevrtej v zahraničí :)
+      Čas se bere podle lokálního času serveru / aplikace. Takže radši se v tom nevrtej v zahraničí :) Mezi dvěma naplánovanými kampaněmi musí být alespoň 5 minut rozdíl.
     </p>
     {% for e in form.scheduled_at.errors %}
       <div class="form-errors">{{ e }}</div>

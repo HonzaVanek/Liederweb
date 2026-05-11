@@ -2,6 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 import re
 from bs4 import BeautifulSoup
+from django.utils import timezone
 from rozesilac.models import EmailTemplate, EmailImage, ContactGroup, Contact
 from events.models import Event
 from django.conf import settings
@@ -9,6 +10,7 @@ from django.db.models import Sum
 
 from pathlib import Path
 from media_assets.models import MediaAsset
+from .scheduling import (find_scheduled_campaign_conflict, get_min_allowed_scheduled_at, get_scheduled_campaign_min_gap_minutes)
 
 
 #přepis html emailu do plaintextu:
@@ -321,7 +323,16 @@ class SendCampaignForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         # popisek skupiny s počtem aktivních kontaktů
-        self.fields["groups"].label_from_instance = lambda obj: f"{obj.name} ({obj.contacts.filter(is_active=True).count()})"
+        self.fields["groups"].label_from_instance = (
+            lambda obj: f"{obj.name} ({obj.contacts.filter(is_active=True).count()})"
+        )
+
+        min_scheduled_at = timezone.localtime(get_min_allowed_scheduled_at()).strftime("%Y-%m-%dT%H:%M")
+
+        self.fields["scheduled_at"].widget.attrs.update({
+            "min": min_scheduled_at,
+            "step": "60",
+        })
 
     def clean(self):
         cleaned_data = super().clean()
@@ -335,33 +346,70 @@ class SendCampaignForm(forms.Form):
 
         if send_mode == "test":
             if not test_email:
-                self.add_error("test_email", "U testovacího režimu musíš vyplnit testovací email.")
+                self.add_error(
+                    "test_email",
+                    "U testovacího režimu musíš vyplnit testovací email.",
+                )
 
         elif send_mode == "live":
             if not groups or groups.count() == 0:
-                self.add_error("groups", "Pro ostré rozeslání musíš vybrat aspoň jednu skupinu.")
+                self.add_error(
+                    "groups",
+                    "Pro ostré rozeslání musíš vybrat aspoň jednu skupinu.",
+                )
 
             if not contacts or contacts.count() == 0:
-                self.add_error("contacts", "Pro ostré rozeslání musíš nechat vybraný aspoň jeden kontakt.")
+                self.add_error(
+                    "contacts",
+                    "Pro ostré rozeslání musíš nechat vybraný aspoň jeden kontakt.",
+                )
 
         if delivery_mode == "scheduled":
             if send_mode != "live":
-                self.add_error("delivery_mode", "Naplánovat lze jen ostré rozeslání, ne testovací email.")
+                self.add_error(
+                    "delivery_mode",
+                    "Naplánovat lze jen ostré rozeslání, ne testovací email.",
+                )
 
             if not scheduled_at:
-                self.add_error("scheduled_at", "Pro naplánované odeslání musíš vyplnit datum a čas.")
+                self.add_error(
+                    "scheduled_at",
+                    "Pro naplánované odeslání musíš vyplnit datum a čas.",
+                )
 
             else:
-                from django.utils import timezone
-
                 if timezone.is_naive(scheduled_at):
                     scheduled_at = timezone.make_aware(
                         scheduled_at,
-                        timezone.get_current_timezone()
+                        timezone.get_current_timezone(),
                     )
                     cleaned_data["scheduled_at"] = scheduled_at
 
-                if scheduled_at <= timezone.now():
-                    self.add_error("scheduled_at", "Naplánovaný čas musí být v budoucnosti.")
+                min_gap_minutes = get_scheduled_campaign_min_gap_minutes()
+                min_allowed_scheduled_at = get_min_allowed_scheduled_at()
+
+                if scheduled_at < min_allowed_scheduled_at:
+                    self.add_error(
+                        "scheduled_at",
+                        f"Kampaň lze naplánovat nejdřív za {min_gap_minutes} minut.",
+                    )
+
+                else:
+                    conflict = find_scheduled_campaign_conflict(scheduled_at)
+
+                    if conflict:
+                        conflict_time = timezone.localtime(
+                            conflict.scheduled_at
+                        ).strftime("%d.%m.%Y %H:%M")
+
+                        self.add_error(
+                            "scheduled_at",
+                            (
+                                f"V okolí tohoto času už je naplánovaná kampaň "
+                                f"„{conflict.subject}“ na {conflict_time}. "
+                                f"Mezi naplánovanými kampaněmi musí být aspoň "
+                                f"{min_gap_minutes} minut rozdíl."
+                            ),
+                        )
 
         return cleaned_data
