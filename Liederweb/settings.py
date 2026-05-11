@@ -280,7 +280,9 @@ if APP_ENV == "prod":
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
     BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 else:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    # dočasně vypneme EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+    EMAIL_FILE_PATH = BASE_DIR / "tmp" / "emails"
     DEFAULT_FROM_EMAIL = "local@test.project"
 
 #zatím jen mně, ale to se musí změnit :)

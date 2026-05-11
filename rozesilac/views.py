@@ -12,7 +12,7 @@ from django.db.models.deletion import ProtectedError
 from media_assets.models import MediaAsset
 from .forms import EmailTemplateForm, EmailImageUploadForm, ContactForm, ContactImportForm, ContactGroupForm, SendCampaignForm, NewsletterImageUploadForm
 from .scheduling import (find_scheduled_campaign_conflict, get_min_allowed_scheduled_at, get_scheduled_campaign_min_gap_minutes)
-from .email_limits import get_daily_email_usage, get_email_count_for_send_form
+from .email_limits import get_daily_email_usage, get_email_count_for_send_form, can_fit_email_count_in_day
 from django.contrib import messages
 from django.shortcuts import redirect
 from openpyxl import load_workbook
@@ -950,7 +950,7 @@ def send_campaign_deliveries(campaign, base_url: str, from_email: str):
     deliveries = campaign.deliveries.filter(status="queued").order_by("id")
 
     for delivery in deliveries:
-        daily_email_usage = get_daily_email_usage()
+        daily_email_usage = get_daily_email_usage(exclude_campaign_id=campaign.id)
 
         if daily_email_usage["remaining"] <= 0:
             limit_reached = True
@@ -980,6 +980,7 @@ def send_campaign_deliveries(campaign, base_url: str, from_email: str):
 
     campaign.finished_at = timezone.now()
     queued_count = campaign.deliveries.filter(status="queued").count()
+    total_failed_count = campaign.deliveries.filter(status="failed").count()
 
     if limit_reached and queued_count > 0:
         tomorrow = timezone.localtime() + timedelta(days=1)
@@ -988,12 +989,14 @@ def send_campaign_deliveries(campaign, base_url: str, from_email: str):
 
         limit_note = "Odesílání bylo přerušeno kvůli dennímu Brevo limitu. Zbytek zůstává ve frontě."
 
-        if limit_note not in campaign.note:
-            campaign.note = ((campaign.note + " | ") if campaign.note else "") + limit_note
+        current_note = campaign.note or ""
+
+        if limit_note not in current_note:
+            campaign.note = ((current_note + " | ") if current_note else "") + limit_note
 
         campaign.save(update_fields=["status", "finished_at", "scheduled_at", "note"])
 
-    elif failed_count == 0 and queued_count == 0:
+    elif queued_count == 0 and total_failed_count == 0:
         campaign.status = "sent"
         campaign.save(update_fields=["status", "finished_at"])
 
@@ -1033,7 +1036,7 @@ def send(request):
             # Zabránění více okamžitým odesíláním najednou
             # --------------------------------------------------
 
-            if delivery_mode == "now" and running_campaign:
+            if running_campaign:
                 started_at_text = (
                     timezone.localtime(running_campaign.started_at).strftime("%d.%m.%Y %H:%M")
                     if running_campaign.started_at
@@ -1045,8 +1048,8 @@ def send(request):
                     (
                         f"Jiná kampaň (ID {running_campaign.id}) právě odesílá "
                         f"a začala v {started_at_text}. "
-                        f"Abyste předešli problémům s Brevo limity, nelze spustit "
-                        f"více kampaní najednou. Zkuste to prosím později, až se "
+                        f"Abyste předešli problémům s Brevo limity, nelze teď vytvořit "
+                        f"ani spustit další kampaň. Zkuste to prosím později, až se "
                         f"aktuální kampaň dokončí."
                     ),
                 )
@@ -1069,15 +1072,29 @@ def send(request):
             daily_email_usage = get_daily_email_usage()
             emails_to_send_count = get_email_count_for_send_form(form.cleaned_data)
 
-            if delivery_mode == "now" and emails_to_send_count > daily_email_usage["remaining"]:
+            if delivery_mode == "scheduled":
+                limit_day = scheduled_at
+            else:
+                limit_day = timezone.now()
+
+            capacity_check = can_fit_email_count_in_day(
+                emails_to_send_count,
+                day=limit_day,
+            )
+
+            if not capacity_check["ok"]:
+                day_label = timezone.localtime(limit_day).strftime("%d.%m.%Y")
+
                 form.add_error(
                     None,
                     (
-                        f"Denní limit Brevo by byl překročen. "
-                        f"Dnes už bylo odesláno {daily_email_usage['sent']} "
-                        f"z {daily_email_usage['limit']} e-mailů, "
-                        f"zbývá {daily_email_usage['remaining']}, "
-                        f"ale tahle rozesílka má {emails_to_send_count} příjemců."
+                        f"Kampaň nelze vytvořit, protože by překročila denní limit Brevo "
+                        f"pro den {day_label}. "
+                        f"Limit je {capacity_check['limit']} e-mailů. "
+                        f"Už odesláno: {capacity_check['sent']}, "
+                        f"rezervováno naplánovanými nebo běžícími kampaněmi: {capacity_check['reserved']}, "
+                        f"zbývá: {capacity_check['remaining']}, "
+                        f"tahle kampaň má {emails_to_send_count} příjemců."
                     ),
                 )
 
@@ -1371,6 +1388,30 @@ def campaign_reschedule(request, campaign_id):
                 f"„{conflict.subject}“ na {conflict_time}. "
                 f"Mezi naplánovanými kampaněmi musí být aspoň "
                 f"{min_gap_minutes} minut rozdíl."
+            ),
+        )
+        return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
+
+    queued_count = campaign.deliveries.filter(status="queued").count()
+
+    capacity_check = can_fit_email_count_in_day(
+        queued_count,
+        day=scheduled_at,
+        exclude_campaign_id=campaign.id,
+    )
+
+    if not capacity_check["ok"]:
+        day_label = timezone.localtime(scheduled_at).strftime("%d.%m.%Y")
+
+        messages.error(
+            request,
+            (
+                f"Kampaň nelze přeplánovat na {day_label}, protože by překročila denní limit Brevo. "
+                f"Limit je {capacity_check['limit']} e-mailů. "
+                f"Už odesláno: {capacity_check['sent']}, "
+                f"rezervováno: {capacity_check['reserved']}, "
+                f"zbývá: {capacity_check['remaining']}, "
+                f"tahle kampaň má ve frontě: {queued_count} příjemců."
             ),
         )
         return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)

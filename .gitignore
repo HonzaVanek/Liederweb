@@ -12,3 +12,4 @@ db.sqlite3.backup
 users.json
 .vscode/settings.json
 rozesilac/send_zaloha.py
+tmp/

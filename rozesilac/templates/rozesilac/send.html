@@ -34,7 +34,11 @@
         <strong>{{ daily_email_usage.sent }}</strong>
       </div>
       <div>
-        <span>Dnes zbývá</span>
+        <span>Dnes rezervováno</span>
+        <strong>{{ daily_email_usage.reserved }}</strong>
+      </div>
+      <div>
+        <span>Dnes volná kapacita</span>
         <strong>{{ daily_email_usage.remaining }}</strong>
       </div>
     </div>
@@ -48,7 +52,7 @@
   </div>
 
   <p class="daily-email-limit-card__note">
-    Počítadlo vychází z e-mailů odeslaných přes tuto aplikaci, ne přímo z administrace Brevo.
+      Počítadlo vychází z e-mailů odeslaných (viz dnes odesláno) a z naplánovaných kampaní (viz to dnes rezervováno), ne přímo z administrace Brevo.
   </p>
 </section>
 {% endif %}

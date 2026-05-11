@@ -252,6 +252,10 @@ body.dark-mode #scheduled-at-row {
     margin-top: 4px;
 }
 
+/* =========================================================
+   DAILY EMAIL LIMIT CARD
+   ========================================================= */
+
 .daily-email-limit-card {
     margin: 0 0 24px 0;
     padding: 18px 20px;
@@ -259,13 +263,29 @@ body.dark-mode #scheduled-at-row {
     border: 1px solid #d8d8d2;
     border-left: 5px solid #111;
     border-radius: 12px;
+
+    display: grid;
+    grid-template-columns: auto minmax(260px, 1fr);
+    grid-template-areas:
+        "main note"
+        "bar bar";
+    column-gap: 28px;
+    row-gap: 14px;
+    align-items: flex-start;
 }
 
 .daily-email-limit-card__main {
+    grid-area: main;
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 24px;
+    min-width: 0;
+}
+
+.daily-email-limit-card__main > div:first-child {
+    flex: 0 0 280px;
+    max-width: 280px;
 }
 
 .daily-email-limit-card h3 {
@@ -281,10 +301,12 @@ body.dark-mode #scheduled-at-row {
 .daily-email-limit-card__numbers {
     display: flex;
     gap: 14px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    flex: 0 0 auto;
 }
 
 .daily-email-limit-card__numbers div {
+    width: 120px;
     min-width: 120px;
     padding: 10px 12px;
     background: #fff;
@@ -306,9 +328,19 @@ body.dark-mode #scheduled-at-row {
     color: #111;
 }
 
+.daily-email-limit-card__note {
+    grid-area: note;
+    margin: 0 !important;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    min-width: 0;
+    max-width: none;
+}
+
 .daily-email-limit-card__bar {
+    grid-area: bar;
     height: 9px;
-    margin-top: 16px;
+    margin-top: 0;
     background: #e0e0dc;
     border-radius: 999px;
     overflow: hidden;
@@ -318,11 +350,6 @@ body.dark-mode #scheduled-at-row {
     height: 100%;
     background: #111;
     border-radius: 999px;
-}
-
-.daily-email-limit-card__note {
-    margin-top: 10px !important;
-    font-size: 0.9rem;
 }
 
 .daily-email-limit-card.is-warning {
@@ -372,16 +399,36 @@ body.dark-mode .daily-email-limit-card__bar-fill {
     background: #eee;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 1400px) {
+    .daily-email-limit-card {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "main"
+            "note"
+            "bar";
+    }
+
+    .daily-email-limit-card__note {
+        margin-top: 0 !important;
+    }
+}
+
+@media (max-width: 1000px) {
     .daily-email-limit-card__main {
         display: block;
     }
 
+    .daily-email-limit-card__main > div:first-child {
+        max-width: none;
+    }
+
     .daily-email-limit-card__numbers {
         margin-top: 14px;
+        flex-wrap: wrap;
     }
 
     .daily-email-limit-card__numbers div {
         flex: 1 1 120px;
+        width: auto;
     }
 }
