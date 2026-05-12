@@ -5,6 +5,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, CreateView, UpdateView
+from django.db import transaction
+from django.db.models.deletion import ProtectedError
 
 from core.decorators import staff_required
 from .forms import MediaAssetForm, MEDIA_ASSETS_TOTAL_LIMIT
@@ -20,6 +22,7 @@ def get_asset_usage(asset):
 
     checks = [
         ("Profily lidí", asset.person_profiles.count()),
+        ("Partneři – logo", asset.partner_logos.count()),
         ("Koncerty – plakát", asset.events_as_poster_asset.count()),
         ("Koncerty – hero", asset.events_as_hero_asset.count()),
         ("Koncerty – sekundární obrázek", asset.events_as_secondary_asset.count()),
@@ -149,18 +152,21 @@ def asset_delete(request, pk):
         return HttpResponseForbidden("Pouze POST.")
 
     asset = get_object_or_404(MediaAsset, pk=pk)
-    usage = get_asset_usage(asset)
 
-    if usage["is_used"]:
+    storage = asset.file.storage if asset.file else None
+    file_name = asset.file.name if asset.file else None
+
+    try:
+        asset.delete()
+    except ProtectedError:
         messages.error(
             request,
             "Soubor nelze smazat, protože se stále používá jinde na webu."
         )
         return redirect("media_assets:asset_update", pk=asset.pk)
 
-    if asset.file:
-        asset.file.delete(save=False)
-    asset.delete()
+    if storage and file_name:
+        transaction.on_commit(lambda: storage.delete(file_name))
 
     messages.success(request, "Soubor byl smazán.")
     return redirect("media_assets:asset_list")

@@ -25,6 +25,7 @@ import requests
 import html
 import re
 from urllib.parse import quote, unquote, urlparse
+from django.db import transaction
 
 # Create your views here.
 
@@ -558,9 +559,20 @@ def images(request):
             image_id = request.POST.get("image_id")
             obj = get_object_or_404(MediaAsset, id=image_id)
 
-            if obj.file:
-                obj.file.delete(save=False)
-            obj.delete()
+            storage = obj.file.storage if obj.file else None
+            file_name = obj.file.name if obj.file else None
+
+            try:
+                obj.delete()
+            except ProtectedError:
+                messages.error(
+                    request,
+                    "Obrázek nelze smazat, protože se stále používá jinde na webu."
+                )
+                return redirect("rozesilac:images")
+
+            if storage and file_name:
+                transaction.on_commit(lambda: storage.delete(file_name))
 
             messages.success(request, "Obrázek byl smazán.")
             return redirect("rozesilac:images")
