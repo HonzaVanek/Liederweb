@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.utils import timezone
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode, url_has_allowed_host_and_scheme
+from django.http import HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
@@ -26,7 +27,58 @@ from rozesilac.models import Contact
 from rozesilac.services import get_web_contacts_group
 
 
+def robots_txt(request):
+    content = """# Lieder Society
+# https://www.liedersociety.website/robots.txt
 
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Meta-ExternalAgent
+Disallow: /
+
+User-agent: FacebookBot
+Disallow: /
+
+User-agent: *
+Allow: /
+
+Disallow: /admin/
+Disallow: /staff/
+Disallow: /rozesilac/
+Disallow: /media-assets/
+
+Disallow: /login/
+Disallow: /logout/
+Disallow: /registrace/
+Disallow: /password-reset/
+Disallow: /reset/
+Disallow: /activate/
+
+Disallow: /events/create/
+Disallow: /events/vip/
+Disallow: /events/*/edit/
+Disallow: /events/*/tickets/
+Disallow: /events/*/export-vip/
+
+# Sitemap: https://www.liedersociety.website/sitemap.xml
+"""
+    return HttpResponse(content, content_type="text/plain")
 
 
 

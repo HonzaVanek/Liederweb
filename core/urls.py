@@ -7,6 +7,7 @@ app_name = 'core'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path("robots.txt", views.robots_txt, name="robots_txt"),
     path('login/', VlastniLoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='core:login'), name='logout'),
     path('registrace/', views.registrace, name='registrace'),
