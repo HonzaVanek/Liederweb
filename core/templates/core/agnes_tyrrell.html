@@ -197,5 +197,73 @@
         </div>
     </section>
 
+
+
+    <section id="newsletter-signup" class="agnes-section agnes-newsletter-section" aria-labelledby="agnes-newsletter-title">
+        <div class="agnes-section-inner agnes-newsletter-inner">
+            <div class="agnes-newsletter-content">
+                <p class="agnes-section-label">Newsletter</p>
+
+                <h2 id="agnes-newsletter-title">
+                    Zůstaňte v kontaktu s&nbsp;Lieder Society
+                </h2>
+
+                <p>
+                    Přihlaste se k odběru novinek o koncertech, projektech a dalších aktivitách
+                    Lieder Society. Pošleme vám i další informace o projektu Agnes Tyrrell.
+                </p>
+            </div>
+
+            <form class="agnes-newsletter-form" method="post" action="{% url 'core:newsletter_signup' %}">
+                {% csrf_token %}
+
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+
+                {% if messages %}
+                    <div class="agnes-newsletter-messages" aria-live="polite">
+                        {% for message in messages %}
+                            {% if "newsletter" in message.tags %}
+                                <div class="agnes-newsletter-message agnes-newsletter-message--{{ message.level_tag }}">
+                                    {{ message }}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="agnes-newsletter-trap" aria-hidden="true">
+                    <label for="agnes-newsletter-website">Web</label>
+                    <input id="agnes-newsletter-website" type="text" name="website" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div class="agnes-newsletter-field">
+                    <label for="agnes-newsletter-email">E-mail</label>
+                    <input
+                        id="agnes-newsletter-email"
+                        type="email"
+                        name="email"
+                        required
+                        autocomplete="email"
+                        placeholder="vas@email.cz"
+                    >
+                </div>
+
+                <div class="agnes-newsletter-field">
+                    <label for="agnes-newsletter-name">Jméno <span>nepovinné</span></label>
+                    <input
+                        id="agnes-newsletter-name"
+                        type="text"
+                        name="name"
+                        autocomplete="name"
+                        placeholder="Vaše jméno"
+                    >
+                </div>
+
+                <button type="submit" class="agnes-newsletter-button">
+                    Přihlásit se k newsletteru
+                </button>
+            </form>
+        </div>
+    </section>
 </main>
 {% endblock content %}

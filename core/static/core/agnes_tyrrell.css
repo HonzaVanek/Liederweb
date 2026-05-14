@@ -446,6 +446,10 @@ body {
     .agnes-support-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .agnes-hero-image {
+        object-position: center 20%;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -459,6 +463,168 @@ body {
 
     .agnes-primary-button:hover,
     .agnes-primary-button:focus-visible {
+        transform: none;
+    }
+}
+
+
+.agnes-newsletter-section {
+    padding-top: 72px;
+    padding-bottom: 80px;
+    background:
+        radial-gradient(circle at top left, rgba(232, 207, 155, 0.12), transparent 28rem),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.055));
+    border-top: 1px solid var(--agnes-line);
+}
+
+.agnes-newsletter-content p:not(.agnes-section-label) {
+    margin: 22px 0 0;
+    color: var(--agnes-muted);
+    line-height: 1.65;
+    font-size: 1.05rem;
+}
+
+.agnes-newsletter-form {
+    margin-top: 30px;
+    padding: 22px;
+    border: 1px solid rgba(255, 248, 243, 0.18);
+    border-radius: 28px;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.095), rgba(255, 255, 255, 0.045)),
+        rgba(255, 255, 255, 0.05);
+    box-shadow: var(--agnes-shadow);
+}
+
+.agnes-newsletter-field {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.agnes-newsletter-field label {
+    color: var(--agnes-text);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.agnes-newsletter-field label span {
+    color: var(--agnes-faint);
+    font-weight: 500;
+}
+
+.agnes-newsletter-field input {
+    width: 100%;
+    min-height: 50px;
+    padding: 0 16px;
+    border: 1px solid rgba(255, 248, 243, 0.2);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--agnes-text);
+    font: inherit;
+    outline: none;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.agnes-newsletter-field input::placeholder {
+    color: rgba(255, 248, 243, 0.45);
+}
+
+.agnes-newsletter-field input:focus {
+    border-color: rgba(232, 207, 155, 0.72);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 4px rgba(232, 207, 155, 0.12);
+}
+
+.agnes-newsletter-button {
+    width: 100%;
+    min-height: 52px;
+    margin-top: 4px;
+    border: 1px solid rgba(255, 248, 243, 0.34);
+    border-radius: 999px;
+    background: rgba(255, 248, 243, 0.96);
+    color: #1b1023;
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.agnes-newsletter-button:hover,
+.agnes-newsletter-button:focus-visible {
+    transform: translateY(-2px);
+    background: #fff;
+    border-color: #fff;
+}
+
+.agnes-newsletter-trap {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.agnes-newsletter-messages {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.agnes-newsletter-message {
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 248, 243, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--agnes-text);
+    line-height: 1.45;
+}
+
+.agnes-newsletter-message--success {
+    border-color: rgba(232, 207, 155, 0.5);
+    background: rgba(232, 207, 155, 0.13);
+}
+
+.agnes-newsletter-message--error {
+    border-color: rgba(255, 140, 140, 0.5);
+    background: rgba(255, 140, 140, 0.12);
+}
+
+@media (min-width: 720px) {
+    .agnes-newsletter-form {
+        padding: 28px;
+    }
+}
+
+@media (min-width: 980px) {
+    .agnes-newsletter-inner {
+        align-items: center;
+    }
+
+    .agnes-newsletter-content {
+        grid-column: 1;
+    }
+
+    .agnes-newsletter-content .agnes-section-label,
+    .agnes-newsletter-content h2,
+    .agnes-newsletter-content p {
+        grid-column: auto;
+    }
+
+    .agnes-newsletter-form {
+        grid-column: 2;
+        margin-top: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .agnes-newsletter-field input,
+    .agnes-newsletter-button {
+        transition: none;
+    }
+
+    .agnes-newsletter-button:hover,
+    .agnes-newsletter-button:focus-visible {
         transform: none;
     }
 }
