@@ -532,3 +532,73 @@ class PersonUpdateView(UpdateView):
     
 
 ##### konec stránky lidé  #######
+
+
+
+
+########## další view pro statickou stránku kampaně k Agnes Tyrrell jen pro návštěvníky Tugendhatu.
+
+
+def agnes_tyrrell_landing(request):
+    support_levels = [
+        {
+            "title": "Přítel alba",
+            "amount": "500 Kč",
+            "description": "CD a poděkování.",
+        },
+        {
+            "title": "Podporovatel projektu",
+            "amount": "1 000 Kč",
+            "description": "Podepsané CD a osobní poděkování.",
+        },
+        {
+            "title": "Mecenáš nahrávky",
+            "amount": "5 000 Kč",
+            "description": "Jméno v bookletu a pozvání na slavnostní křest.",
+        },
+        {
+            "title": "Patron Agnes Tyrrell",
+            "amount": "10 000 Kč",
+            "description": "Jméno v bookletu, VIP pozvání na křest a setkání s umělci.",
+        },
+    ]
+
+    timeline_items = [
+        {
+            "date": "29. května",
+            "title": "Koncert ve Vile Tugendhat",
+            "text": "Festival Meeting Brno.",
+        },
+        {
+            "date": "Červen / červenec",
+            "title": "Natáčení alba",
+            "text": "První studiové zachycení vybraných skladeb Agnes Tyrrell.",
+        },
+        {
+            "date": "Léto / podzim",
+            "title": "Postprodukce a booklet",
+            "text": "Dokončení nahrávky, dramaturgických textů a grafického zpracování.",
+        },
+        {
+            "date": "Podzim",
+            "title": "Vydání CD",
+            "text": "Uvedení alba do života a jeho představení veřejnosti.",
+        },
+        {
+            "date": "9. prosince",
+            "title": "Slavnostní křest",
+            "text": "Setkání partnerů, podporovatelů a interpretů.",
+        },
+    ]
+
+    return render(
+        request,
+        "core/agnes_tyrrell.html",
+        {
+            "hide_header": True,
+            "support_levels": support_levels,
+            "timeline_items": timeline_items,
+            "hero_image_url": "/media/media_assets/image/2026/05/8cfedb64afb84007bbdd3a41a758be84.jpg",
+            "video_embed_url": "",
+        },
+    )

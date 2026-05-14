@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Agnes Tyrrell | Lieder Society{% endblock title %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'core/agnes_tyrrell.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<main class="agnes-page">
+
+    <section class="agnes-hero">
+        <div class="agnes-hero-image-wrap">
+            <img
+                class="agnes-hero-image"
+                src="{{ hero_image_url }}"
+                alt="Agnes Tyrrell – projekt nového alba"
+            >
+        </div>
+
+        <div class="agnes-hero-content">
+            <p class="agnes-kicker">Soukromé pozvání k podpoře</p>
+
+            <h1>První nové album věnované Agnes Tyrrell</h1>
+
+            <p class="agnes-hero-lead">
+                Pomozte vrátit výjimečnou českou skladatelku do živého hudebního prostoru.
+            </p>
+
+            <a class="agnes-primary-button" href="#podpora">
+                Stát se mecenášem
+            </a>
+        </div>
+    </section>
+
+    <section class="agnes-section agnes-story">
+        <div class="agnes-section-inner">
+            <p class="agnes-section-label">Příběh projektu</p>
+
+            <h2>Hudba, která si zaslouží znovu zaznít</h2>
+
+            <div class="agnes-text-block">
+                <p>
+                    Agnes Tyrrell patří k osobnostem české hudební historie, jejichž tvorba zůstala
+                    po dlouhou dobu neprávem stranou pozornosti. Tento projekt chce její hudbu vrátit
+                    tam, kam patří — mezi posluchače, interprety a živý kulturní prostor.
+                </p>
+
+                <p>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sed magna
+                    dignissim, luctus arcu non, posuere justo. Album vzniká jako komorní, pečlivě
+                    připravená nahrávka s ambicí otevřít příběh Agnes Tyrrell novému publiku.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="agnes-section agnes-timeline-section">
+        <div class="agnes-section-inner">
+            <p class="agnes-section-label">Cesta alba</p>
+
+            <h2>Jak bude projekt vznikat</h2>
+
+            <div class="agnes-timeline">
+                {% for item in timeline_items %}
+                    <article class="agnes-timeline-item">
+                        <div class="agnes-timeline-marker"></div>
+
+                        <div class="agnes-timeline-card">
+                            <p class="agnes-timeline-date">{{ item.date }}</p>
+                            <h3>{{ item.title }}</h3>
+                            <p>{{ item.text }}</p>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="agnes-section agnes-video-section">
+        <div class="agnes-section-inner">
+            <p class="agnes-section-label">Osobní pozdrav</p>
+
+            <h2>Krátké pozvání k projektu</h2>
+
+            {% if video_embed_url %}
+                <div class="agnes-video-frame">
+                    <iframe
+                        src="{{ video_embed_url }}"
+                        title="Osobní pozdrav k projektu Agnes Tyrrell"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            {% else %}
+                <div class="agnes-video-placeholder">
+                    <p class="agnes-video-placeholder-title">Video bude doplněno</p>
+                    <p>
+                        Sem později vložíme krátký osobní pozdrav, záběr ze zkoušky
+                        nebo hudební ukázku.
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section id="podpora" class="agnes-section agnes-support-section">
+        <div class="agnes-section-inner">
+            <p class="agnes-section-label">Možnosti podpory</p>
+
+            <h2>Staňte se součástí vzniku alba</h2>
+
+            <p class="agnes-support-intro">
+                Každý dar pomáhá tomu, aby mohla nahrávka vzniknout důstojně,
+                profesionálně a s péčí, kterou si hudba Agnes Tyrrell zaslouží.
+            </p>
+
+            <div class="agnes-support-grid">
+                {% for level in support_levels %}
+                    <article class="agnes-support-card">
+                        <p class="agnes-support-amount">{{ level.amount }}</p>
+                        <h3>{{ level.title }}</h3>
+                        <p>{{ level.description }}</p>
+                    </article>
+                {% endfor %}
+            </div>
+
+            <div class="agnes-donation-box">
+                <h3>Podpořit projekt</h3>
+
+                <p>
+                    Zde bude vložen darovací widget Darujme.cz. Po jeho dodání nahradíme
+                    tento blok konkrétním embed kódem.
+                </p>
+
+                <div class="agnes-donation-placeholder-buttons" aria-label="Ukázka dárcovských částek">
+                    <button type="button">500 Kč</button>
+                    <button type="button">1 000 Kč</button>
+                    <button type="button">5 000 Kč</button>
+                    <button type="button">10 000 Kč</button>
+                    <button type="button">Jiná částka</button>
+                </div>
+
+                {# 
+                    Sem později vložit reálný embed kód z Darujme.cz.
+                    Ideálně přímo kód vygenerovaný v administraci Darujme.
+                #}
+            </div>
+        </div>
+    </section>
+
+    <section class="agnes-section agnes-trust-section">
+        <div class="agnes-section-inner">
+            <p class="agnes-section-label">Kdo za projektem stojí</p>
+
+            <h2>Lieder Society a interpreti projektu</h2>
+
+            <div class="agnes-trust-grid">
+                <article class="agnes-trust-card">
+                    <h3>Lieder Society</h3>
+                    <p>
+                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                        Spolek dlouhodobě rozvíjí koncertní a edukační projekty
+                        věnované písňové a komorní tvorbě.
+                    </p>
+                </article>
+
+                <article class="agnes-trust-card">
+                    <h3>Interpreti</h3>
+                    <p>
+                        Zde bude krátké představení umělců, kteří se na vzniku
+                        nahrávky podílejí.
+                    </p>
+                </article>
+
+                <article class="agnes-trust-card">
+                    <h3>Partneři</h3>
+                    <p>
+                        Prostor pro loga institucí, partnerů a dalších podporovatelů.
+                    </p>
+                </article>
+            </div>
+
+            <div class="agnes-contact-box">
+                <h3>Chcete se na podporu zeptat osobně?</h3>
+
+                <p>
+                    Napište nám. Rádi vám projekt představíme podrobněji.
+                </p>
+
+                <a href="mailto:info@lieder-society.cz">
+                    info@lieder-society.cz
+                </a>
+            </div>
+        </div>
+    </section>
+
+</main>
+{% endblock content %}
