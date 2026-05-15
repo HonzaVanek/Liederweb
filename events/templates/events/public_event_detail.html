@@ -296,40 +296,90 @@
               <p>{{ contact.salutation }},</p>
             {% endif %}
 
-            {% if reservation %}
+            {% if reservation and reservation.status == "active" %}
               <p>
                 Vaši žádost už evidujeme.
                 {% if reservation.ticket_count == 1 %}
                   Aktuálně máte rezervovanou <strong>1 vstupenku</strong>.
                 {% else %}
-                  Aktuálně máte rezervovány <strong>{{ reservation.ticket_count }} vstupenky</strong>.
+                  Aktuálně máte rezervované <strong>vstupenky 1 + 1</strong>.
                 {% endif %}
               </p>
+
               <p class="muted">Počet můžete níže kdykoli upravit.</p>
-            {% else %}
-              <p>Jako VIP host si můžete požádat o čestné vstupenky na tento koncert.</p>
-            {% endif %}
 
-            <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
-              {% csrf_token %}
+              <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
+                {% csrf_token %}
 
-              <div class="vip-ticket-count-block">
-                <p><strong>{{ vip_form.ticket_count.label }}</strong></p>
-                {{ vip_form.ticket_count }}
+                <div class="vip-ticket-count-block">
+                  <p><strong>{{ vip_form.ticket_count.label }}</strong></p>
+                  {{ vip_form.ticket_count }}
 
-                {% for e in vip_form.ticket_count.errors %}
-                  <div class="form-errors">{{ e }}</div>
-                {% endfor %}
-              </div>
+                  {% for e in vip_form.ticket_count.errors %}
+                    <div class="form-errors">{{ e }}</div>
+                  {% endfor %}
+                </div>
 
-              <button type="submit">
-                {% if reservation %}
+                <button type="submit">
                   Uložit změnu rezervace
-                {% else %}
+                </button>
+              </form>
+
+              <form method="post"
+                    action="{% url 'events:vip_cancel_reservation' token=delivery.tracking_token %}"
+                    onsubmit="return confirm('Opravdu chcete zrušit rezervaci čestných vstupenek?');">
+                {% csrf_token %}
+                <button type="submit" class="secondary-action-button">
+                  Zrušit rezervaci
+                </button>
+              </form>
+
+            {% elif reservation and reservation.status == "cancelled" %}
+              <p>Vaše rezervace byla zrušena.</p>
+
+              {% if reservation.cancelled_at %}
+                <p class="muted">Zrušeno: {{ reservation.cancelled_at|date:"d.m.Y H:i" }}</p>
+              {% endif %}
+
+              <p>Pokud chcete rezervaci obnovit, vyberte počet vstupenek a odešlete formulář znovu.</p>
+
+              <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
+                {% csrf_token %}
+
+                <div class="vip-ticket-count-block">
+                  <p><strong>{{ vip_form.ticket_count.label }}</strong></p>
+                  {{ vip_form.ticket_count }}
+
+                  {% for e in vip_form.ticket_count.errors %}
+                    <div class="form-errors">{{ e }}</div>
+                  {% endfor %}
+                </div>
+
+                <button type="submit">
+                  Obnovit rezervaci
+                </button>
+              </form>
+
+            {% else %}
+              <p>Jako VIP host si můžete požádat o čestnou vstupenku pro sebe, případně o vstupenku 1 + 1.</p>
+
+              <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
+                {% csrf_token %}
+
+                <div class="vip-ticket-count-block">
+                  <p><strong>{{ vip_form.ticket_count.label }}</strong></p>
+                  {{ vip_form.ticket_count }}
+
+                  {% for e in vip_form.ticket_count.errors %}
+                    <div class="form-errors">{{ e }}</div>
+                  {% endfor %}
+                </div>
+
+                <button type="submit">
                   Požádat o čestné vstupenky
-                {% endif %}
-              </button>
-            </form>
+                </button>
+              </form>
+            {% endif %}
           </div>
         {% endif %}
       </div>

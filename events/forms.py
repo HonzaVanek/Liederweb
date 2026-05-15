@@ -134,9 +134,7 @@ EventSponsorFormSet = inlineformset_factory(
 class VipReservationForm(forms.Form):
     TICKET_COUNT_CHOICES = [
         (1, "1 vstupenka"),
-        (2, "2 vstupenky"),
-        (3, "3 vstupenky"),
-        (4, "4 vstupenky"),
+        (2, "1 + 1 vstupenka"),
     ]
 
     ticket_count = forms.TypedChoiceField(

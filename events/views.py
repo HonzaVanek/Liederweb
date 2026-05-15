@@ -38,6 +38,8 @@ from .services.ticket_pdf import build_event_ticket_pdf, build_ticket_pdf_filena
 
 from django.conf import settings
 from django.core.mail import send_mail
+from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from openpyxl import Workbook
 from openpyxl.styles import Font
@@ -239,6 +241,10 @@ def event_detail(request, pk):
     vip_reservations = event.vip_reservations.all()
     ticket_settings = event.ticket_settings if hasattr(event, "ticket_settings") else None
     ticket_variants = event.ticket_variants.all()
+    active_vip_reservations_count = event.vip_reservations.filter(status="active").count()
+    active_vip_tickets_count = sum(
+        r.ticket_count for r in event.vip_reservations.all() if r.status == "active"
+    )
 
     return render(
         request,
@@ -249,6 +255,8 @@ def event_detail(request, pk):
             "vip_reservations": vip_reservations,
             "ticket_settings": ticket_settings,
             "ticket_variants": ticket_variants,
+            "active_vip_reservations_count": active_vip_reservations_count,
+            "active_vip_tickets_count": active_vip_tickets_count,
         },
     )
 
@@ -404,6 +412,7 @@ def vip_reserve(request, token):
             "contact": contact,
             "reservation": VipReservation.objects.filter(event=event, contact=contact).first(),
             "vip_form": form,
+            "hide_header": True,
         })
 
     ticket_count = form.cleaned_data["ticket_count"]
@@ -418,14 +427,18 @@ def vip_reserve(request, token):
             campaign=campaign,
             delivery=delivery,
             ticket_count=ticket_count,
+            status="active",
+            cancelled_at=None,
         )
     else:
         reservation.ticket_count = ticket_count
+        reservation.status = "active"
+        reservation.cancelled_at = None
         if not reservation.campaign:
             reservation.campaign = campaign
         if not reservation.delivery:
             reservation.delivery = delivery
-        reservation.save(update_fields=["ticket_count", "campaign", "delivery"])
+        reservation.save(update_fields=["ticket_count", "campaign", "delivery", "status", "cancelled_at"])
 
     if created:
         subject = f"VIP rezervace: {contact.name or contact.email} – {event.title}"
@@ -515,6 +528,31 @@ def vip_reservation_done(request, token):
     })
 
 
+@require_POST
+def vip_cancel_reservation(request, token):
+    delivery = get_object_or_404(
+        EmailDelivery.objects.select_related("campaign__event", "contact"),
+        tracking_token=token,
+    )
+
+    event = delivery.campaign.event
+    contact = delivery.contact
+
+    if not event or not contact:
+        raise Http404()
+
+    reservation = get_object_or_404(
+        VipReservation,
+        event=event,
+        contact=contact,
+    )
+
+    reservation.status = "cancelled"
+    reservation.cancelled_at = timezone.now()
+    reservation.save(update_fields=["status", "cancelled_at"])
+
+    return redirect("events:vip_event_detail", token=token)
+
 @staff_required
 def event_export_vip_xlsx(request, pk):
     event = get_object_or_404(Event, pk=pk)
@@ -530,7 +568,7 @@ def event_export_vip_xlsx(request, pk):
     ws.title = "VIP rezervace"
 
     # hlavička
-    headers = ["Jméno", "Email", "Oslovení", "Počet vstupenek", "Čas rezervace", "Kampaň"]
+    headers = ["Jméno", "Email", "Oslovení", "Počet vstupenek", "Stav", "Zrušeno", "Čas rezervace", "Kampaň"]
     ws.append(headers)
 
     # bold header
@@ -544,12 +582,14 @@ def event_export_vip_xlsx(request, pk):
             r.contact.email,
             r.contact.salutation or "",
             r.ticket_count,
+            r.get_status_display(),
+            r.cancelled_at.strftime("%d.%m.%Y %H:%M") if r.cancelled_at else "",
             r.created_at.strftime("%d.%m.%Y %H:%M"),
             r.campaign.subject if r.campaign else "",
         ])
 
     # trochu lepší šířky sloupců
-    column_widths = [25, 30, 30, 18, 20, 30]
+    column_widths = [25, 30, 30, 18, 22, 20, 20, 30]
     for i, width in enumerate(column_widths, start=1):
         ws.column_dimensions[chr(64 + i)].width = width
 

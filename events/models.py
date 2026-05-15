@@ -257,8 +257,22 @@ class EventSponsor(models.Model):
 
 
 class VipReservation(models.Model):
+    STATUS_CHOICES = [("active", "Aktivní"), ("cancelled", "Zrušeno hostem"),]
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="vip_reservations")
     contact = models.ForeignKey("rozesilac.Contact", on_delete=models.CASCADE, related_name="vip_reservations")
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="active",
+        db_index=True,
+        verbose_name="Stav",
+    )
+    cancelled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Zrušeno",
+    )
 
     campaign = models.ForeignKey(
         "rozesilac.EmailCampaign",

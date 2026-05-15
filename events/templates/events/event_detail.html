@@ -460,7 +460,9 @@
         <h3>Rychlý přehled</h3>
 
         <p><strong>Kampaně:</strong> {{ campaigns|length }}</p>
-        <p><strong>VIP rezervace:</strong> {{ vip_reservations|length }}</p>
+        <p><strong>VIP rezervace celkem:</strong> {{ vip_reservations|length }}</p>
+        <p><strong>Aktivní VIP rezervace:</strong> {{ active_vip_reservations_count }}</p>
+        <p><strong>Aktivní VIP vstupenky:</strong> {{ active_vip_tickets_count }}</p>
         <p><strong>Položky programu:</strong> {{ event.program_items.count }}</p>
         <p><strong>Interpreti:</strong> {{ event.artists.count }}</p>
         <p><strong>Odkazy:</strong> {{ event.resources.count }}</p>
@@ -602,6 +604,8 @@
                   <th>Čas rezervace</th>
                   <th>Počet vstupenek</th>
                   <th>Kampaň</th>
+                  <th>Stav</th>
+                  <th>Zrušeno</th>
                 </tr>
               </thead>
               <tbody>
@@ -626,6 +630,20 @@
                         <span class="muted">—</span>
                       {% endif %}
                     </td>
+                    <td>
+                      {% if reservation.status == "active" %}
+                        <span class="badge badge-success">Aktivní</span>
+                      {% elif reservation.status == "cancelled" %}
+                        <span class="badge badge-danger">Zrušena</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if reservation.cancelled_at %}
+                        {{ reservation.cancelled_at|date:"d.m.Y H:i" }}
+                      {% else %}
+                        <span class="muted">—</span>
+                      {% endif %}
+                  </td>
                   </tr>
                 {% endfor %}
               </tbody>
