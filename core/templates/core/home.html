@@ -351,9 +351,10 @@ document.addEventListener("DOMContentLoaded", function () {
   track.insertBefore(lastClone, originalSlides[0]);
   track.appendChild(firstClone);
 
-  let slides = Array.from(track.querySelectorAll(".home-slide"));
+  const slides = Array.from(track.querySelectorAll(".home-slide"));
   let currentIndex = 1;
   let isAnimating = false;
+  let currentTranslate = 0;
 
   function updateClasses() {
     slides.forEach((slide, index) => {
@@ -369,27 +370,50 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  function applyPosition(animate = true) {
+  function setTransition(enabled) {
+    track.style.transition = enabled
+      ? "transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)"
+      : "none";
+  }
+
+  function centerActiveSlide(animate = true) {
     const activeSlide = slides[currentIndex];
     if (!activeSlide) return;
 
-    track.style.transition = animate
-      ? "transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)"
-      : "none";
+    setTransition(animate);
+    track.style.transform = `translateX(${currentTranslate}px)`;
 
-    const viewportCenter = viewport.clientWidth / 2;
-    const slideCenter = activeSlide.offsetLeft + (activeSlide.offsetWidth / 2);
-    const translateX = viewportCenter - slideCenter;
+    requestAnimationFrame(() => {
+      const viewportRect = viewport.getBoundingClientRect();
+      const activeRect = activeSlide.getBoundingClientRect();
 
-    track.style.transform = `translateX(${translateX}px)`;
-    updateClasses();
+      const viewportCenter = viewportRect.left + viewportRect.width / 2;
+      const activeCenter = activeRect.left + activeRect.width / 2;
+      const delta = viewportCenter - activeCenter;
+
+      currentTranslate += delta;
+      setTransition(animate);
+      track.style.transform = `translateX(${currentTranslate}px)`;
+      updateClasses();
+    });
+  }
+
+  function jumpToRealSlideIfNeeded() {
+    if (currentIndex === 0) {
+      currentIndex = slides.length - 2;
+      centerActiveSlide(false);
+    } else if (currentIndex === slides.length - 1) {
+      currentIndex = 1;
+      centerActiveSlide(false);
+    }
+    isAnimating = false;
   }
 
   function goTo(index) {
     if (isAnimating) return;
     isAnimating = true;
     currentIndex = index;
-    applyPosition(true);
+    centerActiveSlide(true);
   }
 
   function goNext() {
@@ -403,27 +427,21 @@ document.addEventListener("DOMContentLoaded", function () {
   prevBtn.addEventListener("click", goPrev);
   nextBtn.addEventListener("click", goNext);
 
-  track.addEventListener("transitionend", function () {
-    if (currentIndex === 0) {
-      currentIndex = slides.length - 2;
-      applyPosition(false);
-    } else if (currentIndex === slides.length - 1) {
-      currentIndex = 1;
-      applyPosition(false);
-    }
-
-    isAnimating = false;
-  });
+  track.addEventListener("transitionend", jumpToRealSlideIfNeeded);
 
   let resizeTimer = null;
   window.addEventListener("resize", function () {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function () {
-      applyPosition(false);
+      centerActiveSlide(false);
     }, 120);
   });
 
-  applyPosition(false);
+  window.addEventListener("load", function () {
+    centerActiveSlide(false);
+  });
+
+  centerActiveSlide(false);
 });
 </script>
 
