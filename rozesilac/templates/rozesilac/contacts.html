@@ -1,11 +1,18 @@
 {% extends "rozesilac/base_rozesilac.html" %}
 
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'rozesilac/contacts.css' %}">
+{% endblock extra_css %}
+
 {% block title %}Rozesílač | Kontakty{% endblock title %}
 
 {% block rozesilac_content %}
 <h2>Kontakty</h2>
 
-<p class="help-text">Zde můžeš spravovat kontakty pro rozesílání emailů. Nejprve vytvoř jednu nebo více skupin kontaktů. Pak můžeš do jednotlivých skupin přidávat kontakty (jeden kontakt může být i ve více skupinách najednou). To pole aktivní je defaultně zaškrtnuté, pokud je odškrtnuté, tak to znamená, že kontakt sice máme ve skupině, ale maily mu posílat nebudeme. Zároveň když se uživatel odhlásí z odběru newsletterů, tak o jeho email nepřijdeme, ale právě se přehodí na neaktivní, takže mu maily chodit už nebudou (můžeš ho manuálně upravit zas na aktivní, ale to bych asi nedělal když se odhlásil). Kontakty lze nahrávat i hromadně přes Excel, z toho drop-down MENU nejdřív vyber do jaké skupiny chceš kontakty importovat. Přes Excel ale teda nejde nahrávat kontaky do více skupin najednou. Dole pak je seznam úplně všech kontaktů, lze je i upravovat. Možná tam časem přidám nějaký paginator, aby nebyly všechny na jedné stránce, ale třeba jen prvních 20 a pak by se dalo překlikávat na další stránky...</p>
+<p class="help-text">Zde můžeš spravovat kontakty pro rozesílání emailů. Nejprve vytvoř jednu nebo více skupin kontaktů. Pak můžeš do jednotlivých skupin přidávat kontakty (jeden kontakt může být i ve více skupinách najednou). To pole aktivní je defaultně zaškrtnuté, pokud je odškrtnuté, tak to znamená, že kontakt sice máme ve skupině, ale maily mu posílat nebudeme. Zároveň když se uživatel odhlásí z odběru newsletterů, tak o jeho email nepřijdeme, ale právě se přehodí na neaktivní, takže mu maily chodit už nebudou (můžeš ho manuálně upravit zas na aktivní, ale to bych asi nedělal když se odhlásil). Kontakty lze nahrávat i hromadně přes Excel, z toho drop-down MENU nejdřív vyber do jaké skupiny chceš kontakty importovat. Přes Excel ale teda nejde nahrávat kontaky do více skupin najednou. Dole pak je seznam úplně všech kontaktů, lze je i upravovat.</p>
 
 {% if messages %}
 <ul class="messages">
@@ -50,7 +57,7 @@
       {% for g in groups %}
         <tr>
           <td>{{ g.name }}</td>
-          <td>{{ g.contacts.count }}</td>
+          <td>{{ g.contact_count }}</td>
           <td class="actions">
             <form method="post" style="display:inline;" onsubmit="return confirm('Opravdu smazat skupinu {{ g.name }}?');">
               {% csrf_token %}
@@ -108,7 +115,7 @@
 
 <section class="content-section content-section-soft">
 <h3>Import z XLSX</h3>
-<p class="muted">Soubor musí mít první řádek hlavičky: <strong>jméno</strong> a <strong>email</strong>, ideálně i <strong>oslovení</strong>.</p>
+<p class="muted contacts-filter-note">Soubor musí mít první řádek hlavičky: <strong>jméno</strong> a <strong>email</strong>, ideálně i <strong>oslovení</strong>.</p>
 
 <form method="post" enctype="multipart/form-data" style="margin-bottom:20px;">
   {% csrf_token %}
@@ -132,52 +139,117 @@
 <section class="content-section">
 <h3>Seznam uložených kontaktů</h3>
 
+<form method="get" class="contacts-filter-form">
+  <div class="contacts-filter-grid">
+    <div>
+      <label for="contact-group-filter">Zobrazit skupinu</label>
+      <select id="contact-group-filter" name="group">
+        <option value="">Všechny skupiny</option>
+        {% for g in groups %}
+          <option value="{{ g.id }}" {% if selected_group_id == g.id|stringformat:"s" %}selected{% endif %}>
+            {{ g.name }} ({{ g.contact_count }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label for="per-page-filter">Kontaktů na stránku</label>
+      <select id="per-page-filter" name="per_page">
+        {% for option in per_page_options %}
+          <option value="{{ option }}" {% if per_page == option %}selected{% endif %}>
+            {{ option }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="contacts-filter-submit">
+      <label>&nbsp;</label>
+      <button type="submit">Filtrovat</button>
+    </div>
+  </div>
+
+  {% if selected_group %}
+    <p class="muted contacts-filter-note">
+      Zobrazuje se skupina: <strong>{{ selected_group.name }}</strong>.
+      <a href="{% url 'rozesilac:contacts' %}">Zrušit filtr</a>
+    </p>
+  {% endif %}
+</form>
+
+
+
 {% if contacts %}
-<table class="table">
-  <thead>
-    <tr>
-      <th>Jméno</th>
-      <th>Oslovení</th>
-      <th>Email</th>
-      <th>Skupiny</th>
-      <th>Aktivní</th>
-      <th>Počet doručení</th>
-      <th>Potvrzené kliky</th>
-      <th>Akce</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for c in contacts %}
+<div class="table-responsive contacts-table-wrap">
+  <table class="table contacts-table">
+    <thead>
       <tr>
-        <td>{{ c.name }}</td>
-        <td>{{ c.salutation|default:"—" }}</td>
-        <td>{{ c.email }}</td>
-        <td>
-          {% for g in c.groups.all %}
-            <span class="contact-group-badge">{{ g.name }}</span>
-          {% empty %}
-            <span class="muted">—</span>
-          {% endfor %}
-        </td>
-        <td>{% if c.is_active %}Ano{% else %}Ne{% endif %}</td>
-        <td>{{ c.delivery_count_for_ui }}</td>
-        <td>{{ c.confirmed_unique_click_count_for_ui }}</td>
-        <td class="actions">
-          <a href="{% url 'rozesilac:contact_detail' c.id %}">Statistiky</a>
-          |
-          <a href="{% url 'rozesilac:contact_edit' c.id %}">Upravit</a>
-          |
-          <form method="post" style="display:inline;">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="delete_contact">
-            <input type="hidden" name="contact_id" value="{{ c.id }}">
-            <button type="submit" onclick="return confirm('Opravdu smazat kontakt {{ c.email }}?');">Smazat</button>
-          </form>
-        </td>
+        <th>Jméno</th>
+        <th>Oslovení</th>
+        <th>Email</th>
+        <th>Skupiny</th>
+        <th>Aktivní</th>
+        <th>Počet doručení</th>
+        <th>Potvrzené kliky</th>
+        <th>Akce</th>
       </tr>
-    {% endfor %}
-  </tbody>
-</table>
+    </thead>
+    <tbody>
+      {% for c in contacts %}
+        <tr>
+          <td>{{ c.name }}</td>
+          <td>{{ c.salutation|default:"—" }}</td>
+          <td>{{ c.email }}</td>
+          <td>
+            {% for g in c.groups.all %}
+              <span class="contact-group-badge">{{ g.name }}</span>
+            {% empty %}
+              <span class="muted">—</span>
+            {% endfor %}
+          </td>
+          <td>{% if c.is_active %}Ano{% else %}Ne{% endif %}</td>
+          <td>{{ c.delivery_count_for_ui }}</td>
+          <td>{{ c.confirmed_unique_click_count_for_ui }}</td>
+          <td class="actions">
+            <a href="{% url 'rozesilac:contact_detail' c.id %}">Statistiky</a>
+            |
+            <a href="{% url 'rozesilac:contact_edit' c.id %}">Upravit</a>
+            |
+            <form method="post" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete_contact">
+              <input type="hidden" name="contact_id" value="{{ c.id }}">
+              <button type="submit" onclick="return confirm('Opravdu smazat kontakt {{ c.email }}?');">Smazat</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if page_obj.has_other_pages %}
+  <nav class="contacts-pagination" aria-label="Stránkování kontaktů">
+    <div class="contacts-pagination__links">
+      {% if page_obj.has_previous %}
+        <a href="{{ pagination_base_url }}page=1">« První</a>
+        <a href="{{ pagination_base_url }}page={{ page_obj.previous_page_number }}">‹ Předchozí</a>
+      {% endif %}
+    </div>
+
+    <div class="contacts-pagination__status">
+      Stránka {{ page_obj.number }} z {{ paginator.num_pages }}
+    </div>
+
+    <div class="contacts-pagination__links">
+      {% if page_obj.has_next %}
+        <a href="{{ pagination_base_url }}page={{ page_obj.next_page_number }}">Další ›</a>
+        <a href="{{ pagination_base_url }}page={{ paginator.num_pages }}">Poslední »</a>
+      {% endif %}
+    </div>
+  </nav>
+{% endif %}
+
 </section>
 {% else %}
 <p class="muted">Zatím žádné kontakty.</p>

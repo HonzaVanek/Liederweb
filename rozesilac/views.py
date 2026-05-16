@@ -26,6 +26,8 @@ import html
 import re
 from urllib.parse import quote, unquote, urlparse
 from django.db import transaction
+from django.core.paginator import Paginator
+from django.db.models import Count
 
 # Create your views here.
 
@@ -402,11 +404,60 @@ def contacts(request):
             messages.success(request, f"Import hotový. Přidáno: {created}, přeskočeno (duplicitní): {skipped}, neplatné emaily: {invalid}.")
             return redirect("rozesilac:contacts")
 
-    contacts = Contact.objects.prefetch_related("groups").order_by("groups__name", "email").distinct()
-    groups = ContactGroup.objects.all()
+    # --------------------------------------------------
+    # Filtrování a stránkování kontaktů
+    # --------------------------------------------------
+
+    per_page_options = [20, 50, 100]
+
+    try:
+        per_page = int(request.GET.get("per_page", 20))
+    except (TypeError, ValueError):
+        per_page = 20
+
+    if per_page not in per_page_options:
+        per_page = 20
+
+    selected_group_id = request.GET.get("group") or ""
+
+    groups = (
+        ContactGroup.objects
+        .annotate(contact_count=Count("contacts", distinct=True))
+        .order_by("name")
+    )
+
+    contacts_qs = (
+        Contact.objects
+        .prefetch_related("groups")
+        .order_by("email")
+    )
+
+    selected_group = None
+
+    if selected_group_id:
+        selected_group = ContactGroup.objects.filter(id=selected_group_id).first()
+        if selected_group:
+            contacts_qs = contacts_qs.filter(groups=selected_group)
+        else:
+            selected_group_id = ""
+
+    paginator = Paginator(contacts_qs, per_page)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    contacts = list(page_obj.object_list)
+
+    # Query string pro stránkování, aby se při přepínání stránek neztratil filtr
+    query_params = request.GET.copy()
+    if "page" in query_params:
+        del query_params["page"]
+
+    query_string = query_params.urlencode()
+    pagination_base_url = f"?{query_string}&" if query_string else "?"
 
     # --------------------------------------------------
     # Statistiky kontaktů pro přehled v seznamu
+    # Důležité: počítáme jen kontakty na aktuální stránce,
+    # ne všechny kontakty v databázi.
     # --------------------------------------------------
 
     contact_emails = [c.email for c in contacts]
@@ -414,10 +465,16 @@ def contacts(request):
     deliveries_for_contacts = (
         EmailDelivery.objects
         .filter(to_email__in=contact_emails)
-        .prefetch_related(Prefetch("click_events", queryset=EmailClickEvent.objects.order_by("created_at"),))
+        .prefetch_related(
+            Prefetch(
+                "click_events",
+                queryset=EmailClickEvent.objects.order_by("created_at"),
+            )
+        )
     )
 
     deliveries_by_email = {}
+
     for d in deliveries_for_contacts:
         deliveries_by_email.setdefault(d.to_email, []).append(d)
 
@@ -428,13 +485,34 @@ def contacts(request):
         confirmed_unique_click_count = 0
 
         for d in contact_deliveries:
-            human_events = [e for e in d.click_events.all() if not e.is_suspected_bot]
+            human_events = [
+                e for e in d.click_events.all()
+                if not e.is_suspected_bot
+            ]
             unique_urls = set(e.original_url for e in human_events)
             confirmed_unique_click_count += len(unique_urls)
 
         c.confirmed_unique_click_count_for_ui = confirmed_unique_click_count
 
-    return render(request, "rozesilac/contacts.html", {"contacts": contacts, "groups": groups, "add_form": add_form, "import_form": import_form, "group_form": group_form,},)
+    return render(
+        request,
+        "rozesilac/contacts.html",
+        {
+            "contacts": contacts,
+            "groups": groups,
+            "add_form": add_form,
+            "import_form": import_form,
+            "group_form": group_form,
+
+            "selected_group_id": str(selected_group_id),
+            "selected_group": selected_group,
+            "per_page": per_page,
+            "per_page_options": per_page_options,
+            "page_obj": page_obj,
+            "paginator": paginator,
+            "pagination_base_url": pagination_base_url,
+        },
+    )
 
 @staff_required
 def contact_detail(request, contact_id):
