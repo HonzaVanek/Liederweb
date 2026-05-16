@@ -24,53 +24,98 @@
     <div class="home-carousel-viewport" id="home-carousel-viewport">
       <div class="home-carousel-track">
         <article class="home-slide">
-          <div class="home-slide-grid">
-            {% if featured_facebook_post and featured_facebook_post.image_url %}
-              <div class="home-slide-image-wrap">
-                <img
-                  src="{{ featured_facebook_post.image_url }}"
-                  alt="Náhled Facebook postu"
-                  class="home-slide-image"
-                >
-              </div>
-            {% else %}
-              <div class="home-slide-image-wrap home-slide-image-wrap-empty">
-                <div class="home-slide-image-placeholder">Facebook</div>
-              </div>
-            {% endif %}
+          {% if featured_facebook_post %}
+            {% with gallery=featured_facebook_post.media_items.all %}
+              <div class="home-slide-grid">
+                <div class="home-slide-gallery">
+                  {% if gallery %}
+                    <button
+                      type="button"
+                      class="home-slide-gallery-main"
+                      data-lightbox-open="0"
+                      aria-label="Otevřít galerii Facebook postu"
+                    >
+                      <img
+                        src="{{ gallery.0.media_url|default:gallery.0.thumbnail_url }}"
+                        alt="Hlavní obrázek Facebook postu"
+                        class="home-slide-image"
+                      >
 
-            <div class="home-slide-content">
-              <p class="home-slide-eyebrow">Facebook / poslední post s obrázkem</p>
-              <h3>Poslední Facebook post</h3>
+                      {% if featured_facebook_post.has_gallery %}
+                        <span class="home-slide-gallery-badge">
+                          +{{ featured_facebook_post.media_count|add:"-1" }} další
+                        </span>
+                      {% endif %}
+                    </button>
 
-              {% if featured_facebook_post %}
-                <div class="home-slide-meta">
-                  <span>{{ featured_facebook_post.source.name }}</span>
-                  {% if featured_facebook_post.published_at %}
-                    <span>{{ featured_facebook_post.published_at|date:"d. m. Y H:i" }}</span>
+                    {% if featured_facebook_post.has_gallery %}
+                      <div class="home-slide-thumbs">
+                        {% for media in gallery %}
+                          <button
+                            type="button"
+                            class="home-slide-thumb {% if forloop.first %}is-active{% endif %}"
+                            data-lightbox-open="{{ forloop.counter0 }}"
+                            aria-label="Otevřít obrázek {{ forloop.counter }}"
+                          >
+                            <img
+                              src="{{ media.thumbnail_url|default:media.media_url }}"
+                              alt="Miniatura {{ forloop.counter }}"
+                            >
+                          </button>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  {% else %}
+                    <div class="home-slide-image-wrap home-slide-image-wrap-empty">
+                      <div class="home-slide-image-placeholder">Facebook</div>
+                    </div>
                   {% endif %}
                 </div>
 
-                {% if featured_facebook_post.message %}
-                  <div class="home-slide-text home-slide-text-facebook">
-                    {{ featured_facebook_post.message|truncatechars:700 }}
-                  </div>
-                {% else %}
-                  <p class="muted">Tento post nemá textovou část.</p>
-                {% endif %}
+                <div class="home-slide-content">
+                  <p class="home-slide-eyebrow">Facebook / poslední post s obrázkem</p>
+                  <h3>Poslední Facebook post</h3>
 
-                {% if featured_facebook_post.permalink_url %}
-                  <div class="home-slide-actions">
-                    <a href="{{ featured_facebook_post.permalink_url }}" target="_blank" rel="noopener" class="home-slide-button">
-                      Otevřít originální post
-                    </a>
+                  <div class="home-slide-meta">
+                    <span>{{ featured_facebook_post.source.name }}</span>
+                    {% if featured_facebook_post.published_at %}
+                      <span>{{ featured_facebook_post.published_at|date:"d. m. Y H:i" }}</span>
+                    {% endif %}
+                    {% if featured_facebook_post.has_gallery %}
+                      <span>{{ featured_facebook_post.media_count }} fotky</span>
+                    {% endif %}
                   </div>
-                {% endif %}
-              {% else %}
+
+                  {% if featured_facebook_post.message %}
+                    <div class="home-slide-text-scroll">
+                      {{ featured_facebook_post.message|linebreaksbr }}
+                    </div>
+                  {% else %}
+                    <p class="muted">Tento post nemá textovou část.</p>
+                  {% endif %}
+
+                  <div class="home-slide-actions">
+                    {% if featured_facebook_post.permalink_url %}
+                      <a
+                        href="{{ featured_facebook_post.permalink_url }}"
+                        target="_blank"
+                        rel="noopener"
+                        class="home-slide-button"
+                      >
+                        Otevřít originální post
+                      </a>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% endwith %}
+          {% else %}
+            <div class="home-slide-grid">
+              <div class="home-slide-content">
                 <p class="muted">Zatím tu není načtený žádný Facebook post s obrázkem.</p>
-              {% endif %}
+              </div>
             </div>
-          </div>
+          {% endif %}
         </article>
 
         <article class="home-slide">
@@ -223,6 +268,58 @@
   </div>
 </section>
 
+
+{% if featured_facebook_post and featured_facebook_post.media_items.all %}
+  <div class="home-lightbox" id="facebook-lightbox" hidden>
+    <div class="home-lightbox-backdrop" data-lightbox-close></div>
+
+    <div class="home-lightbox-dialog" role="dialog" aria-modal="true" aria-label="Galerie Facebook postu">
+      <button type="button" class="home-lightbox-close" data-lightbox-close aria-label="Zavřít galerii">
+        ×
+      </button>
+
+      <button type="button" class="home-lightbox-nav home-lightbox-nav-prev" data-lightbox-prev aria-label="Předchozí obrázek">
+        ←
+      </button>
+
+      <div class="home-lightbox-stage">
+        {% for media in featured_facebook_post.media_items.all %}
+          <figure
+            class="home-lightbox-slide {% if forloop.first %}is-active{% endif %}"
+            data-lightbox-slide="{{ forloop.counter0 }}"
+          >
+            <img
+              src="{{ media.media_url|default:media.thumbnail_url }}"
+              alt="Obrázek {{ forloop.counter }} z Facebook postu"
+              class="home-lightbox-image"
+            >
+          </figure>
+        {% endfor %}
+      </div>
+
+      <button type="button" class="home-lightbox-nav home-lightbox-nav-next" data-lightbox-next aria-label="Další obrázek">
+        →
+      </button>
+
+      <div class="home-lightbox-thumbs">
+        {% for media in featured_facebook_post.media_items.all %}
+          <button
+            type="button"
+            class="home-lightbox-thumb {% if forloop.first %}is-active{% endif %}"
+            data-lightbox-thumb="{{ forloop.counter0 }}"
+            aria-label="Zobrazit obrázek {{ forloop.counter }}"
+          >
+            <img
+              src="{{ media.thumbnail_url|default:media.media_url }}"
+              alt="Miniatura {{ forloop.counter }}"
+            >
+          </button>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endif %}
+
 <section class="home-intro">
   <h1>Interní (zatím) web <span>Lieder Society</span></h1>
   <p>
@@ -253,6 +350,95 @@ document.addEventListener("DOMContentLoaded", function () {
 
   nextBtn.addEventListener("click", function () {
     scrollBySlide(1);
+  });
+});
+</script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const lightbox = document.getElementById("facebook-lightbox");
+  if (!lightbox) return;
+
+  const body = document.body;
+  const openButtons = document.querySelectorAll("[data-lightbox-open]");
+  const closeButtons = lightbox.querySelectorAll("[data-lightbox-close]");
+  const prevButton = lightbox.querySelector("[data-lightbox-prev]");
+  const nextButton = lightbox.querySelector("[data-lightbox-next]");
+  const slides = Array.from(lightbox.querySelectorAll("[data-lightbox-slide]"));
+  const thumbs = Array.from(lightbox.querySelectorAll("[data-lightbox-thumb]"));
+
+  let currentIndex = 0;
+
+  function renderLightbox(index) {
+    currentIndex = index;
+
+    slides.forEach((slide, i) => {
+      slide.classList.toggle("is-active", i === currentIndex);
+    });
+
+    thumbs.forEach((thumb, i) => {
+      thumb.classList.toggle("is-active", i === currentIndex);
+    });
+  }
+
+  function openLightbox(index) {
+    renderLightbox(index);
+    lightbox.hidden = false;
+    body.classList.add("lightbox-open");
+  }
+
+  function closeLightbox() {
+    lightbox.hidden = true;
+    body.classList.remove("lightbox-open");
+  }
+
+  function showPrev() {
+    const nextIndex = currentIndex === 0 ? slides.length - 1 : currentIndex - 1;
+    renderLightbox(nextIndex);
+  }
+
+  function showNext() {
+    const nextIndex = currentIndex === slides.length - 1 ? 0 : currentIndex + 1;
+    renderLightbox(nextIndex);
+  }
+
+  openButtons.forEach((button) => {
+    button.addEventListener("click", function () {
+      const index = Number(button.dataset.lightboxOpen || 0);
+      openLightbox(index);
+    });
+  });
+
+  closeButtons.forEach((button) => {
+    button.addEventListener("click", closeLightbox);
+  });
+
+  if (prevButton) {
+    prevButton.addEventListener("click", showPrev);
+  }
+
+  if (nextButton) {
+    nextButton.addEventListener("click", showNext);
+  }
+
+  thumbs.forEach((thumb) => {
+    thumb.addEventListener("click", function () {
+      const index = Number(thumb.dataset.lightboxThumb || 0);
+      renderLightbox(index);
+    });
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (lightbox.hidden) return;
+
+    if (event.key === "Escape") {
+      closeLightbox();
+    } else if (event.key === "ArrowLeft") {
+      showPrev();
+    } else if (event.key === "ArrowRight") {
+      showNext();
+    }
   });
 });
 </script>

@@ -204,3 +204,46 @@ body.dark-mode .contacts-pagination__links a:hover {
         min-width: 980px;
     }
 }
+
+/* =========================================================
+   KONTAKTY – akční tlačítka v tabulce
+   ========================================================= */
+
+.contacts-table td.actions {
+    white-space: nowrap;
+}
+
+.contacts-table td.actions a,
+.contacts-table td.actions button {
+    margin-left: 6px;
+}
+
+.contacts-table td.actions form {
+    display: inline;
+    margin: 0;
+}
+
+/* odstraní potřebu vizuálních oddělovačů typu | */
+.contacts-table td.actions a + a,
+.contacts-table td.actions a + form,
+.contacts-table td.actions form + a {
+    margin-left: 8px;
+}
+
+/* =========================================================
+   DARK MODE – akční tlačítka v kontaktech
+   ========================================================= */
+
+body.dark-mode .contacts-table td.actions a,
+body.dark-mode .contacts-table td.actions button {
+    background-color: #1b1b1b;
+    color: #eee;
+    border-color: #666;
+}
+
+body.dark-mode .contacts-table td.actions a:hover,
+body.dark-mode .contacts-table td.actions button:hover {
+    background-color: #eee;
+    color: #111;
+    border-color: #eee;
+}

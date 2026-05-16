@@ -103,6 +103,7 @@ def home(request):
 
     featured_facebook_post = (
         SocialPost.objects.select_related("source")
+        .prefetch_related("media_items")
         .filter(
             source__platform=SocialSource.Platform.FACEBOOK,
             source__is_active=True,
