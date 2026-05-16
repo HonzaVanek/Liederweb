@@ -331,26 +331,99 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const viewport = document.getElementById("home-carousel-viewport");
+  const track = viewport ? viewport.querySelector(".home-carousel-track") : null;
   const prevBtn = document.querySelector(".home-carousel-nav-prev");
   const nextBtn = document.querySelector(".home-carousel-nav-next");
 
-  if (!viewport || !prevBtn || !nextBtn) return;
+  if (!viewport || !track || !prevBtn || !nextBtn) return;
 
-  function scrollBySlide(direction) {
-    const amount = viewport.clientWidth;
-    viewport.scrollBy({
-      left: direction * amount,
-      behavior: "smooth"
+  const originalSlides = Array.from(track.querySelectorAll(".home-slide"));
+  if (!originalSlides.length) return;
+
+  if (window.matchMedia("(max-width: 760px)").matches) return;
+
+  const firstClone = originalSlides[0].cloneNode(true);
+  const lastClone = originalSlides[originalSlides.length - 1].cloneNode(true);
+
+  firstClone.classList.add("is-clone");
+  lastClone.classList.add("is-clone");
+
+  track.insertBefore(lastClone, originalSlides[0]);
+  track.appendChild(firstClone);
+
+  let slides = Array.from(track.querySelectorAll(".home-slide"));
+  let currentIndex = 1;
+  let isAnimating = false;
+
+  function updateClasses() {
+    slides.forEach((slide, index) => {
+      slide.classList.remove("is-active", "is-prev", "is-next");
+
+      if (index === currentIndex) {
+        slide.classList.add("is-active");
+      } else if (index === currentIndex - 1) {
+        slide.classList.add("is-prev");
+      } else if (index === currentIndex + 1) {
+        slide.classList.add("is-next");
+      }
     });
   }
 
-  prevBtn.addEventListener("click", function () {
-    scrollBySlide(-1);
+  function applyPosition(animate = true) {
+    const activeSlide = slides[currentIndex];
+    if (!activeSlide) return;
+
+    track.style.transition = animate
+      ? "transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)"
+      : "none";
+
+    const viewportCenter = viewport.clientWidth / 2;
+    const slideCenter = activeSlide.offsetLeft + (activeSlide.offsetWidth / 2);
+    const translateX = viewportCenter - slideCenter;
+
+    track.style.transform = `translateX(${translateX}px)`;
+    updateClasses();
+  }
+
+  function goTo(index) {
+    if (isAnimating) return;
+    isAnimating = true;
+    currentIndex = index;
+    applyPosition(true);
+  }
+
+  function goNext() {
+    goTo(currentIndex + 1);
+  }
+
+  function goPrev() {
+    goTo(currentIndex - 1);
+  }
+
+  prevBtn.addEventListener("click", goPrev);
+  nextBtn.addEventListener("click", goNext);
+
+  track.addEventListener("transitionend", function () {
+    if (currentIndex === 0) {
+      currentIndex = slides.length - 2;
+      applyPosition(false);
+    } else if (currentIndex === slides.length - 1) {
+      currentIndex = 1;
+      applyPosition(false);
+    }
+
+    isAnimating = false;
   });
 
-  nextBtn.addEventListener("click", function () {
-    scrollBySlide(1);
+  let resizeTimer = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      applyPosition(false);
+    }, 120);
   });
+
+  applyPosition(false);
 });
 </script>
 
