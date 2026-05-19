@@ -11,12 +11,14 @@
 
 {% block content %}
 <section class="home-carousel-section">
-  <div class="home-carousel-header">
-    <p class="home-carousel-kicker">Test homepage</p>
-    <h2>První návrh carouselu</h2>
-  </div>
-
   <div class="home-carousel-shell">
+    <div class="home-carousel-mobile-meta home-carousel-mobile-meta--top">
+      <div class="home-carousel-dots">
+        <button type="button" class="home-carousel-dot is-active" data-slide-dot="0" aria-label="Slide 1"></button>
+        <button type="button" class="home-carousel-dot" data-slide-dot="1" aria-label="Slide 2"></button>
+        <button type="button" class="home-carousel-dot" data-slide-dot="2" aria-label="Slide 3"></button>
+      </div>
+    </div>
     <button type="button" class="home-carousel-nav home-carousel-nav-prev" aria-label="Předchozí slide">
       ←
     </button>
@@ -33,11 +35,11 @@
                       type="button"
                       class="home-slide-gallery-main"
                       data-lightbox-open="0"
-                      aria-label="Otevřít galerii Facebook postu"
+                      aria-label="Otevřít galerii příspěvku"
                     >
                       <img
                         src="{{ gallery.0.media_url|default:gallery.0.thumbnail_url }}"
-                        alt="Hlavní obrázek Facebook postu"
+                        alt="Hlavní obrázek příspěvku"
                         class="home-slide-image"
                       >
 
@@ -67,17 +69,20 @@
                     {% endif %}
                   {% else %}
                     <div class="home-slide-image-wrap home-slide-image-wrap-empty">
-                      <div class="home-slide-image-placeholder">Facebook</div>
+                      <div class="home-slide-image-placeholder">Příspěvek</div>
                     </div>
                   {% endif %}
                 </div>
 
-                <div class="home-slide-content">
-                  <p class="home-slide-eyebrow">Facebook / poslední post s obrázkem</p>
-                  <h3>Poslední Facebook post</h3>
-
-                  <div class="home-slide-meta">
-                    <span>{{ featured_facebook_post.source.name }}</span>
+                <div class="home-slide-content home-slide-content-social">
+                  <div class="home-slide-meta home-slide-meta-social">
+                    <span>
+                      {% if featured_facebook_post.source.platform == "facebook" %}
+                        Z Facebooku Lieder Society
+                      {% else %}
+                        {{ featured_facebook_post.source.name }}
+                      {% endif %}
+                    </span>
                     {% if featured_facebook_post.published_at %}
                       <span>{{ featured_facebook_post.published_at|date:"d. m. Y H:i" }}</span>
                     {% endif %}
@@ -87,24 +92,46 @@
                   </div>
 
                   {% if featured_facebook_post.message %}
-                    <div class="home-slide-text-scroll">
+                    <div class="home-slide-text-scroll home-slide-text-scroll-social">
                       {{ featured_facebook_post.message|linebreaksbr }}
                     </div>
                   {% else %}
-                    <p class="muted">Tento post nemá textovou část.</p>
+                    <p class="muted">Tento příspěvek nemá textovou část.</p>
                   {% endif %}
 
-                  <div class="home-slide-actions">
-                    {% if featured_facebook_post.permalink_url %}
+                  <div class="home-slide-actions home-slide-actions-social">
+                    <div class="home-slide-social-copy">
+                      Sledujte Lieder Society na sociálních sítích
+                    </div>
+
+                    <div class="home-slide-social-links">
                       <a
-                        href="{{ featured_facebook_post.permalink_url }}"
+                        href="https://www.facebook.com/LiederSociety/"
                         target="_blank"
                         rel="noopener"
-                        class="home-slide-button"
+                        class="home-slide-button home-slide-button-social"
                       >
-                        Otevřít originální post
+                        Náš Facebook
                       </a>
-                    {% endif %}
+
+                      <a
+                        href="https://www.instagram.com/liedersociety/"
+                        target="_blank"
+                        rel="noopener"
+                        class="home-slide-button home-slide-button-social home-slide-button-secondary"
+                      >
+                        Instagram
+                      </a>
+
+                      <a
+                        href="https://www.youtube.com/channel/UCOBzc-a-yvCh-03bXUplTVw"
+                        target="_blank"
+                        rel="noopener"
+                        class="home-slide-button home-slide-button-social home-slide-button-secondary"
+                      >
+                        YouTube
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -112,49 +139,10 @@
           {% else %}
             <div class="home-slide-grid">
               <div class="home-slide-content">
-                <p class="muted">Zatím tu není načtený žádný Facebook post s obrázkem.</p>
+                <p class="muted">Zatím tu není načtený žádný příspěvek s obrázkem.</p>
               </div>
             </div>
           {% endif %}
-        </article>
-
-        <article class="home-slide">
-          <div class="home-slide-grid home-slide-grid-feed">
-            <div class="home-slide-content home-slide-content-feed">
-              <p class="home-slide-eyebrow">Facebook / posledních 5 postů</p>
-              <h3>Scrollovatelný feed</h3>
-
-              {% if recent_facebook_posts %}
-                <div class="home-facebook-feed-list">
-                  {% for post in recent_facebook_posts %}
-                    <article class="home-facebook-feed-item">
-                      <div class="home-facebook-feed-meta">
-                        {% if post.published_at %}
-                          <span>{{ post.published_at|date:"d. m. Y H:i" }}</span>
-                        {% endif %}
-                      </div>
-
-                      <div class="home-facebook-feed-text">
-                        {% if post.message %}
-                          {{ post.message|truncatechars:320 }}
-                        {% else %}
-                          <span class="muted">Bez textu</span>
-                        {% endif %}
-                      </div>
-
-                      <div class="home-facebook-feed-actions">
-                        {% if post.permalink_url %}
-                          <a href="{{ post.permalink_url }}" target="_blank" rel="noopener">Otevřít post</a>
-                        {% endif %}
-                      </div>
-                    </article>
-                  {% endfor %}
-                </div>
-              {% else %}
-                <p class="muted">Zatím tu nejsou načtené žádné Facebook posty.</p>
-              {% endif %}
-            </div>
-          </div>
         </article>
 
         <article class="home-slide">
@@ -174,7 +162,7 @@
             {% endif %}
 
             <div class="home-slide-content">
-              <p class="home-slide-eyebrow">Events / plakát koncertu</p>
+              <p class="home-slide-eyebrow">Koncert</p>
               <h3>
                 {% if featured_event and featured_event.starts_at and featured_event.starts_at >= now %}
                   Nejbližší koncert
@@ -206,10 +194,6 @@
                       Otevřít stránku koncertu
                     </a>
                   {% endif %}
-
-                  <a href="{% url 'events:event_detail' featured_event.pk %}" class="home-slide-button home-slide-button-secondary">
-                    Staff detail koncertu
-                  </a>
                 </div>
               {% else %}
                 <p class="muted">Zatím tu není žádný publikovaný koncert.</p>
@@ -235,23 +219,16 @@
             {% endif %}
 
             <div class="home-slide-content">
-              <p class="home-slide-eyebrow">Media assets / ruční foto</p>
-              <h3>Ruční homepage fotka</h3>
+              <p class="home-slide-eyebrow">Lieder Society</p>
+              <h3>Vybraný vizuál</h3>
 
               {% if manual_home_asset %}
                 <div class="home-slide-meta">
                   <span>{{ manual_home_asset.title|default:"Bez názvu" }}</span>
-                  <span>{{ manual_home_asset.uploaded_at|date:"d. m. Y H:i" }}</span>
                 </div>
 
                 <div class="home-slide-text">
-                  Tohle je zatím ručně vybraný slide z mediální knihovny. Později to uděláme pořádně přes nějaké nastavení homepage, ale pro první prototyp to stačí.
-                </div>
-
-                <div class="home-slide-actions">
-                  <a href="{% url 'media_assets:asset_update' manual_home_asset.pk %}" class="home-slide-button">
-                    Otevřít asset
-                  </a>
+                  Ručně vybraný vizuál pro homepage. Později to klidně napojíme na nějaké jednodušší nastavení v administraci.
                 </div>
               {% else %}
                 <p class="muted">Zatím tu není žádný aktivní obrázek z mediální knihovny.</p>
@@ -265,6 +242,15 @@
     <button type="button" class="home-carousel-nav home-carousel-nav-next" aria-label="Další slide">
       →
     </button>
+  </div>
+
+  <div class="home-carousel-mobile-meta home-carousel-mobile-meta--bottom">
+    <p class="home-carousel-mobile-hint">Potáhněte pro další</p>
+    <div class="home-carousel-dots">
+      <button type="button" class="home-carousel-dot is-active" data-slide-dot="0" aria-label="Slide 1"></button>
+      <button type="button" class="home-carousel-dot" data-slide-dot="1" aria-label="Slide 2"></button>
+      <button type="button" class="home-carousel-dot" data-slide-dot="2" aria-label="Slide 3"></button>
+    </div>
   </div>
 </section>
 
@@ -328,19 +314,71 @@
     Do administrace (koncerty, newslettery apod.) se připojíš přes přihlašovací stránku. Dole už je taky hotová stránka s logama partnerů, ta se zobrazuje i na stránce lidé. Zase platí, že pokud je uživatel přihlášen, vidí i možnost loga upravovat.
   </p>
 </section>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const viewport = document.getElementById("home-carousel-viewport");
   const track = viewport ? viewport.querySelector(".home-carousel-track") : null;
   const prevBtn = document.querySelector(".home-carousel-nav-prev");
   const nextBtn = document.querySelector(".home-carousel-nav-next");
+  const dots = Array.from(document.querySelectorAll("[data-slide-dot]"));
 
-  if (!viewport || !track || !prevBtn || !nextBtn) return;
+  if (!viewport || !track) return;
+
+  function setActiveDot(index) {
+    dots.forEach((dot) => {
+      const dotIndex = Number(dot.dataset.slideDot || 0);
+      dot.classList.toggle("is-active", dotIndex === index);
+    });
+  }
+
+  if (window.matchMedia("(max-width: 760px)").matches) {
+    const slides = Array.from(track.querySelectorAll(".home-slide"));
+
+    function updateMobileDots() {
+      const viewportCenter = viewport.scrollLeft + viewport.clientWidth / 2;
+
+      let bestIndex = 0;
+      let bestDistance = Infinity;
+
+      slides.forEach((slide, index) => {
+        const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
+        const distance = Math.abs(slideCenter - viewportCenter);
+
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
+        }
+      });
+
+      setActiveDot(bestIndex);
+    }
+
+    dots.forEach((dot) => {
+      dot.addEventListener("click", function () {
+        const index = Number(dot.dataset.slideDot || 0);
+        const slide = slides[index];
+        if (!slide) return;
+
+        viewport.scrollTo({
+          left: slide.offsetLeft - ((viewport.clientWidth - slide.offsetWidth) / 2),
+          behavior: "smooth"
+        });
+      });
+    });
+
+    viewport.addEventListener("scroll", function () {
+      window.requestAnimationFrame(updateMobileDots);
+    });
+
+    updateMobileDots();
+    return;
+  }
+
+  if (!prevBtn || !nextBtn) return;
 
   const originalSlides = Array.from(track.querySelectorAll(".home-slide"));
   if (!originalSlides.length) return;
-
-  if (window.matchMedia("(max-width: 760px)").matches) return;
 
   const firstClone = originalSlides[0].cloneNode(true);
   const lastClone = originalSlides[originalSlides.length - 1].cloneNode(true);
@@ -368,6 +406,15 @@ document.addEventListener("DOMContentLoaded", function () {
         slide.classList.add("is-next");
       }
     });
+
+    const realIndex =
+      currentIndex === 0
+        ? originalSlides.length - 1
+        : currentIndex === slides.length - 1
+          ? 0
+          : currentIndex - 1;
+
+    setActiveDot(realIndex);
   }
 
   function setTransition(enabled) {
@@ -416,16 +463,20 @@ document.addEventListener("DOMContentLoaded", function () {
     centerActiveSlide(true);
   }
 
-  function goNext() {
-    goTo(currentIndex + 1);
-  }
-
-  function goPrev() {
+  prevBtn.addEventListener("click", function () {
     goTo(currentIndex - 1);
-  }
+  });
 
-  prevBtn.addEventListener("click", goPrev);
-  nextBtn.addEventListener("click", goNext);
+  nextBtn.addEventListener("click", function () {
+    goTo(currentIndex + 1);
+  });
+
+  dots.forEach((dot) => {
+    dot.addEventListener("click", function () {
+      const index = Number(dot.dataset.slideDot || 0);
+      goTo(index + 1);
+    });
+  });
 
   track.addEventListener("transitionend", jumpToRealSlideIfNeeded);
 
@@ -435,10 +486,6 @@ document.addEventListener("DOMContentLoaded", function () {
     resizeTimer = setTimeout(function () {
       centerActiveSlide(false);
     }, 120);
-  });
-
-  window.addEventListener("load", function () {
-    centerActiveSlide(false);
   });
 
   centerActiveSlide(false);

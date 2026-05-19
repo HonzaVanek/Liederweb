@@ -646,6 +646,96 @@ body {
     object-fit: cover;
 }
 
+.home-slide-content-social {
+    justify-content: space-between;
+}
+
+.home-slide-meta-social {
+    margin-bottom: 18px;
+}
+
+.home-slide-text-scroll-social {
+    max-height: 360px;
+}
+
+.home-slide-actions-social {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    margin-top: 24px;
+    padding-top: 0;
+}
+
+.home-slide-social-copy {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #666;
+}
+
+.home-slide-social-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.home-slide-button-social {
+    min-height: 40px;
+    padding: 9px 16px;
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+}
+
+.home-carousel-mobile-meta {
+    display: none;
+}
+
+.home-carousel-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.home-carousel-dot {
+    width: 9px;
+    height: 9px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: #c7c7c7;
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.home-carousel-dot.is-active {
+    background: #111;
+    transform: scale(1.15);
+}
+
+.home-carousel-mobile-meta--top {
+    margin-bottom: 12px;
+}
+
+.home-carousel-mobile-meta--bottom {
+    margin-top: 14px;
+}
+
+@media (min-width: 1400px) {
+    .home-slide-content-social {
+        justify-content: flex-start;
+        gap: 18px;
+    }
+
+    .home-slide-text-scroll-social {
+        max-height: 470px;
+    }
+
+    .home-slide-actions-social {
+        margin-top: 18px;
+    }
+}
+
 @media (max-width: 1100px) {
     .home-slide {
         flex: 0 0 calc(100vw - 140px);
@@ -673,7 +763,15 @@ body {
     }
 
     .home-carousel-viewport {
-        padding: 0 16px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        padding: 0 10px 6px;
+    }
+
+    .home-carousel-viewport::-webkit-scrollbar {
+        display: none;
     }
 
     .home-carousel-viewport::before,
@@ -681,8 +779,15 @@ body {
         display: none;
     }
 
+    .home-carousel-track {
+        gap: 14px;
+        transform: none !important;
+        transition: none !important;
+    }
+
     .home-slide {
-        flex: 0 0 100%;
+        flex: 0 0 calc(100vw - 42px);
+        scroll-snap-align: center;
         opacity: 1;
         transform: none;
         filter: none;
@@ -696,6 +801,57 @@ body {
     .home-slide-grid {
         padding: 18px;
         border-radius: 18px;
+    }
+
+    .home-slide-image {
+        min-height: 280px;
+        max-height: 320px;
+    }
+
+    .home-slide-gallery-main .home-slide-image {
+        min-height: 280px;
+        max-height: 320px;
+    }
+
+    .home-slide-text-scroll,
+    .home-slide-text-scroll-social {
+        max-height: 260px;
+    }
+
+    .home-carousel-mobile-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        margin-top: 14px;
+    }
+
+    .home-carousel-mobile-hint {
+        margin: 0;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #666;
+    }
+
+        .home-carousel-mobile-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .home-carousel-mobile-meta--top {
+        margin-bottom: 10px;
+    }
+
+    .home-carousel-mobile-meta--bottom {
+        margin-top: 14px;
+    }
+
+    body.dark-mode .home-carousel-mobile-hint {
+        color: #b8b8b8;
     }
 }
 
@@ -846,4 +1002,16 @@ body.dark-mode .home-carousel-viewport::after {
 body.dark-mode .home-slide.is-prev::after,
 body.dark-mode .home-slide.is-next::after {
     background: rgba(0,0,0,0.34);
+}
+
+body.dark-mode .home-slide-social-copy {
+    color: #b8b8b8;
+}
+
+body.dark-mode .home-carousel-dot {
+    background: #5a5a5a;
+}
+
+body.dark-mode .home-carousel-dot.is-active {
+    background: #f0f0f0;
 }
