@@ -74,6 +74,14 @@ class SocialPost(models.Model):
         blank=True,
         verbose_name="Text postu",
     )
+
+    message_tags = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="Tagy / zmínky v textu",
+        help_text="Normalizované message_tags z Facebook Graph API.",
+    )
+
     permalink_url = models.URLField(
         blank=True,
         max_length=1000,

@@ -648,6 +648,7 @@ body {
 
 .home-slide-content-social {
     justify-content: space-between;
+    position: relative;
 }
 
 .home-slide-meta-social {
@@ -655,7 +656,7 @@ body {
 }
 
 .home-slide-text-scroll-social {
-    max-height: 360px;
+    max-height: var(--social-text-max-height, 360px);
 }
 
 .home-slide-actions-social {
@@ -728,7 +729,7 @@ body {
     }
 
     .home-slide-text-scroll-social {
-        max-height: 470px;
+    max-height: var(--social-text-max-height, 470px);
     }
 
     .home-slide-actions-social {

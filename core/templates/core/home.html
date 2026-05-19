@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% load core_tags %}
+{% load social_feed_tags %}
 
 {% block extra_css %}
   {{ block.super }}
@@ -93,7 +94,7 @@
 
                   {% if featured_facebook_post.message %}
                     <div class="home-slide-text-scroll home-slide-text-scroll-social">
-                      {{ featured_facebook_post.message|linebreaksbr }}
+                      {{ featured_facebook_post|facebook_message_html }}
                     </div>
                   {% else %}
                     <p class="muted">Tento příspěvek nemá textovou část.</p>
@@ -245,7 +246,7 @@
   </div>
 
   <div class="home-carousel-mobile-meta home-carousel-mobile-meta--bottom">
-    <p class="home-carousel-mobile-hint">Potáhněte pro další</p>
+    <p class="home-carousel-mobile-hint">Potáhněte do strany pro další</p>
     <div class="home-carousel-dots">
       <button type="button" class="home-carousel-dot is-active" data-slide-dot="0" aria-label="Slide 1"></button>
       <button type="button" class="home-carousel-dot" data-slide-dot="1" aria-label="Slide 2"></button>
@@ -315,6 +316,9 @@
   </p>
 </section>
 
+
+
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   const viewport = document.getElementById("home-carousel-viewport");
@@ -324,6 +328,35 @@ document.addEventListener("DOMContentLoaded", function () {
   const dots = Array.from(document.querySelectorAll("[data-slide-dot]"));
 
   if (!viewport || !track) return;
+
+  function updateSocialTextHeights() {
+    const socialSlides = document.querySelectorAll(".home-slide-content-social");
+
+    socialSlides.forEach((content) => {
+      const text = content.querySelector(".home-slide-text-scroll-social");
+      const meta = content.querySelector(".home-slide-meta-social");
+      const actions = content.querySelector(".home-slide-actions-social");
+
+      if (!text || !meta || !actions) return;
+
+      if (window.matchMedia("(max-width: 760px)").matches) {
+        content.style.removeProperty("--social-text-max-height");
+        return;
+      }
+
+      const contentStyles = window.getComputedStyle(content);
+      const gap = parseFloat(contentStyles.gap || contentStyles.rowGap || 0);
+
+      const available =
+        content.clientHeight
+        - meta.offsetHeight
+        - actions.offsetHeight
+        - (gap * 2);
+
+      const safeHeight = Math.max(220, Math.floor(available));
+      content.style.setProperty("--social-text-max-height", `${safeHeight}px`);
+    });
+  }
 
   function setActiveDot(index) {
     dots.forEach((dot) => {
@@ -372,6 +405,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     updateMobileDots();
+    updateSocialTextHeights();
+    window.addEventListener("load", updateSocialTextHeights);
+
+    document.querySelectorAll(".home-slide-image").forEach((img) => {
+      if (!img.complete) {
+        img.addEventListener("load", updateSocialTextHeights);
+      }
+    });
+
     return;
   }
 
@@ -442,6 +484,7 @@ document.addEventListener("DOMContentLoaded", function () {
       setTransition(animate);
       track.style.transform = `translateX(${currentTranslate}px)`;
       updateClasses();
+      updateSocialTextHeights();
     });
   }
 
@@ -485,10 +528,20 @@ document.addEventListener("DOMContentLoaded", function () {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function () {
       centerActiveSlide(false);
+      updateSocialTextHeights();
     }, 120);
   });
 
+  window.addEventListener("load", updateSocialTextHeights);
+
+  document.querySelectorAll(".home-slide-image").forEach((img) => {
+    if (!img.complete) {
+      img.addEventListener("load", updateSocialTextHeights);
+    }
+  });
+
   centerActiveSlide(false);
+  updateSocialTextHeights();
 });
 </script>
 

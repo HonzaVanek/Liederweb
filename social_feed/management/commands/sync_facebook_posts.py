@@ -11,8 +11,55 @@ from django.utils.dateparse import parse_datetime
 from social_feed.models import SocialPost, SocialPostMedia, SocialSource
 
 
+
+
 class Command(BaseCommand):
     help = "Stáhne poslední Facebook posty a uloží je do databáze."
+
+
+    def normalize_message_tags(self, raw_tags):
+        normalized = []
+
+        if isinstance(raw_tags, dict):
+            items = []
+            for value in raw_tags.values():
+                if isinstance(value, list):
+                    items.extend(value)
+                elif isinstance(value, dict):
+                    items.append(value)
+        elif isinstance(raw_tags, list):
+            items = raw_tags
+        else:
+            items = []
+
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+
+            tag_id = str(item.get("id") or "").strip()
+            name = (item.get("name") or "").strip()
+
+            try:
+                offset = int(item.get("offset"))
+                length = int(item.get("length"))
+            except (TypeError, ValueError):
+                continue
+
+            if not tag_id or not name or offset < 0 or length <= 0:
+                continue
+
+            normalized.append(
+                {
+                    "id": tag_id,
+                    "name": name,
+                    "offset": offset,
+                    "length": length,
+                    "type": (item.get("type") or "").strip(),
+                }
+            )
+
+        normalized.sort(key=lambda x: (x["offset"], -x["length"]))
+        return normalized
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -55,7 +102,7 @@ class Command(BaseCommand):
 
     def sync_source(self, source, token, limit):
         params = {
-            "fields": "id,message,created_time,permalink_url,full_picture",
+            "fields": "id,message,message_tags,created_time,permalink_url,full_picture",
             "limit": limit,
             "access_token": token,
         }
@@ -81,7 +128,7 @@ class Command(BaseCommand):
             published_at = parse_datetime(item.get("created_time") or "")
             fallback_image_url = (item.get("full_picture") or "")[:1500]
             message = (item.get("message") or "").strip()
-
+            message_tags = self.normalize_message_tags(item.get("message_tags"))
             post_media_items = self.fetch_post_media_items(
                 post_id=item["id"],
                 token=token,
@@ -114,13 +161,14 @@ class Command(BaseCommand):
 
             defaults = {
                 "message": message,
+                "message_tags": message_tags,
                 "permalink_url": (item.get("permalink_url") or "")[:1000],
                 "media_type": post_media_type,
                 "image_url": primary_media_url,
                 "thumbnail_url": primary_thumbnail_url,
                 "published_at": published_at,
                 "is_visible": True,
-                "raw_payload": item,
+                "raw_payload": item,               
             }
 
             with transaction.atomic():
