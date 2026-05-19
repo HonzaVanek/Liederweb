@@ -32,42 +32,67 @@
               <div class="home-slide-grid">
                 <div class="home-slide-gallery">
                   {% if gallery %}
-                    <button
-                      type="button"
-                      class="home-slide-gallery-main"
-                      data-lightbox-open="0"
-                      aria-label="Otevřít galerii příspěvku"
-                    >
-                      <img
-                        src="{{ gallery.0.media_url|default:gallery.0.thumbnail_url }}"
-                        alt="Hlavní obrázek příspěvku"
-                        class="home-slide-image"
-                      >
+                    {% with first_media=gallery.0 %}
+                      {% if first_media.media_type == "video" %}
+                        <div class="home-slide-gallery-main home-slide-gallery-main-video">
+                          <video
+                            class="home-slide-image home-slide-video"
+                            controls
+                            preload="metadata"
+                            poster="{{ first_media.thumbnail_url|default:'' }}"
+                            data-carousel-video
+                          >
+                            <source src="{{ first_media.media_url }}" type="video/mp4">
+                          </video>
 
-                      {% if featured_facebook_post.has_gallery %}
-                        <span class="home-slide-gallery-badge">
-                          +{{ featured_facebook_post.media_count|add:"-1" }} další
-                        </span>
-                      {% endif %}
-                    </button>
-
-                    {% if featured_facebook_post.has_gallery %}
-                      <div class="home-slide-thumbs">
-                        {% for media in gallery %}
                           <button
                             type="button"
-                            class="home-slide-thumb {% if forloop.first %}is-active{% endif %}"
-                            data-lightbox-open="{{ forloop.counter0 }}"
-                            aria-label="Otevřít obrázek {{ forloop.counter }}"
+                            class="home-video-play-overlay"
+                            data-carousel-video-play
+                            aria-label="Přehrát video"
                           >
-                            <img
-                              src="{{ media.thumbnail_url|default:media.media_url }}"
-                              alt="Miniatura {{ forloop.counter }}"
-                            >
+                            <span class="home-video-play-icon">▶</span>
                           </button>
-                        {% endfor %}
-                      </div>
-                    {% endif %}
+                        </div>
+                      {% else %}
+                        <button
+                          type="button"
+                          class="home-slide-gallery-main"
+                          data-lightbox-open="0"
+                          aria-label="Otevřít galerii příspěvku"
+                        >
+                          <img
+                            src="{{ first_media.media_url|default:first_media.thumbnail_url }}"
+                            alt="Hlavní obrázek příspěvku"
+                            class="home-slide-image"
+                          >
+
+                          {% if featured_facebook_post.has_gallery %}
+                            <span class="home-slide-gallery-badge">
+                              +{{ featured_facebook_post.media_count|add:"-1" }} další
+                            </span>
+                          {% endif %}
+                        </button>
+
+                        {% if featured_facebook_post.has_gallery %}
+                          <div class="home-slide-thumbs">
+                            {% for media in gallery %}
+                              <button
+                                type="button"
+                                class="home-slide-thumb {% if forloop.first %}is-active{% endif %}"
+                                data-lightbox-open="{{ forloop.counter0 }}"
+                                aria-label="Otevřít obrázek {{ forloop.counter }}"
+                              >
+                                <img
+                                  src="{{ media.thumbnail_url|default:media.media_url }}"
+                                  alt="Miniatura {{ forloop.counter }}"
+                                >
+                              </button>
+                            {% endfor %}
+                          </div>
+                        {% endif %}
+                      {% endif %}
+                    {% endwith %}
                   {% else %}
                     <div class="home-slide-image-wrap home-slide-image-wrap-empty">
                       <div class="home-slide-image-placeholder">Příspěvek</div>
@@ -256,7 +281,7 @@
 </section>
 
 
-{% if featured_facebook_post and featured_facebook_post.media_items.all %}
+{% if featured_facebook_post and featured_facebook_post.media_items.all and featured_facebook_post.media_items.all.0.media_type != "video" %}
   <div class="home-lightbox" id="facebook-lightbox" hidden>
     <div class="home-lightbox-backdrop" data-lightbox-close></div>
 
@@ -271,16 +296,18 @@
 
       <div class="home-lightbox-stage">
         {% for media in featured_facebook_post.media_items.all %}
-          <figure
-            class="home-lightbox-slide {% if forloop.first %}is-active{% endif %}"
-            data-lightbox-slide="{{ forloop.counter0 }}"
-          >
-            <img
-              src="{{ media.media_url|default:media.thumbnail_url }}"
-              alt="Obrázek {{ forloop.counter }} z Facebook postu"
-              class="home-lightbox-image"
+          {% if media.media_type != "video" %}
+            <figure
+              class="home-lightbox-slide {% if forloop.first %}is-active{% endif %}"
+              data-lightbox-slide="{{ forloop.counter0 }}"
             >
-          </figure>
+              <img
+                src="{{ media.media_url|default:media.thumbnail_url }}"
+                alt="Obrázek {{ forloop.counter }} z Facebook postu"
+                class="home-lightbox-image"
+              >
+            </figure>
+          {% endif %}
         {% endfor %}
       </div>
 
@@ -288,8 +315,9 @@
         →
       </button>
 
-      <div class="home-lightbox-thumbs">
-        {% for media in featured_facebook_post.media_items.all %}
+    <div class="home-lightbox-thumbs">
+      {% for media in featured_facebook_post.media_items.all %}
+        {% if media.media_type != "video" %}
           <button
             type="button"
             class="home-lightbox-thumb {% if forloop.first %}is-active{% endif %}"
@@ -301,8 +329,9 @@
               alt="Miniatura {{ forloop.counter }}"
             >
           </button>
-        {% endfor %}
-      </div>
+        {% endif %}
+      {% endfor %}
+    </div>
     </div>
   </div>
 {% endif %}
@@ -633,6 +662,65 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 </script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const videoBlocks = document.querySelectorAll(".home-slide-gallery-main-video");
+
+  function pauseAllCarouselVideos() {
+    document.querySelectorAll("[data-carousel-video]").forEach((video) => {
+      try {
+        video.pause();
+      } catch (e) {}
+    });
+  }
+
+  videoBlocks.forEach((block) => {
+    const video = block.querySelector("[data-carousel-video]");
+    const playButton = block.querySelector("[data-carousel-video-play]");
+
+    if (!video || !playButton) return;
+
+    function playVideo() {
+      const isMobile = window.matchMedia("(max-width: 760px)").matches;
+
+      video.play().catch(() => {});
+
+      if (isMobile) {
+        if (video.requestFullscreen) {
+          video.requestFullscreen().catch(() => {});
+        } else if (video.webkitEnterFullscreen) {
+          video.webkitEnterFullscreen();
+        }
+      }
+    }
+
+    playButton.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      playVideo();
+    });
+
+    video.addEventListener("play", function () {
+      playButton.style.display = "none";
+    });
+
+    video.addEventListener("pause", function () {
+      playButton.style.display = "";
+    });
+
+    video.addEventListener("ended", function () {
+      playButton.style.display = "";
+    });
+  });
+
+  document.querySelectorAll(".home-carousel-nav").forEach((button) => {
+    button.addEventListener("click", pauseAllCarouselVideos);
+  });
+});
+</script>
+
 {% endblock %}
 {% block partners_section %}
     {% render_partners_section %}

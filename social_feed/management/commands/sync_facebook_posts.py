@@ -225,8 +225,9 @@ class Command(BaseCommand):
                 "id,"
                 "media_type,"
                 "media,"
+                "source,"
                 "url,"
-                "subattachments.limit(12){id,media_type,media,url}"
+                "subattachments.limit(12){id,media_type,media,source,url}"
             ),
             "limit": 12,
             "access_token": token,
@@ -295,14 +296,17 @@ class Command(BaseCommand):
         }
 
     def extract_media_url(self, media_data, attachment):
+        raw_media_type = (attachment.get("media_type") or "").lower()
+
+        if raw_media_type == "video":
+            return attachment.get("source") or media_data.get("source") or ""
+
         image = media_data.get("image") or {}
-        source = image.get("src") or media_data.get("source") or attachment.get("url") or ""
-        return source
+        return image.get("src") or attachment.get("url") or ""
 
     def extract_thumbnail_url(self, media_data, attachment, fallback=""):
         image = media_data.get("image") or {}
-        thumb = image.get("src") or attachment.get("url") or fallback or ""
-        return thumb
+        return image.get("src") or attachment.get("url") or fallback or ""
 
     def fetch_json(self, url, source_name):
         try:
