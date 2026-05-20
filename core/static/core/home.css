@@ -915,7 +915,7 @@ body {
 
     .home-carousel-mobile-meta--bottom,
     .home-carousel-mobile-meta--bottom * {
-        touch-action: pan-x;
+        touch-action: pan-y;
     }
 
     body.dark-mode .home-carousel-mobile-hint {
