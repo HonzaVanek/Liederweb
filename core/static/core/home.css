@@ -913,6 +913,11 @@ body {
         -webkit-user-select: none;
     }
 
+
+    .home-carousel-viewport.is-meta-dragging {
+        scroll-snap-type: none;
+    }
+
     .home-carousel-mobile-meta--bottom,
     .home-carousel-mobile-meta--bottom * {
         touch-action: pan-y;

@@ -485,6 +485,7 @@ document.addEventListener("DOMContentLoaded", function () {
         startX = e.clientX;
         startY = e.clientY;
         startScrollLeft = viewport.scrollLeft;
+        viewport.classList.add("is-meta-dragging");
 
         try {
           bottomMeta.setPointerCapture(e.pointerId);
@@ -501,6 +502,7 @@ document.addEventListener("DOMContentLoaded", function () {
           moved = true;
           e.preventDefault();
           viewport.scrollLeft = startScrollLeft - dx;
+          window.requestAnimationFrame(updateMobileDots);
         }
       }
 
@@ -508,6 +510,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!dragging) return;
 
         dragging = false;
+        viewport.classList.remove("is-meta-dragging");
 
         try {
           bottomMeta.releasePointerCapture(e.pointerId);
@@ -524,7 +527,15 @@ document.addEventListener("DOMContentLoaded", function () {
       bottomMeta.addEventListener("pointerdown", onPointerDown);
       bottomMeta.addEventListener("pointermove", onPointerMove, { passive: false });
       bottomMeta.addEventListener("pointerup", onPointerEnd);
-      bottomMeta.addEventListener("pointercancel", onPointerEnd);
+      bottomMeta.addEventListener("pointercancel", function (e) {
+        dragging = false;
+        moved = false;
+        viewport.classList.remove("is-meta-dragging");
+
+        try {
+          bottomMeta.releasePointerCapture(e.pointerId);
+        } catch (_) {}
+      });
 
       bottomMeta.addEventListener("click", function (e) {
         if (moved) {
