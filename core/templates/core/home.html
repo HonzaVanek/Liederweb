@@ -37,8 +37,8 @@
                         <div class="home-slide-gallery-main home-slide-gallery-main-video">
                           <video
                             class="home-slide-image home-slide-video"
-                            controls
                             preload="metadata"
+                            playsinline
                             poster="{{ first_media.thumbnail_url|default:'' }}"
                             data-carousel-video
                           >
@@ -396,6 +396,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (window.matchMedia("(max-width: 760px)").matches) {
     const slides = Array.from(track.querySelectorAll(".home-slide"));
+    const bottomMeta = document.querySelector(".home-carousel-mobile-meta--bottom");
 
     function updateMobileDots() {
       const viewportCenter = viewport.scrollLeft + viewport.clientWidth / 2;
@@ -443,6 +444,32 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
+    if (bottomMeta) {
+      let isDraggingMeta = false;
+      let startX = 0;
+      let startScrollLeft = 0;
+
+      bottomMeta.addEventListener("touchstart", function (e) {
+        if (e.touches.length !== 1) return;
+        isDraggingMeta = true;
+        startX = e.touches[0].clientX;
+        startScrollLeft = viewport.scrollLeft;
+      }, { passive: true });
+
+      bottomMeta.addEventListener("touchmove", function (e) {
+        if (!isDraggingMeta || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - startX;
+        viewport.scrollLeft = startScrollLeft - dx;
+      }, { passive: true });
+
+      bottomMeta.addEventListener("touchend", function () {
+        isDraggingMeta = false;
+      });
+
+      bottomMeta.addEventListener("touchcancel", function () {
+        isDraggingMeta = false;
+      });
+    }
     return;
   }
 
@@ -676,18 +703,33 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function isPhone() {
+    return (
+      window.matchMedia("(pointer: coarse)").matches &&
+      window.innerWidth <= 767
+    );
+  }
+
   videoBlocks.forEach((block) => {
     const video = block.querySelector("[data-carousel-video]");
     const playButton = block.querySelector("[data-carousel-video-play]");
 
     if (!video || !playButton) return;
 
+    function syncControlsState() {
+      video.controls = !isPhone();
+    }
+
     function playVideo() {
-      const isMobile = window.matchMedia("(max-width: 760px)").matches;
+      pauseAllCarouselVideos();
+
+      if (isPhone()) {
+        video.controls = false;
+      }
 
       video.play().catch(() => {});
 
-      if (isMobile) {
+      if (isPhone()) {
         if (video.requestFullscreen) {
           video.requestFullscreen().catch(() => {});
         } else if (video.webkitEnterFullscreen) {
@@ -695,6 +737,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       }
     }
+
+    syncControlsState();
+    window.addEventListener("resize", syncControlsState);
 
     playButton.addEventListener("click", function (e) {
       e.preventDefault();
@@ -704,14 +749,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     video.addEventListener("play", function () {
       playButton.style.display = "none";
+      video.controls = true;
     });
 
     video.addEventListener("pause", function () {
       playButton.style.display = "";
+      syncControlsState();
     });
 
     video.addEventListener("ended", function () {
       playButton.style.display = "";
+      syncControlsState();
     });
   });
 

@@ -892,19 +892,12 @@ body {
         color: #666;
     }
 
-        .home-carousel-mobile-meta {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-    }
-
-        .home-slide-video {
+    .home-slide-video {
         min-height: 280px;
         max-height: 320px;
     }
 
-        .home-video-play-icon {
+    .home-video-play-icon {
         width: 64px;
         height: 64px;
         font-size: 1.7rem;
@@ -916,6 +909,9 @@ body {
 
     .home-carousel-mobile-meta--bottom {
         margin-top: 14px;
+        touch-action: pan-x;
+        user-select: none;
+        -webkit-user-select: none;
     }
 
     body.dark-mode .home-carousel-mobile-hint {
