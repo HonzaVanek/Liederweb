@@ -778,6 +778,10 @@ body {
     background: #000;
 }
 
+.home-carousel-mobile-overlay {
+    display: none;
+}
+
 @media (min-width: 1400px) {
     .home-slide-content-social {
         justify-content: flex-start;
@@ -885,6 +889,7 @@ body {
 
     .home-carousel-mobile-hint {
         margin: 0;
+        text-align: center;
         font-size: 0.8rem;
         font-weight: 700;
         letter-spacing: 0.08em;
@@ -917,15 +922,16 @@ body {
     }
 
     .home-carousel-mobile-overlay {
-        position: absolute;
-        left: 10px;
-        right: 10px;
-        bottom: 8px;
-        z-index: 6;
+        position: static;
+        z-index: auto;
+
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 10px;
+
+        margin: 12px auto 0;
+        padding-bottom: 4px;
 
         pointer-events: auto;
         touch-action: pan-y;
@@ -933,13 +939,12 @@ body {
         -webkit-user-select: none;
     }
 
-    /* Děti zůstanou jen vizuální, gesto chytá celý overlay */
-    .home-carousel-mobile-overlay * {
-        pointer-events: none;
+    .home-intro {
+        padding-top: 34px;
     }
 
-    .home-carousel-viewport.is-meta-dragging {
-        scroll-snap-type: none;
+    .home-carousel-mobile-overlay * {
+        pointer-events: none;
     }
 
 
