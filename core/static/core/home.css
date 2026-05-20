@@ -909,9 +909,13 @@ body {
 
     .home-carousel-mobile-meta--bottom {
         margin-top: 14px;
-        touch-action: pan-x;
         user-select: none;
         -webkit-user-select: none;
+    }
+
+    .home-carousel-mobile-meta--bottom,
+    .home-carousel-mobile-meta--bottom * {
+        touch-action: pan-x;
     }
 
     body.dark-mode .home-carousel-mobile-hint {
