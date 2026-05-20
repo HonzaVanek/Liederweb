@@ -907,10 +907,35 @@ body {
         margin-bottom: 10px;
     }
 
+    .home-carousel-shell {
+        position: relative;
+        padding-bottom: 58px;
+    }
+
     .home-carousel-mobile-meta--bottom {
-        margin-top: 14px;
-        user-select: none;
-        -webkit-user-select: none;
+        display: none;
+    }
+
+    .home-carousel-mobile-overlay {
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 0;
+        z-index: 6;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        pointer-events: none;
+    }
+
+    .home-carousel-dots-mobile,
+    .home-carousel-dots-mobile * {
+        pointer-events: none;
+    }
+
+    .home-carousel-mobile-hint {
+        pointer-events: none;
     }
 
 
