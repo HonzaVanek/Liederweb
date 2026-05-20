@@ -397,9 +397,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (window.matchMedia("(max-width: 760px)").matches) {
     const slides = Array.from(track.querySelectorAll(".home-slide"));
-    
+    const mobileOverlay = document.querySelector(".home-carousel-mobile-overlay");
 
-    function updateMobileDots() {
+    function getSlideTargetLeft(slide) {
+      return slide.offsetLeft - ((viewport.clientWidth - slide.offsetWidth) / 2);
+    }
+
+    function getClosestSlideIndex() {
       const viewportCenter = viewport.scrollLeft + viewport.clientWidth / 2;
 
       let bestIndex = 0;
@@ -415,21 +419,101 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       });
 
-      setActiveDot(bestIndex);
+      return bestIndex;
+    }
+
+    function scrollToSlide(index, behavior = "smooth") {
+      const slide = slides[index];
+      if (!slide) return;
+
+      viewport.scrollTo({
+        left: getSlideTargetLeft(slide),
+        behavior
+      });
+    }
+    
+
+    function updateMobileDots() {
+      setActiveDot(getClosestSlideIndex());
     }
 
     dots.forEach((dot) => {
       dot.addEventListener("click", function () {
         const index = Number(dot.dataset.slideDot || 0);
-        const slide = slides[index];
-        if (!slide) return;
-
-        viewport.scrollTo({
-          left: slide.offsetLeft - ((viewport.clientWidth - slide.offsetWidth) / 2),
-          behavior: "smooth"
-        });
+        scrollToSlide(index, "smooth");
       });
     });
+
+    if (mobileOverlay) {
+      let overlayDrag = null;
+
+      function finishOverlayDrag(event) {
+        if (!overlayDrag) return;
+
+        const shouldSnap = overlayDrag.mode === "x" && overlayDrag.moved;
+        const pointerId = overlayDrag.pointerId;
+
+        overlayDrag = null;
+        viewport.classList.remove("is-meta-dragging");
+
+        try {
+          mobileOverlay.releasePointerCapture(pointerId);
+        } catch (e) {}
+
+        if (shouldSnap) {
+          window.requestAnimationFrame(() => {
+            scrollToSlide(getClosestSlideIndex(), "smooth");
+          });
+        }
+      }
+
+      mobileOverlay.addEventListener("pointerdown", function (event) {
+        if (event.pointerType === "mouse" && event.button !== 0) return;
+
+        overlayDrag = {
+          pointerId: event.pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          startScrollLeft: viewport.scrollLeft,
+          mode: null,
+          moved: false
+        };
+
+        try {
+          mobileOverlay.setPointerCapture(event.pointerId);
+        } catch (e) {}
+      });
+
+      mobileOverlay.addEventListener("pointermove", function (event) {
+        if (!overlayDrag || event.pointerId !== overlayDrag.pointerId) return;
+
+        const dx = event.clientX - overlayDrag.startX;
+        const dy = event.clientY - overlayDrag.startY;
+
+        if (!overlayDrag.mode) {
+          if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+
+          overlayDrag.mode = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+
+          if (overlayDrag.mode === "x") {
+            viewport.classList.add("is-meta-dragging");
+          }
+        }
+
+        if (overlayDrag.mode !== "x") return;
+
+        event.preventDefault();
+
+        overlayDrag.moved = true;
+        viewport.scrollLeft = overlayDrag.startScrollLeft - dx;
+
+        window.requestAnimationFrame(updateMobileDots);
+      });
+
+      mobileOverlay.addEventListener("pointerup", finishOverlayDrag);
+      mobileOverlay.addEventListener("pointercancel", finishOverlayDrag);
+      mobileOverlay.addEventListener("lostpointercapture", finishOverlayDrag);
+    }
 
     viewport.addEventListener("scroll", function () {
       window.requestAnimationFrame(updateMobileDots);

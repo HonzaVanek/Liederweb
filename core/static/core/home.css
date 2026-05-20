@@ -926,21 +926,20 @@ body {
         flex-direction: column;
         align-items: center;
         gap: 10px;
-        pointer-events: none;
+
+        pointer-events: auto;
+        touch-action: pan-y;
+        user-select: none;
+        -webkit-user-select: none;
     }
 
-    .home-carousel-mobile-overlay,
+    /* Děti zůstanou jen vizuální, gesto chytá celý overlay */
     .home-carousel-mobile-overlay * {
         pointer-events: none;
     }
 
-    .home-carousel-dots-mobile,
-    .home-carousel-dots-mobile * {
-        pointer-events: none;
-    }
-
-    .home-carousel-mobile-hint {
-        pointer-events: none;
+    .home-carousel-viewport.is-meta-dragging {
+        scroll-snap-type: none;
     }
 
 
