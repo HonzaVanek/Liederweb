@@ -1,0 +1,245 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'core/home_manual_slide_form.css' %}">
+{% endblock %}
+
+{% block title %}{{ page_title }} | Lieder Society{% endblock %}
+
+{% block rozesilac_content %}
+<section class="staff-form-page">
+  <header class="staff-form-header">
+    <h1>Homepage carousel - custom photo slide</h1>
+    <p class="muted">
+      Administrace ručního nastavení obrázkového bloku v carouselu na úvodní stránce.
+    </p>
+
+    <p>
+      <a href="{% url 'core:home' %}">← Zpět na homepage</a>
+    </p>
+  </header>
+
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="post" class="staff-form">
+    {% csrf_token %}
+
+    <div class="form-row">
+      <label>Obrázek</label>
+
+      {{ form.image_asset }}
+
+      <input type="hidden" name="images_page" value="{{ image_page.number }}">
+
+      <div class="current-home-slide-preview" data-current-home-image-preview>
+        <p class="muted">Aktuálně vybraný obrázek:</p>
+
+        {% if selected_image_asset %}
+          <img
+            src="{{ selected_image_asset.file.url }}"
+            alt="{{ selected_image_asset.alt_text|default:selected_image_asset.title|default:'' }}"
+          >
+          <strong data-image-picker-status>
+            Vybráno: {{ selected_image_asset.title|default:"Bez názvu" }}
+          </strong>
+        {% else %}
+          <div class="current-home-slide-preview-empty">
+            Bez obrázku
+          </div>
+          <strong data-image-picker-status>
+            Vybráno: bez obrázku
+          </strong>
+        {% endif %}
+      </div>
+
+      <div class="home-image-picker" data-home-image-picker>
+        <button
+          type="button"
+          class="home-image-picker-card home-image-picker-card-empty {% if not selected_image_asset_id %}is-selected{% endif %}"
+          data-image-picker-card
+          data-asset-id=""
+          data-asset-title="bez obrázku"
+          data-asset-url=""
+          aria-pressed="{% if not selected_image_asset_id %}true{% else %}false{% endif %}"
+        >
+          <span class="home-image-picker-empty-text">Bez obrázku</span>
+        </button>
+
+        {% for asset in image_page %}
+          <button
+            type="button"
+            class="home-image-picker-card {% if selected_image_asset_id == asset.pk|stringformat:'s' %}is-selected{% endif %}"
+            data-image-picker-card
+            data-asset-id="{{ asset.pk }}"
+            data-asset-title="{{ asset.title|default:'Bez názvu' }}"
+            data-asset-url="{{ asset.file.url }}"
+            aria-pressed="{% if selected_image_asset_id == asset.pk|stringformat:'s' %}true{% else %}false{% endif %}"
+          >
+            <span class="home-image-picker-thumb">
+              <img
+                src="{{ asset.file.url }}"
+                alt="{{ asset.alt_text|default:asset.title|default:'Obrázek' }}"
+                loading="lazy"
+              >
+            </span>
+
+            <span class="home-image-picker-title">
+              {{ asset.title|default:"Bez názvu" }}
+            </span>
+
+            <span class="home-image-picker-selected-label">
+              Vybráno
+            </span>
+          </button>
+        {% endfor %}
+      </div>
+
+      {% if image_page.paginator.num_pages > 1 %}
+        <nav class="home-image-picker-pagination" aria-label="Stránkování obrázků">
+          {% if image_page.has_previous %}
+            <a href="?images_page={{ image_page.previous_page_number }}">← Předchozí</a>
+          {% else %}
+            <span class="is-disabled">← Předchozí</span>
+          {% endif %}
+
+          <span>
+            Strana {{ image_page.number }} z {{ image_page.paginator.num_pages }}
+          </span>
+
+          {% if image_page.has_next %}
+            <a href="?images_page={{ image_page.next_page_number }}">Další →</a>
+          {% else %}
+            <span class="is-disabled">Další →</span>
+          {% endif %}
+        </nav>
+      {% endif %}
+
+      {% for error in form.image_asset.errors %}
+        <div class="form-errors">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-row">
+      <label for="{{ form.layout.id_for_label }}">Rozložení slidu</label>
+      {{ form.layout }}
+        <p class="muted">
+        Varianta „obrázek nahoře, text dole“ se hodí hlavně pro široké fotografie.
+        Varianta „obrázek vlevo, text vpravo“ se hodí hlavně pro fotografie na výšku.
+        Na velmi úzkých obrazovkách může být zobrazení kompaktnější, aby se obsah vešel.
+        </p>
+      {% for error in form.layout.errors %}
+        <div class="form-errors">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-row">
+      <label for="{{ form.eyebrow.id_for_label }}">Horní štítek</label>
+      {{ form.eyebrow }}
+      {% for error in form.eyebrow.errors %}
+        <div class="form-errors">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-row">
+      <label for="{{ form.title.id_for_label }}">Nadpis</label>
+      {{ form.title }}
+      {% for error in form.title.errors %}
+        <div class="form-errors">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-row">
+      <label for="{{ form.subtitle.id_for_label }}">Doplňující řádek</label>
+      {{ form.subtitle }}
+      {% for error in form.subtitle.errors %}
+        <div class="form-errors">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-row">
+      <label for="{{ form.body.id_for_label }}">Popisek</label>
+      {{ form.body }}
+      {% for error in form.body.errors %}
+        <div class="form-errors">{{ error }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="button-primary">Uložit</button>
+      <a href="{% url 'core:home' %}" class="button-secondary">Zobrazit homepage</a>
+    </div>
+  </form>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const picker = document.querySelector("[data-home-image-picker]");
+  const input = document.querySelector("[data-image-picker-input], input[name='{{ form.image_asset.html_name }}']");
+  const preview = document.querySelector("[data-current-home-image-preview]");
+
+  if (!picker || !input) return;
+
+  const cards = Array.from(picker.querySelectorAll("[data-image-picker-card]"));
+
+  function renderPreview(assetId, assetTitle, assetUrl) {
+    if (!preview) return;
+
+    preview.innerHTML = "";
+
+    const label = document.createElement("p");
+    label.className = "muted";
+    label.textContent = "Aktuálně vybraný obrázek:";
+    preview.appendChild(label);
+
+    if (assetId && assetUrl) {
+      const img = document.createElement("img");
+      img.src = assetUrl;
+      img.alt = "";
+      preview.appendChild(img);
+    } else {
+      const empty = document.createElement("div");
+      empty.className = "current-home-slide-preview-empty";
+      empty.textContent = "Bez obrázku";
+      preview.appendChild(empty);
+    }
+
+    const status = document.createElement("strong");
+    status.dataset.imagePickerStatus = "";
+    status.textContent = assetId
+      ? `Vybráno: ${assetTitle}`
+      : "Vybráno: bez obrázku";
+    preview.appendChild(status);
+  }
+
+  function setSelectedCard(selectedCard) {
+    const assetId = selectedCard.dataset.assetId || "";
+    const assetTitle = selectedCard.dataset.assetTitle || "bez obrázku";
+    const assetUrl = selectedCard.dataset.assetUrl || "";
+
+    input.value = assetId;
+
+    cards.forEach((card) => {
+      const isSelected = card === selectedCard;
+      card.classList.toggle("is-selected", isSelected);
+      card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+    });
+
+    renderPreview(assetId, assetTitle, assetUrl);
+  }
+
+  cards.forEach((card) => {
+    card.addEventListener("click", function () {
+      setSelectedCard(card);
+    });
+  });
+});
+</script>
+{% endblock %}

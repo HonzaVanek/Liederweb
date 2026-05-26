@@ -1,6 +1,7 @@
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
+from django.core.exceptions import ValidationError
 
 
 import hashlib
@@ -8,6 +9,8 @@ import hashlib
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
+from media_assets.models import MediaAsset
 
 def person_photo_upload_to(instance, filename):
     return f"people/{instance.slug or 'unsorted'}/{filename}"
@@ -192,3 +195,75 @@ class DailySiteVisitor(models.Model):
 
     def __str__(self):
         return f"{self.day} — {self.visitor_hash[:8]} — {self.pageviews} views"
+    
+
+
+
+    # custom image v carouselu:
+     
+class HomeCarouselManualSlide(models.Model):
+    class Layout(models.TextChoices):
+        SIDE = "side", "Obrázek vlevo, text vpravo"
+        STACKED = "stacked", "Obrázek nahoře, text dole"
+
+    image_asset = models.ForeignKey(
+        MediaAsset,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        limit_choices_to={
+            "asset_type": MediaAsset.AssetType.IMAGE,
+            "is_active": True,
+        },
+        verbose_name="Obrázek z mediální knihovny",
+    )
+
+    layout = models.CharField(
+        "Rozložení slidu",
+        max_length=20,
+        choices=Layout.choices,
+        default=Layout.STACKED,
+        help_text="Pro široké fotografie většinou použijte variantu obrázek nahoře, text dole.",
+    )
+
+    eyebrow = models.CharField("Horní štítek", max_length=120, blank=True, default="Lieder Society")
+    title = models.CharField("Nadpis", max_length=180, blank=True, default="Vybraný vizuál")
+    subtitle = models.CharField("Doplňující řádek", max_length=220, blank=True, default="")
+    body = models.TextField("Popisek", blank=True, default="")
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "ruční blok homepage carouselu"
+        verbose_name_plural = "ruční blok homepage carouselu"
+
+    def __str__(self):
+        return self.title or "Ruční blok homepage carouselu"
+
+    def clean(self):
+        super().clean()
+
+        if self.image_asset:
+            if self.image_asset.asset_type != MediaAsset.AssetType.IMAGE:
+                raise ValidationError({
+                    "image_asset": "Na homepage do carouselu lze vybrat jen obrázek."
+                })
+
+            if not self.image_asset.is_active:
+                raise ValidationError({
+                    "image_asset": "Vybraný obrázek není aktivní."
+                })
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

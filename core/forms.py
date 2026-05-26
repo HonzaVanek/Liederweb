@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from media_assets.models import MediaAsset
-from .models import Person, Partner
+from .models import Person, Partner, HomeCarouselManualSlide
 
 class VlastniLoginForm(AuthenticationForm):
     username = forms.CharField(label="Uživatelské jméno")
@@ -165,3 +165,36 @@ class PartnerForm(forms.ModelForm):
             raise forms.ValidationError("Vybrané logo není aktivní.")
 
         return logo
+    
+
+
+class HomeCarouselManualSlideForm(forms.ModelForm):
+    class Meta:
+        model = HomeCarouselManualSlide
+        fields = [
+            "image_asset",
+            "layout",
+            "eyebrow",
+            "title",
+            "subtitle",
+            "body",
+        ]
+        widgets = {
+            "image_asset": forms.HiddenInput(attrs={
+                "data-image-picker-input": "true",
+            }),
+            "body": forms.Textarea(attrs={"rows": 5}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["image_asset"].queryset = (
+            MediaAsset.objects.filter(
+                asset_type=MediaAsset.AssetType.IMAGE,
+                is_active=True,
+            )
+            .order_by("-uploaded_at", "-id")
+        )
+
+        self.fields["image_asset"].required = False

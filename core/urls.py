@@ -22,6 +22,8 @@ urlpatterns = [
     path("lide/", views.PersonListView.as_view(), name="person_list"),
     path("lide/<slug:slug>/", views.PersonDetailView.as_view(), name="person_detail"),
 
+    path("staff/homepage-carousel/", views.home_manual_slide_edit, name="home_manual_slide_edit"),
+
     path("staff/lide/", views.PersonAdminListView.as_view(), name="person_admin_list"),
     path("staff/lide/novy/", views.PersonCreateView.as_view(), name="person_create"),
     path("staff/lide/<slug:slug>/upravit/", views.PersonUpdateView.as_view(), name="person_update"),

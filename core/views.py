@@ -15,10 +15,11 @@ from django.utils.encoding import force_bytes
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage, send_mail
+from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
 
-from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm
-from .models import Person, Partner
+from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm
+from .models import Person, Partner, HomeCarouselManualSlide
 from events.models import Event
 from media_assets.models import MediaAsset
 from social_feed.models import SocialPost, SocialSource
@@ -124,31 +125,8 @@ def home(request):
         .order_by("-published_at", "-id")[:5]
     )
 
-    # Zatím jednoduché ruční řešení:
-    # sem si můžeš dát konkrétní ID assetu, který chceš na homepage.
-    MANUAL_HOME_ASSET_ID = None
 
-    manual_home_asset = None
-
-    if MANUAL_HOME_ASSET_ID:
-        manual_home_asset = (
-            MediaAsset.objects.filter(
-                pk=MANUAL_HOME_ASSET_ID,
-                asset_type=MediaAsset.AssetType.IMAGE,
-                is_active=True,
-            )
-            .first()
-        )
-
-    if not manual_home_asset:
-        manual_home_asset = (
-            MediaAsset.objects.filter(
-                asset_type=MediaAsset.AssetType.IMAGE,
-                is_active=True,
-            )
-            .order_by("-uploaded_at")
-            .first()
-        )
+    manual_home_slide = HomeCarouselManualSlide.get_solo()
 
     return render(
         request,
@@ -157,8 +135,58 @@ def home(request):
             "featured_event": featured_event,
             "featured_facebook_post": featured_facebook_post,
             "recent_facebook_posts": recent_facebook_posts,
-            "manual_home_asset": manual_home_asset,
+            "manual_home_slide": manual_home_slide,
             "now": now,
+        },
+    )
+
+@staff_required
+def home_manual_slide_edit(request):
+    slide = HomeCarouselManualSlide.get_solo()
+
+    if request.method == "POST":
+        form = HomeCarouselManualSlideForm(request.POST, instance=slide)
+
+        if form.is_valid():
+            slide = form.save(commit=False)
+            slide.updated_by = request.user
+            slide.save()
+
+            messages.success(request, "Blok homepage carouselu byl uložen.")
+            return redirect("core:home_manual_slide_edit")
+    else:
+        form = HomeCarouselManualSlideForm(instance=slide)
+
+    image_assets_qs = form.fields["image_asset"].queryset
+
+    paginator = Paginator(image_assets_qs, 18)
+    image_page_number = (
+        request.GET.get("images_page")
+        or request.POST.get("images_page")
+        or 1
+    )
+    image_page = paginator.get_page(image_page_number)
+
+    selected_image_asset_id = str(form["image_asset"].value() or "")
+
+    selected_image_asset = None
+    if selected_image_asset_id:
+        selected_image_asset = (
+            image_assets_qs
+            .filter(pk=selected_image_asset_id)
+            .first()
+        )
+
+    return render(
+        request,
+        "core/home_manual_slide_form.html",
+        {
+            "form": form,
+            "slide": slide,
+            "image_page": image_page,
+            "selected_image_asset": selected_image_asset,
+            "selected_image_asset_id": selected_image_asset_id,
+            "page_title": "Homepage carousel",
         },
     )
 

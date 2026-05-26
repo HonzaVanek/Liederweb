@@ -422,6 +422,89 @@ body {
     object-fit: cover;
 }
 
+.home-slide-grid-manual {
+    align-items: stretch;
+}
+
+.home-slide-image-wrap-manual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    border: 0;
+    cursor: zoom-in;
+    background: #f6f2ec;
+}
+
+.home-slide-manual-image-button {
+    padding: 0;
+    text-align: inherit;
+}
+
+.home-slide-image-manual {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    object-fit: contain;
+    background: #f6f2ec;
+}
+
+.home-slide-content-manual {
+    justify-content: center;
+    gap: 0;
+}
+
+.home-slide-text-manual {
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.home-slide-actions-manual {
+    margin-top: 24px;
+}
+
+/* Varianta vhodná hlavně pro fotky na výšku */
+.home-slide-grid-manual--side {
+    grid-template-columns: minmax(320px, 540px) minmax(0, 1fr);
+}
+
+.home-slide-grid-manual--side .home-slide-image-wrap-manual {
+    min-height: 500px;
+}
+
+.home-slide-grid-manual--side .home-slide-content-manual {
+    justify-content: center;
+}
+
+/* Varianta vhodná hlavně pro široké fotky */
+.home-slide-grid-manual--stacked {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+}
+
+.home-slide-grid-manual--stacked .home-slide-image-wrap-manual {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    aspect-ratio: 3 / 2;
+}
+
+.home-slide-grid-manual--stacked .home-slide-image-manual {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    object-fit: contain;
+}
+
+.home-slide-grid-manual--stacked .home-slide-content-manual {
+    max-width: 920px;
+    width: 100%;
+    margin: 0 auto;
+}
+
 
 .home-facebook-feed-list {
     max-height: 420px;
@@ -782,6 +865,51 @@ body {
     display: none;
 }
 
+.home-manual-lightbox .home-lightbox-dialog-single {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: min(1180px, calc(100vw - 32px));
+    height: min(88vh, 920px);
+    padding: 20px;
+    overflow: hidden;
+}
+
+.home-manual-lightbox .home-lightbox-stage-single {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+    border-radius: 14px;
+}
+
+.home-manual-lightbox .home-lightbox-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+
+    object-fit: contain;
+    border-radius: 12px;
+}
+
+.home-manual-lightbox .home-lightbox-close {
+    z-index: 5;
+}
+
+.home-lightbox-stage-single {
+    width: 100%;
+    height: 100%;
+}
+
 @media (min-width: 1400px) {
     .home-slide-content-social {
         justify-content: flex-start;
@@ -810,6 +938,36 @@ body {
     .home-slide-image {
         min-height: 360px;
         max-height: 420px;
+    }
+
+    /*
+      Obecné pravidlo výše skládá běžné slidy pod sebe.
+      U ručního slidu ale necháváme variantu side aktivní i na menších obrazovkách,
+      protože dává smysl hlavně u fotek na výšku.
+    */
+    .home-slide-grid-manual--side {
+        grid-template-columns: minmax(220px, 42%) minmax(0, 1fr);
+        gap: 22px;
+        align-items: start;
+    }
+
+    .home-slide-grid-manual--side .home-slide-image-wrap-manual {
+        height: auto;
+        min-height: 0;
+        max-height: none;
+        align-self: start;
+    }
+
+    .home-slide-grid-manual--side .home-slide-image-manual {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        max-height: 460px;
+        object-fit: contain;
+    }
+
+    .home-slide-grid-manual--side .home-slide-content-manual {
+        justify-content: flex-start;
     }
 }
 
@@ -862,6 +1020,7 @@ body {
     .home-slide-grid {
         padding: 18px;
         border-radius: 18px;
+        min-height: auto;
     }
 
     .home-slide-image {
@@ -939,22 +1098,131 @@ body {
         -webkit-user-select: none;
     }
 
-    .home-intro {
-        padding-top: 34px;
-    }
-
     .home-carousel-mobile-overlay * {
         pointer-events: none;
     }
-
 
     .home-carousel-viewport.is-meta-dragging {
         scroll-snap-type: none;
     }
 
-    .home-carousel-mobile-meta--bottom,
-    .home-carousel-mobile-meta--bottom * {
-        touch-action: pan-y;
+    .home-intro {
+        padding-top: 34px;
+    }
+
+    /*
+      Ruční slide:
+      - stacked = obrázek nahoře, text dole
+      - side = obrázek vlevo, text vpravo i na mobilu, aby fotky na výšku nebyly zbytečně malé
+    */
+    .home-slide-grid-manual--stacked {
+        grid-template-columns: 1fr;
+    }
+
+    .home-slide-grid-manual--stacked .home-slide-image-wrap-manual {
+        aspect-ratio: 3 / 2;
+        height: auto;
+        min-height: 0;
+        max-height: none;
+    }
+
+    .home-slide-grid-manual--stacked .home-slide-image-manual {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        max-height: none;
+        object-fit: contain;
+    }
+
+    .home-slide-grid-manual--side {
+        grid-template-columns: minmax(116px, 42%) minmax(0, 1fr);
+        gap: 14px;
+        align-items: start;
+    }
+
+    .home-slide-grid-manual--side .home-slide-image-wrap-manual {
+        height: auto;
+        min-height: 0;
+        max-height: none;
+        align-self: start;
+        border-radius: 14px;
+    }
+
+    .home-slide-grid-manual--side .home-slide-image-manual {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        max-height: 420px;
+        object-fit: contain;
+    }
+
+    .home-slide-grid-manual--side .home-slide-content-manual {
+        justify-content: flex-start;
+        min-width: 0;
+    }
+
+    .home-slide-grid-manual--side .home-slide-eyebrow {
+        margin-bottom: 9px;
+        font-size: 0.68rem;
+        letter-spacing: 0.08em;
+    }
+
+    .home-slide-grid-manual--side .home-slide-content-manual h3 {
+        margin-bottom: 12px;
+        font-size: clamp(1.05rem, 5vw, 1.45rem);
+        line-height: 1.08;
+    }
+
+    .home-slide-grid-manual--side .home-slide-meta {
+        margin-bottom: 12px;
+        font-size: 0.68rem;
+        letter-spacing: 0.06em;
+    }
+
+    .home-slide-grid-manual--side .home-slide-text-manual {
+        max-height: none;
+        overflow: visible;
+        padding-right: 0;
+        font-size: 0.92rem;
+        line-height: 1.55;
+    }
+
+    .home-slide-grid-manual--side .home-slide-actions-manual {
+        margin-top: 14px;
+        padding-top: 0;
+    }
+
+    .home-slide-grid-manual--side .home-slide-button {
+        min-height: 38px;
+        padding: 8px 12px;
+        font-size: 0.66rem;
+        letter-spacing: 0.05em;
+    }
+
+    .home-slide-grid-manual--stacked .home-slide-content-manual {
+        justify-content: flex-start;
+    }
+
+    .home-slide-grid-manual--stacked .home-slide-text-manual {
+        max-height: 220px;
+        overflow-y: auto;
+    }
+
+    .home-slide-grid-manual--stacked .home-slide-actions-manual {
+        margin-top: 20px;
+        padding-top: 0;
+    }
+
+    .home-manual-lightbox .home-lightbox-dialog-single {
+        width: calc(100vw - 24px);
+        height: min(82vh, 720px);
+        margin-top: 7vh;
+        padding: 12px;
+        border-radius: 18px;
+    }
+
+    .home-manual-lightbox .home-lightbox-stage-single {
+        border-radius: 12px;
     }
 
     body.dark-mode .home-carousel-mobile-hint {
