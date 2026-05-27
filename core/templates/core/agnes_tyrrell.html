@@ -43,15 +43,16 @@
 
             <div class="agnes-text-block">
                 <p>
-                    Agnes Tyrrell patří k osobnostem české hudební historie, jejichž tvorba zůstala
-                    po dlouhou dobu neprávem stranou pozornosti. Tento projekt chce její hudbu vrátit
-                    tam, kam patří — mezi posluchače, interprety a živý kulturní prostor.
+                    Agnes Tyrrell patří k pozoruhodným osobnostem české hudební historie, jejichž tvorba zůstala po dlouhou dobu neprávem stranou pozornosti. 
+                    Přestože napsala více než 150 písní, operu i orchestrální skladby, její hudba postupně zmizela z koncertních sálů i z hudebních dějin.
+                    Teprve dnes díky nově nalezeným dopisům znovu objevujeme nejen její tvorbu, ale i silný a mimořádný životní příběh ženy, 
+                    která tvořila navzdory předsudkům, vážné nemoci i dramatickým životním zkušenostem. 
                 </p>
 
                 <p>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sed magna
-                    dignissim, luctus arcu non, posuere justo. Album vzniká jako komorní, pečlivě
-                    připravená nahrávka s ambicí otevřít příběh Agnes Tyrrell novému publiku.
+                    Lieder Society chce vrátit hudbu Agnes Tyrrell tam, kam patří – mezi posluchače, interprety a živý kulturní prostor. 
+                    Při příležitosti 180. výročí jejího narození připravujeme nové CD a další projekty věnované jejímu dílu.
+                    Budeme vděčni, pokud se k této cestě připojíte.
                 </p>
             </div>
         </div>
@@ -138,8 +139,8 @@
                 <div class="agnes-donation-placeholder-buttons" aria-label="Ukázka dárcovských částek">
                     <button type="button">500 Kč</button>
                     <button type="button">1 000 Kč</button>
+                    <button type="button">2 000 Kč</button>
                     <button type="button">5 000 Kč</button>
-                    <button type="button">10 000 Kč</button>
                     <button type="button">Jiná částka</button>
                 </div>
 
@@ -155,44 +156,58 @@
         <div class="agnes-section-inner">
             <p class="agnes-section-label">Kdo za projektem stojí</p>
 
-            <h2>Lieder Society a interpreti projektu</h2>
+            <h2>Lieder Society a interpretky projektu</h2>
 
-            <div class="agnes-trust-grid">
-                <article class="agnes-trust-card">
+            <div class="agnes-trust-content">
+                <article class="agnes-trust-card agnes-trust-card--intro">
                     <h3>Lieder Society</h3>
                     <p>
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                        Spolek dlouhodobě rozvíjí koncertní a edukační projekty
-                        věnované písňové a komorní tvorbě.
+                        Lieder Society dlouhodobě rozvíjí koncertní a edukační projekty
+                        věnované písňové a komorní tvorbě. Součástí její práce je také
+                        návrat pozapomenutých skladatelek do živého hudebního prostoru.
                     </p>
                 </article>
 
-                <article class="agnes-trust-card">
-                    <h3>Interpreti</h3>
+                <div class="agnes-artists-grid" aria-label="Interpretky projektu Agnes Tyrrell">
+                    {% for artist in artist_cards %}
+                        <article class="agnes-artist-card">
+                            <div class="agnes-artist-photo-wrap">
+                                <img
+                                    class="agnes-artist-photo"
+                                    src="{{ artist.image_url }}"
+                                    alt="{{ artist.name }} – {{ artist.role }}"
+                                    loading="lazy"
+                                >
+                            </div>
+
+                            <div class="agnes-artist-body">
+                                <p class="agnes-artist-role">{{ artist.role }}</p>
+                                <h3>{{ artist.name }}</h3>
+                                <p>{{ artist.bio }}</p>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+
+                <article class="agnes-trust-card agnes-trust-card--partners">
+                    <h3>Partneři a podporovatelé</h3>
                     <p>
-                        Zde bude krátké představení umělců, kteří se na vzniku
-                        nahrávky podílejí.
+                        Zde bude prostor pro loga institucí, partnerů a dalších podporovatelů,
+                        kteří se na vzniku projektu podílejí.
                     </p>
                 </article>
 
-                <article class="agnes-trust-card">
-                    <h3>Partneři</h3>
+                <div class="agnes-contact-box">
+                    <h3>Chcete se na podporu zeptat osobně?</h3>
+
                     <p>
-                        Prostor pro loga institucí, partnerů a dalších podporovatelů.
+                        Napište nám. Rádi vám projekt představíme podrobněji.
                     </p>
-                </article>
-            </div>
 
-            <div class="agnes-contact-box">
-                <h3>Chcete se na podporu zeptat osobně?</h3>
-
-                <p>
-                    Napište nám. Rádi vám projekt představíme podrobněji.
-                </p>
-
-                <a href="mailto:info@lieder-society.cz">
-                    info@lieder-society.cz
-                </a>
+                    <a href="mailto:info@lieder-society.cz">
+                        info@lieder-society.cz
+                    </a>
+                </div>
             </div>
         </div>
     </section>

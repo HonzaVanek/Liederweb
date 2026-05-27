@@ -582,12 +582,12 @@ def agnes_tyrrell_landing(request):
         },
         {
             "title": "Mecenáš nahrávky",
-            "amount": "5 000 Kč",
+            "amount": "2 000 Kč",
             "description": "Jméno v bookletu a pozvání na slavnostní křest.",
         },
         {
             "title": "Patron Agnes Tyrrell",
-            "amount": "10 000 Kč",
+            "amount": "5 000 Kč",
             "description": "Jméno v bookletu, VIP pozvání na křest a setkání s umělci.",
         },
     ]
@@ -620,6 +620,48 @@ def agnes_tyrrell_landing(request):
         },
     ]
 
+    artist_cards = [
+        {
+            "name": "Monika Jägerová",
+            "role": "altistka",
+            "image_url": "/media/media_assets/image/2026/05/4b1d7034a8634ee6bedfaa3a2101a534.jpg",
+            "bio": (
+                "Česká altistka oceňovaná pro podmanivý hluboký hlas a stylovou všestrannost. "
+                "Vystupuje na předních evropských scénách a festivalech, spolupracuje s významnými "
+                "orchestry a soubory a je jednou ze zakladatelek Lieder Society."
+            ),
+        },
+        {
+            "name": "Tamara Morozová",
+            "role": "sopranistka",
+            "image_url": "/media/media_assets/image/2026/05/5ed7302f50ae4126b60d99a814ed6d67.jpg",
+            "bio": (
+                "Sopranistka slovenského původu, členka Národního divadla v Praze a předsedkyně "
+                "Lieder Society. Je laureátkou a finalistkou významných pěveckých soutěží a věnuje se "
+                "opernímu i koncertnímu repertoáru."
+            ),
+        },
+        {
+            "name": "Arnheiður Eiríksdóttir",
+            "role": "mezzosopranistka",
+            "image_url": "/media/media_assets/image/2026/05/929581cc52bb42e9a65717e33b4f804c.jpg",
+            "bio": (
+                "Islandská mezzosopranistka známá českému publiku mimo jiné z Národního divadla v Praze. "
+                "V projektu Agnes Tyrrell propůjčí hlas písňovému cyklu Schilflieder – Písně rákosí z roku 1878."
+            ),
+        },
+        {
+            "name": "Kristýna Marková",
+            "role": "klavíristka",
+            "image_url": "/media/media_assets/image/2026/05/58492b3dff204431a0c9edd0bbbbd980.jpg",
+            "bio": (
+                "Klavíristka a vyhledávaná komorní interpretka, absolventka HAMU a Universität für Musik "
+                "und darstellende Kunst ve Vídni. Dlouhodobě se věnuje sólové i komorní hudbě a působí "
+                "na Pražské konzervatoři a HAMU."
+            ),
+        },
+    ]
+
     return render(
         request,
         "core/agnes_tyrrell.html",
@@ -627,6 +669,7 @@ def agnes_tyrrell_landing(request):
             "hide_header": True,
             "support_levels": support_levels,
             "timeline_items": timeline_items,
+            "artist_cards": artist_cards,
             "hero_image_url": "/media/media_assets/image/2026/05/8cfedb64afb84007bbdd3a41a758be84.jpg",
             "video_embed_url": "",
         },
