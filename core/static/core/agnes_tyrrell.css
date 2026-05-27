@@ -30,6 +30,8 @@ body {
     overflow: hidden;
 }
 
+/* HERO */
+
 .agnes-hero {
     min-height: 100svh;
     display: grid;
@@ -117,6 +119,8 @@ body {
     border-color: #fff;
 }
 
+/* COMMON SECTIONS */
+
 .agnes-section {
     padding: 68px 20px;
     position: relative;
@@ -135,6 +139,10 @@ body {
     letter-spacing: -0.05em;
 }
 
+.agnes-story {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+}
+
 .agnes-text-block {
     margin-top: 28px;
     display: grid;
@@ -148,9 +156,7 @@ body {
     margin: 0;
 }
 
-.agnes-story {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
-}
+/* TIMELINE */
 
 .agnes-timeline-section {
     background: rgba(255, 255, 255, 0.025);
@@ -212,6 +218,8 @@ body {
     line-height: 1.58;
 }
 
+/* VIDEO */
+
 .agnes-video-frame,
 .agnes-video-placeholder {
     margin-top: 30px;
@@ -253,6 +261,8 @@ body {
     font-weight: 700;
     margin-bottom: 8px !important;
 }
+
+/* SUPPORT */
 
 .agnes-support-section {
     background:
@@ -337,10 +347,29 @@ body {
     font-weight: 700;
 }
 
-.agnes-trust-grid {
-    margin-top: 30px;
+/* TRUST + ARTISTS */
+
+.agnes-trust-section .agnes-section-inner {
+    display: block;
+}
+
+.agnes-trust-section .agnes-section-label {
+    max-width: 1040px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.agnes-trust-section h2 {
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.agnes-trust-content {
+    width: min(100%, 1040px);
+    margin: 34px auto 0;
     display: grid;
-    gap: 14px;
+    gap: 22px;
 }
 
 .agnes-trust-card,
@@ -349,6 +378,17 @@ body {
     border: 1px solid var(--agnes-line);
     border-radius: 24px;
     background: var(--agnes-bg-card);
+}
+
+.agnes-trust-card--intro {
+    background:
+        linear-gradient(135deg, rgba(232, 207, 155, 0.11), rgba(217, 184, 255, 0.06)),
+        var(--agnes-bg-card);
+}
+
+.agnes-trust-card--partners {
+    border-style: dashed;
+    background: rgba(255, 255, 255, 0.045);
 }
 
 .agnes-trust-card h3,
@@ -364,8 +404,60 @@ body {
     line-height: 1.6;
 }
 
-.agnes-contact-box {
-    margin-top: 18px;
+.agnes-artists-grid {
+    display: grid;
+    gap: 22px;
+}
+
+.agnes-artist-card {
+    overflow: hidden;
+    border: 1px solid var(--agnes-line);
+    border-radius: 28px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035)),
+        var(--agnes-bg-card);
+    box-shadow: 0 18px 56px rgba(0, 0, 0, 0.22);
+}
+
+.agnes-artist-photo-wrap {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.agnes-artist-photo {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.agnes-artist-body {
+    padding: 20px 20px 22px;
+}
+
+.agnes-artist-role {
+    margin: 0 0 8px;
+    color: var(--agnes-gold);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.agnes-artist-body h3 {
+    margin: 0 0 10px;
+    color: var(--agnes-text);
+    font-size: 1.35rem;
+    line-height: 1.15;
+}
+
+.agnes-artist-body p:last-child {
+    margin: 0;
+    color: var(--agnes-muted);
+    line-height: 1.58;
 }
 
 .agnes-contact-box a {
@@ -377,96 +469,7 @@ body {
     border-bottom: 1px solid rgba(232, 207, 155, 0.5);
 }
 
-@media (min-width: 720px) {
-    .agnes-hero {
-        min-height: 760px;
-    }
-
-    .agnes-hero-content {
-        padding: 64px min(7vw, 80px) 76px;
-    }
-
-    .agnes-section {
-        padding: 96px min(7vw, 80px);
-    }
-
-    .agnes-text-block {
-        max-width: 720px;
-        font-size: 1.15rem;
-    }
-
-    .agnes-support-grid,
-    .agnes-trust-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .agnes-donation-placeholder-buttons {
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 980px) {
-    .agnes-hero-content {
-        width: min(58vw, 800px);
-    }
-
-    .agnes-section-inner {
-        display: grid;
-        grid-template-columns: minmax(240px, 0.65fr) minmax(0, 1fr);
-        gap: 72px;
-        align-items: start;
-    }
-
-    .agnes-section-label,
-    .agnes-section h2 {
-        grid-column: 1;
-    }
-
-    .agnes-text-block,
-    .agnes-timeline,
-    .agnes-video-frame,
-    .agnes-video-placeholder,
-    .agnes-support-intro,
-    .agnes-support-grid,
-    .agnes-donation-box,
-    .agnes-trust-grid,
-    .agnes-contact-box {
-        grid-column: 2;
-    }
-
-    .agnes-section-label {
-        margin-top: 8px;
-    }
-
-    .agnes-section h2 {
-        grid-row: 1 / span 2;
-        margin-top: 32px;
-    }
-
-    .agnes-support-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .agnes-hero-image {
-        object-position: center 20%;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    html {
-        scroll-behavior: auto;
-    }
-
-    .agnes-primary-button {
-        transition: none;
-    }
-
-    .agnes-primary-button:hover,
-    .agnes-primary-button:focus-visible {
-        transform: none;
-    }
-}
-
+/* NEWSLETTER */
 
 .agnes-newsletter-section {
     padding-top: 72px;
@@ -590,13 +593,91 @@ body {
     background: rgba(255, 140, 140, 0.12);
 }
 
+/* TABLET */
+
+@media (min-width: 640px) {
+    .agnes-artists-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (min-width: 720px) {
+    .agnes-hero {
+        min-height: 760px;
+    }
+
+    .agnes-hero-content {
+        padding: 64px min(7vw, 80px) 76px;
+    }
+
+    .agnes-section {
+        padding: 96px min(7vw, 80px);
+    }
+
+    .agnes-text-block {
+        max-width: 720px;
+        font-size: 1.15rem;
+    }
+
+    .agnes-support-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .agnes-donation-placeholder-buttons {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
     .agnes-newsletter-form {
         padding: 28px;
     }
 }
 
+/* DESKTOP */
+
 @media (min-width: 980px) {
+    .agnes-hero-content {
+        width: min(58vw, 800px);
+    }
+
+    .agnes-hero-image {
+        object-position: center 20%;
+    }
+
+    .agnes-section-inner {
+        display: grid;
+        grid-template-columns: minmax(240px, 0.65fr) minmax(0, 1fr);
+        gap: 72px;
+        align-items: start;
+    }
+
+    .agnes-section-label,
+    .agnes-section h2 {
+        grid-column: 1;
+    }
+
+    .agnes-text-block,
+    .agnes-timeline,
+    .agnes-video-frame,
+    .agnes-video-placeholder,
+    .agnes-support-intro,
+    .agnes-support-grid,
+    .agnes-donation-box {
+        grid-column: 2;
+    }
+
+    .agnes-section-label {
+        margin-top: 8px;
+    }
+
+    .agnes-section h2 {
+        grid-row: 1 / span 2;
+        margin-top: 32px;
+    }
+
+    .agnes-support-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .agnes-newsletter-inner {
         align-items: center;
     }
@@ -615,104 +696,81 @@ body {
         grid-column: 2;
         margin-top: 0;
     }
+
+    /* Trust sekce má vlastní desktop layout, jiný než běžné textové sekce. */
+    .agnes-trust-section .agnes-section-inner {
+        display: block;
+        width: min(100%, 1180px);
+        margin: 0 auto;
+    }
+
+    .agnes-trust-section .agnes-section-label,
+    .agnes-trust-section h2 {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .agnes-trust-content {
+        width: 100%;
+        margin-top: 42px;
+    }
+
+    .agnes-trust-card--intro {
+        max-width: 720px;
+    }
+
+    .agnes-artists-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+    }
+
+    .agnes-artist-card {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr);
+        min-height: 260px;
+    }
+
+    .agnes-artist-photo-wrap {
+        aspect-ratio: auto;
+        height: 100%;
+    }
+
+    .agnes-artist-body {
+        padding: 24px;
+    }
+
+    .agnes-artist-body h3 {
+        font-size: 1.45rem;
+    }
+
+    .agnes-artist-body p:last-child {
+        font-size: 0.98rem;
+        line-height: 1.62;
+    }
+
+    .agnes-trust-card--partners,
+    .agnes-contact-box {
+        max-width: 720px;
+    }
 }
 
+/* REDUCED MOTION */
+
 @media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .agnes-primary-button,
     .agnes-newsletter-field input,
     .agnes-newsletter-button {
         transition: none;
     }
 
+    .agnes-primary-button:hover,
+    .agnes-primary-button:focus-visible,
     .agnes-newsletter-button:hover,
     .agnes-newsletter-button:focus-visible {
         transform: none;
-    }
-}
-
-
-.agnes-trust-content {
-    margin-top: 30px;
-    display: grid;
-    gap: 18px;
-}
-
-.agnes-trust-card--intro {
-    background:
-        linear-gradient(135deg, rgba(232, 207, 155, 0.11), rgba(217, 184, 255, 0.06)),
-        var(--agnes-bg-card);
-}
-
-.agnes-artists-grid {
-    display: grid;
-    gap: 16px;
-}
-
-.agnes-artist-card {
-    overflow: hidden;
-    border: 1px solid var(--agnes-line);
-    border-radius: 28px;
-    background: var(--agnes-bg-card);
-    box-shadow: 0 18px 56px rgba(0, 0, 0, 0.22);
-}
-
-.agnes-artist-photo-wrap {
-    position: relative;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.06);
-}
-
-.agnes-artist-photo {
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: cover;
-    transform: scale(1.01);
-}
-
-.agnes-artist-body {
-    padding: 20px;
-}
-
-.agnes-artist-role {
-    margin: 0 0 8px;
-    color: var(--agnes-gold);
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-
-.agnes-artist-body h3 {
-    margin: 0 0 10px;
-    font-size: 1.35rem;
-    line-height: 1.15;
-}
-
-.agnes-artist-body p:last-child {
-    margin: 0;
-    color: var(--agnes-muted);
-    line-height: 1.58;
-}
-
-.agnes-trust-card--partners {
-    border-style: dashed;
-    background: rgba(255, 255, 255, 0.045);
-}
-
-@media (min-width: 640px) {
-    .agnes-artists-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (min-width: 980px) {
-    .agnes-trust-content {
-        grid-column: 2;
-        margin-top: 0;
-    }
-
-    .agnes-artists-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
