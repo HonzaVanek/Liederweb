@@ -127,26 +127,223 @@
                 {% endfor %}
             </div>
 
-            <div class="agnes-donation-box">
-                <h3>Podpořit projekt</h3>
+            <div class="agnes-donation-options">
 
-                <p>
-                    Zde bude vložen darovací widget Darujme.cz. Po jeho dodání nahradíme
-                    tento blok konkrétním embed kódem.
-                </p>
+                <div class="agnes-donation-box agnes-donation-box--darujme">
+                    <h3>Podpořit projekt přes Darujme.cz</h3>
 
-                <div class="agnes-donation-placeholder-buttons" aria-label="Ukázka dárcovských částek">
-                    <button type="button">500 Kč</button>
-                    <button type="button">1 000 Kč</button>
-                    <button type="button">2 000 Kč</button>
-                    <button type="button">5 000 Kč</button>
-                    <button type="button">Jiná částka</button>
+                    <p>
+                        Zde bude vložen darovací widget Darujme.cz. Pokud bude aktivní včas,
+                        půjde projekt podpořit přímo přes zabezpečený darovací formulář.
+                    </p>
+
+                    <div class="agnes-donation-placeholder-buttons" aria-label="Ukázka dárcovských částek">
+                        <button type="button">500 Kč</button>
+                        <button type="button">1 000 Kč</button>
+                        <button type="button">2 000 Kč</button>
+                        <button type="button">5 000 Kč</button>
+                        <button type="button">Jiná částka</button>
+                    </div>
+
+                    {#
+                        Sem později vložit reálný embed kód z Darujme.cz.
+                    #}
                 </div>
 
-                {# 
-                    Sem později vložit reálný embed kód z Darujme.cz.
-                    Ideálně přímo kód vygenerovaný v administraci Darujme.
-                #}
+                <div class="agnes-donation-box agnes-donation-box--bank">
+                    <h3>Podpořit bankovním převodem</h3>
+
+                    <p>
+                        Pokud darovací widget ještě nebude aktivní, můžete si zde vygenerovat
+                        platební údaje a QR kód pro bankovní aplikaci.
+                    </p>
+
+                    {% if support_form.non_field_errors %}
+                        <div class="agnes-bank-form-errors">
+                            {% for error in support_form.non_field_errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form class="agnes-bank-form" method="post" action="{{ request.path }}#platebni-udaje">
+                        {% csrf_token %}
+
+                        <input type="hidden" name="form_type" value="agnes_support">
+                        <input id="agnes-amount-choice" type="hidden" name="amount_choice" value="{{ support_form.amount_choice.value|default:'1000' }}">
+
+                        <fieldset class="agnes-bank-amounts">
+                            <legend>Vyberte částku</legend>
+
+                            <div class="agnes-bank-amount-grid">
+                                <button class="agnes-bank-amount-button" type="button" data-amount-choice="500">
+                                    500 Kč
+                                </button>
+
+                                <button class="agnes-bank-amount-button is-selected" type="button" data-amount-choice="1000">
+                                    1 000 Kč
+                                </button>
+
+                                <button class="agnes-bank-amount-button" type="button" data-amount-choice="2000">
+                                    2 000 Kč
+                                </button>
+
+                                <button class="agnes-bank-amount-button" type="button" data-amount-choice="5000">
+                                    5 000 Kč
+                                </button>
+
+                                <button class="agnes-bank-amount-button" type="button" data-amount-choice="other">
+                                    Jiná částka
+                                </button>
+                            </div>
+
+                            <div class="agnes-bank-custom-amount" hidden>
+                                <label for="agnes-custom-amount">Vlastní částka v Kč</label>
+                                <input
+                                    id="agnes-custom-amount"
+                                    type="number"
+                                    name="custom_amount"
+                                    min="100"
+                                    step="1"
+                                    inputmode="numeric"
+                                    placeholder="Např. 10000"
+                                    value="{{ support_form.custom_amount.value|default:'' }}"
+                                >
+
+                                {% for error in support_form.custom_amount.errors %}
+                                    <p class="agnes-field-error">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        </fieldset>
+
+                        <div class="agnes-bank-fields">
+                            <div class="agnes-bank-field">
+                                <label for="agnes-donor-name">Jméno</label>
+                                <input
+                                    id="agnes-donor-name"
+                                    type="text"
+                                    name="donor_name"
+                                    autocomplete="name"
+                                    placeholder="Vaše jméno"
+                                    value="{{ support_form.donor_name.value|default:'' }}"
+                                >
+
+                                {% for error in support_form.donor_name.errors %}
+                                    <p class="agnes-field-error">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+
+                            <div class="agnes-bank-field">
+                                <label for="agnes-donor-email">E-mail</label>
+                                <input
+                                    id="agnes-donor-email"
+                                    type="email"
+                                    name="donor_email"
+                                    autocomplete="email"
+                                    placeholder="vas@email.cz"
+                                    value="{{ support_form.donor_email.value|default:'' }}"
+                                >
+
+                                {% for error in support_form.donor_email.errors %}
+                                    <p class="agnes-field-error">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+
+                            <div class="agnes-bank-field">
+                                <label for="agnes-donor-phone">Telefon <span>nepovinné</span></label>
+                                <input
+                                    id="agnes-donor-phone"
+                                    type="tel"
+                                    name="donor_phone"
+                                    autocomplete="tel"
+                                    placeholder="+420 ..."
+                                    value="{{ support_form.donor_phone.value|default:'' }}"
+                                >
+
+                                {% for error in support_form.donor_phone.errors %}
+                                    <p class="agnes-field-error">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+
+                            <div class="agnes-bank-field">
+                                <label for="agnes-donor-note">Poznámka <span>nepovinné</span></label>
+                                <textarea
+                                    id="agnes-donor-note"
+                                    name="note"
+                                    rows="3"
+                                    placeholder="Například dotaz k potvrzení o daru nebo k projektu."
+                                >{{ support_form.note.value|default:'' }}</textarea>
+
+                                {% for error in support_form.note.errors %}
+                                    <p class="agnes-field-error">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+
+                            <label class="agnes-bank-checkbox">
+                                <input
+                                    type="checkbox"
+                                    name="wants_receipt"
+                                    value="on"
+                                    {% if support_form.wants_receipt.value %}checked{% endif %}
+                                >
+                                <span>Budu potřebovat potvrzení o daru.</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="agnes-bank-submit">
+                            Vygenerovat platební údaje
+                        </button>
+                    </form>
+
+                    {% if payment_intent %}
+                        <div class="agnes-payment-result" id="platebni-udaje">
+                            <h4>Platební údaje</h4>
+
+                            <p class="agnes-payment-result-intro">
+                                Naskenujte QR kód ve své bankovní aplikaci, nebo použijte údaje níže.
+                            </p>
+
+                            {% if payment_qr_svg %}
+                                <div class="agnes-payment-qr">
+                                    {{ payment_qr_svg|safe }}
+                                </div>
+                            {% endif %}
+
+                            <dl class="agnes-payment-details">
+                                <div>
+                                    <dt>Příjemce</dt>
+                                    <dd>{{ donation_recipient }}</dd>
+                                </div>
+
+                                <div>
+                                    <dt>Účet</dt>
+                                    <dd>{{ donation_account_display }}</dd>
+                                </div>
+
+                                <div>
+                                    <dt>Částka</dt>
+                                    <dd>{{ payment_intent.amount }} Kč</dd>
+                                </div>
+
+                                <div>
+                                    <dt>Variabilní symbol</dt>
+                                    <dd>{{ payment_intent.variable_symbol }}</dd>
+                                </div>
+
+                                <div>
+                                    <dt>Zpráva pro příjemce</dt>
+                                    <dd>Dar Agnes Tyrrell</dd>
+                                </div>
+                            </dl>
+
+                            <p class="agnes-payment-note">
+                                Platbu po přijetí ručně spárujeme podle variabilního symbolu.
+                                Pokud budete potřebovat potvrzení o daru, ozveme se vám na uvedený e-mail.
+                            </p>
+                        </div>
+                    {% endif %}
+                </div>
+
             </div>
         </div>
     </section>
@@ -323,4 +520,56 @@
         </div>
     </section>
 </main>
+
+
+
+<script>
+(function () {
+    const amountChoiceInput = document.getElementById("agnes-amount-choice");
+    const buttons = document.querySelectorAll(".agnes-bank-amount-button");
+    const customAmountWrap = document.querySelector(".agnes-bank-custom-amount");
+    const customAmountInput = document.getElementById("agnes-custom-amount");
+
+    if (!amountChoiceInput || !buttons.length || !customAmountWrap) {
+        return;
+    }
+
+    function selectAmount(value) {
+        amountChoiceInput.value = value;
+
+        buttons.forEach(function (button) {
+            button.classList.toggle("is-selected", button.dataset.amountChoice === value);
+        });
+
+        const isOther = value === "other";
+        customAmountWrap.hidden = !isOther;
+
+        if (customAmountInput) {
+            customAmountInput.required = isOther;
+
+            if (isOther) {
+                customAmountInput.focus();
+            }
+        }
+    }
+
+    buttons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            selectAmount(button.dataset.amountChoice);
+        });
+    });
+
+    selectAmount(amountChoiceInput.value || "1000");
+
+    const paymentResult = document.getElementById("platebni-udaje");
+    if (paymentResult) {
+        paymentResult.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    }
+})();
+</script>
+
+
 {% endblock content %}

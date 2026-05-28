@@ -900,4 +900,306 @@ body {
     .agnes-newsletter-button:focus-visible {
         transform: none;
     }
+
+    .agnes-bank-amount-button,
+    .agnes-bank-submit {
+        transition: none;
+    }
+
+    .agnes-bank-submit:hover,
+    .agnes-bank-submit:focus-visible {
+        transform: none;
+    }
 }
+
+
+
+
+
+
+/* TADY JE AZ DO 1191 CSS K BANKOVNIMU QR KODU A GENEROVANI, MOZNA TO SMAZEME KDYZ SE TO NESTANE */
+
+.agnes-donation-options {
+    margin-top: 22px;
+    display: grid;
+    gap: 18px;
+}
+
+.agnes-donation-box--bank {
+    border-color: rgba(232, 207, 155, 0.52);
+}
+
+.agnes-bank-form {
+    margin-top: 24px;
+    display: grid;
+    gap: 22px;
+}
+
+.agnes-bank-amounts {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.agnes-bank-amounts legend {
+    margin-bottom: 12px;
+    color: var(--agnes-text);
+    font-weight: 800;
+}
+
+.agnes-bank-amount-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.agnes-bank-amount-button {
+    min-height: 48px;
+    padding: 0 12px;
+    border: 1px solid rgba(255, 248, 243, 0.22);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.075);
+    color: var(--agnes-text);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.agnes-bank-amount-button:hover,
+.agnes-bank-amount-button:focus-visible,
+.agnes-bank-amount-button.is-selected {
+    border-color: rgba(232, 207, 155, 0.72);
+    background: rgba(232, 207, 155, 0.14);
+}
+
+.agnes-bank-amount-button:focus-visible {
+    outline: 3px solid rgba(232, 207, 155, 0.45);
+    outline-offset: 3px;
+}
+
+.agnes-bank-custom-amount {
+    margin-top: 14px;
+    display: grid;
+    gap: 8px;
+}
+
+.agnes-bank-fields {
+    display: grid;
+    gap: 14px;
+}
+
+.agnes-bank-field {
+    display: grid;
+    gap: 8px;
+}
+
+.agnes-bank-field label,
+.agnes-bank-custom-amount label {
+    color: var(--agnes-text);
+    font-size: 0.92rem;
+    font-weight: 800;
+}
+
+.agnes-bank-field label span {
+    color: var(--agnes-faint);
+    font-weight: 500;
+}
+
+.agnes-bank-field input,
+.agnes-bank-field textarea,
+.agnes-bank-custom-amount input {
+    width: 100%;
+    padding: 0 16px;
+    border: 1px solid rgba(255, 248, 243, 0.2);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--agnes-text);
+    font: inherit;
+    outline: none;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.agnes-bank-field input,
+.agnes-bank-custom-amount input {
+    min-height: 50px;
+}
+
+.agnes-bank-field textarea {
+    min-height: 92px;
+    padding-top: 13px;
+    padding-bottom: 13px;
+    resize: vertical;
+}
+
+.agnes-bank-field input::placeholder,
+.agnes-bank-field textarea::placeholder,
+.agnes-bank-custom-amount input::placeholder {
+    color: rgba(255, 248, 243, 0.45);
+}
+
+.agnes-bank-field input:focus,
+.agnes-bank-field textarea:focus,
+.agnes-bank-custom-amount input:focus {
+    border-color: rgba(232, 207, 155, 0.72);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 4px rgba(232, 207, 155, 0.12);
+}
+
+.agnes-bank-checkbox {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    color: var(--agnes-muted);
+    line-height: 1.45;
+    cursor: pointer;
+}
+
+.agnes-bank-checkbox input {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--agnes-gold);
+}
+
+.agnes-bank-submit {
+    width: 100%;
+    min-height: 54px;
+    border: 1px solid rgba(255, 248, 243, 0.34);
+    border-radius: 999px;
+    background: rgba(255, 248, 243, 0.96);
+    color: #1b1023;
+    font: inherit;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.agnes-bank-submit:hover,
+.agnes-bank-submit:focus-visible {
+    transform: translateY(-2px);
+    background: #fff;
+    border-color: #fff;
+}
+
+.agnes-bank-form-errors,
+.agnes-field-error {
+    color: #ffd6d6;
+}
+
+.agnes-bank-form-errors {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 140, 140, 0.45);
+    border-radius: 16px;
+    background: rgba(255, 140, 140, 0.1);
+}
+
+.agnes-bank-form-errors p,
+.agnes-field-error {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.agnes-payment-result {
+    margin-top: 28px;
+    padding: 22px;
+    border: 1px solid rgba(232, 207, 155, 0.52);
+    border-radius: 24px;
+    background:
+        linear-gradient(135deg, rgba(232, 207, 155, 0.14), rgba(217, 184, 255, 0.08)),
+        rgba(255, 255, 255, 0.06);
+}
+
+.agnes-payment-result h4 {
+    margin: 0 0 10px;
+    font-size: 1.35rem;
+}
+
+.agnes-payment-result-intro,
+.agnes-payment-note {
+    margin: 0;
+    color: var(--agnes-muted);
+    line-height: 1.58;
+}
+
+.agnes-payment-qr {
+    width: min(100%, 260px);
+    margin: 22px auto;
+    padding: 14px;
+    border-radius: 20px;
+    background: #fff;
+}
+
+.agnes-payment-qr svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.agnes-payment-details {
+    margin: 18px 0 0;
+    display: grid;
+    gap: 10px;
+}
+
+.agnes-payment-details div {
+    padding: 12px 0;
+    border-top: 1px solid rgba(255, 248, 243, 0.13);
+}
+
+.agnes-payment-details dt {
+    margin: 0 0 4px;
+    color: var(--agnes-faint);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.agnes-payment-details dd {
+    margin: 0;
+    color: var(--agnes-text);
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.agnes-payment-note {
+    margin-top: 18px;
+    font-size: 0.94rem;
+}
+
+.agnes-payment-result {
+    scroll-margin-top: 28px;
+}
+
+@media (min-width: 720px) {
+    .agnes-bank-amount-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .agnes-bank-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .agnes-bank-field:nth-child(4),
+    .agnes-bank-checkbox {
+        grid-column: 1 / -1;
+    }
+
+    .agnes-payment-details {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        column-gap: 24px;
+    }
+}
+
+@media (min-width: 980px) {
+    .agnes-donation-options {
+        grid-column: 2;
+    }
+}
+
+/* TADY KONCI CSS K BANKOVNIMU QR KODU A GENEROVANI, MOZNA TO SMAZEME KDYZ SE TO NESTANE */

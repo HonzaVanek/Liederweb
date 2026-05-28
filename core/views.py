@@ -18,7 +18,7 @@ from django.core.mail import EmailMessage, send_mail
 from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
 
-from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm
+from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm
 from .models import Person, Partner, HomeCarouselManualSlide
 from events.models import Event
 from media_assets.models import MediaAsset
@@ -26,6 +26,8 @@ from social_feed.models import SocialPost, SocialSource
 from .decorators import staff_required
 from rozesilac.models import Contact
 from rozesilac.services import get_web_contacts_group
+
+from .utils.payments import build_spd_payload, make_qr_svg
 
 
 def robots_txt(request):
@@ -698,6 +700,30 @@ def agnes_tyrrell_landing(request):
         },
     ]
 
+
+# tady funkce spojené s platební kampaní pro Agnes Tyrrell, možná se to nakonec nepoužije, ale zatím to tu nechám pro případný další vývoj.
+    payment_intent = None
+    payment_qr_svg = ""
+    payment_payload = ""
+
+    if request.method == "POST" and request.POST.get("form_type") == "agnes_support":
+        support_form = AgnesSupportIntentForm(request.POST)
+
+        if support_form.is_valid():
+            payment_intent = support_form.save()
+
+            payment_payload = build_spd_payload(
+                iban=settings.LIEDER_DONATION_IBAN,
+                amount=payment_intent.amount,
+                message="Dar Agnes Tyrrell",
+                variable_symbol=payment_intent.variable_symbol,
+            )
+            payment_qr_svg = make_qr_svg(payment_payload)
+        else:
+            payment_intent = None
+    else:
+        support_form = AgnesSupportIntentForm()
+# pocaď se to dá vlastně smazat, pokud se nakonec rozhodne, že se žádný platební formulář na landing page dělat nebude. Ale zatím to tu nechám pro případný další vývoj.
     return render(
         request,
         "core/agnes_tyrrell.html",
@@ -710,5 +736,13 @@ def agnes_tyrrell_landing(request):
             "hero_image_url": "/media/media_assets/image/2026/05/8cfedb64afb84007bbdd3a41a758be84.jpg",
             "lieder_logo_url": "/media/media_assets/image/2026/05/2adc68f6908b4cf6b9934db24e34f53f.png",
             "video_embed_url": "",
+
+            #následující 4 řádky bude možné později smazat, pokud se nakonec rozhodne, že se žádný platební formulář na landing page dělat nebude. Ale zatím to tu nechám pro případný další vývoj.
+            "support_form": support_form,
+            "payment_intent": payment_intent,
+            "payment_qr_svg": payment_qr_svg,
+            "payment_payload": payment_payload,
+            "donation_recipient": settings.LIEDER_DONATION_RECIPIENT,
+            "donation_account_display": settings.LIEDER_DONATION_ACCOUNT_DISPLAY,
         },
     )

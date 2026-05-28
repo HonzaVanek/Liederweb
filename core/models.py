@@ -12,6 +12,8 @@ from django.utils import timezone
 
 from media_assets.models import MediaAsset
 
+from decimal import Decimal
+
 def person_photo_upload_to(instance, filename):
     return f"people/{instance.slug or 'unsorted'}/{filename}"
 
@@ -267,3 +269,77 @@ class HomeCarouselManualSlide(models.Model):
     def get_solo(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+    
+
+
+##### tohle je model jen pro platbu přes bankovní údaje, případně QR code spojenou s landing page Tyrrell. Možná ten model pak zas smažem jestli se to nepoužije.
+
+class AgnesSupportIntent(models.Model):
+    class Status(models.TextChoices):
+        CREATED = "created", "Vytvořeno"
+        PAID = "paid", "Zaplaceno"
+        CANCELLED = "cancelled", "Zrušeno"
+
+    amount = models.DecimalField(
+        "částka",
+        max_digits=10,
+        decimal_places=2,
+    )
+    donor_name = models.CharField(
+        "jméno dárce",
+        max_length=255,
+        blank=True,
+    )
+    donor_email = models.EmailField(
+        "e-mail dárce",
+        blank=True,
+    )
+    donor_phone = models.CharField(
+        "telefon",
+        max_length=50,
+        blank=True,
+    )
+    wants_receipt = models.BooleanField(
+        "chce potvrzení o daru",
+        default=False,
+    )
+    note = models.TextField(
+        "poznámka",
+        blank=True,
+    )
+    variable_symbol = models.CharField(
+        "variabilní symbol",
+        max_length=20,
+        unique=True,
+        blank=True,
+    )
+    status = models.CharField(
+        "stav",
+        max_length=20,
+        choices=Status.choices,
+        default=Status.CREATED,
+    )
+    created_at = models.DateTimeField(
+        "vytvořeno",
+        auto_now_add=True,
+    )
+    paid_at = models.DateTimeField(
+        "zaplaceno",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = "zájem o podporu Agnes Tyrrell"
+        verbose_name_plural = "zájmy o podporu Agnes Tyrrell"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.amount} Kč – {self.donor_name or self.donor_email or 'anonym'}"
+
+    def mark_paid(self):
+        self.status = self.Status.PAID
+        self.paid_at = timezone.now()
+        self.save(update_fields=["status", "paid_at"])
+
+#### konec platby přes bankovní údaje, případně QR code spojenou s landing page Tyrrell. Možná ten model pak zas smažem jestli se to nepoužije.

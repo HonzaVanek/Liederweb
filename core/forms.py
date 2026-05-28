@@ -2,7 +2,9 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from media_assets.models import MediaAsset
-from .models import Person, Partner, HomeCarouselManualSlide
+from .models import Person, Partner, HomeCarouselManualSlide, AgnesSupportIntent
+
+from decimal import Decimal
 
 class VlastniLoginForm(AuthenticationForm):
     username = forms.CharField(label="Uživatelské jméno")
@@ -198,3 +200,73 @@ class HomeCarouselManualSlideForm(forms.ModelForm):
         )
 
         self.fields["image_asset"].required = False
+
+
+
+
+##### tohle je formulář jen pro platbu přes bankovní údaje, případně QR code spojenou s landing page Tyrrell. Možná ten form pak zas smažem jestli se to nepoužije.
+
+class AgnesSupportIntentForm(forms.ModelForm):
+    PRESET_AMOUNTS = {
+        "500": Decimal("500.00"),
+        "1000": Decimal("1000.00"),
+        "2000": Decimal("2000.00"),
+        "5000": Decimal("5000.00"),
+    }
+
+    amount_choice = forms.ChoiceField(
+        choices=[
+            ("500", "500 Kč"),
+            ("1000", "1 000 Kč"),
+            ("2000", "2 000 Kč"),
+            ("5000", "5 000 Kč"),
+            ("other", "Jiná částka"),
+        ],
+        initial="1000",
+    )
+
+    custom_amount = forms.DecimalField(
+        required=False,
+        min_value=Decimal("100.00"),
+        max_digits=10,
+        decimal_places=2,
+    )
+
+    class Meta:
+        model = AgnesSupportIntent
+        fields = [
+            "donor_name",
+            "donor_email",
+            "donor_phone",
+            "wants_receipt",
+            "note",
+        ]
+
+    def clean(self):
+        cleaned = super().clean()
+        amount_choice = cleaned.get("amount_choice")
+        custom_amount = cleaned.get("custom_amount")
+
+        if amount_choice == "other":
+            if not custom_amount:
+                raise forms.ValidationError("Vyplňte prosím vlastní částku.")
+            cleaned["amount"] = custom_amount
+        else:
+            cleaned["amount"] = self.PRESET_AMOUNTS[amount_choice]
+
+        return cleaned
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.amount = self.cleaned_data["amount"]
+
+        if commit:
+            instance.save()
+
+            if not instance.variable_symbol:
+                instance.variable_symbol = f"2605{instance.id:06d}"
+                instance.save(update_fields=["variable_symbol"])
+
+        return instance
+    
+##### konec formuláře jen pro platbu přes bankovní údaje, případně QR code spojenou s landing page Tyrrell. Možná ten form pak zas smažem jestli se to nepoužije.

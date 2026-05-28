@@ -295,3 +295,10 @@ FACEBOOK_PAGE_ACCESS_TOKEN = os.getenv("FACEBOOK_PAGE_ACCESS_TOKEN", "")
 
 BREVO_DAILY_EMAIL_LIMIT = 300
 NEWSLETTER_SCHEDULED_CAMPAIGN_MIN_GAP_MINUTES = 5
+
+
+
+# věci spojené s platebním formulářem pro Tyrrell landing page - možná se to pak smaže, pokud se to nepoužije.
+LIEDER_DONATION_IBAN = os.getenv("LIEDER_DONATION_IBAN", "")
+LIEDER_DONATION_ACCOUNT_DISPLAY = os.getenv("LIEDER_DONATION_ACCOUNT_DISPLAY", "")
+LIEDER_DONATION_RECIPIENT = os.getenv("LIEDER_DONATION_RECIPIENT", "Lieder Society z.s.")
