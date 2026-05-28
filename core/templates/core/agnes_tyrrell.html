@@ -5,7 +5,7 @@
 
 {% block extra_css %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% static 'core/agnes_tyrrell.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'core/agnes_tyrrell.css' %}?v=5">
 {% endblock extra_css %}
 
 {% block content %}
@@ -114,8 +114,7 @@
             <h2>Staňte se součástí vzniku alba</h2>
 
             <p class="agnes-support-intro">
-                Každý dar pomáhá tomu, aby mohla nahrávka vzniknout důstojně,
-                profesionálně a s péčí, kterou si hudba Agnes Tyrrell zaslouží.
+                Díky vaší podpoře může hudba Agnes Tyrrell znovu zaznít. Děkujeme!
             </p>
 
             <div class="agnes-support-grid">
@@ -156,21 +155,38 @@
         <div class="agnes-section-inner">
             <p class="agnes-section-label">Kdo za projektem stojí</p>
 
-            <h2>Lieder Society a interpretky projektu</h2>
+            <h2>O nás</h2>
 
             <div class="agnes-trust-content">
                 <article class="agnes-trust-card agnes-trust-card--intro">
-                    <h3>Lieder Society</h3>
-                    <p>
-                        Lieder Society dlouhodobě rozvíjí koncertní a edukační projekty
-                        věnované písňové a komorní tvorbě. Součástí její práce je také
-                        návrat pozapomenutých skladatelek do živého hudebního prostoru.
-                    </p>
+                    <div class="agnes-lieder-logo-wrap">
+                        <img
+                            class="agnes-lieder-logo"
+                            src="{{ lieder_logo_url }}"
+                            alt="Lieder Society"
+                            loading="lazy"
+                        >
+                    </div>
+
+                    <div>
+                        <h3>Lieder Society</h3>
+                        <p>
+                            Lieder Society dlouhodobě rozvíjí koncertní a edukační projekty
+                            věnované písňové a komorní tvorbě. Součástí její práce je také
+                            návrat pozapomenutých skladatelek do živého hudebního prostoru.
+                        </p>
+                    </div>
                 </article>
 
                 <div class="agnes-artists-grid" aria-label="Interpretky projektu Agnes Tyrrell">
                     {% for artist in artist_cards %}
-                        <article class="agnes-artist-card">
+                        <a
+                            class="agnes-artist-card"
+                            href="{{ artist.url }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="{{ artist.name }} – {{ artist.role }}"
+                        >
                             <div class="agnes-artist-photo-wrap">
                                 <img
                                     class="agnes-artist-photo"
@@ -184,17 +200,43 @@
                                 <p class="agnes-artist-role">{{ artist.role }}</p>
                                 <h3>{{ artist.name }}</h3>
                                 <p>{{ artist.bio }}</p>
+                                <span class="agnes-artist-link-hint">Osobní stránky</span>
                             </div>
-                        </article>
+                        </a>
                     {% endfor %}
                 </div>
 
                 <article class="agnes-trust-card agnes-trust-card--partners">
                     <h3>Partneři a podporovatelé</h3>
+
                     <p>
-                        Zde bude prostor pro loga institucí, partnerů a dalších podporovatelů,
-                        kteří se na vzniku projektu podílejí.
+                        Projekt vzniká za podpory institucí a partnerů, kteří pomáhají vracet
+                        hudbu Agnes Tyrrell do živého kulturního prostoru.
                     </p>
+
+                    <div class="agnes-partners-grid" aria-label="Partneři projektu">
+                        {% for partner in project_partners %}
+                            <a
+                                class="agnes-partner-card"
+                                href="{{ partner.url }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="{{ partner.name }}"
+                            >
+                                <span class="agnes-partner-logo-box">
+                                    <img
+                                        src="{{ partner.logo_url }}"
+                                        alt="{{ partner.name }}"
+                                        loading="lazy"
+                                    >
+                                </span>
+
+                                <span class="agnes-partner-name">
+                                    {{ partner.name }}
+                                </span>
+                            </a>
+                        {% endfor %}
+                    </div>
                 </article>
 
                 <div class="agnes-contact-box">
@@ -220,7 +262,7 @@
                 <p class="agnes-section-label">Newsletter</p>
 
                 <h2 id="agnes-newsletter-title">
-                    Zůstaňte v kontaktu s&nbsp;Lieder Society
+                    Zůstaňme v&nbsp;kontaktu
                 </h2>
 
                 <p>

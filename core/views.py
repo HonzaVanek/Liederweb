@@ -604,7 +604,7 @@ def agnes_tyrrell_landing(request):
             "text": "První studiové zachycení vybraných skladeb Agnes Tyrrell.",
         },
         {
-            "date": "Léto / podzim",
+            "date": "Podzim",
             "title": "Postprodukce a booklet",
             "text": "Dokončení nahrávky, dramaturgických textů a grafického zpracování.",
         },
@@ -621,19 +621,11 @@ def agnes_tyrrell_landing(request):
     ]
 
     artist_cards = [
-        {
-            "name": "Monika Jägerová",
-            "role": "altistka",
-            "image_url": "/media/media_assets/image/2026/05/4b1d7034a8634ee6bedfaa3a2101a534.jpg",
-            "bio": (
-                "Česká altistka oceňovaná pro podmanivý hluboký hlas a stylovou všestrannost. "
-                "Vystupuje na předních evropských scénách a festivalech, spolupracuje s významnými "
-                "orchestry a soubory a je jednou ze zakladatelek Lieder Society."
-            ),
-        },
+
         {
             "name": "Tamara Morozová",
             "role": "sopranistka",
+            "url": "https://tamaramorozova.com/",
             "image_url": "/media/media_assets/image/2026/05/5ed7302f50ae4126b60d99a814ed6d67.jpg",
             "bio": (
                 "Sopranistka slovenského původu, členka Národního divadla v Praze a předsedkyně "
@@ -641,24 +633,68 @@ def agnes_tyrrell_landing(request):
                 "opernímu i koncertnímu repertoáru."
             ),
         },
+
         {
             "name": "Arnheiður Eiríksdóttir",
             "role": "mezzosopranistka",
+            "url": "http://arnheidur.com/",
             "image_url": "/media/media_assets/image/2026/05/929581cc52bb42e9a65717e33b4f804c.jpg",
             "bio": (
                 "Islandská mezzosopranistka známá českému publiku mimo jiné z Národního divadla v Praze. "
                 "V projektu Agnes Tyrrell propůjčí hlas písňovému cyklu Schilflieder – Písně rákosí z roku 1878."
             ),
         },
+
         {
-            "name": "Kristýna Marková",
+            "name": "Monika Jägerová",
+            "role": "altistka",
+            "url": "https://www.monikajagerova.com/cs",
+            "image_url": "/media/media_assets/image/2026/05/4b1d7034a8634ee6bedfaa3a2101a534.jpg",
+            "bio": (
+                "Česká altistka oceňovaná pro podmanivý hluboký hlas a stylovou všestrannost. "
+                "Vystupuje na předních evropských scénách a festivalech, spolupracuje s významnými "
+                "orchestry a soubory a je jednou ze zakladatelek Lieder Society."
+            ),
+        },
+
+        {
+            "name": "Kristina Marková",
             "role": "klavíristka",
+            "url": "https://lieder-society.cz/lide/kristina-markova-stepasjukova/",
             "image_url": "/media/media_assets/image/2026/05/58492b3dff204431a0c9edd0bbbbd980.jpg",
             "bio": (
                 "Klavíristka a vyhledávaná komorní interpretka, absolventka HAMU a Universität für Musik "
                 "und darstellende Kunst ve Vídni. Dlouhodobě se věnuje sólové i komorní hudbě a působí "
                 "na Pražské konzervatoři a HAMU."
             ),
+        },
+    ]
+
+    project_partners = [
+        {
+            "name": "Ministerstvo kultury",
+            "url": "https://mk.gov.cz/",
+            "logo_url": "/media/email_images/logo-mkcr.png",
+        },
+        {
+            "name": "Mariann-Steegmann-Foundation",
+            "url": "http://mariann-steegmann-foundation.org/",
+            "logo_url": "/media/media_assets/image/2026/05/33fa4db704d248608660b5a56b7ad487.png",
+        },
+        {
+            "name": "Meeting Brno",
+            "url": "https://www.meetingbrno.cz/",
+            "logo_url": "/media/media_assets/image/2026/05/66494f44d27c497ab05cde65387fd0ed.jpg",
+        },
+        {
+            "name": "Universität Leipzig",
+            "url": "https://www.uni-leipzig.de/",
+            "logo_url": "/media/media_assets/image/2026/05/2d2101676fb04395a3ec76e69dedafd2.svg",
+        },
+        {
+            "name": "Univerzita Palackého v Olomouci",
+            "url": "https://www.upol.cz/",
+            "logo_url": "/media/media_assets/image/2026/05/880243a0ef78413aba8231f1b41c162e.png",
         },
     ]
 
@@ -670,7 +706,9 @@ def agnes_tyrrell_landing(request):
             "support_levels": support_levels,
             "timeline_items": timeline_items,
             "artist_cards": artist_cards,
+            "project_partners": project_partners,
             "hero_image_url": "/media/media_assets/image/2026/05/8cfedb64afb84007bbdd3a41a758be84.jpg",
+            "lieder_logo_url": "/media/media_assets/image/2026/05/2adc68f6908b4cf6b9934db24e34f53f.png",
             "video_embed_url": "",
         },
     )
