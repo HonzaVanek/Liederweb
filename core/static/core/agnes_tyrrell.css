@@ -226,7 +226,7 @@ body {
     border: 1px solid var(--agnes-line);
     border-radius: 26px;
     overflow: hidden;
-    background: var(--agnes-bg-card);
+    background: #050308;
     box-shadow: var(--agnes-shadow);
 }
 
@@ -234,11 +234,26 @@ body {
     aspect-ratio: 16 / 9;
 }
 
+.agnes-video-player {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #050308;
+    object-fit: contain;
+}
+
 .agnes-video-frame iframe {
     width: 100%;
     height: 100%;
     border: 0;
     display: block;
+}
+
+.agnes-video-caption {
+    margin: 14px 0 0;
+    color: var(--agnes-faint);
+    font-size: 0.92rem;
+    line-height: 1.5;
 }
 
 .agnes-video-placeholder {

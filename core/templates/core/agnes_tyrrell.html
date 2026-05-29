@@ -5,7 +5,7 @@
 
 {% block extra_css %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% static 'core/agnes_tyrrell.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'core/agnes_tyrrell.css' %}?v=6">
 {% endblock extra_css %}
 
 {% block content %}
@@ -86,15 +86,23 @@
 
             <h2>Krátké pozvání k projektu</h2>
 
-            {% if video_embed_url %}
+            {% if video_url %}
                 <div class="agnes-video-frame">
-                    <iframe
-                        src="{{ video_embed_url }}"
-                        title="Osobní pozdrav k projektu Agnes Tyrrell"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowfullscreen>
-                    </iframe>
+                    <video
+                        class="agnes-video-player"
+                        controls
+                        preload="metadata"
+                        playsinline
+                        {% if video_poster_url %}poster="{{ video_poster_url }}"{% endif %}
+                    >
+                        <source src="{{ video_url }}" type="video/mp4">
+                        Váš prohlížeč nepodporuje přehrávání videa.
+                    </video>
                 </div>
+
+                <p class="agnes-video-caption">
+                    Krátký osobní pozdrav k projektu Agnes Tyrrell.
+                </p>
             {% else %}
                 <div class="agnes-video-placeholder">
                     <p class="agnes-video-placeholder-title">Video bude doplněno</p>

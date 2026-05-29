@@ -735,7 +735,8 @@ def agnes_tyrrell_landing(request):
             "project_partners": project_partners,
             "hero_image_url": "/media/media_assets/image/2026/05/8cfedb64afb84007bbdd3a41a758be84.jpg",
             "lieder_logo_url": "/media/media_assets/image/2026/05/2adc68f6908b4cf6b9934db24e34f53f.png",
-            "video_embed_url": "",
+            "video_url": "/media/media_assets/video/2026/05/7085f8be181542f28cff7e0d1f2e5ae9.mp4",
+            "video_poster_url": "",
 
             #následující 4 řádky bude možné později smazat, pokud se nakonec rozhodne, že se žádný platební formulář na landing page dělat nebude. Ale zatím to tu nechám pro případný další vývoj.
             "support_form": support_form,
