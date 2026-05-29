@@ -892,6 +892,10 @@ body {
     .agnes-trust-card--partners {
         max-width: 920px;
     }
+
+    .agnes-donation-box--darujme {
+        max-width: 640px;
+    }
 }
 
 /* REDUCED MOTION */
@@ -931,16 +935,22 @@ body {
 
 
 .agnes-darujme-widget-wrap {
-    margin-top: 22px;
+    width: fit-content;
+    max-width: 100%;
+    margin: 22px auto 0;
     padding: 12px;
     border-radius: 22px;
     background: rgba(255, 255, 255, 0.96);
     overflow: hidden;
 }
 
+.agnes-darujme-widget-wrap > div {
+    width: 270px;
+    max-width: calc(100vw - 96px);
+}
+
 .agnes-darujme-widget-wrap iframe {
     display: block;
-    width: 100%;
     max-width: 100%;
     border: 0;
 }
