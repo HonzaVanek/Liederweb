@@ -930,7 +930,27 @@ body {
 
 
 
+.agnes-darujme-widget-wrap {
+    margin-top: 22px;
+    padding: 12px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.96);
+    overflow: hidden;
+}
 
+.agnes-darujme-widget-wrap iframe {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    border: 0;
+}
+
+.agnes-darujme-note {
+    margin-top: 14px !important;
+    color: var(--agnes-faint) !important;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
 
 /* TADY JE AZ DO 1191 CSS K BANKOVNIMU QR KODU A GENEROVANI, MOZNA TO SMAZEME KDYZ SE TO NESTANE */
 
@@ -1218,9 +1238,9 @@ body {
 }
 
 
-
+/* zakomentujeme
 .agnes-donation-box--darujme {
     display: none;
 }
-
+*/
 /* TADY KONCI CSS K BANKOVNIMU QR KODU A GENEROVANI, MOZNA TO SMAZEME KDYZ SE TO NESTANE */

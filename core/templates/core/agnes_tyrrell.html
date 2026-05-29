@@ -5,7 +5,7 @@
 
 {% block extra_css %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% static 'core/agnes_tyrrell.css' %}?v=6">
+    <link rel="stylesheet" href="{% static 'core/agnes_tyrrell.css' %}?v=7">
 {% endblock extra_css %}
 
 {% block content %}
@@ -141,21 +141,18 @@
                     <h3>Podpořit projekt přes Darujme.cz</h3>
 
                     <p>
-                        Zde bude vložen darovací widget Darujme.cz. Pokud bude aktivní včas,
-                        půjde projekt podpořit přímo přes zabezpečený darovací formulář.
+                        Projekt můžete podpořit přímo přes zabezpečený darovací formulář Darujme.cz.
+                        Vyberte částku a pokračujte podle pokynů ve formuláři.
                     </p>
 
-                    <div class="agnes-donation-placeholder-buttons" aria-label="Ukázka dárcovských částek">
-                        <button type="button">500 Kč</button>
-                        <button type="button">1 000 Kč</button>
-                        <button type="button">2 000 Kč</button>
-                        <button type="button">5 000 Kč</button>
-                        <button type="button">Jiná částka</button>
+                    <div class="agnes-darujme-widget-wrap">
+                        <div data-darujme-widget-token="ppvsq0w518t9zabi"></div>
                     </div>
 
-                    {#
-                        Sem později vložit reálný embed kód z Darujme.cz.
-                    #}
+                    <p class="agnes-darujme-note">
+                        Pokud se vám darovací formulář nezobrazí, můžete projekt podpořit také
+                        bankovním převodem níže.
+                    </p>
                 </div>
 
                 <div class="agnes-donation-box agnes-donation-box--bank">
@@ -622,4 +619,26 @@
 })();
 </script>
 
+
+<script type="text/javascript">
+    +function(w, d, s, u, a, b) {
+        w['DarujmeObject'] = u;
+        w[u] = w[u] || function () {
+            (w[u].q = w[u].q || []).push(arguments);
+        };
+        a = d.createElement(s);
+        b = d.getElementsByTagName(s)[0];
+        a.async = 1;
+        a.src = "https://www.darujme.cz/assets/scripts/widget.js";
+        b.parentNode.insertBefore(a, b);
+    }(window, document, 'script', 'Darujme');
+
+    Darujme(
+        1,
+        "ppvsq0w518t9zabi",
+        "render",
+        "https://www.darujme.cz/widget?token=ppvsq0w518t9zabi",
+        "270px"
+    );
+</script>
 {% endblock content %}
