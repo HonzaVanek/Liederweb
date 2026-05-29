@@ -214,7 +214,7 @@
                                     min="100"
                                     step="1"
                                     inputmode="numeric"
-                                    placeholder="Např. 10000"
+                                    placeholder="Zadejte vlastní částku v Kč"
                                     value="{{ support_form.custom_amount.value|default:'' }}"
                                 >
 
@@ -345,8 +345,7 @@
                             </dl>
 
                             <p class="agnes-payment-note">
-                                Platbu po přijetí ručně spárujeme podle variabilního symbolu.
-                                Pokud budete potřebovat potvrzení o daru, ozveme se vám na uvedený e-mail.
+                                Pokud budete potřebovat potvrzení o daru, ozveme se vám na e-mail který jste uvedli. Moc děkujeme za vaši podporu!
                             </p>
                         </div>
                     {% endif %}
@@ -542,7 +541,10 @@
         return;
     }
 
-    function selectAmount(value) {
+    function selectAmount(value, options = {}) {
+        const shouldFocusCustom = options.focusCustom === true;
+        const shouldClearCustom = options.clearCustom === true;
+
         amountChoiceInput.value = value;
 
         buttons.forEach(function (button) {
@@ -555,7 +557,11 @@
         if (customAmountInput) {
             customAmountInput.required = isOther;
 
-            if (isOther) {
+            if (!isOther && shouldClearCustom) {
+                customAmountInput.value = "";
+            }
+
+            if (isOther && shouldFocusCustom) {
                 customAmountInput.focus();
             }
         }
@@ -563,18 +569,37 @@
 
     buttons.forEach(function (button) {
         button.addEventListener("click", function () {
-            selectAmount(button.dataset.amountChoice);
+            const value = button.dataset.amountChoice;
+
+            selectAmount(value, {
+                focusCustom: value === "other",
+                clearCustom: value !== "other"
+            });
         });
     });
+
+    if (customAmountInput) {
+        customAmountInput.addEventListener("focus", function () {
+            selectAmount("other");
+        });
+
+        customAmountInput.addEventListener("input", function () {
+            if (customAmountInput.value.trim() !== "") {
+                selectAmount("other");
+            }
+        });
+    }
 
     selectAmount(amountChoiceInput.value || "1000");
 
     const paymentResult = document.getElementById("platebni-udaje");
-    if (paymentResult) {
-        paymentResult.scrollIntoView({
-            behavior: "smooth",
-            block: "start"
-        });
+    if (paymentResult && window.location.hash === "#platebni-udaje") {
+        setTimeout(function () {
+            paymentResult.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+        }, 80);
     }
 })();
 </script>
