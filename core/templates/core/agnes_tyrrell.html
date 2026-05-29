@@ -162,8 +162,7 @@
                     <h3>Podpořit bankovním převodem</h3>
 
                     <p>
-                        Pokud darovací widget ještě nebude aktivní, můžete si zde vygenerovat
-                        platební údaje a QR kód pro bankovní aplikaci.
+                        Zde si můžete vygenerovat platební údaje a QR kód pro bankovní aplikaci.
                     </p>
 
                     {% if support_form.non_field_errors %}
@@ -248,7 +247,7 @@
                                     type="email"
                                     name="donor_email"
                                     autocomplete="email"
-                                    placeholder="vas@email.cz"
+                                    placeholder="pro případ potvrzení o daru"
                                     value="{{ support_form.donor_email.value|default:'' }}"
                                 >
 
@@ -604,5 +603,23 @@
 })();
 </script>
 
+
+<script>
+(function () {
+    const receiptCheckbox = document.querySelector('input[name="wants_receipt"]');
+    const emailInput = document.getElementById("agnes-donor-email");
+
+    if (!receiptCheckbox || !emailInput) {
+        return;
+    }
+
+    function syncEmailRequired() {
+        emailInput.required = receiptCheckbox.checked;
+    }
+
+    receiptCheckbox.addEventListener("change", syncEmailRequired);
+    syncEmailRequired();
+})();
+</script>
 
 {% endblock content %}

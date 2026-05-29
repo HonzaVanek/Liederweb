@@ -1217,4 +1217,10 @@ body {
     }
 }
 
+
+
+.agnes-donation-box--darujme {
+    display: none;
+}
+
 /* TADY KONCI CSS K BANKOVNIMU QR KODU A GENEROVANI, MOZNA TO SMAZEME KDYZ SE TO NESTANE */
