@@ -42,6 +42,7 @@ if not SECRET_KEY:
 # SECURITY WARNING: don't run with debug turned on in production!
 
 SECURITY_LOG_FILE = "/srv/log/security.log"
+TRAFFIC_LOG_FILE = "/srv/log/traffic.log"
 DEBUG = APP_ENV == "dev"
 
 if APP_ENV == "prod":
@@ -66,6 +67,14 @@ if APP_ENV == "prod":
                 "formatter": "verbose",
                 "encoding": "utf-8",
             },
+            "traffic_file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": TRAFFIC_LOG_FILE,
+                "maxBytes": 1024 * 1024 * 5,
+                "backupCount": 5,
+                "formatter": "verbose",
+                "encoding": "utf-8",
+            },
         },
         "root": {
             "handlers": ["console"],
@@ -85,6 +94,11 @@ if APP_ENV == "prod":
             "liederweb.security": {
                 "handlers": ["security_file", "console"],
                 "level": "WARNING",
+                "propagate": False,
+            },
+            "liederweb.traffic": {
+                "handlers": ["traffic_file"],
+                "level": "INFO",
                 "propagate": False,
             },
         },
@@ -112,6 +126,11 @@ else:
             "liederweb.security": {
                 "handlers": ["console"],
                 "level": "WARNING",
+                "propagate": False,
+            },
+            "liederweb.traffic": {
+                "handlers": ["console"],
+                "level": "INFO",
                 "propagate": False,
             },
         },

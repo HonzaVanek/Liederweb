@@ -1,17 +1,17 @@
 from pathlib import Path
 import subprocess
+import re
 
-from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponseForbidden
 from django.shortcuts import render
-
 from django.db.models import Count, Sum
 
 from core.models import DailySiteVisitor, DailyPageVisitor
 
 
 LOG_FILES = {
+    "traffic": Path("/srv/log/traffic.log"),
     "python": Path("/srv/log/python.log"),
     "python.old": Path("/srv/log/python.log.1"),
     "nginx": Path("/srv/log/nginx.log"),
@@ -23,17 +23,41 @@ LOG_FILES = {
 DEFAULT_LINES = 100
 MAX_LINES = 1000
 
+VISITOR_RE = re.compile(r"VISIT visitor=([a-f0-9]{8})")
+
+
+def build_colored_log_lines(log_text):
+    colored_log_lines = []
+
+    for line in log_text.splitlines():
+        match = VISITOR_RE.search(line)
+
+        visitor = None
+        color_index = None
+
+        if match:
+            visitor = match.group(1)
+            color_index = int(visitor, 16) % 12
+
+        colored_log_lines.append({
+            "text": line,
+            "visitor": visitor,
+            "color_index": color_index,
+        })
+
+    return colored_log_lines
+
 
 @staff_member_required
 def system_logs_view(request):
     if not request.user.is_superuser:
         return HttpResponseForbidden("Tato stránka je dostupná pouze superuserovi.")
 
-    selected_log = request.GET.get("log", "python")
+    selected_log = request.GET.get("log", "traffic")
     log_path = LOG_FILES.get(selected_log)
 
     if log_path is None:
-        selected_log = "python"
+        selected_log = "traffic"
         log_path = LOG_FILES[selected_log]
 
     try:
@@ -67,7 +91,9 @@ def system_logs_view(request):
             error_message = "Čtení logu trvalo příliš dlouho."
         except Exception as e:
             error_message = f"Chyba při čtení logu: {e}"
-    
+
+    colored_log_lines = build_colored_log_lines(log_text)
+
     daily_stats = list(
         DailySiteVisitor.objects
         .values("day")
@@ -114,5 +140,6 @@ def system_logs_view(request):
             "daily_stats": daily_stats,
             "page_stats": page_stats,
             "agnes_stats": agnes_stats,
+            "colored_log_lines": colored_log_lines,
         },
     )

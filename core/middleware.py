@@ -8,6 +8,8 @@ from django.utils import timezone
 
 from .models import DailySiteVisitor, DailyPageVisitor
 
+from urllib.parse import urlsplit, urlunsplit
+
 
 IGNORED_EXACT_PATHS = (
     "/admin",
@@ -94,8 +96,7 @@ BOT_USER_AGENT_PARTS = (
     "qr scanner",
 )
 
-logger = logging.getLogger(__name__)
-
+logger = logging.getLogger("liederweb.traffic")
 
 class SiteVisitStatsMiddleware:
     def __init__(self, get_response):
@@ -112,7 +113,15 @@ class SiteVisitStatsMiddleware:
 
         return response
 
+    def clean_referer(self, referer):
+        if not referer:
+            return ""
 
+        try:
+            parts = urlsplit(referer)
+            return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+        except Exception:
+            return referer.split("?", 1)[0][:300]
 
 
     def track_visit(self, request, response):
@@ -123,8 +132,6 @@ class SiteVisitStatsMiddleware:
         if response.status_code != 200:
             return
 
-        if request.method != "GET":
-            return
 
         if self.is_ignored_path(path):
             return
@@ -156,14 +163,6 @@ class SiteVisitStatsMiddleware:
             return
 
 
-        logger.warning(
-            "IP DEBUG path=%s REMOTE_ADDR=%s X_FORWARDED_FOR=%s X_REAL_IP=%s",
-            path,
-            request.META.get("REMOTE_ADDR"),
-            request.META.get("HTTP_X_FORWARDED_FOR"),
-            request.META.get("HTTP_X_REAL_IP"),
-        )
-        
         ip = self.get_client_ip(request)
         if not ip:
             return
@@ -172,6 +171,23 @@ class SiteVisitStatsMiddleware:
 
         raw_visitor_id = f"{today}|{ip}|{user_agent}|{settings.SECRET_KEY}"
         visitor_hash = hashlib.sha256(raw_visitor_id.encode("utf-8")).hexdigest()
+
+        visitor_label = visitor_hash[:8]
+
+        referer = self.clean_referer(request.META.get("HTTP_REFERER", ""))[:300]
+
+        logger.info(
+            "VISIT visitor=%s method=%s status=%s path=%s referer=%s ua=%s",
+            visitor_label,
+            request.method,
+            response.status_code,
+            path[:300],
+            referer,
+            user_agent[:300],
+        )
+
+        if request.method != "GET":
+            return
 
         defaults = {
             "pageviews": 0,
@@ -243,3 +259,4 @@ class SiteVisitStatsMiddleware:
             return x_real_ip.strip()
 
         return request.META.get("REMOTE_ADDR")
+    
