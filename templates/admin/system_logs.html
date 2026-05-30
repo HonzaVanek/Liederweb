@@ -80,4 +80,56 @@
         {% endfor %}
     </tbody>
 </table>
+
+<h2>Agnes Tyrrell</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Den</th>
+            <th>Unikátní návštěvníci</th>
+            <th>Zobrazení stránky</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in agnes_stats %}
+            <tr>
+                <td>{{ row.day }}</td>
+                <td>{{ row.unique_visitors }}</td>
+                <td>{{ row.pageviews }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="3">Zatím žádná data pro Agnes stránku.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Nejnavštěvovanější stránky</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Den</th>
+            <th>Stránka</th>
+            <th>Unikátní návštěvníci</th>
+            <th>Zobrazení stránky</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in page_stats %}
+            <tr>
+                <td>{{ row.day }}</td>
+                <td>{{ row.path }}</td>
+                <td>{{ row.unique_visitors }}</td>
+                <td>{{ row.pageviews }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="4">Zatím žádná data podle stránek.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 {% endblock %}

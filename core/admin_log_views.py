@@ -8,7 +8,7 @@ from django.shortcuts import render
 
 from django.db.models import Count, Sum
 
-from core.models import DailySiteVisitor
+from core.models import DailySiteVisitor, DailyPageVisitor
 
 
 LOG_FILES = {
@@ -78,6 +78,27 @@ def system_logs_view(request):
         .order_by("-day")[:30]
     )
 
+    page_stats = list(
+        DailyPageVisitor.objects
+        .values("day", "path")
+        .annotate(
+            unique_visitors=Count("id"),
+            pageviews=Sum("pageviews"),
+        )
+        .order_by("-day", "-pageviews")[:100]
+    )
+
+    agnes_stats = list(
+        DailyPageVisitor.objects
+        .filter(path="/agnes-tyrrell/")
+        .values("day", "path")
+        .annotate(
+            unique_visitors=Count("id"),
+            pageviews=Sum("pageviews"),
+        )
+        .order_by("-day")[:30]
+    )
+
     return render(
         request,
         "admin/system_logs.html",
@@ -91,5 +112,7 @@ def system_logs_view(request):
             "log_text": log_text,
             "error_message": error_message,
             "daily_stats": daily_stats,
+            "page_stats": page_stats,
+            "agnes_stats": agnes_stats,
         },
     )
