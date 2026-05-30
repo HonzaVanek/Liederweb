@@ -1,4 +1,5 @@
 import hashlib
+import logging
 
 from django.conf import settings
 from django.db import IntegrityError
@@ -93,6 +94,8 @@ BOT_USER_AGENT_PARTS = (
     "qr scanner",
 )
 
+logger = logging.getLogger(__name__)
+
 
 class SiteVisitStatsMiddleware:
     def __init__(self, get_response):
@@ -108,6 +111,9 @@ class SiteVisitStatsMiddleware:
             pass
 
         return response
+
+
+
 
     def track_visit(self, request, response):
         path = request.path or ""
@@ -149,6 +155,15 @@ class SiteVisitStatsMiddleware:
         if self.is_probably_bot(user_agent):
             return
 
+
+        logger.warning(
+            "IP DEBUG path=%s REMOTE_ADDR=%s X_FORWARDED_FOR=%s X_REAL_IP=%s",
+            path,
+            request.META.get("REMOTE_ADDR"),
+            request.META.get("HTTP_X_FORWARDED_FOR"),
+            request.META.get("HTTP_X_REAL_IP"),
+        )
+        
         ip = self.get_client_ip(request)
         if not ip:
             return
