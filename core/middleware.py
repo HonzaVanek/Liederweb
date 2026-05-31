@@ -1,5 +1,6 @@
 import hashlib
 import logging
+from django.core.cache import cache
 
 from django.conf import settings
 from django.db import IntegrityError
@@ -94,6 +95,12 @@ BOT_USER_AGENT_PARTS = (
 
     # často jen mezikrok před otevřením v browseru
     "qr scanner",
+
+    "googleother",
+    "appengine-google",
+    "virustotal",
+    "virustotalcloud",
+    "aisearchindex",
 )
 
 logger = logging.getLogger("liederweb.traffic")
@@ -122,6 +129,33 @@ class SiteVisitStatsMiddleware:
             return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
         except Exception:
             return referer.split("?", 1)[0][:300]
+        
+    def is_suspicious_rapid_visitor(self, visitor_label, path):
+        now_ts = int(timezone.now().timestamp())
+
+        cache_key = f"traffic_hits:{visitor_label}"
+        hits = cache.get(cache_key, [])
+
+        # necháme jen posledních 10 sekund
+        hits = [
+            hit for hit in hits
+            if now_ts - hit["ts"] <= 10
+        ]
+
+        hits.append({
+            "ts": now_ts,
+            "path": path,
+        })
+
+        cache.set(cache_key, hits, timeout=30)
+
+        unique_paths = {hit["path"] for hit in hits}
+
+        # člověk běžně neotevře 8 různých HTML stránek za 10 sekund
+        if len(hits) >= 8 and len(unique_paths) >= 6:
+            return True
+
+        return False
 
 
     def track_visit(self, request, response):
@@ -130,6 +164,9 @@ class SiteVisitStatsMiddleware:
         # Počítat jen reálné načtení HTML stránky.
         # Tím vypadnou redirecty 301/302, 404, 403 atd.
         if response.status_code != 200:
+            return
+
+        if request.method not in ("GET", "POST"):
             return
 
 
@@ -159,6 +196,8 @@ class SiteVisitStatsMiddleware:
             return
 
         user_agent = request.META.get("HTTP_USER_AGENT", "")[:500]
+        if not user_agent.strip():
+            return
         if self.is_probably_bot(user_agent):
             return
 
@@ -173,6 +212,17 @@ class SiteVisitStatsMiddleware:
         visitor_hash = hashlib.sha256(raw_visitor_id.encode("utf-8")).hexdigest()
 
         visitor_label = visitor_hash[:8]
+
+        if self.is_suspicious_rapid_visitor(visitor_label, path):
+            logger.info(
+                "SKIP_BOT_LIKE visitor=%s method=%s status=%s path=%s ua=%s",
+                visitor_label,
+                request.method,
+                response.status_code,
+                path[:300],
+                user_agent[:300],
+            )
+            return
 
         referer = self.clean_referer(request.META.get("HTTP_REFERER", ""))[:300]
 
