@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 from .views import VlastniLoginView
 from django.contrib.auth import views as auth_views
@@ -33,7 +33,8 @@ urlpatterns = [
     path("staff/partneri/<int:pk>/upravit/", views.partner_admin_update, name="partner_admin_update"),
     path("staff/partneri/<int:pk>/smazat/", views.partner_admin_delete, name="partner_admin_delete"),
 
-    #kampaň k Tyrell jen pro návštěvníky Tugendhatu - statická stránka.
+    #kampaň k Tyrrell jen pro návštěvníky Tugendhatu - statická stránka.
     path("agnes-tyrrell/", views.agnes_tyrrell_landing, name="agnes_tyrrell_landing"),
-    path("agnes-tyrrell", RedirectView.as_view(url="/agnes-tyrrell/", permanent=True), name="agnes_tyrrell_landing_no_slash")
+    path("agnes-tyrrell", RedirectView.as_view(url="/agnes-tyrrell/", permanent=True), name="agnes_tyrrell_landing_no_slash"),
+    re_path(r"^agnes[-_]?(?:tyrel|tyrell|tyrrel|tyrrell)/?$", RedirectView.as_view(url="/agnes-tyrrell/", permanent=True), name="agnes_tyrrell_landing_typos"),
 ]
