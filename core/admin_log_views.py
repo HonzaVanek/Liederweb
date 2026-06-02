@@ -23,7 +23,29 @@ LOG_FILES = {
 DEFAULT_LINES = 100
 MAX_LINES = 1000
 
+# Pro barevné rozlišení traffic logu.
 VISITOR_RE = re.compile(r"VISIT visitor=([a-f0-9]{8})")
+
+# Pravidelný healthcheck / monitoring přes python-requests.
+HEALTHCHECK_RE = re.compile(
+    r'"GET / HTTP/1\.0" 200 \d+ "-" "python-requests/[^"]+"'
+)
+
+
+def filter_noise_log_lines(log_text, max_lines):
+    hidden_count = 0
+    kept_lines = []
+
+    for line in log_text.splitlines():
+        if HEALTHCHECK_RE.search(line):
+            hidden_count += 1
+            continue
+
+        kept_lines.append(line)
+
+    kept_lines = kept_lines[-max_lines:]
+
+    return "\n".join(kept_lines), hidden_count
 
 
 def build_colored_log_lines(log_text):
@@ -67,15 +89,24 @@ def system_logs_view(request):
 
     lines = max(10, min(lines, MAX_LINES))
 
+    hide_noise = request.GET.get("hide_noise", "1") == "1"
+    hidden_noise_count = 0
+
     log_text = ""
     error_message = None
+
+    # Když skrýváme healthchecky, načteme víc řádků,
+    # aby po odfiltrování pořád zůstalo dost relevantních záznamů.
+    tail_lines = lines
+    if hide_noise and selected_log in ("python", "python.old"):
+        tail_lines = min(lines * 5, 5000)
 
     if not log_path.exists():
         error_message = f"Soubor neexistuje: {log_path}"
     else:
         try:
             result = subprocess.run(
-                ["tail", "-n", str(lines), str(log_path)],
+                ["tail", "-n", str(tail_lines), str(log_path)],
                 capture_output=True,
                 text=True,
                 timeout=5,
@@ -91,6 +122,9 @@ def system_logs_view(request):
             error_message = "Čtení logu trvalo příliš dlouho."
         except Exception as e:
             error_message = f"Chyba při čtení logu: {e}"
+
+    if hide_noise and selected_log in ("python", "python.old"):
+        log_text, hidden_noise_count = filter_noise_log_lines(log_text, lines)
 
     colored_log_lines = build_colored_log_lines(log_text)
 
@@ -141,5 +175,7 @@ def system_logs_view(request):
             "page_stats": page_stats,
             "agnes_stats": agnes_stats,
             "colored_log_lines": colored_log_lines,
+            "hide_noise": hide_noise,
+            "hidden_noise_count": hidden_noise_count,
         },
     )

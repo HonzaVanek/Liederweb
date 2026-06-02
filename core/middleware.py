@@ -101,6 +101,13 @@ BOT_USER_AGENT_PARTS = (
     "virustotal",
     "virustotalcloud",
     "aisearchindex",
+
+    "scrapy",
+    "libwww",
+    "mechanize",
+    "beautifulsoup",
+    "bs4",
+    "requests",
 )
 
 logger = logging.getLogger("liederweb.traffic")
@@ -130,13 +137,12 @@ class SiteVisitStatsMiddleware:
         except Exception:
             return referer.split("?", 1)[0][:300]
         
-    def is_suspicious_rapid_visitor(self, visitor_label, path):
+    def is_suspicious_rapid_visitor(self, client_label, path):
         now_ts = int(timezone.now().timestamp())
 
-        cache_key = f"traffic_hits:{visitor_label}"
+        cache_key = f"traffic_hits:{client_label}"
         hits = cache.get(cache_key, [])
 
-        # necháme jen posledních 10 sekund
         hits = [
             hit for hit in hits
             if now_ts - hit["ts"] <= 10
@@ -147,12 +153,11 @@ class SiteVisitStatsMiddleware:
             "path": path,
         })
 
-        cache.set(cache_key, hits, timeout=30)
+        cache.set(cache_key, hits, timeout=60)
 
         unique_paths = {hit["path"] for hit in hits}
 
-        # člověk běžně neotevře 8 různých HTML stránek za 10 sekund
-        if len(hits) >= 8 and len(unique_paths) >= 6:
+        if len(hits) >= 5 and len(unique_paths) >= 4:
             return True
 
         return False
@@ -208,14 +213,18 @@ class SiteVisitStatsMiddleware:
 
         today = timezone.localdate()
 
+        raw_client_id = f"{today}|{ip}|{settings.SECRET_KEY}"
+        client_hash = hashlib.sha256(raw_client_id.encode("utf-8")).hexdigest()
+        client_label = client_hash[:8]
+
         raw_visitor_id = f"{today}|{ip}|{user_agent}|{settings.SECRET_KEY}"
         visitor_hash = hashlib.sha256(raw_visitor_id.encode("utf-8")).hexdigest()
-
         visitor_label = visitor_hash[:8]
 
-        if self.is_suspicious_rapid_visitor(visitor_label, path):
+        if self.is_suspicious_rapid_visitor(client_label, path):
             logger.info(
-                "SKIP_BOT_LIKE visitor=%s method=%s status=%s path=%s ua=%s",
+                "SKIP_BOT_LIKE client=%s visitor=%s method=%s status=%s path=%s ua=%s",
+                client_label,
                 visitor_label,
                 request.method,
                 response.status_code,
@@ -227,7 +236,8 @@ class SiteVisitStatsMiddleware:
         referer = self.clean_referer(request.META.get("HTTP_REFERER", ""))[:300]
 
         logger.info(
-            "VISIT visitor=%s method=%s status=%s path=%s referer=%s ua=%s",
+            "VISIT client=%s visitor=%s method=%s status=%s path=%s referer=%s ua=%s",
+            client_label,
             visitor_label,
             request.method,
             response.status_code,

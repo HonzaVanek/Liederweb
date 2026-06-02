@@ -29,11 +29,27 @@
     >
 
     <button type="submit" class="button">Zobrazit</button>
+    <label style="margin-left: 12px;">
+        <input type="hidden" name="hide_noise" value="0">
+        <input
+            type="checkbox"
+            name="hide_noise"
+            value="1"
+            {% if hide_noise %}checked{% endif %}
+        >
+        Skrýt healthchecky
+    </label>
 </form>
 
 <p>
     <strong>Soubor:</strong>
     <code>{{ selected_path }}</code>
+    {% if hidden_noise_count %}
+        <p class="help">
+            Skryto {{ hidden_noise_count }} řádků automatických healthchecků
+            <code>python-requests</code>.
+        </p>
+    {% endif %}
 </p>
 
 {% if error_message %}
