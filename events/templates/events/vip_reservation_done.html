@@ -47,24 +47,28 @@
         Velmi si vážíme vaší podpory a těšíme se na setkání na koncertě.
       </p>
 
-      <div class="vip-followup-box">
-        <h2>Chcete nás podpořit i jinak?</h2>
+        <div class="vip-followup-box">
+          <h2>Pomozte nám natočit CD písní Agnes Tyrrell</h2>
 
-        <p>
-          Pokud byste chtěli podpořit činnost Lieder Society i nad rámec návštěvy koncertu,
-          můžete se podívat také do našeho e-shopu.
-        </p>
+          <p>
+            Pokud byste chtěli Lieder Society podpořit i jinak, budeme vděční za příspěvek
+            do veřejné sbírky na natočení CD písní skladatelky Agnes Tyrrell.
+          </p>
 
-        <div class="vip-done-actions">
-          <a href="https://eshop.lieder-society.cz" target="_blank" rel="noopener" class="primary-action-button">
-            Navštívit e-shop
-          </a>
+          <p>
+            Na <a href="https://liedersociety.website/agnes-tyrrell/" target="_blank" rel="noopener">stránce sbírky</a> najdete více informací o projektu i možnosti, jak přispět.
+          </p>
 
-          <a href="{% url 'events:vip_event_detail' delivery.tracking_token %}" class="secondary-action-button">
-            Zpět na stránku koncertu
-          </a>
+          <div class="vip-done-actions">
+            <a href="https://liedersociety.website/agnes-tyrrell/#podpora" class="primary-action-button">
+              Podpořit natočení CD
+            </a>
+
+            <a href="{% url 'events:vip_event_detail' delivery.tracking_token %}" class="secondary-action-button">
+              Zpět na stránku koncertu
+            </a>
+          </div>
         </div>
-      </div>
 
     </div>
   </div>
