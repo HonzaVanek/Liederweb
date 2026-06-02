@@ -41,17 +41,22 @@
             </nav>
 
             <div class="nav-user-panel">
-                {% if request.user.is_authenticated %}
-                    <button
-                        type="button"
-                        id="dark-mode-toggle"
-                        class="dark-mode-toggle"
-                        aria-label="Přepnout tmavý režim"
-                        title="Přepnout tmavý režim"
-                    >
-                        🌛
-                    </button>
+                <button
+                    type="button"
+                    id="dark-mode-toggle"
+                    class="dark-mode-toggle"
+                    aria-label="Přepnout tmavý režim"
+                    title="Přepnout tmavý režim"
+                    aria-pressed="false"
+                >
+                    <span class="dark-mode-toggle__track" aria-hidden="true">
+                        <span class="dark-mode-toggle__icon dark-mode-toggle__icon--sun">☀</span>
+                        <span class="dark-mode-toggle__icon dark-mode-toggle__icon--moon">☾</span>
+                        <span class="dark-mode-toggle__thumb"></span>
+                    </span>
+                </button>
 
+                {% if request.user.is_authenticated %}
                     <a href="/rozesilac/" class="nav-button nav-rozesilac">
                         Admin panel <span>→</span>
                     </a>
@@ -135,27 +140,33 @@
     </footer>
     {% endif %}
     
-    <script>
-    (function () {
-        const btn = document.getElementById("dark-mode-toggle");
+<script>
+(function () {
+    const btn = document.getElementById("dark-mode-toggle");
 
-        if (localStorage.getItem("darkMode") === "on") {
-            document.body.classList.add("dark-mode");
-        }
+    function setDarkMode(isDark) {
+        document.body.classList.toggle("dark-mode", isDark);
+        localStorage.setItem("darkMode", isDark ? "on" : "off");
 
         if (btn) {
-            btn.addEventListener("click", function () {
-                document.body.classList.toggle("dark-mode");
-
-                if (document.body.classList.contains("dark-mode")) {
-                    localStorage.setItem("darkMode", "on");
-                } else {
-                    localStorage.setItem("darkMode", "off");
-                }
-            });
+            btn.setAttribute("aria-pressed", isDark ? "true" : "false");
+            btn.title = isDark ? "Přepnout světlý režim" : "Přepnout tmavý režim";
+            btn.setAttribute(
+                "aria-label",
+                isDark ? "Přepnout světlý režim" : "Přepnout tmavý režim"
+            );
         }
-    })();
-    </script>
+    }
+
+    setDarkMode(localStorage.getItem("darkMode") === "on");
+
+    if (btn) {
+        btn.addEventListener("click", function () {
+            setDarkMode(!document.body.classList.contains("dark-mode"));
+        });
+    }
+})();
+</script>
 
 </body>
 </html>
