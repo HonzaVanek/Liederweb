@@ -122,16 +122,24 @@
             <h2>Staňte se součástí vzniku alba</h2>
 
             <p class="agnes-support-intro">
+                
+                Vyberte si jednu z možností podpory. Po kliknutí budete přesměrováni
+                na zabezpečený darovací formulář Darujme.cz s předvyplněnou částkou. </br>
                 Díky vaší podpoře může hudba Agnes Tyrrell znovu zaznít. Děkujeme!
             </p>
 
             <div class="agnes-support-grid">
                 {% for level in support_levels %}
-                    <article class="agnes-support-card">
+                    <a
+                        class="agnes-support-card agnes-support-card--link"
+                        href="https://www.darujme.cz/darovat/1213196?portalWidget=1&frequency=once&amount={{ level.darujme_amount }}"
+                        aria-label="{{ level.title }} – {{ level.amount }}. Pokračovat na Darujme.cz."
+                    >
                         <p class="agnes-support-amount">{{ level.amount }}</p>
                         <h3>{{ level.title }}</h3>
                         <p>{{ level.description }}</p>
-                    </article>
+                        <span class="agnes-support-card-hint">Darovat tuto částku</span>
+                    </a>
                 {% endfor %}
             </div>
 

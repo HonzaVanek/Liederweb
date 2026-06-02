@@ -575,21 +575,25 @@ def agnes_tyrrell_landing(request):
         {
             "title": "Přítel alba",
             "amount": "500 Kč",
+            "darujme_amount": 500,
             "description": "CD a poděkování.",
         },
         {
             "title": "Podporovatel projektu",
             "amount": "1 000 Kč",
+            "darujme_amount": 1000,
             "description": "Podepsané CD a osobní poděkování.",
         },
         {
             "title": "Mecenáš nahrávky",
             "amount": "2 000 Kč",
+            "darujme_amount": 2000,
             "description": "Jméno v bookletu a pozvání na slavnostní křest.",
         },
         {
             "title": "Patron Agnes Tyrrell",
             "amount": "5 000 Kč",
+            "darujme_amount": 5000,
             "description": "Jméno v bookletu, VIP pozvání na křest a setkání s umělci.",
         },
     ]
