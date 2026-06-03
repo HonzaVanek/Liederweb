@@ -81,33 +81,33 @@
         color: #f4f4f4;
     }
 
-    .visitor-color-0 { background: rgba(255, 99, 132, 0.18); border-left-color: rgb(255, 99, 132); }
-    .visitor-color-1 { background: rgba(54, 162, 235, 0.18); border-left-color: rgb(54, 162, 235); }
-    .visitor-color-2 { background: rgba(255, 206, 86, 0.20); border-left-color: rgb(255, 206, 86); }
-    .visitor-color-3 { background: rgba(75, 192, 192, 0.18); border-left-color: rgb(75, 192, 192); }
-    .visitor-color-4 { background: rgba(153, 102, 255, 0.18); border-left-color: rgb(153, 102, 255); }
-    .visitor-color-5 { background: rgba(255, 159, 64, 0.20); border-left-color: rgb(255, 159, 64); }
-    .visitor-color-6 { background: rgba(120, 180, 80, 0.18); border-left-color: rgb(120, 180, 80); }
-    .visitor-color-7 { background: rgba(180, 80, 160, 0.18); border-left-color: rgb(180, 80, 160); }
-    .visitor-color-8 { background: rgba(80, 130, 180, 0.18); border-left-color: rgb(80, 130, 180); }
-    .visitor-color-9 { background: rgba(180, 120, 80, 0.18); border-left-color: rgb(180, 120, 80); }
-    .visitor-color-10 { background: rgba(140, 140, 140, 0.18); border-left-color: rgb(140, 140, 140); }
-    .visitor-color-11 { background: rgba(40, 180, 120, 0.18); border-left-color: rgb(40, 180, 120); }
+    .visitor-color-0 { background: rgba(255, 99, 133, 0.3); border-left-color: rgb(255, 99, 132); }
+    .visitor-color-1 { background: rgba(54, 162, 235, 0.3); border-left-color: rgb(54, 162, 235); }
+    .visitor-color-2 { background: rgba(255, 206, 86, 0.3); border-left-color: rgb(255, 206, 86); }
+    .visitor-color-3 { background: rgba(75, 192, 192, 0.3); border-left-color: rgb(75, 192, 192); }
+    .visitor-color-4 { background: rgba(153, 102, 255, 0.3); border-left-color: rgb(153, 102, 255); }
+    .visitor-color-5 { background: rgba(255, 159, 64, 0.3); border-left-color: rgb(255, 159, 64); }
+    .visitor-color-6 { background: rgba(120, 180, 80, 0.3); border-left-color: rgb(120, 180, 80); }
+    .visitor-color-7 { background: rgba(180, 80, 160, 0.3); border-left-color: rgb(180, 80, 160); }
+    .visitor-color-8 { background: rgba(80, 130, 180, 0.3); border-left-color: rgb(80, 130, 180); }
+    .visitor-color-9 { background: rgba(180, 120, 80, 0.3); border-left-color: rgb(180, 120, 80); }
+    .visitor-color-10 { background: rgba(140, 140, 140, 0.3); border-left-color: rgb(140, 140, 140); }
+    .visitor-color-11 { background: rgba(40, 180, 120, 0.3); border-left-color: rgb(40, 180, 120); }
 
     .visitor-badge {
         display: inline-block;
-        min-width: 76px;
+        min-width: 155px;
         margin-right: 8px;
         padding: 1px 6px;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.3);
         color: #fff;
         font-size: 12px;
         font-weight: 700;
     }
 </style>
 
-<pre class="system-log-output">{% for line in colored_log_lines %}<span class="system-log-line{% if line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>{% empty %}{{ log_text }}{% endfor %}</pre>
+<pre class="system-log-output">{% for line in colored_log_lines %}<span class="system-log-line{% if line.client or line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.client %}<span class="visitor-badge">{{ line.client }} / {{ line.visitor }}</span>{% elif line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>{% empty %}{{ log_text }}{% endfor %}</pre>
 
 <h2>Návštěvnost webu</h2>
 

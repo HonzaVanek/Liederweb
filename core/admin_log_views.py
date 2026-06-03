@@ -24,7 +24,8 @@ DEFAULT_LINES = 100
 MAX_LINES = 1000
 
 # Pro barevné rozlišení traffic logu.
-VISITOR_RE = re.compile(r"VISIT visitor=([a-f0-9]{8})")
+CLIENT_RE = re.compile(r"VISIT client=([a-f0-9]{8})")
+VISITOR_RE = re.compile(r"visitor=([a-f0-9]{8})")
 
 # Pravidelný healthcheck / monitoring přes python-requests.
 HEALTHCHECK_RE = re.compile(
@@ -52,17 +53,27 @@ def build_colored_log_lines(log_text):
     colored_log_lines = []
 
     for line in log_text.splitlines():
-        match = VISITOR_RE.search(line)
+        client_match = CLIENT_RE.search(line)
+        visitor_match = VISITOR_RE.search(line)
 
+        client = None
         visitor = None
         color_index = None
 
-        if match:
-            visitor = match.group(1)
-            color_index = int(visitor, 16) % 12
+        if client_match:
+            client = client_match.group(1)
+            color_index = int(client, 16) % 12
+
+        if visitor_match:
+            visitor = visitor_match.group(1)
+
+            # Zpětná kompatibilita pro staré řádky bez client=
+            if color_index is None:
+                color_index = int(visitor, 16) % 12
 
         colored_log_lines.append({
             "text": line,
+            "client": client,
             "visitor": visitor,
             "color_index": color_index,
         })
