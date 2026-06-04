@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+{% load core_tags %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'core/contact.css' %}">
+{% endblock %}
+
+{% block title %}Kontakt | Lieder Society{% endblock %}
+
+{% block content %}
+<section class="contact-page">
+  <div class="contact-page__inner">
+    <div class="contact-page__header">
+      <p class="contact-page__eyebrow">Kontakt</p>
+      <h1>Lieder Society, z. s.</h1>
+      <p>
+        Lieder Society je zapsaný spolek, který organizuje písňové koncerty, přednášky
+        a workshopy, věnuje se popularizaci žánru komorní písně, aktivně vyhledává a podporuje
+        mladé profesionální interprety a spolupracuje s významnými osobnostmi a institucemi
+        české kulturní obce.
+
+      </p>
+    </div>
+
+    <div class="contact-page__grid">
+      <section class="contact-card contact-card--main" aria-labelledby="contact-info-title">
+        <h2 id="contact-info-title">Údaje o spolku</h2>
+
+        <dl class="contact-details">
+          <div class="contact-details__row">
+            <dt>Název</dt>
+            <dd>Lieder Society, z. s.</dd>
+          </div>
+
+          <div class="contact-details__row">
+            <dt>Založeno</dt>
+            <dd>12. února 2021</dd>
+          </div>
+
+          <div class="contact-details__row">
+            <dt>Sídlo</dt>
+            <dd>Střimelická 2504/24, Záběhlice, 141 00 Praha 4</dd>
+          </div>
+
+          <div class="contact-details__row">
+            <dt>IČO</dt>
+            <dd>09862455</dd>
+          </div>
+
+          <div class="contact-details__row">
+            <dt>Email</dt>
+            <dd>
+              <a href="mailto:info@lieder-society.cz">info@lieder-society.cz</a>
+            </dd>
+          </div>
+
+          <div class="contact-details__row">
+            <dt>Datová schránka</dt>
+            <dd>e7x8cgb</dd>
+          </div>
+
+          <div class="contact-details__row">
+            <dt>Bankovní spojení</dt>
+            <dd>103646736/2250</dd>
+          </div>
+        </dl>
+      </section>
+
+      <aside class="contact-card contact-card--documents" aria-labelledby="contact-documents-title">
+        <p class="contact-card__eyebrow">Dokumenty</p>
+        <h2 id="contact-documents-title">Ke stažení</h2>
+
+        <div class="contact-documents">
+          <a
+            href="https://liedersociety.website/media/media_assets/document/2026/06/73625c1662874395b6411bfad6b79371.pdf"
+            target="_blank"
+            rel="noopener"
+            class="contact-document-link"
+          >
+            <span>Stanovy spolku</span>
+            <strong>PDF</strong>
+          </a>
+
+          <a
+            href="https://liedersociety.website/media/media_assets/document/2026/06/0d44e2fed0514cb8987b364580702f56.pdf"
+            target="_blank"
+            rel="noopener"
+            class="contact-document-link"
+          >
+            <span>Výroční zpráva za rok 2024</span>
+            <strong>PDF</strong>
+          </a>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block partners_section %}
+  {% render_partners_section %}
+{% endblock partners_section %}
+
+{% block newsletter_signup %}
+  {% include "core/includes/newsletter_signup.html" %}
+{% endblock newsletter_signup %}

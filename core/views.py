@@ -565,6 +565,20 @@ class PersonUpdateView(UpdateView):
 ##### konec stránky lidé  #######
 
 
+# stránka kontakty bude jen statická #
+
+def contact(request):
+    return render(request, "core/contact.html")
+
+# to je všechno :) #
+
+
+
+
+
+
+
+
 
 
 ########## další view pro statickou stránku kampaně k Agnes Tyrrell jen pro návštěvníky Tugendhatu.
