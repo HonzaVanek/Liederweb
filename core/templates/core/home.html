@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="{% static 'core/home.css' %}">
 {% endblock %}
 
-{% block title %}Nový web Lieder Society{% endblock %}
+{% block title %}Lieder Society - cílíme na píseň{% endblock %}
 
 {% block content %}
 <section class="home-carousel-section">
@@ -375,13 +375,62 @@
   </div>
 {% endif %}
 
-<section class="home-intro">
-  <h1>Interní (zatím) web <span>Lieder Society</span></h1>
-  <p>
-    Toto je hlavní stránka, časem tu bude ukázka nového webu Lieder Society.
-    Nyní si vyber z MENU nahoře - máme už připravenou stránku Lidé, ostatní vedou zatím na starý web.
-    Do administrace (koncerty, newslettery apod.) se připojíš přes přihlašovací stránku. Dole už je taky hotová stránka s logama partnerů, ta se zobrazuje i na stránce lidé. Zase platí, že pokud je uživatel přihlášen, vidí i možnost loga upravovat.
-  </p>
+<section class="home-about">
+  <div class="home-about__inner">
+    <p class="home-about__eyebrow">Lieder Society</p>
+
+    <h1>Cílíme na píseň</h1>
+
+    <div class="home-about__text">
+      <p>
+        Písňová tvorba je svou podstatou nesmírně barevná a rozmanitá,
+        nechává zblízka a důvěrně nahlédnout do duše svého skladatele.
+        Těsné sepjetí hudby a básnického textu dává už několik staletí
+        vznik nespočetnému množství drobných korálků i skutečných drahokamů,
+        často provází písně skladatele celým životem, od prvních kompozičních
+        pokusů až k závěrečnému bilancování.
+      </p>
+
+      <p>
+        Přes svou nespornou krásu bohužel nedostává tolik prostoru, kolik by si
+        zasloužila. Spolek Lieder Society z.s. jsme založily s myšlenkou tuto
+        situaci změnit. Připravujeme zajímavé dramaturgie, které propojují to
+        nejkrásnější dědictví s pozapomenutými poklady, nacházíme spojení mezi
+        klasiky a současníky, dáváme prostor mladým interpretům. Pořádáme
+        koncerty, přednášky i mistrovské kurzy a hledáme moderní cesty, jak
+        dostat píseň k novým posluchačům.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="home-logo-divider" aria-label="Lieder Society">
+  <img
+    src="/media/media_assets/image/2026/06/b819977413e843b4b219058133d7f6b5.svg"
+    alt="Lieder Society"
+    class="home-logo-divider__image"
+  >
+</section>
+
+<section class="home-shop-promo">
+  <div class="home-shop-promo__inner">
+    <div class="home-shop-promo__content">
+      <p class="home-shop-promo__eyebrow">Novinka</p>
+      <h2>Sláva! Naše první písňové album je na světě.</h2>
+      <p>
+        Objevte nahrávky Lieder Society a podpořte naši další práci přímo v našem e-shopu.
+      </p>
+    </div>
+
+    <a
+      href="https://eshop.lieder-society.cz/"
+      class="home-shop-promo__button"
+      target="_blank"
+      rel="noopener"
+    >
+      Navštívit e-shop
+    </a>
+  </div>
 </section>
 
 
