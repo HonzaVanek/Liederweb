@@ -124,7 +124,7 @@
             <p class="agnes-support-intro">
                 
                 Vyberte si jednu z možností podpory. Po kliknutí budete přesměrováni
-                na zabezpečený darovací formulář Darujme.cz s předvyplněnou částkou. </br>
+                na zabezpečený darovací formulář Darujme.cz s předvyplněnou částkou. <br>
                 Díky vaší podpoře může hudba Agnes Tyrrell znovu zaznít. Děkujeme!
             </p>
 
@@ -158,11 +158,12 @@
                     </div>
 
                     <p class="agnes-darujme-note">
-                        Pokud se vám darovací formulář nezobrazí, můžete projekt podpořit také
-                        bankovním převodem níže.
+                        Pokud by se vám darovací formulář nezobrazil správně, napište nám prosím na
+                        <a href="mailto:info@lieder-society.cz">info@lieder-society.cz</a>.
                     </p>
                 </div>
 
+                {% comment %}
                 <div class="agnes-donation-box agnes-donation-box--bank">
                     <h3>Podpořit bankovním převodem</h3>
 
@@ -354,7 +355,7 @@
                         </div>
                     {% endif %}
                 </div>
-
+                {% endcomment %}
             </div>
         </div>
     </section>
@@ -458,6 +459,7 @@
                         info@lieder-society.cz
                     </a>
                 </div>
+                
             </div>
         </div>
     </section>
@@ -533,7 +535,7 @@
 </main>
 
 
-
+{% comment %}
 <script>
 (function () {
     const amountChoiceInput = document.getElementById("agnes-amount-choice");
@@ -627,7 +629,7 @@
 })();
 </script>
 
-
+{% endcomment %}
 <script type="text/javascript">
     +function(w, d, s, u, a, b) {
         w['DarujmeObject'] = u;
