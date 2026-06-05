@@ -34,26 +34,56 @@
                   {% if gallery %}
                     {% with first_media=gallery.0 %}
                       {% if first_media.media_type == "video" %}
-                        <div class="home-slide-gallery-main home-slide-gallery-main-video">
-                          <video
-                            class="home-slide-image home-slide-video"
-                            preload="metadata"
-                            playsinline
-                            poster="{{ first_media.thumbnail_url|default:'' }}"
-                            data-carousel-video
-                          >
-                            <source src="{{ first_media.media_url }}" type="video/mp4">
-                          </video>
+                        {% if first_media.has_audio %}
+                          <div class="home-slide-gallery-main home-slide-gallery-main-video">
+                            <video
+                              class="home-slide-image home-slide-video"
+                              preload="metadata"
+                              playsinline
+                              poster="{{ first_media.thumbnail_url|default:'' }}"
+                              data-carousel-video
+                            >
+                              <source src="{{ first_media.media_url }}" type="video/mp4">
+                            </video>
 
-                          <button
-                            type="button"
-                            class="home-video-play-overlay"
-                            data-carousel-video-play
-                            aria-label="Přehrát video"
-                          >
-                            <span class="home-video-play-icon">▶</span>
-                          </button>
-                        </div>
+                            <button
+                              type="button"
+                              class="home-video-play-overlay"
+                              data-carousel-video-play
+                              aria-label="Přehrát video"
+                            >
+                              <span class="home-video-play-icon">▶</span>
+                            </button>
+                          </div>
+                            {% else %}
+                              {% if "/reel/" in featured_facebook_post.permalink_url %}
+                                <div class="home-slide-gallery-main home-slide-gallery-main-video home-slide-facebook-embed home-slide-facebook-embed--reel">
+                                  <iframe
+                                    src="https://www.facebook.com/plugins/video.php?href={{ featured_facebook_post.permalink_url|urlencode }}&show_text=0&width=360"
+                                    width="300"
+                                    height="533"
+                                    style="border:none;overflow:hidden"
+                                    scrolling="no"
+                                    frameborder="0"
+                                    allowfullscreen="true"
+                                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
+                                  </iframe>
+                                </div>
+                              {% else %}
+                                <div class="home-slide-gallery-main home-slide-gallery-main-video home-slide-facebook-embed home-slide-facebook-embed--video">
+                                  <iframe
+                                    src="https://www.facebook.com/plugins/video.php?href={{ featured_facebook_post.permalink_url|urlencode }}&show_text=0&width=900"
+                                    width="900"
+                                    height="506"
+                                    style="border:none;overflow:hidden"
+                                    scrolling="no"
+                                    frameborder="0"
+                                    allowfullscreen="true"
+                                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
+                                  </iframe>
+                                </div>
+                              {% endif %}
+                            {% endif %}
                       {% else %}
                         <button
                           type="button"

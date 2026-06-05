@@ -1,4 +1,5 @@
 import json
+import subprocess
 from urllib.parse import urlencode
 from urllib.request import urlopen
 from urllib.error import HTTPError, URLError
@@ -129,6 +130,7 @@ class Command(BaseCommand):
             fallback_image_url = (item.get("full_picture") or "")[:1500]
             message = (item.get("message") or "").strip()
             message_tags = self.normalize_message_tags(item.get("message_tags"))
+
             post_media_items = self.fetch_post_media_items(
                 post_id=item["id"],
                 token=token,
@@ -143,7 +145,9 @@ class Command(BaseCommand):
                 first_item = post_media_items[0]
                 primary_media_url = (first_item.get("media_url") or fallback_image_url)[:1500]
                 primary_thumbnail_url = (
-                    first_item.get("thumbnail_url") or first_item.get("media_url") or fallback_image_url
+                    first_item.get("thumbnail_url")
+                    or first_item.get("media_url")
+                    or fallback_image_url
                 )[:1500]
 
                 if len(post_media_items) > 1:
@@ -156,6 +160,7 @@ class Command(BaseCommand):
                         post_media_type = SocialPost.MediaType.IMAGE
                     else:
                         post_media_type = SocialPost.MediaType.OTHER
+
             elif fallback_image_url:
                 post_media_type = SocialPost.MediaType.IMAGE
 
@@ -168,8 +173,35 @@ class Command(BaseCommand):
                 "thumbnail_url": primary_thumbnail_url,
                 "published_at": published_at,
                 "is_visible": True,
-                "raw_payload": item,               
+                "raw_payload": item,
             }
+
+            prepared_media_items = []
+
+            for index, media_item in enumerate(post_media_items[:12], start=1):
+                media_type = media_item.get("media_type") or SocialPostMedia.MediaType.OTHER
+                media_url = (media_item.get("media_url") or "")[:1500]
+                thumbnail_url = (media_item.get("thumbnail_url") or "")[:1500]
+
+                has_audio = None
+
+                if media_type == SocialPostMedia.MediaType.VIDEO:
+                    has_audio = self.video_has_audio(media_url)
+
+                    self.stdout.write(
+                        f"[{source.name}] video {media_item.get('external_media_id') or ''} | has_audio={has_audio}"
+                    )
+
+                prepared_media_items.append(
+                    {
+                        "external_media_id": media_item.get("external_media_id"),
+                        "media_type": media_type,
+                        "media_url": media_url,
+                        "thumbnail_url": thumbnail_url,
+                        "sort_order": index,
+                        "has_audio": has_audio,
+                    }
+                )
 
             with transaction.atomic():
                 obj, created = SocialPost.objects.update_or_create(
@@ -181,15 +213,17 @@ class Command(BaseCommand):
                 obj.media_items.all().delete()
 
                 media_objects = []
-                for index, media_item in enumerate(post_media_items[:12], start=1):
+
+                for media_item in prepared_media_items:
                     media_objects.append(
                         SocialPostMedia(
                             post=obj,
-                            external_media_id=media_item.get("external_media_id"),
-                            media_type=media_item.get("media_type") or SocialPostMedia.MediaType.OTHER,
-                            media_url=(media_item.get("media_url") or "")[:1500],
-                            thumbnail_url=(media_item.get("thumbnail_url") or "")[:1500],
-                            sort_order=index,
+                            external_media_id=media_item["external_media_id"],
+                            media_type=media_item["media_type"],
+                            media_url=media_item["media_url"],
+                            thumbnail_url=media_item["thumbnail_url"],
+                            sort_order=media_item["sort_order"],
+                            has_audio=media_item["has_audio"],
                         )
                     )
 
@@ -202,6 +236,7 @@ class Command(BaseCommand):
                             media_url=fallback_image_url,
                             thumbnail_url=fallback_image_url,
                             sort_order=1,
+                            has_audio=None,
                         )
                     )
 
@@ -338,3 +373,54 @@ class Command(BaseCommand):
                 )
             )
             return None
+        
+
+    def video_has_audio(self, media_url):
+        if not media_url:
+            return None
+
+        try:
+            result = subprocess.run(
+                [
+                    "ffprobe",
+                    "-v", "error",
+                    "-select_streams", "a",
+                    "-show_entries", "stream=codec_type",
+                    "-of", "csv=p=0",
+                    media_url,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=20,
+            )
+        except FileNotFoundError:
+            self.stderr.write(
+                self.style.WARNING(
+                    "ffprobe není dostupný. Audio stopu u videa nelze ověřit."
+                )
+            )
+            return None
+        except subprocess.TimeoutExpired:
+            self.stderr.write(
+                self.style.WARNING(
+                    "ffprobe timeout při kontrole audio stopy u Facebook videa."
+                )
+            )
+            return None
+        except Exception as exc:
+            self.stderr.write(
+                self.style.WARNING(
+                    f"Nepodařilo se ověřit audio stopu u videa: {exc}"
+                )
+            )
+            return None
+
+        if result.returncode != 0:
+            self.stderr.write(
+                self.style.WARNING(
+                    f"ffprobe neověřil audio stopu u videa: {result.stderr.strip()[:300]}"
+                )
+            )
+            return None
+
+        return bool(result.stdout.strip())

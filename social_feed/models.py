@@ -188,6 +188,16 @@ class SocialPostMedia(models.Model):
         blank=True,
         verbose_name="URL média",
     )
+
+    
+    has_audio = models.BooleanField(
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name="Video má audio stopu",
+        help_text="Vyplňuje synchronizace u video souborů. None = neověřeno.",
+    )
+    
     thumbnail_url = models.URLField(
         max_length=1500,
         blank=True,
