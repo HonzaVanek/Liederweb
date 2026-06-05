@@ -512,6 +512,32 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function stopMediaInSlide(slide) {
+    if (!slide) return;
+
+    slide.querySelectorAll("[data-carousel-video]").forEach((video) => {
+      try {
+        video.pause();
+        video.currentTime = 0;
+      } catch (e) {}
+    });
+
+    slide.querySelectorAll(".home-slide-facebook-embed iframe").forEach((iframe) => {
+      const src = iframe.getAttribute("src");
+      if (!src) return;
+
+      /*
+        Facebook iframe je cross-origin, takže ho neumíme přímo pauznout.
+        Nejbezpečnější workaround je iframe reloadnout přes src.
+      */
+      iframe.setAttribute("src", "about:blank");
+
+      window.requestAnimationFrame(() => {
+        iframe.setAttribute("src", src);
+      });
+    });
+  }
+
   if (window.matchMedia("(max-width: 760px)").matches) {
     const slides = Array.from(track.querySelectorAll(".home-slide"));
     const mobileOverlay = document.querySelector(".home-carousel-mobile-overlay");
@@ -539,19 +565,32 @@ document.addEventListener("DOMContentLoaded", function () {
       return bestIndex;
     }
 
+    let activeMobileIndex = getClosestSlideIndex();
+
     function scrollToSlide(index, behavior = "smooth") {
       const slide = slides[index];
       if (!slide) return;
+
+      if (index !== activeMobileIndex) {
+        stopMediaInSlide(slides[activeMobileIndex]);
+        activeMobileIndex = index;
+      }
 
       viewport.scrollTo({
         left: getSlideTargetLeft(slide),
         behavior
       });
     }
-    
 
     function updateMobileDots() {
-      setActiveDot(getClosestSlideIndex());
+      const nextIndex = getClosestSlideIndex();
+
+      if (nextIndex !== activeMobileIndex) {
+        stopMediaInSlide(slides[activeMobileIndex]);
+        activeMobileIndex = nextIndex;
+      }
+
+      setActiveDot(nextIndex);
     }
 
     dots.forEach((dot) => {
@@ -646,7 +685,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-
     return;
   }
 
@@ -734,6 +772,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function goTo(index) {
     if (isAnimating) return;
+
+    if (index !== currentIndex) {
+      stopMediaInSlide(slides[currentIndex]);
+    }
+
     isAnimating = true;
     currentIndex = index;
     centerActiveSlide(true);
@@ -777,7 +820,6 @@ document.addEventListener("DOMContentLoaded", function () {
   updateSocialTextHeights();
 });
 </script>
-
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -911,7 +953,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 </script>
-
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
