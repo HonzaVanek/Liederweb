@@ -176,6 +176,28 @@ class EventArtist(models.Model):
         return self.photo_asset or self.photo_image
 
 
+class EventGalleryImage(models.Model):
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="gallery_images",
+    )
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    image_asset = models.ForeignKey(
+        MediaAsset,
+        on_delete=models.CASCADE,
+        related_name="event_gallery_images",
+        limit_choices_to={"asset_type": "image", "is_active": True},
+    )
+    caption = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+
+    def __str__(self):
+        return f"{self.event.title} – {self.image_asset}"
+
+
 class EventResource(models.Model):
     RESOURCE_TYPES = [
         ("wiki", "Wikipedia"),

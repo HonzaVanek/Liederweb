@@ -24,6 +24,7 @@
 
   {{ program_formset.management_form }}
   {{ artist_formset.management_form }}
+  {{ gallery_formset.management_form }}
   {{ resource_formset.management_form }}
   {{ practical_info_formset.management_form }}
   {{ sponsor_formset.management_form }}
@@ -206,6 +207,7 @@
       {% endfor %}
     </div>
 
+    {% comment %}
     <div class="template-form-row">
       <label for="{{ form.secondary_asset.id_for_label }}">Další fotka do obsahu stránky</label>
       {{ form.secondary_asset }}
@@ -216,9 +218,107 @@
         <div class="form-errors">{{ e }}</div>
       {% endfor %}
     </div>
+    {% endcomment %}
+
+    <div class="content-section js-formset" data-prefix="{{ gallery_formset.prefix }}">
+      <h3>Galerie koncertu</h3>
+      <p class="section-intro">
+        Vyber fotky z mediální knihovny. Jedna fotka se zobrazí jako samostatný obrazový blok,
+        více fotek se zobrazí jako galerie s lightboxem.
+      </p>
+
+      <div class="formset-toolbar">
+        <label>
+          Počet zobrazených řádků galerie
+          <input
+            type="number"
+            min="{{ gallery_formset.forms|length }}"
+            value="{{ gallery_formset.forms|length }}"
+            data-formset-target-count
+          >
+        </label>
+
+        <button type="button" data-formset-add>Přidat jednu fotku</button>
+      </div>
+
+      <div class="js-formset-list">
+        {% for subform in gallery_formset %}
+          <div class="inline-formset-card">
+            {{ subform.id }}
+
+            <div class="form-grid formset-grid-gallery">
+              <div>
+                <label for="{{ subform.sort_order.id_for_label }}">Pořadí</label>
+                {{ subform.sort_order }}
+              </div>
+
+              <div>
+                <label for="{{ subform.image_asset.id_for_label }}">Fotka</label>
+                {{ subform.image_asset }}
+              </div>
+
+              <div>
+                <label for="{{ subform.caption.id_for_label }}">Popisek</label>
+                {{ subform.caption }}
+              </div>
+
+              <div class="delete-cell">
+                <label for="{{ subform.DELETE.id_for_label }}">Smazat</label>
+                {{ subform.DELETE }}
+              </div>
+            </div>
+
+            {% if subform.errors %}
+              <div class="form-errors formset-errors">
+                {% for field in subform %}
+                  {% for error in field.errors %}
+                    <div>{{ field.label }}: {{ error }}</div>
+                  {% endfor %}
+                {% endfor %}
+                {% for error in subform.non_field_errors %}
+                  <div>{{ error }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <template class="js-empty-form-template">
+        <div class="inline-formset-card">
+          {{ gallery_formset.empty_form.id }}
+
+          <div class="form-grid formset-grid-gallery">
+            <div>
+              <label for="{{ gallery_formset.empty_form.sort_order.id_for_label }}">Pořadí</label>
+              {{ gallery_formset.empty_form.sort_order }}
+            </div>
+
+            <div>
+              <label for="{{ gallery_formset.empty_form.image_asset.id_for_label }}">Fotka</label>
+              {{ gallery_formset.empty_form.image_asset }}
+            </div>
+
+            <div>
+              <label for="{{ gallery_formset.empty_form.caption.id_for_label }}">Popisek</label>
+              {{ gallery_formset.empty_form.caption }}
+            </div>
+
+            <div class="delete-cell">
+              <label for="{{ gallery_formset.empty_form.DELETE.id_for_label }}">Smazat</label>
+              {{ gallery_formset.empty_form.DELETE }}
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <p class="gallery-link-wrap">
+        <a href="/media-assets/" class="btn-link">Otevřít mediální knihovnu</a>
+      </p>
+    </div>
 
     <p class="gallery-link-wrap">
-      <a href="{% url 'rozesilac:images' %}" class="btn-link">Otevřít galerii všech obrázků</a>
+      <a href="/media-assets/" class="btn-link">Otevřít mediální knihovnu</a>
     </p>
   </div>
 

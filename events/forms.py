@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory, BaseInlineFormSet
 from django.utils import timezone
-from .models import (Event, EventArtist, EventProgramItem, EventPracticalInfo, EventResource, EventSponsor, EventTicketSettings, EventTicketVariant)
+from .models import (Event, EventArtist, EventProgramItem, EventPracticalInfo, EventResource, EventSponsor, EventTicketSettings, EventTicketVariant, EventGalleryImage)
 from rozesilac.models import EmailImage
 from media_assets.models import MediaAsset
 
@@ -39,7 +39,6 @@ class EventForm(forms.ModelForm):
             "hero_asset",
             "hero_image_position",
             "hero_parallax_enabled",
-            "secondary_asset",
             "public_text",
             "program_intro",
             "educational_text",
@@ -72,12 +71,11 @@ class EventForm(forms.ModelForm):
 
         image_qs = get_event_image_assets_queryset()
 
-        for field_name in ["poster_asset", "hero_asset", "secondary_asset"]:
+        for field_name in ["poster_asset", "hero_asset"]:
             self.fields[field_name].queryset = image_qs
             self.fields[field_name].required = False
             self.fields["poster_asset"].label = "Poster Image"
             self.fields["hero_asset"].label = "Hero Image"
-            self.fields["secondary_asset"].label = "Secondary Image"
 
         if self.instance and self.instance.pk and self.instance.starts_at:
             self.initial["starts_at"] = timezone.localtime(
@@ -128,6 +126,14 @@ EventArtistFormSet = inlineformset_factory(
     Event,
     EventArtist,
     fields=["sort_order", "name", "role", "url", "photo_asset", "photo_position"],
+    extra=3,
+    can_delete=True,
+)
+
+EventGalleryImageFormSet = inlineformset_factory(
+    Event,
+    EventGalleryImage,
+    fields=["sort_order", "image_asset", "caption"],
     extra=3,
     can_delete=True,
 )

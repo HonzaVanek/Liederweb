@@ -15,6 +15,7 @@ from .models import (
     EventSponsor,
     EventTicketVariant,
     VipReservation,
+    EventGalleryImage,
 )
 
 from rozesilac.models import EmailImage, EmailDelivery, EmailCampaign
@@ -29,6 +30,7 @@ from .forms import (
     EventTicketSettingsForm,
     EventTicketVariantFormSet,
     InitialEventTicketVariantFormSet,
+    EventGalleryImageFormSet,
     get_default_ticket_variant_initials,
 )
 
@@ -80,6 +82,11 @@ def _build_event_formsets(data=None, instance=None):
             data=data,
             instance=instance,
             prefix="sponsors",
+        ),
+        "gallery_formset": EventGalleryImageFormSet(
+            data=data,
+            instance=instance,
+            prefix="gallery",
         ),
     }
 
@@ -262,6 +269,10 @@ def event_detail(request, pk):
 
 
 def public_event_detail(request, slug):
+    Prefetch(
+        "gallery_images",
+        queryset=EventGalleryImage.objects.select_related("image_asset").order_by("sort_order", "id"),
+    ),
     event = get_object_or_404(
         Event.objects.select_related(
             "poster_image",
@@ -278,6 +289,15 @@ def public_event_detail(request, slug):
         is_published=True,
     )
 
+    gallery_images = list(event.gallery_images.all())
+
+    if len(gallery_images) > 4:
+        gallery_preview_images = gallery_images[:5]
+    else:
+        gallery_preview_images = gallery_images[:4]
+
+    gallery_extra_count = max(len(gallery_images) - 4, 0)
+
     return render(
         request,
         "events/public_event_detail.html",
@@ -289,6 +309,9 @@ def public_event_detail(request, slug):
             "contact": None,
             "reservation": None,
             "vip_form": None,
+            "gallery_images": gallery_images,
+            "gallery_preview_images": gallery_preview_images,
+            "gallery_extra_count": gallery_extra_count,
         },
     )
 
