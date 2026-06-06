@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% load static %}
+{% load core_tags %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'events/public_event_list.css' %}">
+{% endblock %}
+
+{% block title %}Koncerty | Lieder Society{% endblock %}
+
+{% block content %}
+<section class="public-events-page">
+  <div class="public-events-page__inner">
+
+    <header class="public-events-header">
+      <p class="public-events-header__eyebrow">Koncerty</p>
+      <h1>Program Lieder Society</h1>
+      <p>
+        Připravované i proběhlé koncerty, projekty a další písňové události.
+      </p>
+    </header>
+
+    {% if featured_event %}
+      <section class="featured-event" aria-labelledby="featured-event-title">
+        <div class="featured-event__poster">
+          {% if featured_event.poster_asset %}
+            <img
+              src="{{ featured_event.poster_asset.file.url }}"
+              alt="{{ featured_event.poster_asset.alt_text|default:featured_event.poster_asset.title|default:featured_event.title }}"
+            >
+          {% elif featured_event.poster_image %}
+            <img
+              src="{{ featured_event.poster_image.image.url }}"
+              alt="{{ featured_event.poster_image.title|default:featured_event.title }}"
+            >
+          {% else %}
+            <div class="event-poster-placeholder">
+              Koncert
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="featured-event__content">
+          <p class="featured-event__eyebrow">Nejbližší koncert</p>
+
+          <h2 id="featured-event-title">
+            {{ featured_event.title }}
+          </h2>
+
+          {% if featured_event.subtitle %}
+            <p class="featured-event__subtitle">
+              {{ featured_event.subtitle }}
+            </p>
+          {% endif %}
+
+          <div class="featured-event__meta">
+            {% if featured_event.starts_at %}
+              <span>{{ featured_event.starts_at|date:"d. m. Y H:i" }}</span>
+            {% endif %}
+
+            {% if featured_event.venue %}
+              <span>{{ featured_event.venue }}</span>
+            {% endif %}
+          </div>
+
+          {% if featured_event.public_text %}
+            <p class="featured-event__excerpt">
+              {{ featured_event.public_text|striptags|truncatechars:260 }}
+            </p>
+          {% endif %}
+
+          <div class="featured-event__actions">
+            {% if featured_event.tickets_url %}
+              <a
+                href="{{ featured_event.tickets_url }}"
+                class="events-button events-button--primary"
+                target="_blank"
+                rel="noopener"
+              >
+                {{ featured_event.tickets_label|default:"Koupit vstupenky" }}
+              </a>
+            {% endif %}
+
+            <a
+              href="{% url 'events:public_event_detail' featured_event.slug %}"
+              class="events-button"
+            >
+              Detail koncertu
+            </a>
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+    {% if other_upcoming_events %}
+      <section class="events-section" aria-labelledby="upcoming-events-title">
+        <div class="events-section__header">
+          <p class="events-section__eyebrow">Program</p>
+          <h2 id="upcoming-events-title">Další připravované koncerty</h2>
+        </div>
+
+        <div class="events-grid">
+          {% for event in other_upcoming_events %}
+            {% include "events/includes/public_event_card.html" with event=event %}
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    <section class="events-section" aria-labelledby="past-events-title">
+      <div class="events-section__header">
+        <p class="events-section__eyebrow">Archiv</p>
+        <h2 id="past-events-title">Proběhlé koncerty</h2>
+      </div>
+
+      {% if past_events %}
+        <div class="events-grid">
+          {% for event in past_events %}
+            {% include "events/includes/public_event_card.html" with event=event %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="events-empty">
+          Zatím tu nejsou žádné publikované proběhlé koncerty.
+        </p>
+      {% endif %}
+    </section>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block partners_section %}
+  {% render_partners_section %}
+{% endblock partners_section %}
+
+{% block newsletter_signup %}
+  {% include "core/includes/newsletter_signup.html" %}
+{% endblock newsletter_signup %}

@@ -17,6 +17,7 @@ urlpatterns = [
     path("vip/<str:token>/cancel/", views.vip_cancel_reservation, name="vip_cancel_reservation"),
 
     path("<int:pk>/export-vip/", views.event_export_vip_xlsx, name="event_export_vip_xlsx"),
+
     
     # veřejná stránka se slugem musí být až nakonec, protože je nejširší
     # a jinak by mohla spolknout jiné textové URL

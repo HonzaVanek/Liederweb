@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from events import views as event_views
 
 from core.admin_log_views import system_logs_view
 
@@ -27,6 +28,7 @@ urlpatterns = [
     path("", include(("core.urls", "core"), namespace="core")),
     path('rozesilac/', include('rozesilac.urls', namespace='rozesilac')),
     path("events/", include("events.urls")),
+    path("koncerty/", event_views.public_event_list, name="public_event_list"),
     path("media-assets/", include(("media_assets.urls", "media_assets"), namespace="media_assets")),
 ]
 

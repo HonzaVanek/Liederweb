@@ -738,3 +738,46 @@ def event_ticket_pdf(request, pk, variant_code):
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
     return response
+
+
+
+
+
+# veřejná stránka koncerty v MENU nahoře #
+
+def public_event_list(request):
+    now = timezone.now()
+
+    base_qs = (
+        Event.objects
+        .filter(is_published=True, starts_at__isnull=False)
+        .select_related(
+            "poster_image",
+            "poster_asset",
+        )
+    )
+
+    upcoming_events = list(
+        base_qs
+        .filter(starts_at__gte=now)
+        .order_by("starts_at", "created_at")
+    )
+
+    featured_event = upcoming_events[0] if upcoming_events else None
+    other_upcoming_events = upcoming_events[1:] if len(upcoming_events) > 1 else []
+
+    past_events = (
+        base_qs
+        .filter(starts_at__lt=now)
+        .order_by("-starts_at", "-created_at")
+    )
+
+    return render(
+        request,
+        "events/public_event_list.html",
+        {
+            "featured_event": featured_event,
+            "other_upcoming_events": other_upcoming_events,
+            "past_events": past_events,
+        },
+    )
