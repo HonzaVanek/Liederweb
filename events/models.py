@@ -120,7 +120,7 @@ class EventProgramItem(models.Model):
     sort_order = models.PositiveSmallIntegerField(default=0)
     composer = models.CharField(max_length=200, blank=True)
     work_title = models.CharField(max_length=255)
-    note = models.CharField(max_length=255, blank=True)
+    note = models.TextField(blank=True)
     info_url = models.URLField(blank=True)
 
     class Meta:
