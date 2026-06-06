@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static core_tags %}
 
 {% block extra_css %}
   {{ block.super }}
@@ -42,7 +42,7 @@
 
         {% if event.public_text %}
           <div class="public-event-lead">
-            {{ event.public_text|linebreaks }}
+            {{ event.public_text|event_richtext }}
           </div>
         {% endif %}
       </div>
@@ -66,6 +66,20 @@
     </div>
   </section>
 
+    {% if event.tickets_url %}
+      <div class="public-event-hero-cta" aria-label="Vstupenky">
+        <a
+          href="{{ event.tickets_url }}"
+          target="_blank"
+          rel="noopener"
+          class="public-event-hero-cta__button"
+        >
+          {{ event.tickets_label|default:"Koupit vstupenky" }}
+        </a>
+      </div>
+    {% endif %}
+
+
   <div class="public-event-layout">
     <main class="public-event-main">
       {% if event.program_items.exists %}
@@ -74,7 +88,7 @@
 
           {% if event.program_intro %}
             <div class="public-event-section-text public-event-section-intro">
-              {{ event.program_intro|linebreaks }}
+              {{ event.program_intro|event_richtext }}
             </div>
           {% endif %}
 
@@ -153,7 +167,7 @@
         <section class="public-event-section">
           <h2>O hudbě</h2>
           <div class="public-event-section-text">
-            {{ event.educational_text|linebreaks }}
+            {{ event.educational_text|event_richtext }}
           </div>
         </section>
       {% endif %}
