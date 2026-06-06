@@ -91,10 +91,35 @@ class EventForm(forms.ModelForm):
             raise forms.ValidationError("Tento slug nelze použít.")
         return slug
 
+class EventProgramItemForm(forms.ModelForm):
+    class Meta:
+        model = EventProgramItem
+        fields = [
+            "sort_order",
+            "composer",
+            "work_title",
+            "note",
+            "info_url",
+        ]
+        widgets = {
+            "note": forms.Textarea(
+                attrs={
+                    "rows": 3,
+                    "placeholder": (
+                        "Např.:\n"
+                        "1. Er ist gekommen in Sturm und Regen\n"
+                        "2. Liebst du um Schönheit\n"
+                        "3. Warum willst du and're fragen"
+                    ),
+                }
+            ),
+        }
+
+
 EventProgramItemFormSet = inlineformset_factory(
     Event,
     EventProgramItem,
-    fields=["sort_order", "composer", "work_title", "note", "info_url"],
+    form=EventProgramItemForm,
     extra=3,
     can_delete=True,
 )

@@ -303,9 +303,12 @@
               {{ subform.work_title }}
             </div>
 
-            <div>
-              <label for="{{ subform.note.id_for_label }}">Poznámka</label>
+            <div class="program-note-cell">
+              <label for="{{ subform.note.id_for_label }}">Poznámka / části skladby</label>
               {{ subform.note }}
+              <p class="small muted">
+                Pro části cyklu použij každý název na nový řádek. HTML značky není potřeba psát.
+              </p>
             </div>
 
             <div>
@@ -355,9 +358,12 @@
             {{ program_formset.empty_form.work_title }}
           </div>
 
-          <div>
-            <label for="{{ program_formset.empty_form.note.id_for_label }}">Poznámka</label>
+          <div class="program-note-cell">
+            <label for="{{ program_formset.empty_form.note.id_for_label }}">Poznámka / části skladby</label>
             {{ program_formset.empty_form.note }}
+            <p class="small muted">
+              Pro části cyklu použij každý název na nový řádek. HTML značky není potřeba psát.
+            </p>
           </div>
 
           <div>
