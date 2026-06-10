@@ -1,633 +1,577 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% load static core_tags %}
 
 {% block extra_css %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'events/public_event_detail.css' %}">
+  <link rel="stylesheet" href="{% static 'events/public_event_detail.css' %}" />
 {% endblock %}
 
-{% block title %}{{ event.title }}{% endblock title %}
+{% block title %}
+  {{ event.title }}
+{% endblock %}
 
 {% block content %}
-<div class="public-event-page" style="--event-color: {{ event.theme_color|default:'#7B2738' }};">
-  <section class="public-event-hero {% if event.hero_media %}has-hero-image{% endif %} {% if event.hero_parallax_enabled %}hero-parallax-enabled{% endif %}">
-    {% if event.hero_media %}
-      <div
-        class="public-event-hero-bg"
-        style="
+  <div class="public-event-page" style="--event-color: {{ event.theme_color|default:'#7B2738' }};">
+    <section class="public-event-hero {% if event.hero_media %}has-hero-image{% endif %} {% if event.hero_parallax_enabled %}hero-parallax-enabled{% endif %}">
+      {% if event.hero_media %}
+        <div class="public-event-hero-bg" style="
           background-image: url('{{ event.hero_media.image.url }}');
           background-position: center {{ event.hero_image_position|default:'center' }};
-        "
-      ></div>
-    {% endif %}
+        "></div>
+      {% endif %}
 
-    <div class="public-event-hero-overlay"></div>
+      <div class="public-event-hero-overlay"></div>
 
-    <div class="public-event-hero-inner">
-      <div class="public-event-hero-copy">
-        {% if event.subtitle %}
-          <p class="public-event-kicker">{{ event.subtitle }}</p>
-        {% endif %}
-
-        <h1>{{ event.title }}</h1>
-
-        <div class="public-event-meta-inline">
-          {% if event.starts_at %}
-            <span>{{ event.starts_at|date:"d. m. Y H:i" }}</span>
+      <div class="public-event-hero-inner">
+        <div class="public-event-hero-copy">
+          {% if event.subtitle %}
+            <p class="public-event-kicker">{{ event.subtitle }}</p>
           {% endif %}
-          {% if event.venue %}
-            <span>{{ event.venue }}</span>
+
+          <h1>{{ event.title }}</h1>
+
+          <div class="public-event-meta-inline">
+            {% if event.starts_at %}
+              <span>{{ event.starts_at|date:'d. m. Y H:i' }}</span>
+            {% endif %}
+            {% if event.venue %}
+              <span>{{ event.venue }}</span>
+            {% endif %}
+          </div>
+
+          {% if event.public_text %}
+            <div class="public-event-lead">{{ event.public_text|event_richtext }}</div>
           {% endif %}
         </div>
 
-        {% if event.public_text %}
-          <div class="public-event-lead">
-            {{ event.public_text|event_richtext }}
+        {% if event.poster_media %}
+          <div class="public-event-poster-card">
+            <button type="button" class="public-event-poster-trigger" id="open-poster-modal" aria-label="Zvětšit plakát koncertu"><img src="{{ event.poster_media.image.url }}" alt="{{ event.poster_media.title|default:event.title }}" class="public-event-poster" /></button>
           </div>
         {% endif %}
       </div>
-
-      {% if event.poster_media %}
-        <div class="public-event-poster-card">
-          <button
-            type="button"
-            class="public-event-poster-trigger"
-            id="open-poster-modal"
-            aria-label="Zvětšit plakát koncertu"
-          >
-            <img
-              src="{{ event.poster_media.image.url }}"
-              alt="{{ event.poster_media.title|default:event.title }}"
-              class="public-event-poster"
-            >
-          </button>
-        </div>
-      {% endif %}
-    </div>
-  </section>
+    </section>
 
     {% if event.tickets_url %}
       <div class="public-event-hero-cta" aria-label="Vstupenky">
-        <a
-          href="{{ event.tickets_url }}"
-          target="_blank"
-          rel="noopener"
-          class="public-event-hero-cta__button"
-        >
-          {{ event.tickets_label|default:"Koupit vstupenky" }}
-        </a>
+        <a href="{{ event.tickets_url }}" target="_blank" rel="noopener" class="public-event-hero-cta__button">{{ event.tickets_label|default:'Koupit vstupenky' }}</a>
       </div>
     {% endif %}
 
+    <div class="public-event-layout">
+      <main class="public-event-main">
+        {% if event.program_items.exists %}
+          <section class="public-event-section">
+            <h2>Program</h2>
 
-  <div class="public-event-layout">
-    <main class="public-event-main">
-      {% if event.program_items.exists %}
-        <section class="public-event-section">
-          <h2>Program</h2>
+            {% if event.program_intro %}
+              <div class="public-event-section-text public-event-section-intro">{{ event.program_intro|event_richtext }}</div>
+            {% endif %}
 
-          {% if event.program_intro %}
-            <div class="public-event-section-text public-event-section-intro">
-              {{ event.program_intro|event_richtext }}
-            </div>
-          {% endif %}
+            <ul class="program-list">
+              {% for item in event.program_items.all %}
+                <li class="program-item">
+                  <div class="program-item-text">
+                    {% if item.composer %}
+                      <div class="program-composer">{{ item.composer }}</div>
+                    {% endif %}
 
-          <ul class="program-list">
-            {% for item in event.program_items.all %}
-              <li class="program-item">
-                <div class="program-item-text">
-                  {% if item.composer %}
-                    <div class="program-composer">{{ item.composer }}</div>
-                  {% endif %}
+                    <div class="program-title">{{ item.work_title }}</div>
 
-                  <div class="program-title">{{ item.work_title }}</div>
-
-                  {% if item.note %}
-                    <div class="program-note">{{ item.note|linebreaksbr }}</div>
-                  {% endif %}
-                </div>
-
-                {% if item.info_url %}
-                  <a href="{{ item.info_url }}" target="_blank" rel="noopener" class="program-link">
-                    Více
-                  </a>
-                {% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        </section>
-      {% endif %}
-
-      {% if event.artists.exists %}
-        <section class="public-event-section">
-          <h2>Interpreti</h2>
-
-          <div class="artist-list">
-            {% for artist in event.artists.all %}
-              <div class="artist-item">
-                {% if artist.photo_media %}
-                  <div class="artist-photo-wrap">
-                    <img
-                      src="{{ artist.photo_media.image.url }}"
-                      alt="{{ artist.name }}"
-                      class="artist-photo"
-                      style="object-position: center {{ artist.photo_position|default:'center' }};"
-                    >
+                    {% if item.note %}
+                      <div class="program-note">{{ item.note|linebreaksbr }}</div>
+                    {% endif %}
                   </div>
-                {% endif %}
 
+                  {% if item.info_url %}
+                    <a href="{{ item.info_url }}" target="_blank" rel="noopener" class="program-link">Více</a>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endif %}
+
+        {% if event.artists.exists %}
+          <section class="public-event-section">
+            <h2>Interpreti</h2>
+
+            <div class="artist-list">
+              {% for artist in event.artists.all %}
                 {% if artist.url %}
-                  <a href="{{ artist.url }}" target="_blank" rel="noopener" class="artist-name">
-                    {{ artist.name }}
-                  </a>
-                {% else %}
-                  <div class="artist-name">{{ artist.name }}</div>
-                {% endif %}
+                  <a href="{{ artist.url }}" target="_blank" rel="noopener" class="artist-item artist-item--link" aria-label="{{ artist.name }} – otevřít profil interpreta">
+                    {% if artist.photo_media %}
+                      <div class="artist-photo-wrap">
+                        <img src="{{ artist.photo_media.image.url }}" alt="{{ artist.name }}" class="artist-photo" style="object-position: center {{ artist.photo_position|default:'center' }};" />
+                      </div>
+                    {% endif %}
 
-                {% if artist.role %}
-                  <div class="artist-role">{{ artist.role }}</div>
-                {% endif %}
-              </div>
-            {% endfor %}
-          </div>
-        </section>
-      {% endif %}
+                    <div class="artist-name artist-name--external">
+                      {{ artist.name }} <span aria-hidden="true">↗</span>
+                    </div>
 
-      {% if event.gallery_images.exists %}
-        <section id="gallery" class="public-event-section public-event-gallery-section">
-          <h2>Galerie</h2>
-
-          <div class="event-gallery-preview" data-event-gallery>
-            {% for gallery_item in gallery_preview_images %}
-              <button
-                type="button"
-                class="event-gallery-preview__item event-gallery-preview__item--{{ forloop.counter }}"
-                data-gallery-open="{{ forloop.counter0 }}"
-                aria-label="Otevřít fotku {{ forloop.counter }} v galerii"
-              >
-                <img
-                  src="{{ gallery_item.image_asset.file.url }}"
-                  alt="{{ gallery_item.caption|default:gallery_item.image_asset.title|default:event.title }}"
-                >
-
-                {% if forloop.counter == 5 and gallery_extra_count > 0 %}
-                  <span class="event-gallery-preview__more">
-                    +{{ gallery_extra_count }} dalších
-                  </span>
-                {% endif %}
-              </button>
-            {% endfor %}
-          </div>
-        </section>
-      {% elif event.secondary_media %}
-        <section class="public-event-section public-event-photo-section">
-          <img
-            src="{{ event.secondary_media.image.url }}"
-            alt="{{ event.secondary_media.title|default:event.title }}"
-            class="public-event-secondary-image"
-          >
-        </section>
-      {% endif %}
-
-      {% if event.educational_text %}
-        <section class="public-event-section">
-          <h2>O hudbě</h2>
-          <div class="public-event-section-text">
-            {{ event.educational_text|event_richtext }}
-          </div>
-        </section>
-      {% endif %}
-
-      {% if event.youtube_embed_url %}
-        <section class="public-event-section">
-          <h2>Poslechněte si</h2>
-          <div class="public-event-video-wrap">
-            <iframe
-              src="{{ event.youtube_embed_url }}"
-              title="YouTube video"
-              referrerpolicy="strict-origin-when-cross-origin"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowfullscreen
-            ></iframe>
-          </div>
-        </section>
-      {% endif %}
-
-      {% if event.resources.exists %}
-        <section class="public-event-section">
-          <h2>Zjistit více</h2>
-          <ul class="resource-list">
-            {% for resource in event.resources.all %}
-              <li>
-                <a href="{{ resource.url }}" target="_blank" rel="noopener">
-                  {{ resource.title }}
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
-        </section>
-      {% endif %}
-
-      {% if event.practical_infos.exists %}
-        <section class="public-event-section">
-          <h2>Na co se připravit</h2>
-
-          <div class="practical-info-grid">
-            {% for info in event.practical_infos.all %}
-              <div class="practical-info-card practical-info-{{ info.info_type }}">
-                <div class="practical-info-icon" aria-hidden="true">
-                  {% if info.info_type == "drinks" %}🍷
-                  {% elif info.info_type == "clap" %}👏
-                  {% elif info.info_type == "phones" %}📱
-                  {% elif info.info_type == "arrival" %}🕒
-                  {% elif info.info_type == "dress" %}👔
-                  {% else %}•{% endif %}
-                </div>
-
-                <div class="practical-info-title">{{ info.title }}</div>
-
-                {% if info.text %}
-                  <div class="practical-info-text">{{ info.text }}</div>
-                {% endif %}
-              </div>
-            {% endfor %}
-          </div>
-        </section>
-      {% endif %}
-
-      {% if event.sponsors.exists %}
-        <section class="public-event-section public-event-sponsors">
-          <h2>Partneři koncertu</h2>
-
-          <div class="sponsor-grid">
-            {% for sponsor in event.sponsors.all %}
-              <div class="sponsor-item">
-                {% if sponsor.url %}
-                  <a href="{{ sponsor.url }}" target="_blank" rel="noopener">
-                    {% if sponsor.logo_media %}
-                      <img src="{{ sponsor.logo_media.image.url }}" alt="{{ sponsor.name }}">
-                    {% else %}
-                      <span>{{ sponsor.name }}</span>
+                    {% if artist.role %}
+                      <div class="artist-role">{{ artist.role }}</div>
                     {% endif %}
                   </a>
                 {% else %}
-                  {% if sponsor.logo_media %}
-                    <img src="{{ sponsor.logo_media.image.url }}" alt="{{ sponsor.name }}">
-                  {% else %}
-                    <span>{{ sponsor.name }}</span>
+                  <div class="artist-item">
+                    {% if artist.photo_media %}
+                      <div class="artist-photo-wrap">
+                        <img src="{{ artist.photo_media.image.url }}" alt="{{ artist.name }}" class="artist-photo" style="object-position: center {{ artist.photo_position|default:'center' }};" />
+                      </div>
+                    {% endif %}
+
+                    <div class="artist-name">{{ artist.name }}</div>
+
+                    {% if artist.role %}
+                      <div class="artist-role">{{ artist.role }}</div>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if event.gallery_images.exists %}
+          {% with gallery_count=event.gallery_images.count %}
+            <section id="gallery" class="public-event-section public-event-gallery-section {% if gallery_count == 1 %}public-event-gallery-section--single{% endif %}">
+              <h2>Galerie</h2>
+
+              <div class="event-gallery-preview {% if gallery_count == 1 %}event-gallery-preview--single{% endif %}" data-event-gallery>
+                {% for gallery_item in gallery_preview_images %}
+                  <button type="button" class="event-gallery-preview__item event-gallery-preview__item--{{ forloop.counter }}" data-gallery-open="{{ forloop.counter0 }}" aria-label="Otevřít fotku {{ forloop.counter }} v galerii">
+                    <img src="{{ gallery_item.image_asset.file.url }}" alt="{{ gallery_item.caption|default:gallery_item.image_asset.title|default:event.title }}" />
+
+                    {% if forloop.counter == 5 and gallery_extra_count > 0 %}
+                      <span class="event-gallery-preview__more">+{{ gallery_extra_count }} dalších</span>
+                    {% endif %}
+                  </button>
+                {% endfor %}
+              </div>
+            </section>
+          {% endwith %}
+        {% elif event.secondary_media %}
+          <section class="public-event-section public-event-photo-section">
+            <img src="{{ event.secondary_media.image.url }}" alt="{{ event.secondary_media.title|default:event.title }}" class="public-event-secondary-image" />
+          </section>
+        {% endif %}
+
+        {% if event.educational_text %}
+          <section class="public-event-section">
+            <h2>O hudbě</h2>
+            <div class="public-event-section-text">{{ event.educational_text|event_richtext }}</div>
+          </section>
+        {% endif %}
+
+        {% if event.youtube_embed_url %}
+          <section class="public-event-section">
+            <h2>Poslechněte si</h2>
+            <div class="public-event-video-wrap">
+              <iframe src="{{ event.youtube_embed_url }}" title="YouTube video" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+          </section>
+        {% endif %}
+
+        {% if event.resources.exists %}
+          <section class="public-event-section">
+            <h2>Zjistit více</h2>
+            <ul class="resource-list">
+              {% for resource in event.resources.all %}
+                <li>
+                  <a href="{{ resource.url }}" target="_blank" rel="noopener">{{ resource.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endif %}
+
+        {% if event.practical_infos.exists %}
+          <section class="public-event-section">
+            <h2>Na co se připravit</h2>
+
+            <div class="practical-info-grid">
+              {% for info in event.practical_infos.all %}
+                <div class="practical-info-card practical-info-{{ info.info_type }}">
+                  <div class="practical-info-icon" aria-hidden="true">
+                    {% if info.info_type == 'drinks' %}
+                      🍷
+                    {% elif info.info_type == 'clap' %}
+                      👏
+                    {% elif info.info_type == 'phones' %}
+                      📱
+                    {% elif info.info_type == 'arrival' %}
+                      🕒
+                    {% elif info.info_type == 'dress' %}
+                      👔
+                    {% else %}
+                      •
+                    {% endif %}
+                  </div>
+
+                  <div class="practical-info-title">{{ info.title }}</div>
+
+                  {% if info.text %}
+                    <div class="practical-info-text">{{ info.text }}</div>
                   {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if event.sponsors.exists %}
+          <section class="public-event-section public-event-sponsors">
+            <h2>Partneři koncertu</h2>
+
+            <div class="sponsor-grid">
+              {% for sponsor in event.sponsors.all %}
+                <div class="sponsor-item">
+                  {% if sponsor.url %}
+                    <a href="{{ sponsor.url }}" target="_blank" rel="noopener">
+                      {% if sponsor.logo_media %}
+                        <img src="{{ sponsor.logo_media.image.url }}" alt="{{ sponsor.name }}" />
+                      {% else %}
+                        <span>{{ sponsor.name }}</span>
+                      {% endif %}
+                    </a>
+                  {% else %}
+                    {% if sponsor.logo_media %}
+                      <img src="{{ sponsor.logo_media.image.url }}" alt="{{ sponsor.name }}" />
+                    {% else %}
+                      <span>{{ sponsor.name }}</span>
+                    {% endif %}
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+      </main>
+
+      <aside class="public-event-side">
+        <div class="public-event-side-sticky">
+          <div class="event-info-card">
+            <h3>Základní informace</h3>
+
+            {% if event.starts_at %}
+              <div class="event-info-row">
+                <div class="event-info-label">Datum a čas</div>
+                <div class="event-info-value">{{ event.starts_at|date:'d. m. Y H:i' }}</div>
+              </div>
+            {% endif %}
+
+            {% if event.venue %}
+              <div class="event-info-row">
+                <div class="event-info-label">Místo</div>
+                <div class="event-info-value">{{ event.venue }}</div>
+                {% if event.venue_address %}
+                  <div class="event-info-subvalue">{{ event.venue_address }}</div>
                 {% endif %}
               </div>
-            {% endfor %}
+            {% endif %}
+
+            {% if event.venue_map_url %}
+              <div class="event-info-row event-info-row-link">
+                <a href="{{ event.venue_map_url }}" target="_blank" rel="noopener">Otevřít na mapě</a>
+              </div>
+            {% endif %}
+
+            {% if event.duration_text %}
+              <div class="event-info-row">
+                <div class="event-info-label">Délka večera</div>
+                <div class="event-info-value">{{ event.duration_text }}</div>
+              </div>
+            {% endif %}
+
+            {% if event.tickets_url %}
+              <div class="event-cta-wrap">
+                <a href="{{ event.tickets_url }}" target="_blank" rel="noopener" class="event-cta-button">{{ event.tickets_label|default:'Koupit vstupenky' }}</a>
+              </div>
+            {% endif %}
           </div>
-        </section>
-      {% endif %}
-    </main>
 
-    <aside class="public-event-side">
-      <div class="public-event-side-sticky">
-        <div class="event-info-card">
-          <h3>Základní informace</h3>
+          {% if vip_mode and event.vip_enabled %}
+            <div class="vip-box vip-box-highlight">
+              <h2>Čestné vstupenky</h2>
 
-          {% if event.starts_at %}
-            <div class="event-info-row">
-              <div class="event-info-label">Datum a čas</div>
-              <div class="event-info-value">{{ event.starts_at|date:"d. m. Y H:i" }}</div>
-            </div>
-          {% endif %}
-
-          {% if event.venue %}
-            <div class="event-info-row">
-              <div class="event-info-label">Místo</div>
-              <div class="event-info-value">{{ event.venue }}</div>
-              {% if event.venue_address %}
-                <div class="event-info-subvalue">{{ event.venue_address }}</div>
+              {% if contact and contact.salutation %}
+                <p>{{ contact.salutation }},</p>
               {% endif %}
-            </div>
-          {% endif %}
 
-          {% if event.venue_map_url %}
-            <div class="event-info-row event-info-row-link">
-              <a href="{{ event.venue_map_url }}" target="_blank" rel="noopener">Otevřít na mapě</a>
-            </div>
-          {% endif %}
+              {% if reservation and reservation.status == 'active' %}
+                <p>
+                  Vaši žádost už evidujeme.{% if reservation.ticket_count == 1 %}
+                    Aktuálně máte rezervovanou <strong>1 vstupenku</strong>.
+                  {% else %}
+                    Aktuálně máte rezervované <strong>vstupenky 1 + 1</strong>.
+                  {% endif %}
+                </p>
 
-          {% if event.duration_text %}
-            <div class="event-info-row">
-              <div class="event-info-label">Délka večera</div>
-              <div class="event-info-value">{{ event.duration_text }}</div>
-            </div>
-          {% endif %}
+                <p class="muted">Počet můžete níže kdykoli upravit.</p>
 
-          {% if event.tickets_url %}
-            <div class="event-cta-wrap">
-              <a href="{{ event.tickets_url }}" target="_blank" rel="noopener" class="event-cta-button">
-                {{ event.tickets_label|default:"Koupit vstupenky" }}
-              </a>
+                <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
+                  {% csrf_token %}
+
+                  <div class="vip-ticket-count-block">
+                    <p>
+                      <strong>{{ vip_form.ticket_count.label }}</strong>
+                    </p>
+                    {{ vip_form.ticket_count }}
+
+                    {% for e in vip_form.ticket_count.errors %}
+                      <div class="form-errors">{{ e }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <button type="submit">Uložit změnu rezervace</button>
+                </form>
+
+                <form method="post" action="{% url 'events:vip_cancel_reservation' token=delivery.tracking_token %}" onsubmit="return confirm('Opravdu chcete zrušit rezervaci čestných vstupenek?');">
+                  {% csrf_token %}
+                  <button type="submit" class="secondary-action-button">Zrušit rezervaci</button>
+                </form>
+              {% elif reservation and reservation.status == 'cancelled' %}
+                <p>Vaše rezervace byla zrušena.</p>
+
+                {% if reservation.cancelled_at %}
+                  <p class="muted">Zrušeno: {{ reservation.cancelled_at|date:'d.m.Y H:i' }}</p>
+                {% endif %}
+
+                <p>Pokud chcete rezervaci obnovit, vyberte počet vstupenek a odešlete formulář znovu.</p>
+
+                <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
+                  {% csrf_token %}
+
+                  <div class="vip-ticket-count-block">
+                    <p>
+                      <strong>{{ vip_form.ticket_count.label }}</strong>
+                    </p>
+                    {{ vip_form.ticket_count }}
+
+                    {% for e in vip_form.ticket_count.errors %}
+                      <div class="form-errors">{{ e }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <button type="submit">Obnovit rezervaci</button>
+                </form>
+              {% else %}
+                <p>Jako VIP host si můžete požádat o čestnou vstupenku pro sebe, případně o vstupenku 1 + 1.</p>
+
+                <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
+                  {% csrf_token %}
+
+                  <div class="vip-ticket-count-block">
+                    <p>
+                      <strong>{{ vip_form.ticket_count.label }}</strong>
+                    </p>
+                    {{ vip_form.ticket_count }}
+
+                    {% for e in vip_form.ticket_count.errors %}
+                      <div class="form-errors">{{ e }}</div>
+                    {% endfor %}
+                  </div>
+
+                  <button type="submit">Požádat o čestné vstupenky</button>
+                </form>
+              {% endif %}
             </div>
           {% endif %}
         </div>
+      </aside>
+    </div>
+  </div>
 
-        {% if vip_mode and event.vip_enabled %}
-          <div class="vip-box vip-box-highlight">
-            <h2>Čestné vstupenky</h2>
+  {% if event.poster_media %}
+    <div id="poster-modal" class="poster-modal" hidden>
+      <div class="poster-modal-backdrop"></div>
+      <div class="poster-modal-dialog">
+        <button type="button" class="poster-modal-close" id="close-poster-modal" aria-label="Zavřít plakát">×</button>
+        <img src="{{ event.poster_media.image.url }}" alt="{{ event.poster_media.title|default:event.title }}" class="poster-modal-image" />
+      </div>
+    </div>
+  {% endif %}
 
-            {% if contact and contact.salutation %}
-              <p>{{ contact.salutation }},</p>
-            {% endif %}
+  {% if event.gallery_images.exists %}
+    <div id="event-gallery-modal" class="event-gallery-modal" hidden>
+      <div class="event-gallery-modal__backdrop" data-gallery-close></div>
 
-            {% if reservation and reservation.status == "active" %}
-              <p>
-                Vaši žádost už evidujeme.
-                {% if reservation.ticket_count == 1 %}
-                  Aktuálně máte rezervovanou <strong>1 vstupenku</strong>.
-                {% else %}
-                  Aktuálně máte rezervované <strong>vstupenky 1 + 1</strong>.
-                {% endif %}
-              </p>
+      <div class="event-gallery-modal__dialog" role="dialog" aria-modal="true" aria-label="Galerie koncertu">
+        <button type="button" class="event-gallery-modal__close" data-gallery-close aria-label="Zavřít galerii">×</button>
 
-              <p class="muted">Počet můžete níže kdykoli upravit.</p>
+        <button type="button" class="event-gallery-modal__nav event-gallery-modal__nav--prev" data-gallery-prev aria-label="Předchozí fotka">←</button>
 
-              <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
-                {% csrf_token %}
+        <div class="event-gallery-modal__stage">
+          {% for gallery_item in event.gallery_images.all %}
+            <figure class="event-gallery-modal__slide {% if forloop.first %}is-active{% endif %}" data-gallery-slide="{{ forloop.counter0 }}">
+              <img src="{{ gallery_item.image_asset.file.url }}" alt="{{ gallery_item.caption|default:gallery_item.image_asset.title|default:event.title }}" class="event-gallery-modal__image" />
 
-                <div class="vip-ticket-count-block">
-                  <p><strong>{{ vip_form.ticket_count.label }}</strong></p>
-                  {{ vip_form.ticket_count }}
-
-                  {% for e in vip_form.ticket_count.errors %}
-                    <div class="form-errors">{{ e }}</div>
-                  {% endfor %}
-                </div>
-
-                <button type="submit">
-                  Uložit změnu rezervace
-                </button>
-              </form>
-
-              <form method="post"
-                    action="{% url 'events:vip_cancel_reservation' token=delivery.tracking_token %}"
-                    onsubmit="return confirm('Opravdu chcete zrušit rezervaci čestných vstupenek?');">
-                {% csrf_token %}
-                <button type="submit" class="secondary-action-button">
-                  Zrušit rezervaci
-                </button>
-              </form>
-
-            {% elif reservation and reservation.status == "cancelled" %}
-              <p>Vaše rezervace byla zrušena.</p>
-
-              {% if reservation.cancelled_at %}
-                <p class="muted">Zrušeno: {{ reservation.cancelled_at|date:"d.m.Y H:i" }}</p>
+              {% if gallery_item.caption %}
+                <figcaption>{{ gallery_item.caption }}</figcaption>
               {% endif %}
+            </figure>
+          {% endfor %}
+        </div>
 
-              <p>Pokud chcete rezervaci obnovit, vyberte počet vstupenek a odešlete formulář znovu.</p>
-
-              <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
-                {% csrf_token %}
-
-                <div class="vip-ticket-count-block">
-                  <p><strong>{{ vip_form.ticket_count.label }}</strong></p>
-                  {{ vip_form.ticket_count }}
-
-                  {% for e in vip_form.ticket_count.errors %}
-                    <div class="form-errors">{{ e }}</div>
-                  {% endfor %}
-                </div>
-
-                <button type="submit">
-                  Obnovit rezervaci
-                </button>
-              </form>
-
-            {% else %}
-              <p>Jako VIP host si můžete požádat o čestnou vstupenku pro sebe, případně o vstupenku 1 + 1.</p>
-
-              <form method="post" action="{% url 'events:vip_reserve' token=delivery.tracking_token %}">
-                {% csrf_token %}
-
-                <div class="vip-ticket-count-block">
-                  <p><strong>{{ vip_form.ticket_count.label }}</strong></p>
-                  {{ vip_form.ticket_count }}
-
-                  {% for e in vip_form.ticket_count.errors %}
-                    <div class="form-errors">{{ e }}</div>
-                  {% endfor %}
-                </div>
-
-                <button type="submit">
-                  Požádat o čestné vstupenky
-                </button>
-              </form>
-            {% endif %}
-          </div>
-        {% endif %}
+        <button type="button" class="event-gallery-modal__nav event-gallery-modal__nav--next" data-gallery-next aria-label="Další fotka">→</button>
       </div>
-    </aside>
-  </div>
-</div>
-
-{% if event.poster_media %}
-  <div id="poster-modal" class="poster-modal" hidden>
-    <div class="poster-modal-backdrop"></div>
-    <div class="poster-modal-dialog">
-      <button type="button" class="poster-modal-close" id="close-poster-modal" aria-label="Zavřít plakát">×</button>
-      <img
-        src="{{ event.poster_media.image.url }}"
-        alt="{{ event.poster_media.title|default:event.title }}"
-        class="poster-modal-image"
-      >
     </div>
-  </div>
-{% endif %}
+  {% endif %}
 
-
-{% if event.gallery_images.exists %}
-  <div id="event-gallery-modal" class="event-gallery-modal" hidden>
-    <div class="event-gallery-modal__backdrop" data-gallery-close></div>
-
-    <div class="event-gallery-modal__dialog" role="dialog" aria-modal="true" aria-label="Galerie koncertu">
-      <button type="button" class="event-gallery-modal__close" data-gallery-close aria-label="Zavřít galerii">×</button>
-
-      <button type="button" class="event-gallery-modal__nav event-gallery-modal__nav--prev" data-gallery-prev aria-label="Předchozí fotka">←</button>
-
-      <div class="event-gallery-modal__stage">
-        {% for gallery_item in event.gallery_images.all %}
-          <figure
-            class="event-gallery-modal__slide {% if forloop.first %}is-active{% endif %}"
-            data-gallery-slide="{{ forloop.counter0 }}"
-          >
-            <img
-              src="{{ gallery_item.image_asset.file.url }}"
-              alt="{{ gallery_item.caption|default:gallery_item.image_asset.title|default:event.title }}"
-              class="event-gallery-modal__image"
-            >
-
-            {% if gallery_item.caption %}
-              <figcaption>{{ gallery_item.caption }}</figcaption>
-            {% endif %}
-          </figure>
-        {% endfor %}
-      </div>
-
-      <button type="button" class="event-gallery-modal__nav event-gallery-modal__nav--next" data-gallery-next aria-label="Další fotka">→</button>
-    </div>
-  </div>
-{% endif %}
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-  const body = document.body;
-
-  const openBtn = document.getElementById("open-poster-modal");
-  const closeBtn = document.getElementById("close-poster-modal");
-  const modal = document.getElementById("poster-modal");
-
-  if (openBtn && closeBtn && modal) {
-    function openModal() {
-      modal.hidden = false;
-      body.classList.add("poster-modal-open");
-    }
-
-    function closeModal() {
-      modal.hidden = true;
-      body.classList.remove("poster-modal-open");
-    }
-
-    openBtn.addEventListener("click", openModal);
-    closeBtn.addEventListener("click", closeModal);
-
-    modal.addEventListener("click", function (e) {
-      if (e.target.classList.contains("poster-modal-backdrop")) {
-        closeModal();
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const body = document.body
+    
+      const openBtn = document.getElementById('open-poster-modal')
+      const closeBtn = document.getElementById('close-poster-modal')
+      const modal = document.getElementById('poster-modal')
+    
+      if (openBtn && closeBtn && modal) {
+        function openModal() {
+          modal.hidden = false
+          body.classList.add('poster-modal-open')
+        }
+    
+        function closeModal() {
+          modal.hidden = true
+          body.classList.remove('poster-modal-open')
+        }
+    
+        openBtn.addEventListener('click', openModal)
+        closeBtn.addEventListener('click', closeModal)
+    
+        modal.addEventListener('click', function (e) {
+          if (e.target.classList.contains('poster-modal-backdrop')) {
+            closeModal()
+          }
+        })
+    
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && !modal.hidden) {
+            closeModal()
+          }
+        })
       }
-    });
-
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !modal.hidden) {
-        closeModal();
+    
+      const galleryModal = document.getElementById('event-gallery-modal')
+      const galleryOpenButtons = document.querySelectorAll('[data-gallery-open]')
+    
+      if (galleryModal && galleryOpenButtons.length) {
+        const gallerySlides = Array.from(galleryModal.querySelectorAll('[data-gallery-slide]'))
+        const galleryCloseButtons = galleryModal.querySelectorAll('[data-gallery-close]')
+        const galleryPrevButton = galleryModal.querySelector('[data-gallery-prev]')
+        const galleryNextButton = galleryModal.querySelector('[data-gallery-next]')
+        const galleryCounter = galleryModal.querySelector('[data-gallery-counter]')
+    
+        let activeGalleryIndex = 0
+    
+        function setGallerySlide(index) {
+          if (!gallerySlides.length) return
+    
+          if (index < 0) {
+            activeGalleryIndex = gallerySlides.length - 1
+          } else if (index >= gallerySlides.length) {
+            activeGalleryIndex = 0
+          } else {
+            activeGalleryIndex = index
+          }
+    
+          gallerySlides.forEach((slide, slideIndex) => {
+            slide.classList.toggle('is-active', slideIndex === activeGalleryIndex)
+          })
+    
+          if (galleryCounter) {
+            galleryCounter.textContent = `${activeGalleryIndex + 1} / ${gallerySlides.length}`
+          }
+        }
+    
+        function openGallery(index) {
+          setGallerySlide(index)
+          galleryModal.hidden = false
+          body.classList.add('poster-modal-open')
+        }
+    
+        function closeGallery() {
+          galleryModal.hidden = true
+          body.classList.remove('poster-modal-open')
+        }
+    
+        galleryOpenButtons.forEach((button) => {
+          button.addEventListener('click', function () {
+            const index = Number(button.dataset.galleryOpen || 0)
+            openGallery(index)
+          })
+        })
+    
+        galleryCloseButtons.forEach((button) => {
+          button.addEventListener('click', closeGallery)
+        })
+    
+        if (galleryPrevButton) {
+          galleryPrevButton.addEventListener('click', function () {
+            setGallerySlide(activeGalleryIndex - 1)
+          })
+        }
+    
+        if (galleryNextButton) {
+          galleryNextButton.addEventListener('click', function () {
+            setGallerySlide(activeGalleryIndex + 1)
+          })
+        }
+    
+        document.addEventListener('keydown', function (e) {
+          if (galleryModal.hidden) return
+    
+          if (e.key === 'Escape') {
+            closeGallery()
+          }
+    
+          if (e.key === 'ArrowLeft') {
+            setGallerySlide(activeGalleryIndex - 1)
+          }
+    
+          if (e.key === 'ArrowRight') {
+            setGallerySlide(activeGalleryIndex + 1)
+          }
+        })
+    
+        setGallerySlide(0)
       }
-    });
-  }
-
-
-  const galleryModal = document.getElementById("event-gallery-modal");
-  const galleryOpenButtons = document.querySelectorAll("[data-gallery-open]");
-
-  if (galleryModal && galleryOpenButtons.length) {
-    const gallerySlides = Array.from(galleryModal.querySelectorAll("[data-gallery-slide]"));
-    const galleryCloseButtons = galleryModal.querySelectorAll("[data-gallery-close]");
-    const galleryPrevButton = galleryModal.querySelector("[data-gallery-prev]");
-    const galleryNextButton = galleryModal.querySelector("[data-gallery-next]");
-    const galleryCounter = galleryModal.querySelector("[data-gallery-counter]");
-
-    let activeGalleryIndex = 0;
-
-    function setGallerySlide(index) {
-      if (!gallerySlides.length) return;
-
-      if (index < 0) {
-        activeGalleryIndex = gallerySlides.length - 1;
-      } else if (index >= gallerySlides.length) {
-        activeGalleryIndex = 0;
-      } else {
-        activeGalleryIndex = index;
+    
+      const hero = document.querySelector('.public-event-hero.hero-parallax-enabled')
+      const heroBg = hero ? hero.querySelector('.public-event-hero-bg') : null
+    
+      if (!hero || !heroBg) return
+      if (window.matchMedia('(max-width: 980px)').matches) return
+    
+      let ticking = false
+    
+      function updateParallax() {
+        const rect = hero.getBoundingClientRect()
+    
+        if (rect.bottom <= 0 || rect.top >= window.innerHeight) {
+          ticking = false
+          return
+        }
+    
+        const offset = rect.top * -0.35
+        heroBg.style.transform = `translate3d(0, ${offset}px, 0) scale(1.12)`
+    
+        ticking = false
       }
-
-      gallerySlides.forEach((slide, slideIndex) => {
-        slide.classList.toggle("is-active", slideIndex === activeGalleryIndex);
-      });
-
-      if (galleryCounter) {
-        galleryCounter.textContent = `${activeGalleryIndex + 1} / ${gallerySlides.length}`;
+    
+      function requestTick() {
+        if (!ticking) {
+          requestAnimationFrame(updateParallax)
+          ticking = true
+        }
       }
-    }
-
-    function openGallery(index) {
-      setGallerySlide(index);
-      galleryModal.hidden = false;
-      body.classList.add("poster-modal-open");
-    }
-
-    function closeGallery() {
-      galleryModal.hidden = true;
-      body.classList.remove("poster-modal-open");
-    }
-
-    galleryOpenButtons.forEach((button) => {
-      button.addEventListener("click", function () {
-        const index = Number(button.dataset.galleryOpen || 0);
-        openGallery(index);
-      });
-    });
-
-    galleryCloseButtons.forEach((button) => {
-      button.addEventListener("click", closeGallery);
-    });
-
-    if (galleryPrevButton) {
-      galleryPrevButton.addEventListener("click", function () {
-        setGallerySlide(activeGalleryIndex - 1);
-      });
-    }
-
-    if (galleryNextButton) {
-      galleryNextButton.addEventListener("click", function () {
-        setGallerySlide(activeGalleryIndex + 1);
-      });
-    }
-
-    document.addEventListener("keydown", function (e) {
-      if (galleryModal.hidden) return;
-
-      if (e.key === "Escape") {
-        closeGallery();
-      }
-
-      if (e.key === "ArrowLeft") {
-        setGallerySlide(activeGalleryIndex - 1);
-      }
-
-      if (e.key === "ArrowRight") {
-        setGallerySlide(activeGalleryIndex + 1);
-      }
-    });
-
-    setGallerySlide(0);
-  }
-
-  const hero = document.querySelector(".public-event-hero.hero-parallax-enabled");
-  const heroBg = hero ? hero.querySelector(".public-event-hero-bg") : null;
-
-  if (!hero || !heroBg) return;
-  if (window.matchMedia("(max-width: 980px)").matches) return;
-
-  let ticking = false;
-
-  function updateParallax() {
-    const rect = hero.getBoundingClientRect();
-
-    if (rect.bottom <= 0 || rect.top >= window.innerHeight) {
-      ticking = false;
-      return;
-    }
-
-    const offset = rect.top * -0.35;
-    heroBg.style.transform = `translate3d(0, ${offset}px, 0) scale(1.12)`;
-
-    ticking = false;
-  }
-
-  function requestTick() {
-    if (!ticking) {
-      requestAnimationFrame(updateParallax);
-      ticking = true;
-    }
-  }
-
-  window.addEventListener("scroll", requestTick, { passive: true });
-  window.addEventListener("resize", requestTick);
-  requestTick();
-});
-</script>
-{% endblock content %}
+    
+      window.addEventListener('scroll', requestTick, { passive: true })
+      window.addEventListener('resize', requestTick)
+      requestTick()
+    })
+  </script>
+{% endblock %}
