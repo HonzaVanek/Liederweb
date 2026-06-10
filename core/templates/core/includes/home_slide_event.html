@@ -1,0 +1,54 @@
+<article class="home-slide">
+  <div class="home-slide-grid">
+    {% if featured_event and featured_event.poster_media %}
+      <div class="home-slide-image-wrap home-slide-image-wrap-poster">
+        <img src="{{ featured_event.poster_media.image.url }}" alt="{{ featured_event.poster_media.title|default:featured_event.title }}" class="home-slide-image home-slide-image-poster" />
+      </div>
+    {% else %}
+      <div class="home-slide-image-wrap home-slide-image-wrap-empty">
+        <div class="home-slide-image-placeholder">Koncert</div>
+      </div>
+    {% endif %}
+
+    <div class="home-slide-content">
+      <p class="home-slide-eyebrow">Koncert</p>
+      <h3>
+        {% if featured_event and featured_event.starts_at and featured_event.starts_at >= now %}
+          Nejbližší koncert
+        {% else %}
+          Poslední koncert
+        {% endif %}
+      </h3>
+
+      {% if featured_event %}
+        <div class="home-slide-meta">
+          {% if featured_event.starts_at %}
+            <span>{{ featured_event.starts_at|date:'d. m. Y H:i' }}</span>
+          {% endif %}
+          {% if featured_event.venue %}
+            <span>{{ featured_event.venue }}</span>
+          {% endif %}
+        </div>
+
+        <div class="home-slide-text">
+          <strong>{{ featured_event.title }}</strong>
+          {% if featured_event.subtitle %}
+            <br />{{ featured_event.subtitle }}
+          {% endif %}
+        </div>
+
+        <div class="home-slide-actions">
+          {% if has_upcoming_event and featured_event.tickets_url %}
+            <a href="{{ featured_event.tickets_url }}" class="home-slide-button" target="_blank" rel="noopener">{{ featured_event.tickets_label|default:'Koupit vstupenky' }}</a>
+          {% endif %}
+
+          {% if featured_event.is_published %}
+            <a href="{% url 'events:public_event_detail' featured_event.slug %}" class="home-slide-button home-slide-button-secondary">Otevřít stránku koncertu</a>
+          {% endif %}
+        </div>
+      {% else %}
+        <p class="muted">Zatím tu není žádný publikovaný koncert.</p>
+      {% endif %}
+    </div>
+  </div>
+</article>

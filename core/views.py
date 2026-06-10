@@ -91,18 +91,25 @@ def home(request):
     now = timezone.now()
 
     upcoming_event = (
-        Event.objects.filter(is_published=True, starts_at__gte=now)
+        Event.objects
+        .select_related("poster_asset", "poster_image")
+        .filter(is_published=True, starts_at__gte=now)
         .order_by("starts_at")
         .first()
     )
 
     latest_past_event = (
-        Event.objects.filter(is_published=True, starts_at__lt=now)
+        Event.objects
+        .select_related("poster_asset", "poster_image")
+        .filter(is_published=True, starts_at__lt=now)
         .order_by("-starts_at")
         .first()
     )
 
     featured_event = upcoming_event or latest_past_event
+    has_upcoming_event = upcoming_event is not None
+
+    default_carousel_slide_index = 1 if has_upcoming_event else 0
 
     featured_facebook_post = (
         SocialPost.objects.select_related("source")
@@ -127,7 +134,6 @@ def home(request):
         .order_by("-published_at", "-id")[:5]
     )
 
-
     manual_home_slide = HomeCarouselManualSlide.get_solo()
 
     return render(
@@ -139,6 +145,8 @@ def home(request):
             "recent_facebook_posts": recent_facebook_posts,
             "manual_home_slide": manual_home_slide,
             "now": now,
+            "has_upcoming_event": has_upcoming_event,
+            "default_carousel_slide_index": default_carousel_slide_index,
         },
     )
 

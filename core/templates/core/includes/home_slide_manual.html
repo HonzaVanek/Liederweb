@@ -1,0 +1,37 @@
+<article class="home-slide home-slide-manual">
+  <div class="home-slide-grid home-slide-grid-manual home-slide-grid-manual--{{ manual_home_slide.layout|default:'stacked' }}">
+    {% if manual_home_slide.image_asset %}
+      <button type="button" class="home-slide-image-wrap home-slide-image-wrap-manual home-slide-manual-image-button" data-manual-home-image-open aria-label="Zvětšit obrázek"><img src="{{ manual_home_slide.image_asset.file.url }}" alt="{{ manual_home_slide.image_asset.alt_text|default:manual_home_slide.image_asset.title|default:manual_home_slide.title }}" class="home-slide-image home-slide-image-manual" /></button>
+    {% else %}
+      <div class="home-slide-image-wrap home-slide-image-wrap-empty">
+        <div class="home-slide-image-placeholder">Foto</div>
+      </div>
+    {% endif %}
+
+    <div class="home-slide-content home-slide-content-manual">
+      {% if manual_home_slide.eyebrow %}
+        <p class="home-slide-eyebrow">{{ manual_home_slide.eyebrow }}</p>
+      {% endif %}
+
+      {% if manual_home_slide.title %}
+        <h3>{{ manual_home_slide.title }}</h3>
+      {% endif %}
+
+      {% if manual_home_slide.subtitle %}
+        <div class="home-slide-meta">
+          <span>{{ manual_home_slide.subtitle }}</span>
+        </div>
+      {% endif %}
+
+      {% if manual_home_slide.body %}
+        <div class="home-slide-text home-slide-text-manual">{{ manual_home_slide.body|linebreaksbr }}</div>
+      {% endif %}
+
+      {% if request.user.is_staff %}
+        <div class="home-slide-actions home-slide-actions-manual">
+          <a href="{% url 'core:home_manual_slide_edit' %}" class="home-slide-button home-slide-button-secondary">Upravit tenhle prvek carouselu (fotka + texty)</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</article>
