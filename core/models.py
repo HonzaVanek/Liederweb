@@ -373,7 +373,9 @@ class HomeSupportPromo(models.Model):
 
     class BackgroundPosition(models.TextChoices):
         TOP = "top", "Nahoře"
+        CENTER_TOP = "center_top", "Lehce nahoře"
         CENTER = "center", "Uprostřed"
+        CENTER_BOTTOM = "center_bottom", "Lehce dole"
         BOTTOM = "bottom", "Dole"
 
     eyebrow = models.CharField(
@@ -413,6 +415,16 @@ class HomeSupportPromo(models.Model):
         verbose_name="Pozice fotky v pozadí",
         help_text="Určuje, která část fotky má být při ořezu vidět.",
     )
+    
+    @property
+    def background_position_css(self):
+        return {
+            self.BackgroundPosition.TOP: "center top",
+            self.BackgroundPosition.CENTER_TOP: "center 35%",
+            self.BackgroundPosition.CENTER: "center center",
+            self.BackgroundPosition.CENTER_BOTTOM: "center 65%",
+            self.BackgroundPosition.BOTTOM: "center bottom",
+        }.get(self.background_position, "center center")
     is_enabled = models.BooleanField(
         default=True,
     )

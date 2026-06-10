@@ -177,7 +177,7 @@
     {% if support_promo.background_media %}
       style="
           --support-bg-image: url('{{ support_promo.background_media.image.url }}');
-          --support-bg-position: center {{ support_promo.background_position|default:'center' }};
+          --support-bg-position: {{ support_promo.background_position_css }};
         "
     {% endif %}
   >
