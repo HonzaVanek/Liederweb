@@ -1149,7 +1149,7 @@ body {
         linear-gradient(90deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.60) 52%, rgba(0,0,0,0.28) 100%),
         var(--support-bg-image);
     background-size: cover;
-    background-position: center;
+    background-position: var(--support-bg-position, center center);
     opacity: 1;
 }
 

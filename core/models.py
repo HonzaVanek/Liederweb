@@ -370,6 +370,12 @@ class AgnesSupportIntent(models.Model):
 #### na home dole před partnery ale pod carouselem ####
 
 class HomeSupportPromo(models.Model):
+
+    class BackgroundPosition(models.TextChoices):
+        TOP = "top", "Nahoře"
+        CENTER = "center", "Uprostřed"
+        BOTTOM = "bottom", "Dole"
+
     eyebrow = models.CharField(
         max_length=120,
         default="Podpořte nás",
@@ -399,6 +405,13 @@ class HomeSupportPromo(models.Model):
         on_delete=models.SET_NULL,
         related_name="+",
         limit_choices_to={"asset_type": MediaAsset.AssetType.IMAGE},
+    )
+    background_position = models.CharField(
+        max_length=20,
+        choices=BackgroundPosition.choices,
+        default=BackgroundPosition.CENTER,
+        verbose_name="Pozice fotky v pozadí",
+        help_text="Určuje, která část fotky má být při ořezu vidět.",
     )
     is_enabled = models.BooleanField(
         default=True,

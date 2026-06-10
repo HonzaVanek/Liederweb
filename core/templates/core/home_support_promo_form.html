@@ -63,6 +63,16 @@
         {{ form.background_media.errors }}
       </div>
 
+      <div class="form-row">
+        {{ form.background_position.label_tag }}
+        {{ form.background_position }}
+        {{ form.background_position.errors }}
+
+        {% if form.background_position.help_text %}
+          <p class="muted">{{ form.background_position.help_text }}</p>
+        {% endif %}
+      </div>
+
       <button type="submit" class="button-primary">
         Uložit
       </button>

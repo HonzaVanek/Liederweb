@@ -288,6 +288,7 @@ class HomeSupportPromoForm(forms.ModelForm):
             "button_url",
             "open_in_new_tab",
             "background_media",
+            "background_position",
         ]
         widgets = {
             "body": forms.Textarea(attrs={"rows": 5}),

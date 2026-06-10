@@ -175,7 +175,10 @@
   <section
     class="home-support-promo {% if support_promo.background_media %}home-support-promo--with-image{% endif %}"
     {% if support_promo.background_media %}
-      style="--support-bg-image: url('{{ support_promo.background_media.image.url }}');"
+      style="
+          --support-bg-image: url('{{ support_promo.background_media.image.url }}');
+          --support-bg-position: center {{ support_promo.background_position|default:'center' }};
+        "
     {% endif %}
   >
     <div class="home-support-promo__inner">
