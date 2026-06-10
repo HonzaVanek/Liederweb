@@ -1093,6 +1093,140 @@ body {
     opacity: 0.92;
 }
 
+.home-slide-grid-youtube {
+    grid-template-columns: minmax(420px, 680px) 1fr;
+}
+
+.home-slide-youtube-video-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    align-self: center;
+    overflow: hidden;
+    border-radius: 16px;
+    background: #111;
+}
+
+.home-slide-youtube-video-wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.home-slide-content-youtube {
+    justify-content: center;
+}
+
+.home-support-promo {
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 34px 28px 6px;
+}
+
+.home-support-promo__inner {
+    position: relative;
+    overflow: hidden;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 30px 34px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 28px;
+    background: #111;
+    color: #fff;
+    border-radius: 22px;
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.10);
+}
+
+.home-support-promo--with-image .home-support-promo__inner::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(90deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.60) 52%, rgba(0,0,0,0.28) 100%),
+        var(--support-bg-image);
+    background-size: cover;
+    background-position: center;
+    opacity: 1;
+}
+
+.home-support-promo__content,
+.home-support-promo__button {
+    position: relative;
+    z-index: 1;
+}
+
+.home-support-promo__eyebrow {
+    margin: 0 0 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.home-support-promo h2 {
+    margin: 0 0 10px;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: clamp(1.45rem, 2.7vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1.08;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.home-support-promo p {
+    margin: 0;
+    max-width: 700px;
+    font-size: 1.02rem;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.84);
+}
+
+.home-support-promo__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 11px 20px;
+    border: 1.5px solid #fff;
+    border-radius: 999px;
+    background: #fff;
+    color: #111;
+    font-size: 0.84rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.2s ease,
+        box-shadow 0.25s ease;
+}
+
+.home-support-promo__button:hover {
+    background: transparent;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 22px rgba(0, 0, 0, 0.18);
+}
+
+.home-support-promo__admin {
+    margin-top: 12px !important;
+    font-size: 0.86rem !important;
+}
+
+.home-support-promo__admin a {
+    color: rgba(255, 255, 255, 0.86);
+    text-decoration: underline;
+}
+
 @media (min-width: 1400px) {
     .home-slide-content-social {
         justify-content: flex-start;
@@ -1440,6 +1574,25 @@ body {
     body.dark-mode .home-carousel-mobile-hint {
         color: #b8b8b8;
     }
+    .home-support-promo {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .home-support-promo__inner {
+        grid-template-columns: 1fr;
+        padding: 26px 24px;
+    }
+
+    .home-support-promo__button {
+        width: 100%;
+    }
+
+    .home-support-promo--with-image .home-support-promo__inner::before {
+        background-image:
+            linear-gradient(180deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.68) 100%),
+            var(--support-bg-image);
+    }
 }
 
 @media (max-width: 1500px) and (min-width: 761px) {
@@ -1449,6 +1602,14 @@ body {
 
     .home-slide {
         flex-basis: min(1020px, calc(100vw - 320px));
+    }
+
+    .home-slide-grid-youtube {
+        grid-template-columns: 1fr;
+    }
+
+    .home-slide-youtube-video-wrap {
+        align-self: stretch;
     }
 }
 

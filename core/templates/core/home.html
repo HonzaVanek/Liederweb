@@ -18,6 +18,7 @@
         <button type="button" class="home-carousel-dot is-active" data-slide-dot="0" aria-label="Slide 1"></button>
         <button type="button" class="home-carousel-dot" data-slide-dot="1" aria-label="Slide 2"></button>
         <button type="button" class="home-carousel-dot" data-slide-dot="2" aria-label="Slide 3"></button>
+        <button type="button" class="home-carousel-dot" data-slide-dot="3" aria-label="Slide 4"></button>
       </div>
     </div>
     <button type="button" class="home-carousel-nav home-carousel-nav-prev" aria-label="Předchozí slide">
@@ -30,10 +31,12 @@
           {% include "core/includes/home_slide_event.html" %}
           {% include "core/includes/home_slide_facebook.html" %}
           {% include "core/includes/home_slide_manual.html" %}
+          {% include "core/includes/home_slide_youtubevideo.html" %}
         {% else %}
           {% include "core/includes/home_slide_facebook.html" %}
           {% include "core/includes/home_slide_manual.html" %}
           {% include "core/includes/home_slide_event.html" %}
+          {% include "core/includes/home_slide_youtubevideo.html" %}
         {% endif %}
       </div>
     </div>
@@ -44,6 +47,7 @@
         <span class="home-carousel-dot is-active" data-slide-dot="0"></span>
         <span class="home-carousel-dot" data-slide-dot="1"></span>
         <span class="home-carousel-dot" data-slide-dot="2"></span>
+        <span class="home-carousel-dot" data-slide-dot="3"></span>
       </div>
     </div>
 
@@ -167,26 +171,46 @@
   >
 </section>
 
-<section class="home-shop-promo">
-  <div class="home-shop-promo__inner">
-    <div class="home-shop-promo__content">
-      <p class="home-shop-promo__eyebrow">Novinka</p>
-      <h2>Sláva! Naše první písňové album je na světě.</h2>
-      <p>
-        Objevte nahrávky Lieder Society a podpořte naši další práci přímo v našem e-shopu.
-      </p>
-    </div>
+{% if support_promo and support_promo.is_enabled %}
+  <section
+    class="home-support-promo {% if support_promo.background_media %}home-support-promo--with-image{% endif %}"
+    {% if support_promo.background_media %}
+      style="--support-bg-image: url('{{ support_promo.background_media.image.url }}');"
+    {% endif %}
+  >
+    <div class="home-support-promo__inner">
+      <div class="home-support-promo__content">
+        {% if support_promo.eyebrow %}
+          <p class="home-support-promo__eyebrow">{{ support_promo.eyebrow }}</p>
+        {% endif %}
 
-    <a
-      href="https://eshop.lieder-society.cz/"
-      class="home-shop-promo__button"
-      target="_blank"
-      rel="noopener"
-    >
-      Navštívit e-shop
-    </a>
-  </div>
-</section>
+        <h2>{{ support_promo.title }}</h2>
+
+        {% if support_promo.body %}
+          <p>{{ support_promo.body|linebreaksbr }}</p>
+        {% endif %}
+
+        {% if request.user.is_staff %}
+          <p class="home-support-promo__admin">
+            <a href="{% url 'core:home_support_promo_edit' %}">
+              Upravit sekci podpory
+            </a>
+          </p>
+        {% endif %}
+      </div>
+
+      {% if support_promo.button_url and support_promo.button_label %}
+        <a
+          href="{{ support_promo.button_url }}"
+          class="home-support-promo__button"
+          {% if support_promo.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}
+        >
+          {{ support_promo.button_label }}
+        </a>
+      {% endif %}
+    </div>
+  </section>
+{% endif %}
 
 
 

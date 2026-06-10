@@ -18,8 +18,8 @@ from django.core.mail import EmailMessage, send_mail
 from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
 
-from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm
-from .models import Person, Partner, HomeCarouselManualSlide
+from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm, HomeSupportPromoForm
+from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo
 from events.models import Event
 from media_assets.models import MediaAsset
 from social_feed.models import SocialPost, SocialSource
@@ -135,6 +135,7 @@ def home(request):
     )
 
     manual_home_slide = HomeCarouselManualSlide.get_solo()
+    support_promo = HomeSupportPromo.get_solo()
 
     return render(
         request,
@@ -144,6 +145,7 @@ def home(request):
             "featured_facebook_post": featured_facebook_post,
             "recent_facebook_posts": recent_facebook_posts,
             "manual_home_slide": manual_home_slide,
+            "support_promo": support_promo,
             "now": now,
             "has_upcoming_event": has_upcoming_event,
             "default_carousel_slide_index": default_carousel_slide_index,
@@ -199,6 +201,36 @@ def home_manual_slide_edit(request):
             "page_title": "Homepage carousel",
         },
     )
+
+
+@staff_required
+def home_support_promo_edit(request):
+    promo = HomeSupportPromo.get_solo()
+
+    if request.method == "POST":
+        form = HomeSupportPromoForm(request.POST, instance=promo)
+
+        if form.is_valid():
+            promo = form.save(commit=False)
+            promo.updated_by = request.user
+            promo.save()
+
+            messages.success(request, "Sekce podpory na homepage byla uložena.")
+            return redirect("core:home_support_promo_edit")
+    else:
+        form = HomeSupportPromoForm(instance=promo)
+
+    return render(
+        request,
+        "core/home_support_promo_form.html",
+        {
+            "form": form,
+            "promo": promo,
+            "page_title": "Homepage – podpora",
+        },
+    )
+
+
 
 #newsletter signup view a pomocné funkce
 NEWSLETTER_ANCHOR = "newsletter-signup"

@@ -25,6 +25,7 @@ urlpatterns = [
     path("kontakt/", views.contact, name="contact"),
 
     path("staff/homepage-carousel/", views.home_manual_slide_edit, name="home_manual_slide_edit"),
+    path("staff/homepage/podpora/", views.home_support_promo_edit, name="home_support_promo_edit"),
 
     path("staff/lide/", views.PersonAdminListView.as_view(), name="person_admin_list"),
     path("staff/lide/novy/", views.PersonCreateView.as_view(), name="person_create"),

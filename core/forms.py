@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from media_assets.models import MediaAsset
-from .models import Person, Partner, HomeCarouselManualSlide, AgnesSupportIntent
+from .models import Person, Partner, HomeCarouselManualSlide, AgnesSupportIntent, HomeSupportPromo
 
 from decimal import Decimal
 
@@ -270,3 +270,25 @@ class AgnesSupportIntentForm(forms.ModelForm):
         return instance
     
 ##### konec formuláře jen pro platbu přes bankovní údaje, případně QR code spojenou s landing page Tyrrell. Možná ten form pak zas smažem jestli se to nepoužije.
+
+
+
+
+#### home pod carouselem a nad partnery ####
+
+class HomeSupportPromoForm(forms.ModelForm):
+    class Meta:
+        model = HomeSupportPromo
+        fields = [
+            "is_enabled",
+            "eyebrow",
+            "title",
+            "body",
+            "button_label",
+            "button_url",
+            "open_in_new_tab",
+            "background_media",
+        ]
+        widgets = {
+            "body": forms.Textarea(attrs={"rows": 5}),
+        }

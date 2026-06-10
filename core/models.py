@@ -1,4 +1,6 @@
 from django.db import models
+from django.conf import settings
+from media_assets.models import MediaAsset
 from django.urls import reverse
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
@@ -362,3 +364,62 @@ class AgnesSupportIntent(models.Model):
         self.save(update_fields=["status", "paid_at"])
 
 #### konec platby přes bankovní údaje, případně QR code spojenou s landing page Tyrrell. Možná ten model pak zas smažem jestli se to nepoužije.
+
+
+
+#### na home dole před partnery ale pod carouselem ####
+
+class HomeSupportPromo(models.Model):
+    eyebrow = models.CharField(
+        max_length=120,
+        default="Podpořte nás",
+    )
+    title = models.CharField(
+        max_length=220,
+        default="Pomozte nám vydat nahrávku Agnes Tyrrell",
+    )
+    body = models.TextField(
+        default="Podpořte vznik alba věnovaného skladatelce Agnes Tyrrell a pomozte nám dostat její hudbu k novým posluchačům.",
+    )
+    button_label = models.CharField(
+        max_length=120,
+        default="Podpořit kampaň",
+    )
+    button_url = models.CharField(
+        max_length=500,
+        default="/agnes-tyrrell/",
+    )
+    open_in_new_tab = models.BooleanField(
+        default=False,
+    )
+    background_media = models.ForeignKey(
+        MediaAsset,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        limit_choices_to={"asset_type": MediaAsset.AssetType.IMAGE},
+    )
+    is_enabled = models.BooleanField(
+        default=True,
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "Homepage podpora"
+        verbose_name_plural = "Homepage podpora"
+
+    def __str__(self):
+        return self.title
+
+    @classmethod
+    def get_solo(cls):
+        obj, _created = cls.objects.get_or_create(pk=1)
+        return obj
