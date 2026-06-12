@@ -3,7 +3,7 @@
 
 {% block extra_css %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'events/public_event_detail.css' %}?v=20260610-1" />
+  <link rel="stylesheet" href="{% static 'events/public_event_detail.css' %}?v=20260612-1" />
 {% endblock %}
 
 {% block title %}
@@ -52,13 +52,21 @@
       </div>
     </section>
 
-    {% if event.tickets_url %}
+    {% if vip_mode and event.vip_enabled %}
+      <div class="public-event-hero-cta" aria-label="Čestné vstupenky">
+        <a href="#vip-tickets" class="public-event-hero-cta__button public-event-hero-cta__button--vip" data-vip-scroll>
+          Čestné vstupenky
+        </a>
+      </div>
+    {% elif event.tickets_url %}
       <div class="public-event-hero-cta" aria-label="Vstupenky">
-        <a href="{{ event.tickets_url }}" target="_blank" rel="noopener" class="public-event-hero-cta__button">{{ event.tickets_label|default:'Koupit vstupenky' }}</a>
+        <a href="{{ event.tickets_url }}" target="_blank" rel="noopener" class="public-event-hero-cta__button">
+          {{ event.tickets_label|default:'Koupit vstupenky' }}
+        </a>
       </div>
     {% endif %}
 
-    <div class="public-event-layout">
+    <div class="public-event-layout {% if vip_mode and event.vip_enabled %}public-event-layout--vip{% endif %}">
       <main class="public-event-main">
         {% if event.program_items.exists %}
           <section class="public-event-section">
@@ -293,7 +301,7 @@
           </div>
 
           {% if vip_mode and event.vip_enabled %}
-            <div class="vip-box vip-box-highlight">
+            <div id="vip-tickets" class="vip-box vip-box-highlight" tabindex="-1">
               <h2>Čestné vstupenky</h2>
 
               {% if contact and contact.salutation %}
@@ -427,7 +435,31 @@
       const openBtn = document.getElementById('open-poster-modal')
       const closeBtn = document.getElementById('close-poster-modal')
       const modal = document.getElementById('poster-modal')
-    
+      
+
+      const vipScrollLinks = document.querySelectorAll('[data-vip-scroll]')
+
+      vipScrollLinks.forEach((link) => {
+        link.addEventListener('click', function (e) {
+          const target = document.getElementById('vip-tickets')
+
+          if (!target) return
+
+          e.preventDefault()
+
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          })
+
+          window.history.pushState(null, '', '#vip-tickets')
+
+          window.setTimeout(() => {
+            target.focus({ preventScroll: true })
+          }, 650)
+        })
+      })
+
       if (openBtn && closeBtn && modal) {
         function openModal() {
           modal.hidden = false

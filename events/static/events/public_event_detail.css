@@ -574,6 +574,14 @@ body.poster-modal-open {
     color: #fff;
 }
 
+.vip-box-highlight {
+    scroll-margin-top: 28px;
+}
+
+.public-event-hero-cta__button--vip {
+    background: var(--event-color);
+}
+
 .poster-modal[hidden] {
     display: none !important;
 }
@@ -882,6 +890,12 @@ body.poster-modal-open {
 .artist-item--link:focus-visible {
     outline: 3px solid rgba(123, 39, 56, 0.35);
     outline-offset: 3px;
+}
+
+@media (max-width: 1180px) {
+    .public-event-layout--vip .public-event-side {
+        position: static;
+    }
 }
 
 @media (max-width: 980px) {
