@@ -305,7 +305,7 @@ else:
     DEFAULT_FROM_EMAIL = "local@test.project"
 
 #zatím jen mně, ale to se musí změnit :)
-VIP_NOTIFICATION_EMAILS = ["vanek.hv@gmail.com"]
+VIP_NOTIFICATION_EMAILS = ["info@lieder-society.cz", "vanek.hv@gmail.com"]
 
 
 
