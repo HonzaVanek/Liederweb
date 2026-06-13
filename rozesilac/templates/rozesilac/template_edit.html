@@ -200,10 +200,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
 const isDarkMode = document.body.classList.contains("dark-mode");
 
+const barlowEditorCss = `
+  @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap');
+
+  body, table, td, p, a, span, strong, em, div {
+    font-family: 'Barlow', Arial, Helvetica, sans-serif !important;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  table {
+    max-width: 100%;
+  }
+`;
+
 const editorContentStyle = isDarkMode
   ? `
+    ${barlowEditorCss}
+
     body {
-      font-family: Arial, sans-serif;
       font-size: 14px;
       line-height: 1.4;
       color: #eee;
@@ -213,32 +231,15 @@ const editorContentStyle = isDarkMode
     a {
       color: #8ab4ff;
     }
-
-    img {
-      max-width: 100%;
-      height: auto;
-    }
-
-    table {
-      max-width: 100%;
-    }
   `
   : `
+    ${barlowEditorCss}
+
     body {
-      font-family: Arial, sans-serif;
       font-size: 14px;
       line-height: 1.4;
       color: #222;
       background: #fff;
-    }
-
-    img {
-      max-width: 100%;
-      height: auto;
-    }
-
-    table {
-      max-width: 100%;
     }
   `;
 
@@ -247,12 +248,13 @@ tinymce.init({
   height: 500,
   menubar: true,
   plugins: "lists link image table code autoresize preview",
-  toolbar: "undo redo | styles | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | link image table | preview code",
+  toolbar: "undo redo | fontfamily styles | bold italic underline | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist | link image table | preview code",
+  font_family_formats: "Barlow=Barlow,Arial,Helvetica,sans-serif; Arial=Arial,Helvetica,sans-serif; Helvetica=Helvetica,Arial,sans-serif; Times New Roman=Times New Roman,Times,serif;",
   branding: false,
   convert_urls: false,
   promotion: false,
   skin: isDarkMode ? "oxide-dark" : "oxide",
-  content_css: isDarkMode ? "dark" : "default",
+  content_css: false,
   content_style: editorContentStyle,
   setup: function (editor) {
       function syncTextBody(force = false) {
