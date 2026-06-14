@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from media_assets.models import MediaAsset
-from .models import Person, Partner, HomeCarouselManualSlide, AgnesSupportIntent, HomeSupportPromo
+from .models import Person, Partner, HomeCarouselManualSlide, AgnesSupportIntent, HomeSupportPromo, HomeQuoteSlide
 
 from decimal import Decimal
 
@@ -293,3 +293,61 @@ class HomeSupportPromoForm(forms.ModelForm):
         widgets = {
             "body": forms.Textarea(attrs={"rows": 5}),
         }
+
+
+#### home další carousel s těma citacema ####
+
+class HomeQuoteSlideForm(forms.ModelForm):
+    class Meta:
+        model = HomeQuoteSlide
+        fields = [
+            "is_active",
+            "sort_order",
+            "kicker",
+            "quote_text",
+            "author_name",
+            "source_name",
+            "source_url",
+            "button_label",
+            "button_url",
+            "open_in_new_tab",
+            "background_media",
+            "background_position",
+        ]
+
+        widgets = {
+            "quote_text": forms.Textarea(attrs={
+                "rows": 5,
+                "placeholder": "Text citace bez uvozovek…",
+            }),
+            "kicker": forms.TextInput(attrs={
+                "placeholder": "Např. Koncerty, Sláva! Naše první písňové CD, Mladý salón",
+            }),
+            "author_name": forms.TextInput(attrs={
+                "placeholder": "Např. Anna Šerých",
+            }),
+            "source_name": forms.TextInput(attrs={
+                "placeholder": "Např. OperaPlus.cz",
+            }),
+            "source_url": forms.TextInput(attrs={
+                "placeholder": "Volitelné: odkaz na recenzi",
+            }),
+            "button_label": forms.TextInput(attrs={
+                "placeholder": "Např. Přejít na koncerty",
+            }),
+            "button_url": forms.TextInput(attrs={
+                "placeholder": "Např. /koncerty/ nebo https://eshop.lieder-society.cz/",
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["background_media"].queryset = (
+            MediaAsset.objects
+            .filter(
+                asset_type=MediaAsset.AssetType.IMAGE,
+                is_active=True,
+            )
+            .order_by("-uploaded_at", "-id")
+        )

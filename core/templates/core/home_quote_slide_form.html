@@ -1,0 +1,144 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}Rozesílač | {{ page_title }}{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="admin-page-header">
+    <div>
+      <h2>{{ page_title }}</h2>
+      <p class="muted">
+        Citace se zobrazují v carouselu na homepage.
+      </p>
+    </div>
+
+    <div>
+      <a href="{% url 'core:home_quote_slide_list' %}" class="button-secondary">
+        Zpět na seznam
+      </a>
+    </div>
+  </div>
+
+  <form method="post" class="admin-form">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <div class="form-group">
+      {{ form.is_active.label_tag }}
+      {{ form.is_active }}
+      {{ form.is_active.errors }}
+    </div>
+
+    <div class="form-group">
+      {{ form.sort_order.label_tag }}
+      {{ form.sort_order }}
+      {% if form.sort_order.help_text %}
+        <p class="muted">{{ form.sort_order.help_text }}</p>
+      {% endif %}
+      {{ form.sort_order.errors }}
+    </div>
+
+    <div class="form-group">
+      {{ form.kicker.label_tag }}
+      {{ form.kicker }}
+      {% if form.kicker.help_text %}
+        <p class="muted">{{ form.kicker.help_text }}</p>
+      {% endif %}
+      {{ form.kicker.errors }}
+    </div>
+
+    <div class="form-group">
+      {{ form.quote_text.label_tag }}
+      {{ form.quote_text }}
+      {% if form.quote_text.help_text %}
+        <p class="muted">{{ form.quote_text.help_text }}</p>
+      {% endif %}
+      {{ form.quote_text.errors }}
+    </div>
+
+    <div class="form-group">
+      {{ form.author_name.label_tag }}
+      {{ form.author_name }}
+      {% if form.author_name.help_text %}
+        <p class="muted">{{ form.author_name.help_text }}</p>
+      {% endif %}
+      {{ form.author_name.errors }}
+    </div>
+
+    <div class="form-group">
+      {{ form.source_name.label_tag }}
+      {{ form.source_name }}
+      {% if form.source_name.help_text %}
+        <p class="muted">{{ form.source_name.help_text }}</p>
+      {% endif %}
+      {{ form.source_name.errors }}
+    </div>
+
+    <div class="form-group">
+      {{ form.source_url.label_tag }}
+      {{ form.source_url }}
+      {% if form.source_url.help_text %}
+        <p class="muted">{{ form.source_url.help_text }}</p>
+      {% endif %}
+      {{ form.source_url.errors }}
+    </div>
+
+    <div class="form-group">
+      {{ form.button_label.label_tag }}
+      {{ form.button_label }}
+      {% if form.button_label.help_text %}
+        <p class="muted">{{ form.button_label.help_text }}</p>
+      {% endif %}
+      {{ form.button_label.errors }}
+    </div>
+
+    <div class="form-group">
+      {{ form.button_url.label_tag }}
+      {{ form.button_url }}
+      {% if form.button_url.help_text %}
+        <p class="muted">{{ form.button_url.help_text }}</p>
+      {% endif %}
+      {{ form.button_url.errors }}
+    </div>
+
+    <div class="form-group">
+      {{ form.open_in_new_tab.label_tag }}
+      {{ form.open_in_new_tab }}
+      {{ form.open_in_new_tab.errors }}
+    </div>
+
+    <div class="form-group">
+      {{ form.background_media.label_tag }}
+      {{ form.background_media }}
+      {% if form.background_media.help_text %}
+        <p class="muted">{{ form.background_media.help_text }}</p>
+      {% endif %}
+      {{ form.background_media.errors }}
+
+      {% if slide and slide.background_media %}
+        <p class="muted">
+          Aktuálně vybraná fotka: {{ slide.background_media }}
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="form-group">
+      {{ form.background_position.label_tag }}
+      {{ form.background_position }}
+      {% if form.background_position.help_text %}
+        <p class="muted">{{ form.background_position.help_text }}</p>
+      {% endif %}
+      {{ form.background_position.errors }}
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="button-primary">
+        {{ submit_label|default:"Uložit" }}
+      </button>
+
+      <a href="{% url 'core:home_quote_slide_list' %}" class="btn-link">
+        Zrušit
+      </a>
+    </div>
+  </form>
+{% endblock rozesilac_content %}

@@ -1,0 +1,111 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}Rozesílač | {{ page_title }}{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="admin-page-header">
+    <div>
+      <h2>{{ page_title }}</h2>
+      <p class="muted">
+        Správa citací a CTA slidů z homepage.
+      </p>
+    </div>
+
+    <div>
+      <a href="{% url 'core:home_quote_slide_create' %}" class="button-primary">
+        Přidat citaci
+      </a>
+    </div>
+  </div>
+
+  {% if slides %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Pořadí</th>
+            <th>Aktivní</th>
+            <th>Štítek</th>
+            <th>Citace</th>
+            <th>Autor / zdroj</th>
+            <th>Tlačítko</th>
+            <th>Fotka</th>
+            <th>Akce</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for slide in slides %}
+            <tr>
+              <td>{{ slide.sort_order }}</td>
+
+              <td>
+                {% if slide.is_active %}
+                  Ano
+                {% else %}
+                  Ne
+                {% endif %}
+              </td>
+
+              <td>
+                <strong>{{ slide.kicker }}</strong>
+              </td>
+
+              <td>
+                {{ slide.quote_text|truncatechars:120 }}
+              </td>
+
+              <td>
+                {{ slide.author_name }}
+                {% if slide.source_name %}
+                  <br>
+                  <span class="muted">{{ slide.source_name }}</span>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if slide.button_label %}
+                  {{ slide.button_label }}
+                  {% if slide.button_url %}
+                    <br>
+                    <span class="muted">{{ slide.button_url|truncatechars:42 }}</span>
+                  {% endif %}
+                {% else %}
+                  <span class="muted">Bez tlačítka</span>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if slide.background_media %}
+                  Ano
+                {% else %}
+                  <span class="muted">Bez fotky</span>
+                {% endif %}
+              </td>
+
+              <td class="actions">
+                <a href="{% url 'core:home_quote_slide_update' slide.pk %}">
+                  Upravit
+                </a>
+                ·
+                <a href="{% url 'core:home_quote_slide_delete' slide.pk %}">
+                  Smazat
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="muted">
+      Zatím není vytvořená žádná citace.
+    </p>
+
+    <div class="top-action">
+    <a href="{% url 'core:home_quote_slide_create' %}">
+        Přidat citaci
+    </a>
+    </div>
+  {% endif %}
+{% endblock rozesilac_content %}

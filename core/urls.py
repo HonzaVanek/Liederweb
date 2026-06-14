@@ -26,6 +26,10 @@ urlpatterns = [
 
     path("staff/homepage-carousel/", views.home_manual_slide_edit, name="home_manual_slide_edit"),
     path("staff/homepage/podpora/", views.home_support_promo_edit, name="home_support_promo_edit"),
+    path("staff/homepage/citace/", views.home_quote_slide_list, name="home_quote_slide_list"),
+    path("staff/homepage/citace/nova/", views.home_quote_slide_create, name="home_quote_slide_create"),
+    path("staff/homepage/citace/<int:pk>/upravit/", views.home_quote_slide_update, name="home_quote_slide_update"),
+    path("staff/homepage/citace/<int:pk>/smazat/", views.home_quote_slide_delete, name="home_quote_slide_delete"),
 
     path("staff/lide/", views.PersonAdminListView.as_view(), name="person_admin_list"),
     path("staff/lide/novy/", views.PersonCreateView.as_view(), name="person_create"),

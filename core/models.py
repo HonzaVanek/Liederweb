@@ -448,3 +448,131 @@ class HomeSupportPromo(models.Model):
     def get_solo(cls):
         obj, _created = cls.objects.get_or_create(pk=1)
         return obj
+    
+
+##### tohle taky na home a je to ten druhý malý carousel s citacema
+
+class HomeQuoteSlide(models.Model):
+    class BackgroundPosition(models.TextChoices):
+        TOP = "top", "Nahoře"
+        CENTER_TOP = "center_top", "Lehce nahoře"
+        CENTER = "center", "Uprostřed"
+        CENTER_BOTTOM = "center_bottom", "Lehce dole"
+        BOTTOM = "bottom", "Dole"
+
+    sort_order = models.PositiveIntegerField(
+        default=100,
+        verbose_name="Pořadí",
+        help_text="Nižší číslo se zobrazí dříve.",
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Zobrazit na homepage",
+    )
+
+    kicker = models.CharField(
+        max_length=140,
+        verbose_name="Nadpis / štítek",
+        help_text='Například „Koncerty“, „Sláva! Naše první písňové CD“ nebo „Mladý salón“.',
+    )
+
+    quote_text = models.TextField(
+        verbose_name="Citace",
+        help_text="Text citace bez uvozovek. Uvozovky doplní šablona.",
+    )
+
+    author_name = models.CharField(
+        max_length=160,
+        verbose_name="Autor citace",
+        help_text="Například Anna Šerých.",
+    )
+
+    source_name = models.CharField(
+        max_length=160,
+        blank=True,
+        verbose_name="Médium / zdroj",
+        help_text="Například OperaPlus.cz nebo KlasikaPlus.cz.",
+    )
+
+    source_url = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="Odkaz na zdroj recenze",
+        help_text="Volitelné. Může vést přímo na recenzi.",
+    )
+
+    button_label = models.CharField(
+        max_length=140,
+        blank=True,
+        verbose_name="Text tlačítka",
+        help_text='Například „Přejít na koncerty“, „Do e-shopu“ nebo „Již brzy“.',
+    )
+
+    button_url = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="Odkaz tlačítka",
+        help_text="Může být relativní cesta typu /koncerty/ nebo celá externí URL.",
+    )
+
+    open_in_new_tab = models.BooleanField(
+        default=False,
+        verbose_name="Otevřít tlačítko v nové záložce",
+    )
+
+    background_media = models.ForeignKey(
+        MediaAsset,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        limit_choices_to={"asset_type": MediaAsset.AssetType.IMAGE},
+        verbose_name="Fotka do pozadí",
+    )
+
+    background_position = models.CharField(
+        max_length=24,
+        choices=BackgroundPosition.choices,
+        default=BackgroundPosition.CENTER,
+        verbose_name="Pozice fotky v pozadí",
+        help_text="Určuje, která část fotky má být při ořezu vidět.",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Vytvořeno",
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Upraveno",
+    )
+
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        verbose_name="Upravil",
+    )
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+        verbose_name = "Homepage citace"
+        verbose_name_plural = "Homepage citace"
+
+    def __str__(self):
+        source = f" – {self.source_name}" if self.source_name else ""
+        return f"{self.kicker}: {self.author_name}{source}"
+
+    @property
+    def background_position_css(self):
+        return {
+            self.BackgroundPosition.TOP: "center top",
+            self.BackgroundPosition.CENTER_TOP: "center 35%",
+            self.BackgroundPosition.CENTER: "center center",
+            self.BackgroundPosition.CENTER_BOTTOM: "center 65%",
+            self.BackgroundPosition.BOTTOM: "center bottom",
+        }.get(self.background_position, "center center")

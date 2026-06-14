@@ -1,0 +1,195 @@
+{% if home_quote_slides %}
+  <section class="home-quotes-section" aria-label="Ohlasy na Lieder Society">
+    <div class="home-quotes-section__inner" data-home-quotes-carousel>
+      <div class="home-quotes-header">
+        <h1 class="home-quotes-eyebrow">Ohlasy</h1>
+      </div>
+
+      <div class="home-quotes-stage">
+        {% for slide in home_quote_slides %}
+          <article
+            class="home-quote-slide {% if forloop.first %}is-active{% endif %} {% if slide.background_media %}home-quote-slide--with-image{% endif %}"
+            data-home-quote-slide
+            {% if slide.background_media %}
+              style="
+                --quote-bg-image: url('{{ slide.background_media.image.url }}');
+                --quote-bg-position: {{ slide.background_position_css }};
+              "
+            {% endif %}
+            aria-hidden="{% if forloop.first %}false{% else %}true{% endif %}"
+          >
+            <div class="home-quote-slide__content">
+              {% if slide.kicker %}
+                <p class="home-quote-slide__kicker">{{ slide.kicker }}</p>
+              {% endif %}
+
+                <blockquote class="home-quote-slide__quote">
+                <span class="home-quote-slide__mark home-quote-slide__mark--start" aria-hidden="true">“</span>
+                <p>
+                    {{ slide.quote_text }}<span class="home-quote-slide__quote-end" aria-hidden="true">”</span>
+                </p>
+                </blockquote>
+
+              <div class="home-quote-slide__meta">
+                <strong>{{ slide.author_name }}</strong>
+
+                {% if slide.source_name %}
+                  {% if slide.source_url %}
+                    <a href="{{ slide.source_url }}" target="_blank" rel="noopener">
+                      {{ slide.source_name }}
+                    </a>
+                  {% else %}
+                    <span>{{ slide.source_name }}</span>
+                  {% endif %}
+                {% endif %}
+              </div>
+
+              <div class="home-quote-slide__actions">
+                {% if slide.button_label and slide.button_url %}
+                  <a
+                    href="{{ slide.button_url }}"
+                    class="home-quote-slide__button"
+                    {% if slide.open_in_new_tab %}target="_blank" rel="noopener"{% endif %}
+                  >
+                    {{ slide.button_label }}
+                  </a>
+                {% elif slide.button_label %}
+                  <span class="home-quote-slide__button home-quote-slide__button--disabled">
+                    {{ slide.button_label }}
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+
+      {% if home_quote_slides|length > 1 %}
+        <div class="home-quotes-controls" aria-label="Přepínání citací">
+          <button type="button" class="home-quotes-arrow" data-home-quotes-prev aria-label="Předchozí citace">
+            ←
+          </button>
+
+          <div class="home-quotes-dots">
+            {% for slide in home_quote_slides %}
+              <button
+                type="button"
+                class="home-quotes-dot {% if forloop.first %}is-active{% endif %}"
+                data-home-quotes-dot="{{ forloop.counter0 }}"
+                aria-label="Zobrazit citaci {{ forloop.counter }}"
+              ></button>
+            {% endfor %}
+          </div>
+
+          <button type="button" class="home-quotes-arrow" data-home-quotes-next aria-label="Další citace">
+            →
+          </button>
+        </div>
+      {% endif %}
+
+      {% if request.user.is_staff %}
+        <div class="home-quotes-admin">
+        <a href="{% url 'core:home_quote_slide_list' %}" class="home-quotes-admin__button">
+            Upravit citace na homepage
+        </a>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll("[data-home-quotes-carousel]").forEach((carousel) => {
+        const slides = Array.from(carousel.querySelectorAll("[data-home-quote-slide]"));
+        const dots = Array.from(carousel.querySelectorAll("[data-home-quotes-dot]"));
+        const prevButton = carousel.querySelector("[data-home-quotes-prev]");
+        const nextButton = carousel.querySelector("[data-home-quotes-next]");
+
+        if (slides.length <= 1) return;
+
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        let activeIndex = 0;
+        let timer = null;
+
+        function showSlide(index) {
+          if (index < 0) {
+            activeIndex = slides.length - 1;
+          } else if (index >= slides.length) {
+            activeIndex = 0;
+          } else {
+            activeIndex = index;
+          }
+
+          slides.forEach((slide, slideIndex) => {
+            const isActive = slideIndex === activeIndex;
+            slide.classList.toggle("is-active", isActive);
+            slide.setAttribute("aria-hidden", isActive ? "false" : "true");
+          });
+
+          dots.forEach((dot, dotIndex) => {
+            dot.classList.toggle("is-active", dotIndex === activeIndex);
+          });
+        }
+
+        function nextSlide() {
+          showSlide(activeIndex + 1);
+        }
+
+        function prevSlide() {
+          showSlide(activeIndex - 1);
+        }
+
+        function stopAutoplay() {
+          if (timer) {
+            window.clearInterval(timer);
+            timer = null;
+          }
+        }
+
+        function startAutoplay() {
+          if (reduceMotion) return;
+          stopAutoplay();
+          timer = window.setInterval(nextSlide, 7500);
+        }
+
+        if (prevButton) {
+          prevButton.addEventListener("click", function () {
+            prevSlide();
+            startAutoplay();
+          });
+        }
+
+        if (nextButton) {
+          nextButton.addEventListener("click", function () {
+            nextSlide();
+            startAutoplay();
+          });
+        }
+
+        dots.forEach((dot) => {
+          dot.addEventListener("click", function () {
+            showSlide(Number(dot.dataset.homeQuotesDot || 0));
+            startAutoplay();
+          });
+        });
+
+        carousel.addEventListener("mouseenter", stopAutoplay);
+        carousel.addEventListener("mouseleave", startAutoplay);
+        carousel.addEventListener("focusin", stopAutoplay);
+        carousel.addEventListener("focusout", startAutoplay);
+
+        showSlide(0);
+        startAutoplay();
+      });
+    });
+  </script>
+{% elif request.user.is_staff %}
+  <section class="home-quotes-section">
+    <div class="home-quotes-section__inner home-quotes-section__inner--empty">
+      <p class="muted">Zatím nejsou vytvořené žádné citace pro homepage.</p>
+      <a href="{% url 'core:home_quote_slide_create' %}" class="home-quote-slide__button">
+        Přidat první citaci
+      </a>
+    </div>
+  </section>
+{% endif %}

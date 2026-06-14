@@ -18,8 +18,8 @@ from django.core.mail import EmailMessage, send_mail
 from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
 
-from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm, HomeSupportPromoForm
-from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo
+from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm, HomeSupportPromoForm, HomeQuoteSlideForm
+from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide
 from events.models import Event
 from media_assets.models import MediaAsset
 from social_feed.models import SocialPost, SocialSource
@@ -137,6 +137,13 @@ def home(request):
     manual_home_slide = HomeCarouselManualSlide.get_solo()
     support_promo = HomeSupportPromo.get_solo()
 
+    home_quote_slides = (
+        HomeQuoteSlide.objects
+        .filter(is_active=True)
+        .select_related("background_media")
+        .order_by("sort_order", "id")
+    )
+
     return render(
         request,
         "core/home.html",
@@ -149,6 +156,7 @@ def home(request):
             "now": now,
             "has_upcoming_event": has_upcoming_event,
             "default_carousel_slide_index": default_carousel_slide_index,
+            "home_quote_slides": home_quote_slides,
         },
     )
 
@@ -230,6 +238,94 @@ def home_support_promo_edit(request):
         },
     )
 
+
+@staff_required
+def home_quote_slide_list(request):
+    slides = (
+        HomeQuoteSlide.objects
+        .select_related("background_media", "updated_by")
+        .order_by("sort_order", "id")
+    )
+
+    return render(
+        request,
+        "core/home_quote_slide_list.html",
+        {
+            "slides": slides,
+            "page_title": "Homepage citace",
+        },
+    )
+
+@staff_required
+def home_quote_slide_create(request):
+    if request.method == "POST":
+        form = HomeQuoteSlideForm(request.POST)
+
+        if form.is_valid():
+            slide = form.save(commit=False)
+            slide.updated_by = request.user
+            slide.save()
+
+            messages.success(request, "Citace byla vytvořena.")
+            return redirect("core:home_quote_slide_list")
+    else:
+        form = HomeQuoteSlideForm()
+
+    return render(
+        request,
+        "core/home_quote_slide_form.html",
+        {
+            "form": form,
+            "page_title": "Nová citace na homepage",
+            "submit_label": "Vytvořit citaci",
+        },
+    )
+
+@staff_required
+def home_quote_slide_update(request, pk):
+    slide = get_object_or_404(HomeQuoteSlide, pk=pk)
+
+    if request.method == "POST":
+        form = HomeQuoteSlideForm(request.POST, instance=slide)
+
+        if form.is_valid():
+            slide = form.save(commit=False)
+            slide.updated_by = request.user
+            slide.save()
+
+            messages.success(request, "Citace byla upravena.")
+            return redirect("core:home_quote_slide_list")
+    else:
+        form = HomeQuoteSlideForm(instance=slide)
+
+    return render(
+        request,
+        "core/home_quote_slide_form.html",
+        {
+            "form": form,
+            "slide": slide,
+            "page_title": f"Upravit citaci: {slide.kicker}",
+            "submit_label": "Uložit změny",
+        },
+    )
+
+@staff_required
+def home_quote_slide_delete(request, pk):
+    slide = get_object_or_404(HomeQuoteSlide, pk=pk)
+
+    if request.method == "POST":
+        slide.delete()
+        messages.success(request, "Citace byla smazána.")
+        return redirect("core:home_quote_slide_list")
+
+    return render(
+        request,
+        "core/home_quote_slide_confirm_delete.html",
+        {
+            "slide": slide,
+            "page_title": f"Smazat citaci: {slide.kicker}",
+        },
+    )
 
 
 #newsletter signup view a pomocné funkce
@@ -611,14 +707,6 @@ def contact(request):
     return render(request, "core/contact.html")
 
 # to je všechno :) #
-
-
-
-
-
-
-
-
 
 
 ########## další view pro statickou stránku kampaně k Agnes Tyrrell jen pro návštěvníky Tugendhatu.

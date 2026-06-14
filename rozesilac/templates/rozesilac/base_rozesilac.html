@@ -70,6 +70,11 @@
            class="{% if request.resolver_match.namespace == 'media_assets' and request.resolver_match.url_name == 'asset_list' or request.resolver_match.namespace == 'media_assets' and request.resolver_match.url_name == 'asset_create' or request.resolver_match.namespace == 'media_assets' and request.resolver_match.url_name == 'asset_update' %}active{% endif %}">
            Mediální knihovna
         </a>
+
+        <a href="{% url 'core:home_quote_slide_list' %}"
+            class="{% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'home_quote_slide_list' or request.resolver_match.url_name == 'home_quote_slide_create' or request.resolver_match.url_name == 'home_quote_slide_update' or request.resolver_match.url_name == 'home_quote_slide_delete' %}active{% endif %}">
+            Homepage citace
+         </a>
       </nav>
     </div>
   </aside>

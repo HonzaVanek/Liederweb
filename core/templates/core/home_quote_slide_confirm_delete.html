@@ -1,0 +1,46 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+
+{% block title %}Rozesílač | {{ page_title }}{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="admin-page-header">
+    <div>
+      <h2>{{ page_title }}</h2>
+      <p class="muted">
+        Tuhle akci nejde vrátit zpět.
+      </p>
+    </div>
+  </div>
+
+  <div class="admin-confirm-box">
+    <p>
+      Opravdu chcete smazat citaci:
+    </p>
+
+    <blockquote>
+      „{{ slide.quote_text }}“
+    </blockquote>
+
+    <p>
+      <strong>{{ slide.author_name }}</strong>
+      {% if slide.source_name %}
+        <br>
+        <span class="muted">{{ slide.source_name }}</span>
+      {% endif %}
+    </p>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="form-actions">
+        <button type="submit" class="button-danger">
+          Ano, smazat citaci
+        </button>
+
+        <a href="{% url 'core:home_quote_slide_list' %}" class="button-secondary">
+          Zpět
+        </a>
+      </div>
+    </form>
+  </div>
+{% endblock rozesilac_content %}
