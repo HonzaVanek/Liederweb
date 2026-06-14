@@ -1342,7 +1342,7 @@ body {
 .home-quote-slide__quote p {
     position: relative;
     margin: 0;
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: "Barlow", "Segoe UI", sans-serif;
     font-size: clamp(1.35rem, 2.6vw, 2.2rem);
     line-height: 1.32;
     color: #fff;
