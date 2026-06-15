@@ -12,6 +12,7 @@ from core.models import DailySiteVisitor, DailyPageVisitor
 
 LOG_FILES = {
     "traffic": Path("/srv/log/traffic.log"),
+    "staff_audit": Path("/srv/log/staff_audit.log"),
     "python": Path("/srv/log/python.log"),
     "python.old": Path("/srv/log/python.log.1"),
     "nginx": Path("/srv/log/nginx.log"),
@@ -80,6 +81,21 @@ def build_colored_log_lines(log_text):
 
     return colored_log_lines
 
+def filter_common_staff_get_lines(log_text, max_lines):
+    hidden_count = 0
+    kept_lines = []
+
+    for line in log_text.splitlines():
+        if "STAFF_ACTION" in line and " kind=common_get " in line:
+            hidden_count += 1
+            continue
+
+        kept_lines.append(line)
+
+    kept_lines = kept_lines[-max_lines:]
+
+    return "\n".join(kept_lines), hidden_count
+
 
 @staff_member_required
 def system_logs_view(request):
@@ -88,6 +104,9 @@ def system_logs_view(request):
 
     selected_log = request.GET.get("log", "traffic")
     log_path = LOG_FILES.get(selected_log)
+
+    hide_common_staff_get = request.GET.get("hide_common_staff_get", "1") == "1"
+    hidden_common_staff_get_count = 0
 
     if log_path is None:
         selected_log = "traffic"
@@ -109,8 +128,12 @@ def system_logs_view(request):
     # Když skrýváme healthchecky, načteme víc řádků,
     # aby po odfiltrování pořád zůstalo dost relevantních záznamů.
     tail_lines = lines
+
     if hide_noise and selected_log in ("python", "python.old"):
         tail_lines = min(lines * 5, 5000)
+
+    if hide_common_staff_get and selected_log == "staff_audit":
+        tail_lines = min(lines * 10, 10000)
 
     if not log_path.exists():
         error_message = f"Soubor neexistuje: {log_path}"
@@ -136,6 +159,9 @@ def system_logs_view(request):
 
     if hide_noise and selected_log in ("python", "python.old"):
         log_text, hidden_noise_count = filter_noise_log_lines(log_text, lines)
+
+    if hide_common_staff_get and selected_log == "staff_audit":
+        log_text, hidden_common_staff_get_count = filter_common_staff_get_lines(log_text, lines)
 
     colored_log_lines = build_colored_log_lines(log_text)
 
@@ -188,5 +214,7 @@ def system_logs_view(request):
             "colored_log_lines": colored_log_lines,
             "hide_noise": hide_noise,
             "hidden_noise_count": hidden_noise_count,
+            "hide_common_staff_get": hide_common_staff_get,
+            "hidden_common_staff_get_count": hidden_common_staff_get_count,
         },
     )

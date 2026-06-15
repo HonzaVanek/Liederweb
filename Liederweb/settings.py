@@ -43,6 +43,8 @@ if not SECRET_KEY:
 
 SECURITY_LOG_FILE = "/srv/log/security.log"
 TRAFFIC_LOG_FILE = "/srv/log/traffic.log"
+STAFF_AUDIT_LOG_FILE = "/srv/log/staff_audit.log"
+
 DEBUG = APP_ENV == "dev"
 
 if APP_ENV == "prod":
@@ -75,6 +77,14 @@ if APP_ENV == "prod":
                 "formatter": "verbose",
                 "encoding": "utf-8",
             },
+            "staff_audit_file": {
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": STAFF_AUDIT_LOG_FILE,
+                "maxBytes": 1024 * 1024 * 5,
+                "backupCount": 10,
+                "formatter": "verbose",
+                "encoding": "utf-8",
+                },
         },
         "root": {
             "handlers": ["console"],
@@ -98,6 +108,11 @@ if APP_ENV == "prod":
             },
             "liederweb.traffic": {
                 "handlers": ["traffic_file"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "liederweb.staff_audit": {
+                "handlers": ["staff_audit_file"],
                 "level": "INFO",
                 "propagate": False,
             },
@@ -129,6 +144,11 @@ else:
                 "propagate": False,
             },
             "liederweb.traffic": {
+                "handlers": ["console"],
+                "level": "INFO",
+                "propagate": False,
+            },
+            "liederweb.staff_audit": {
                 "handlers": ["console"],
                 "level": "INFO",
                 "propagate": False,
@@ -172,6 +192,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "core.middleware.StaffAuditMiddleware",
     "core.middleware.SiteVisitStatsMiddleware",
 ]
 

@@ -3,9 +3,10 @@
 {% block content %}
 
 <p class="help">
-    Logy mohou obsahovat IP adresy, URL tokeny nebo technické údaje.
+    Logy mohou obsahovat IP adresy, technické údaje a informace o aktivitě staff uživatelů.
     Stránka je dostupná pouze superuserovi.
 </p>
+
 <form method="get" style="margin: 0 0 20px 0;">
     <label for="log">Log:</label>
     <select name="log" id="log">
@@ -28,29 +29,56 @@
         style="width: 90px;"
     >
 
-    <button type="submit" class="button">Zobrazit</button>
-    <label style="margin-left: 12px;">
-        <input type="hidden" name="hide_noise" value="0">
-        <input
-            type="checkbox"
-            name="hide_noise"
-            value="1"
-            {% if hide_noise %}checked{% endif %}
-        >
-        Skrýt healthchecky
-    </label>
+    {% if selected_log == "python" or selected_log == "python.old" %}
+        <label style="margin-left: 12px;">
+            <input type="hidden" name="hide_noise" value="0">
+            <input
+                type="checkbox"
+                name="hide_noise"
+                value="1"
+                {% if hide_noise %}checked{% endif %}
+            >
+            Skrýt healthchecky
+        </label>
+    {% endif %}
+
+    {% if selected_log == "staff_audit" %}
+        <label style="margin-left: 12px;">
+            <input type="hidden" name="hide_common_staff_get" value="0">
+            <input
+                type="checkbox"
+                name="hide_common_staff_get"
+                value="1"
+                {% if hide_common_staff_get %}checked{% endif %}
+            >
+            Skrýt běžné GET staff požadavky
+        </label>
+    {% endif %}
+
+    <button type="submit" class="button" style="margin-left: 12px;">Zobrazit</button>
 </form>
 
-<p>
-    <strong>Soubor:</strong>
-    <code>{{ selected_path }}</code>
+<div style="margin-bottom: 16px;">
+    <p>
+        <strong>Soubor:</strong>
+        <code>{{ selected_path }}</code>
+    </p>
+
     {% if hidden_noise_count %}
         <p class="help">
             Skryto {{ hidden_noise_count }} řádků automatických healthchecků
             <code>python-requests</code>.
         </p>
     {% endif %}
-</p>
+
+    {% if hidden_common_staff_get_count %}
+        <p class="help">
+            Skryto {{ hidden_common_staff_get_count }} běžných GET staff požadavků.
+            V log souboru zůstávají, jen se teď nezobrazují v přehledu.
+        </p>
+    {% endif %}
+</div>
+
 
 {% if error_message %}
     <p class="errornote">{{ error_message }}</p>
