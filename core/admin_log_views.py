@@ -54,6 +54,12 @@ def filter_noise_log_lines(log_text, max_lines):
 def build_colored_log_lines(log_text):
     colored_log_lines = []
 
+    previous_key = None
+    previous_color_index = None
+
+    # V rámci jednoho zobrazení logu držíme stejnému klientovi/IP stejnou barvu.
+    assigned_colors = {}
+
     for line in log_text.splitlines():
         ip_match = IP_RE.search(line)
         client_match = CLIENT_RE.search(line)
@@ -67,23 +73,38 @@ def build_colored_log_lines(log_text):
         if ip_match:
             ip = ip_match.group(1)
 
-            # Jednoduchá stabilní barva podle IP.
-            # Funguje pro IPv4 i IPv6, protože jen sečteme znaky.
-            color_index = sum(ord(char) for char in ip) % 12
-
         if client_match:
             client = client_match.group(1)
-
-            # Zpětná kompatibilita pro staré řádky bez ip=
-            if color_index is None:
-                color_index = int(client, 16) % 12
 
         if visitor_match:
             visitor = visitor_match.group(1)
 
-            # Zpětná kompatibilita pro úplně staré řádky bez client=
-            if color_index is None:
-                color_index = int(visitor, 16) % 12
+        # Pro identitu řádku preferujeme IP, protože tu teď zobrazuješ v badge.
+        # Client/visitor jsou fallback pro starší řádky bez ip=.
+        color_key = ip or client or visitor
+
+        if color_key:
+            if color_key in assigned_colors:
+                color_index = assigned_colors[color_key]
+            else:
+                if ip:
+                    # Původní logika podle IP.
+                    color_index = sum(ord(char) for char in ip) % 12
+                elif client:
+                    color_index = int(client, 16) % 12
+                elif visitor:
+                    color_index = int(visitor, 16) % 12
+
+                # Když jiný návštěvník/IP hned pod předchozím vyjde stejnou barvou,
+                # posuneme ho na další barvu z palety.
+                if (
+                    previous_color_index is not None
+                    and color_index == previous_color_index
+                    and color_key != previous_key
+                ):
+                    color_index = (color_index + 1) % 12
+
+                assigned_colors[color_key] = color_index
 
         colored_log_lines.append({
             "text": line,
@@ -92,6 +113,10 @@ def build_colored_log_lines(log_text):
             "visitor": visitor,
             "color_index": color_index,
         })
+
+        if color_key:
+            previous_key = color_key
+            previous_color_index = color_index
 
     return colored_log_lines
 
