@@ -1261,24 +1261,14 @@ def send(request):
             # Immediate send
             # --------------------------------------------------
 
-            base_url = f"{request.scheme}://{request.get_host()}"
+            campaign.status = "scheduled"
+            campaign.scheduled_at = timezone.now()
+            campaign.save(update_fields=["status", "scheduled_at"])
 
-            sent_count, failed_count = send_campaign_deliveries(
-                campaign=campaign,
-                base_url=base_url,
-                from_email=from_email,
+            messages.success(
+                request,
+                "Kampaň byla zařazena k okamžitému odeslání. Stav sleduj na detailu kampaně."
             )
-
-            if failed_count == 0:
-                messages.success(
-                    request,
-                    f"Odeslání dokončeno. Úspěšně odesláno: {sent_count}."
-                )
-            else:
-                messages.warning(
-                    request,
-                    f"Odeslání dokončeno s chybami. Odesláno: {sent_count}, chyb: {failed_count}."
-                )
 
             return redirect("rozesilac:campaign_detail", campaign_id=campaign.id)
 
