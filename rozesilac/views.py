@@ -990,17 +990,19 @@ def send_single_delivery(campaign, delivery, base_url: str, from_email: str):
 
     # PROD = Brevo API
     else:
+        to_item = {
+            "email": delivery.to_email,
+        }
+
+        if delivery.to_name and delivery.to_name.strip():
+            to_item["name"] = delivery.to_name.strip()
+
         payload = {
             "sender": {
                 "email": from_email,
                 "name": "Lieder Society",
             },
-            "to": [
-                {
-                    "email": delivery.to_email,
-                    "name": delivery.to_name or "",
-                }
-            ],
+            "to": [to_item],
             "subject": rendered_subject,
             "htmlContent": rendered_html_body,
             "textContent": rendered_text_body,
