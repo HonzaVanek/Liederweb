@@ -196,8 +196,8 @@
 <div id="sending-overlay" class="sending-overlay" hidden>
   <div class="sending-overlay__box">
     <div class="sending-overlay__spinner" aria-hidden="true"></div>
-    <h3>Odesíláme e-maily</h3>
-    <p>Je to jízda, bombí se tam maily jeden za druhym, prosím čekej a nezavírej stránku. Nějakých 200 kontaktů může trvat klidně i několik minut.</p>
+    <h3>Odesíláme testovací e-mail</h3>
+    <p>Prosím čekej, testovací e-mail se právě odesílá.</p>
   </div>
 </div>
 
@@ -499,7 +499,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (deliveryMode === "scheduled") {
         confirmText = `Opravdu chceš naplánovat ostrou kampaň na ${checkedContacts} kontaktů?`;
       } else {
-        confirmText = `Opravdu chceš odeslat ostrou kampaň na ${checkedContacts} kontaktů?`;
+        confirmText = `Opravdu chceš zařadit ostrou kampaň k okamžitému odeslání pro ${checkedContacts} kontaktů?`;
       }
 
       const confirmed = confirm(confirmText);
@@ -511,10 +511,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     isSubmitting = true;
 
-    if (deliveryMode === "scheduled") {
+    if (mode === "test") {
+      showSendingOverlay();
+    } else if (deliveryMode === "scheduled") {
       disableSubmitButton("Plánuji...");
     } else {
-      showSendingOverlay();
+      disableSubmitButton("Zařazuji k odeslání...");
     }
   });
 });
