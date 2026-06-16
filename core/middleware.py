@@ -263,17 +263,6 @@ class SiteVisitStatsMiddleware:
         )
 
         if is_bot_like:
-            logger.info(
-                "SKIP_BOT_LIKE ip=%s client=%s visitor=%s method=%s status=%s path=%s referer=%s ua=%s",
-                ip,
-                client_label,
-                visitor_label,
-                request.method,
-                status_code,
-                path[:300],
-                referer,
-                user_agent[:300],
-            )
             return
 
         if is_known_bot:
