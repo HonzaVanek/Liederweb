@@ -177,7 +177,7 @@ class Partner(models.Model):
 
 
 
-# statistiky přístupů na web:
+### statistiky přístupů na web:
 
 class DailySiteVisitor(models.Model):
     day = models.DateField(db_index=True)
@@ -220,9 +220,48 @@ class DailyPageVisitor(models.Model):
 
     def __str__(self):
         return f"{self.day} | {self.path} | {self.pageviews}"
+    
 
 
-    # custom image v carouselu:
+#### KONEC STATISTIK NÁVŠTĚVNOSTI WEBU
+
+class DailySiteTraffic(models.Model):
+    day = models.DateField(unique=True, db_index=True)
+    total_hits = models.PositiveIntegerField(default=0)
+    human_hits = models.PositiveIntegerField(default=0)
+    bot_hits = models.PositiveIntegerField(default=0)
+    last_seen_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-day"]
+
+    def __str__(self):
+        return f"{self.day} | total={self.total_hits} human={self.human_hits} bot={self.bot_hits}"
+
+
+class DailyPageTraffic(models.Model):
+    day = models.DateField(db_index=True)
+    path = models.CharField(max_length=500)
+    total_hits = models.PositiveIntegerField(default=0)
+    human_hits = models.PositiveIntegerField(default=0)
+    bot_hits = models.PositiveIntegerField(default=0)
+    last_seen_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("day", "path")
+        ordering = ["-day", "-total_hits"]
+        indexes = [
+            models.Index(fields=["day", "path"]),
+            models.Index(fields=["day", "-total_hits"]),
+        ]
+
+    def __str__(self):
+        return f"{self.day} | {self.path} | total={self.total_hits} human={self.human_hits} bot={self.bot_hits}"
+
+
+
+
+# custom image v carouselu:
      
 class HomeCarouselManualSlide(models.Model):
     class Layout(models.TextChoices):

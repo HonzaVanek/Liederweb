@@ -109,6 +109,15 @@ BOT_USER_AGENT_PARTS = (
     "beautifulsoup",
     "bs4",
     "requests",
+
+    #další nalezené z logů
+    "google-read-aloud",
+    "read-aloud",
+    "greedyhand",
+    "nutch",
+    "node-fetch",
+    "builtwith",
+    "visionheight",
 )
 
 logger = logging.getLogger("liederweb.traffic")
@@ -225,7 +234,8 @@ class SiteVisitStatsMiddleware:
 
         if self.is_suspicious_rapid_visitor(client_label, path):
             logger.info(
-                "SKIP_BOT_LIKE client=%s visitor=%s method=%s status=%s path=%s ua=%s",
+                "SKIP_BOT_LIKE ip=%s client=%s visitor=%s method=%s status=%s path=%s ua=%s",
+                ip,
                 client_label,
                 visitor_label,
                 request.method,
@@ -238,7 +248,8 @@ class SiteVisitStatsMiddleware:
         referer = self.clean_referer(request.META.get("HTTP_REFERER", ""))[:300]
 
         logger.info(
-            "VISIT client=%s visitor=%s method=%s status=%s path=%s referer=%s ua=%s",
+            "VISIT ip=%s client=%s visitor=%s method=%s status=%s path=%s referer=%s ua=%s",
+            ip,
             client_label,
             visitor_label,
             request.method,

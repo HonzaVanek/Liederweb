@@ -3,7 +3,7 @@
 {% block content %}
 
 <p class="help">
-    Logy mohou obsahovat IP adresy, technické údaje a informace o aktivitě staff uživatelů.
+    Logy obsahují technické údaje včetně IP adres a mohou obsahovat informace o aktivitě staff uživatelů.
     Stránka je dostupná pouze superuserovi.
 </p>
 
@@ -135,7 +135,7 @@
     }
 </style>
 
-<pre class="system-log-output">{% for line in colored_log_lines %}<span class="system-log-line{% if line.client or line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.client %}<span class="visitor-badge">{{ line.client }} / {{ line.visitor }}</span>{% elif line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>{% empty %}{{ log_text }}{% endfor %}</pre>
+<pre class="system-log-output">{% for line in colored_log_lines %}<span class="system-log-line{% if line.ip or line.client or line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.ip %}<span class="visitor-badge">{{ line.ip }}</span>{% elif line.client %}<span class="visitor-badge">{{ line.client }} / {{ line.visitor }}</span>{% elif line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>{% empty %}{{ log_text }}{% endfor %}</pre>
 
 <h2>Návštěvnost webu</h2>
 

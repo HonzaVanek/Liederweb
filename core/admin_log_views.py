@@ -27,6 +27,7 @@ MAX_LINES = 1000
 # Pro barevné rozlišení traffic logu.
 CLIENT_RE = re.compile(r"VISIT client=([a-f0-9]{8})")
 VISITOR_RE = re.compile(r"visitor=([a-f0-9]{8})")
+IP_RE = re.compile(r"\bip=([0-9a-fA-F:.]+)")
 
 # Pravidelný healthcheck / monitoring přes python-requests.
 HEALTHCHECK_RE = re.compile(
@@ -54,26 +55,39 @@ def build_colored_log_lines(log_text):
     colored_log_lines = []
 
     for line in log_text.splitlines():
+        ip_match = IP_RE.search(line)
         client_match = CLIENT_RE.search(line)
         visitor_match = VISITOR_RE.search(line)
 
+        ip = None
         client = None
         visitor = None
         color_index = None
 
+        if ip_match:
+            ip = ip_match.group(1)
+
+            # Jednoduchá stabilní barva podle IP.
+            # Funguje pro IPv4 i IPv6, protože jen sečteme znaky.
+            color_index = sum(ord(char) for char in ip) % 12
+
         if client_match:
             client = client_match.group(1)
-            color_index = int(client, 16) % 12
+
+            # Zpětná kompatibilita pro staré řádky bez ip=
+            if color_index is None:
+                color_index = int(client, 16) % 12
 
         if visitor_match:
             visitor = visitor_match.group(1)
 
-            # Zpětná kompatibilita pro staré řádky bez client=
+            # Zpětná kompatibilita pro úplně staré řádky bez client=
             if color_index is None:
                 color_index = int(visitor, 16) % 12
 
         colored_log_lines.append({
             "text": line,
+            "ip": ip,
             "client": client,
             "visitor": visitor,
             "color_index": color_index,
