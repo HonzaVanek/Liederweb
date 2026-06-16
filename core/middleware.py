@@ -8,7 +8,8 @@ from django.db.models import F
 from django.utils import timezone
 from django.urls import resolve
 
-from .models import DailySiteVisitor, DailyPageVisitor
+
+from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic
 
 from urllib.parse import urlsplit, urlunsplit
 
@@ -120,6 +121,10 @@ BOT_USER_AGENT_PARTS = (
     "visionheight",
 )
 
+BOT_REFERER_PARTS = (
+    "aisearchindex.space",
+)
+
 logger = logging.getLogger("liederweb.traffic")
 staff_audit_logger = logging.getLogger("liederweb.staff_audit")
 
@@ -173,56 +178,65 @@ class SiteVisitStatsMiddleware:
 
         return False
 
+    def is_scanner_path(self, path):
+        path = path or ""
+
+        scanner_prefixes = (
+            "/wp-admin/",
+            "/wp-content/",
+            "/wp-includes/",
+            "/wordpress/",
+            "/.git/",
+            "/.env",
+            "/vendor/",
+            "/cgi-bin/",
+        )
+
+        scanner_exact = (
+            "/xmlrpc.php",
+            "/wp-login.php",
+        )
+
+        if path in scanner_exact:
+            return True
+
+        return any(path.startswith(prefix) for prefix in scanner_prefixes)
+
 
     def track_visit(self, request, response):
         path = request.path or ""
 
-        # Počítat jen reálné načtení HTML stránky.
-        # Tím vypadnou redirecty 301/302, 404, 403 atd.
-        if response.status_code != 200:
+        if request.method not in ("GET", "POST", "HEAD"):
             return
 
-        if request.method not in ("GET", "POST"):
+        if self.is_hard_ignored_path(path):
             return
 
-
-        if self.is_ignored_path(path):
-            return
-
-        # Pokud je uživatel přihlášený staff, nechci ho ve veřejné návštěvnosti.
         user = getattr(request, "user", None)
+
+        # Staff nechci ani v technické zátěži veřejného webu.
+        # Staff audit řešíme zvlášť.
         if user and user.is_authenticated and user.is_staff:
             return
 
-        content_type = response.headers.get("Content-Type", "")
-        if content_type and "text/html" not in content_type:
-            return
-
-        # Browser prefetch/prerender nechceme počítat jako reálnou návštěvu.
-        purpose = (
-            request.headers.get("Purpose", "")
-            or request.headers.get("Sec-Purpose", "")
-        ).lower()
-        if "prefetch" in purpose or "prerender" in purpose:
-            return
-
-        # Pokud browser posílá Sec-Fetch-Dest, počítat jen dokumenty.
-        fetch_dest = request.headers.get("Sec-Fetch-Dest", "").lower()
-        if fetch_dest and fetch_dest not in ("document", "iframe", "nested-document"):
-            return
-
         user_agent = request.META.get("HTTP_USER_AGENT", "")[:500]
-        if not user_agent.strip():
-            return
-        if self.is_probably_bot(user_agent):
-            return
-
+        has_user_agent = bool(user_agent.strip())
 
         ip = self.get_client_ip(request)
         if not ip:
             return
 
+        referer = self.clean_referer(request.META.get("HTTP_REFERER", ""))[:300]
         today = timezone.localdate()
+        status_code = response.status_code
+
+        is_known_bot = (
+            self.is_scanner_path(path)
+            or request.method == "HEAD"
+            or not has_user_agent
+            or self.is_probably_bot(user_agent)
+            or self.is_probably_bot_referer(referer)
+        )
 
         raw_client_id = f"{today}|{ip}|{settings.SECRET_KEY}"
         client_hash = hashlib.sha256(raw_client_id.encode("utf-8")).hexdigest()
@@ -232,20 +246,61 @@ class SiteVisitStatsMiddleware:
         visitor_hash = hashlib.sha256(raw_visitor_id.encode("utf-8")).hexdigest()
         visitor_label = visitor_hash[:8]
 
-        if self.is_suspicious_rapid_visitor(client_label, path):
+        is_bot_like = False
+
+        if not is_known_bot:
+            is_bot_like = self.is_suspicious_rapid_visitor(client_label, path)
+
+        is_bot_for_traffic = is_known_bot or is_bot_like
+
+        # Technická zátěž:
+        # počítáme i 404/403/500, protože to je reálná práce serveru.
+        self.record_page_traffic(
+            today,
+            path,
+            status_code=status_code,
+            is_bot=is_bot_for_traffic,
+        )
+
+        if is_bot_like:
             logger.info(
-                "SKIP_BOT_LIKE ip=%s client=%s visitor=%s method=%s status=%s path=%s ua=%s",
+                "SKIP_BOT_LIKE ip=%s client=%s visitor=%s method=%s status=%s path=%s referer=%s ua=%s",
                 ip,
                 client_label,
                 visitor_label,
                 request.method,
-                response.status_code,
+                status_code,
                 path[:300],
+                referer,
                 user_agent[:300],
             )
             return
 
-        referer = self.clean_referer(request.META.get("HTTP_REFERER", ""))[:300]
+        if is_known_bot:
+            return
+
+        # Odteď dál řešíme už jen úspěšnou lidskou návštěvnost existujících HTML stránek.
+        # 404/403/500 už byly započítány výše do DailyPageTraffic jako technická zátěž.
+        if status_code != 200:
+            return
+        # Skenovací/admin/static/media cesty nechceme počítat jako lidské pageviews.
+        if self.is_ignored_path(path):
+            return
+
+        content_type = response.headers.get("Content-Type", "")
+        if content_type and "text/html" not in content_type:
+            return
+
+        purpose = (
+            request.headers.get("Purpose", "")
+            or request.headers.get("Sec-Purpose", "")
+        ).lower()
+        if "prefetch" in purpose or "prerender" in purpose:
+            return
+
+        fetch_dest = request.headers.get("Sec-Fetch-Dest", "").lower()
+        if fetch_dest and fetch_dest not in ("document", "iframe", "nested-document"):
+            return
 
         logger.info(
             "VISIT ip=%s client=%s visitor=%s method=%s status=%s path=%s referer=%s ua=%s",
@@ -253,12 +308,13 @@ class SiteVisitStatsMiddleware:
             client_label,
             visitor_label,
             request.method,
-            response.status_code,
+            status_code,
             path[:300],
             referer,
             user_agent[:300],
         )
 
+        # Detailní návštěvnost lidí počítáme jen pro GET.
         if request.method != "GET":
             return
 
@@ -285,7 +341,6 @@ class SiteVisitStatsMiddleware:
             last_seen_at=timezone.now(),
             last_path=path[:500],
         )
-
 
         page_path = path[:500]
 
@@ -317,6 +372,27 @@ class SiteVisitStatsMiddleware:
             return True
 
         return any(path.startswith(prefix) for prefix in IGNORED_PATH_PREFIXES)
+    
+    def is_hard_ignored_path(self, path):
+        """
+        Tohle ignorujeme úplně i pro technickou zátěž.
+        Static/media/favicon by zbytečně nafukovaly statistiku.
+        """
+        if path in (
+            "/favicon.ico",
+            "/favicon.png",
+            "/apple-touch-icon.png",
+            "/apple-touch-icon-precomposed.png",
+        ):
+            return True
+
+        return any(
+            path.startswith(prefix)
+            for prefix in (
+                "/static/",
+                "/media/",
+            )
+        )
 
     def is_probably_bot(self, user_agent):
         user_agent_lower = (user_agent or "").lower()
@@ -333,7 +409,125 @@ class SiteVisitStatsMiddleware:
 
         return request.META.get("REMOTE_ADDR")
     
+    def is_probably_bot_referer(self, referer):
+        referer_lower = (referer or "").lower()
+        return any(part in referer_lower for part in BOT_REFERER_PARTS)
+    
+    def normalize_traffic_path(self, path, status_code):
+        """
+        Pro existující stránky necháme reálnou URL.
+        Pro známý skenovací bordel seskupíme cesty, aby DB nebobtnala.
+        """
+        path = path or ""
 
+        scanner_prefixes = (
+            "/wp-admin/",
+            "/wp-content/",
+            "/wp-includes/",
+            "/wordpress/",
+            "/.git/",
+            "/.env",
+            "/vendor/",
+            "/cgi-bin/",
+        )
+
+        scanner_exact = (
+            "/xmlrpc.php",
+            "/wp-login.php",
+        )
+
+        if path in scanner_exact:
+            return f"/__scan__{path}"
+
+        for prefix in scanner_prefixes:
+            if path.startswith(prefix):
+                return f"/__scan__{prefix}"
+
+        # U běžných 404 chceme vidět konkrétní cestu.
+        # To pomůže odhalit rozbité odkazy.
+        return path[:500]
+    
+    def get_status_bucket(self, status_code):
+        if 200 <= status_code < 300:
+            return "ok"
+
+        if 300 <= status_code < 400:
+            return "redirect"
+
+        if status_code == 404:
+            return "not_found"
+
+        if 500 <= status_code < 600:
+            return "error"
+
+        return "other"
+    
+    def record_page_traffic(self, day, path, status_code, is_bot):
+        page_path = self.normalize_traffic_path(path, status_code)
+        now = timezone.now()
+        status_bucket = self.get_status_bucket(status_code)
+
+        try:
+            site_traffic, _created = DailySiteTraffic.objects.get_or_create(
+                day=day,
+                defaults={
+                    "total_hits": 0,
+                    "human_hits": 0,
+                    "bot_hits": 0,
+                },
+            )
+        except IntegrityError:
+            site_traffic = DailySiteTraffic.objects.get(day=day)
+
+        site_update = {
+            "total_hits": F("total_hits") + 1,
+            "last_seen_at": now,
+        }
+
+        if is_bot:
+            site_update["bot_hits"] = F("bot_hits") + 1
+        else:
+            site_update["human_hits"] = F("human_hits") + 1
+
+        DailySiteTraffic.objects.filter(pk=site_traffic.pk).update(**site_update)
+
+        try:
+            page_traffic, _created = DailyPageTraffic.objects.get_or_create(
+                day=day,
+                path=page_path,
+                defaults={
+                    "total_hits": 0,
+                    "human_hits": 0,
+                    "bot_hits": 0,
+                },
+            )
+        except IntegrityError:
+            page_traffic = DailyPageTraffic.objects.get(
+                day=day,
+                path=page_path,
+            )
+
+        page_update = {
+            "total_hits": F("total_hits") + 1,
+            "last_seen_at": now,
+        }
+
+        if is_bot:
+            page_update["bot_hits"] = F("bot_hits") + 1
+        else:
+            page_update["human_hits"] = F("human_hits") + 1
+
+        # Pokud tyhle sloupce v modelu máš:
+        if status_bucket == "ok":
+            page_update["ok_hits"] = F("ok_hits") + 1
+        elif status_bucket == "redirect":
+            page_update["redirect_hits"] = F("redirect_hits") + 1
+        elif status_bucket == "not_found":
+            page_update["not_found_hits"] = F("not_found_hits") + 1
+        elif status_bucket == "error":
+            page_update["error_hits"] = F("error_hits") + 1
+
+        DailyPageTraffic.objects.filter(pk=page_traffic.pk).update(**page_update)
 
 
 ### logování staff akcí ###

@@ -124,7 +124,7 @@
 
     .visitor-badge {
         display: inline-block;
-        min-width: 155px;
+        min-width: 220px;
         margin-right: 8px;
         padding: 1px 6px;
         border-radius: 999px;
@@ -133,6 +133,30 @@
         font-size: 12px;
         font-weight: 700;
     }
+
+    .stats-table-scroll {
+    max-height: 520px;
+    overflow: auto;
+    border: 1px solid var(--hairline-color, #ddd);
+    border-radius: 6px;
+    margin-bottom: 24px;
+    }
+
+    .stats-table-scroll table {
+        margin: 0;
+        width: 100%;
+    }
+
+    .stats-table-scroll thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--body-bg, #fff);
+    }
+
+    .stats-table-scroll td code {
+        white-space: nowrap;
+    }
 </style>
 
 <pre class="system-log-output">{% for line in colored_log_lines %}<span class="system-log-line{% if line.ip or line.client or line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.ip %}<span class="visitor-badge">{{ line.ip }}</span>{% elif line.client %}<span class="visitor-badge">{{ line.client }} / {{ line.visitor }}</span>{% elif line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>{% empty %}{{ log_text }}{% endfor %}</pre>
@@ -140,8 +164,9 @@
 <h2>Návštěvnost webu</h2>
 
 <p class="help">
-    Orientační denní statistika. Počítá unikátní kombinace IP adresy a prohlížeče,
-    uložené pouze jako hash. Nezahrnuje admin, static/media soubory a část botů.
+    Orientační denní statistika. Unikátní návštěvníci a lidská zobrazení jsou počítané
+    podle hashované kombinace IP adresy a prohlížeče. Sloupce Boti a Celkem ukazují
+    technickou zátěž webu včetně známých botů a skenů.
 </p>
 
 <table>
@@ -149,7 +174,9 @@
         <tr>
             <th>Den</th>
             <th>Unikátní návštěvníci</th>
-            <th>Zobrazení stránek</th>
+            <th>Lidská zobrazení</th>
+            <th>Boti</th>
+            <th>Celkem</th>
         </tr>
     </thead>
     <tbody>
@@ -158,10 +185,12 @@
                 <td>{{ row.day }}</td>
                 <td>{{ row.unique_visitors }}</td>
                 <td>{{ row.pageviews|default:0 }}</td>
+                <td>{{ row.bot_hits|default:0 }}</td>
+                <td>{{ row.total_hits|default:0 }}</td>
             </tr>
         {% empty %}
             <tr>
-                <td colspan="3">Zatím nejsou žádná data.</td>
+                <td colspan="5">Zatím nejsou žádná data.</td>
             </tr>
         {% endfor %}
     </tbody>
@@ -194,28 +223,47 @@
 
 <h2>Nejnavštěvovanější stránky</h2>
 
-<table>
-    <thead>
-        <tr>
-            <th>Den</th>
-            <th>Stránka</th>
-            <th>Unikátní návštěvníci</th>
-            <th>Zobrazení stránky</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for row in page_stats %}
+<p class="help">
+    Řazeno podle celkové technické zátěže. Skenovací bordel typu WordPress URL
+    se může zobrazovat seskupeně jako <code>/__scan__...</code>.
+</p>
+
+<div class="stats-table-scroll">
+    <table>
+        <thead>
             <tr>
-                <td>{{ row.day }}</td>
-                <td>{{ row.path }}</td>
-                <td>{{ row.unique_visitors }}</td>
-                <td>{{ row.pageviews }}</td>
+                <th>Den</th>
+                <th>Stránka</th>
+                <th>Unikátní návštěvníci</th>
+                <th>Lidská zobrazení</th>
+                <th>Boti</th>
+                <th>OK</th>
+                <th>Redirecty</th>
+                <th>404</th>
+                <th>Chyby</th>
+                <th>Celkem</th>
             </tr>
-        {% empty %}
-            <tr>
-                <td colspan="4">Zatím žádná data podle stránek.</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            {% for row in page_stats %}
+                <tr>
+                    <td>{{ row.day }}</td>
+                    <td><code>{{ row.path }}</code></td>
+                    <td>{{ row.unique_visitors }}</td>
+                    <td>{{ row.human_pageviews }}</td>
+                    <td>{{ row.bot_hits }}</td>
+                    <td>{{ row.ok_hits }}</td>
+                    <td>{{ row.redirect_hits }}</td>
+                    <td>{{ row.not_found_hits }}</td>
+                    <td>{{ row.error_hits }}</td>
+                    <td><strong>{{ row.total_hits }}</strong></td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="10">Zatím žádná data podle stránek.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

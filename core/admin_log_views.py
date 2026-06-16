@@ -7,7 +7,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import render
 from django.db.models import Count, Sum
 
-from core.models import DailySiteVisitor, DailyPageVisitor
+from core.models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic
 
 
 LOG_FILES = {
@@ -25,9 +25,9 @@ DEFAULT_LINES = 100
 MAX_LINES = 1000
 
 # Pro barevné rozlišení traffic logu.
-CLIENT_RE = re.compile(r"VISIT client=([a-f0-9]{8})")
-VISITOR_RE = re.compile(r"visitor=([a-f0-9]{8})")
 IP_RE = re.compile(r"\bip=([0-9a-fA-F:.]+)")
+CLIENT_RE = re.compile(r"\bclient=([a-f0-9]{8})")
+VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
 
 # Pravidelný healthcheck / monitoring přes python-requests.
 HEALTHCHECK_RE = re.compile(
@@ -179,25 +179,66 @@ def system_logs_view(request):
 
     colored_log_lines = build_colored_log_lines(log_text)
 
+    human_daily_stats = {
+        row["day"]: row
+        for row in (
+            DailySiteVisitor.objects
+            .values("day")
+            .annotate(
+                unique_visitors=Count("id"),
+                pageviews=Sum("pageviews"),
+            )
+        )
+    }
+
     daily_stats = list(
-        DailySiteVisitor.objects
-        .values("day")
-        .annotate(
-            unique_visitors=Count("id"),
-            pageviews=Sum("pageviews"),
+        DailySiteTraffic.objects
+        .values(
+            "day",
+            "total_hits",
+            "human_hits",
+            "bot_hits",
         )
         .order_by("-day")[:30]
     )
 
-    page_stats = list(
-        DailyPageVisitor.objects
-        .values("day", "path")
-        .annotate(
-            unique_visitors=Count("id"),
-            pageviews=Sum("pageviews"),
+    for row in daily_stats:
+        human_row = human_daily_stats.get(row["day"], {})
+        row["unique_visitors"] = human_row.get("unique_visitors", 0)
+        row["pageviews"] = human_row.get("pageviews", row["human_hits"])
+
+    human_page_stats = {
+        (row["day"], row["path"]): row
+        for row in (
+            DailyPageVisitor.objects
+            .values("day", "path")
+            .annotate(
+                unique_visitors=Count("id"),
+                human_pageviews=Sum("pageviews"),
+            )
         )
-        .order_by("-day", "-pageviews")[:100]
+    }
+
+    page_stats = list(
+        DailyPageTraffic.objects
+        .values(
+            "day",
+            "path",
+            "total_hits",
+            "human_hits",
+            "bot_hits",
+            "ok_hits",
+            "redirect_hits",
+            "not_found_hits",
+            "error_hits",
+        )
+        .order_by("-day", "-total_hits")[:100]
     )
+
+    for row in page_stats:
+        human_row = human_page_stats.get((row["day"], row["path"]), {})
+        row["unique_visitors"] = human_row.get("unique_visitors", 0)
+        row["human_pageviews"] = human_row.get("human_pageviews", row["human_hits"])
 
     agnes_stats = list(
         DailyPageVisitor.objects

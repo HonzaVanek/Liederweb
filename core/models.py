@@ -222,9 +222,6 @@ class DailyPageVisitor(models.Model):
         return f"{self.day} | {self.path} | {self.pageviews}"
     
 
-
-#### KONEC STATISTIK NÁVŠTĚVNOSTI WEBU
-
 class DailySiteTraffic(models.Model):
     day = models.DateField(unique=True, db_index=True)
     total_hits = models.PositiveIntegerField(default=0)
@@ -246,6 +243,10 @@ class DailyPageTraffic(models.Model):
     human_hits = models.PositiveIntegerField(default=0)
     bot_hits = models.PositiveIntegerField(default=0)
     last_seen_at = models.DateTimeField(auto_now=True)
+    ok_hits = models.PositiveIntegerField(default=0)
+    not_found_hits = models.PositiveIntegerField(default=0)
+    error_hits = models.PositiveIntegerField(default=0)
+    redirect_hits = models.PositiveIntegerField(default=0)
 
     class Meta:
         unique_together = ("day", "path")
@@ -258,10 +259,10 @@ class DailyPageTraffic(models.Model):
     def __str__(self):
         return f"{self.day} | {self.path} | total={self.total_hits} human={self.human_hits} bot={self.bot_hits}"
 
+#### KONEC STATISTIK NÁVŠTĚVNOSTI WEBU
 
 
-
-# custom image v carouselu:
+#### custom image v carouselu:
      
 class HomeCarouselManualSlide(models.Model):
     class Layout(models.TextChoices):
@@ -406,7 +407,7 @@ class AgnesSupportIntent(models.Model):
 
 
 
-#### na home dole před partnery ale pod carouselem ####
+#### na home dole před partnery ale pod carouselem, taková ta podpora ####
 
 class HomeSupportPromo(models.Model):
 
