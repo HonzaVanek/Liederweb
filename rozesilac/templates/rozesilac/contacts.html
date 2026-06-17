@@ -142,12 +142,34 @@
 <form method="get" action="{% url 'rozesilac:contacts' %}#contacts-list" class="contacts-filter-form">
   <div class="contacts-filter-grid">
     <div>
+      <label for="contact-search-filter">Hledat kontakt</label>
+      <input
+        id="contact-search-filter"
+        type="search"
+        name="q"
+        value="{{ search_query }}"
+        placeholder="Jméno nebo email"
+      >
+    </div>
+
+    <div>
       <label for="contact-group-filter">Zobrazit skupinu</label>
       <select id="contact-group-filter" name="group">
         <option value="">Všechny skupiny</option>
         {% for g in groups %}
           <option value="{{ g.id }}" {% if selected_group_id == g.id|stringformat:"s" %}selected{% endif %}>
             {{ g.name }} ({{ g.contact_count }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label for="sort-filter">Řadit podle</label>
+      <select id="sort-filter" name="sort">
+        {% for value, label in sort_options %}
+          <option value="{{ value }}" {% if sort == value %}selected{% endif %}>
+            {{ label }}
           </option>
         {% endfor %}
       </select>
@@ -170,13 +192,24 @@
     </div>
   </div>
 
-  {% if selected_group %}
+  {% if selected_group or search_query %}
     <p class="muted contacts-filter-note">
-      Zobrazuje se skupina: <strong>{{ selected_group.name }}</strong>.
+      {% if selected_group %}
+        Skupina: <strong>{{ selected_group.name }}</strong>.
+      {% endif %}
+
+      {% if search_query %}
+        Hledání: <strong>{{ search_query }}</strong>.
+      {% endif %}
+
       <a href="{% url 'rozesilac:contacts' %}#contacts-list">Zrušit filtr</a>
     </p>
   {% endif %}
 </form>
+
+<p class="muted contacts-filter-note">
+  Nalezeno kontaktů: <strong>{{ paginator.count }}</strong>
+</p>
 
 
 
@@ -230,28 +263,46 @@
 </div>
 {% if page_obj.has_other_pages %}
   <nav class="contacts-pagination" aria-label="Stránkování kontaktů">
-    <div class="contacts-pagination__links">
+    <div class="contacts-pagination__side">
       {% if page_obj.has_previous %}
         <a href="{{ pagination_base_url }}page=1#contacts-list">« První</a>
         <a href="{{ pagination_base_url }}page={{ page_obj.previous_page_number }}#contacts-list">‹ Předchozí</a>
       {% endif %}
     </div>
 
-    <div class="contacts-pagination__status">
-      Stránka {{ page_obj.number }} z {{ paginator.num_pages }}
+    <div class="contacts-pagination__numbers">
+      {% for item in pagination_items %}
+        {% if item == "ellipsis" %}
+          <span class="contacts-pagination__ellipsis">…</span>
+        {% elif item == page_obj.number %}
+          <span class="contacts-pagination__current" aria-current="page">{{ item }}</span>
+        {% else %}
+          <a href="{{ pagination_base_url }}page={{ item }}#contacts-list">{{ item }}</a>
+        {% endif %}
+      {% endfor %}
     </div>
 
-    <div class="contacts-pagination__links">
+    <div class="contacts-pagination__side contacts-pagination__side--right">
       {% if page_obj.has_next %}
         <a href="{{ pagination_base_url }}page={{ page_obj.next_page_number }}#contacts-list">Další ›</a>
         <a href="{{ pagination_base_url }}page={{ paginator.num_pages }}#contacts-list">Poslední »</a>
       {% endif %}
     </div>
   </nav>
+
+  <div class="contacts-pagination__status">
+    Stránka {{ page_obj.number }} z {{ paginator.num_pages }}
+  </div>
 {% endif %}
 
-</section>
 {% else %}
-<p class="muted">Zatím žádné kontakty.</p>
+  <p class="muted">
+    {% if selected_group or search_query %}
+      Pro zadaný filtr nebyly nalezeny žádné kontakty.
+    {% else %}
+      Zatím žádné kontakty.
+    {% endif %}
+  </p>
 {% endif %}
+</section>
 {% endblock rozesilac_content %}

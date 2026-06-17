@@ -7,7 +7,8 @@ from django.urls import reverse
 from django.shortcuts import get_object_or_404, render
 from core.decorators import staff_required
 from .models import Contact, EmailCampaign, EmailDelivery, EmailClickEvent, EmailTemplate, EmailImage, ContactGroup, EmailCampaignTrackedLink, DEFAULT_FALLBACK_SALUTATION
-from django.db.models import OuterRef, Sum, Exists, Prefetch
+from django.db.models import OuterRef, Sum, Exists, Prefetch, Count, Q, Case, When, IntegerField, Value
+from django.db.models.functions import Lower
 from django.db.models.deletion import ProtectedError
 from media_assets.models import MediaAsset
 from .forms import EmailTemplateForm, EmailImageUploadForm, ContactForm, ContactImportForm, ContactGroupForm, SendCampaignForm, NewsletterImageUploadForm
@@ -27,7 +28,6 @@ import re
 from urllib.parse import quote, unquote, urlparse
 from django.db import transaction
 from django.core.paginator import Paginator
-from django.db.models import Count
 
 # Create your views here.
 
@@ -405,7 +405,7 @@ def contacts(request):
             return redirect("rozesilac:contacts")
 
     # --------------------------------------------------
-    # Filtrování a stránkování kontaktů
+    # Filtrování, hledání, řazení a stránkování kontaktů
     # --------------------------------------------------
 
     per_page_options = [20, 50, 100]
@@ -419,6 +419,20 @@ def contacts(request):
         per_page = 20
 
     selected_group_id = request.GET.get("group") or ""
+    search_query = (request.GET.get("q") or "").strip()
+
+    sort_options = [
+        ("name", "Jméno A–Z"),
+        ("-name", "Jméno Z–A"),
+        ("email", "Email A–Z"),
+        ("-email", "Email Z–A"),
+    ]
+
+    sort = request.GET.get("sort") or "name"
+    allowed_sorts = {value for value, label in sort_options}
+
+    if sort not in allowed_sorts:
+        sort = "name"
 
     groups = (
         ContactGroup.objects
@@ -429,7 +443,16 @@ def contacts(request):
     contacts_qs = (
         Contact.objects
         .prefetch_related("groups")
-        .order_by("email")
+        .annotate(
+            name_is_empty=Case(
+                When(name__isnull=True, then=Value(1)),
+                When(name="", then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            ),
+            name_lower=Lower("name"),
+            email_lower=Lower("email"),
+        )
     )
 
     selected_group = None
@@ -441,8 +464,57 @@ def contacts(request):
         else:
             selected_group_id = ""
 
+    if search_query:
+        contacts_qs = contacts_qs.filter(
+            Q(name__icontains=search_query) |
+            Q(email__icontains=search_query)
+        )
+
+    if sort == "name":
+        contacts_qs = contacts_qs.order_by("name_is_empty", "name_lower", "email_lower")
+    elif sort == "-name":
+        contacts_qs = contacts_qs.order_by("name_is_empty", "-name_lower", "email_lower")
+    elif sort == "email":
+        contacts_qs = contacts_qs.order_by("email_lower")
+    elif sort == "-email":
+        contacts_qs = contacts_qs.order_by("-email_lower")
+
     paginator = Paginator(contacts_qs, per_page)
     page_obj = paginator.get_page(request.GET.get("page"))
+
+    def build_pagination_items(current_page, total_pages, side_pages=2):
+        """
+        Vrátí seznam stránek pro paginator.
+        Např.: [1, "ellipsis", 8, 9, 10, 11, 12, "ellipsis", 50]
+        """
+        if total_pages <= 9:
+            return list(range(1, total_pages + 1))
+
+        pages = {1, total_pages}
+
+        for page_number in range(current_page - side_pages, current_page + side_pages + 1):
+            if 1 <= page_number <= total_pages:
+                pages.add(page_number)
+
+        sorted_pages = sorted(pages)
+
+        items = []
+        previous_page = None
+
+        for page_number in sorted_pages:
+            if previous_page is not None and page_number - previous_page > 1:
+                items.append("ellipsis")
+
+            items.append(page_number)
+            previous_page = page_number
+
+        return items
+
+
+    pagination_items = build_pagination_items(
+        current_page=page_obj.number,
+        total_pages=paginator.num_pages,
+    )
 
     contacts = list(page_obj.object_list)
 
@@ -506,10 +578,14 @@ def contacts(request):
 
             "selected_group_id": str(selected_group_id),
             "selected_group": selected_group,
+            "search_query": search_query,
+            "sort": sort,
+            "sort_options": sort_options,
             "per_page": per_page,
             "per_page_options": per_page_options,
             "page_obj": page_obj,
             "paginator": paginator,
+            "pagination_items": pagination_items,
             "pagination_base_url": pagination_base_url,
         },
     )
