@@ -181,6 +181,28 @@ class SiteVisitStatsMiddleware:
     def is_scanner_path(self, path):
         path = path or ""
 
+        path_lower = path.lower()
+
+        if (
+            path_lower == "/.env"
+            or path_lower.endswith("/.env")
+            or "phpinfo" in path_lower
+            or path_lower in (
+                "/info.php",
+                "/php.php",
+                "/i.php",
+                "/pi.php",
+                "/pinfo.php",
+                "/test.php",
+                "/debug.php",
+                "/p.php",
+            )
+            or path_lower.startswith("/_profiler")
+            or path_lower == "/_environment"
+            or path_lower == "/.well-known/ucp"
+        ):
+            return True
+
         scanner_prefixes = (
             "/wp-admin/",
             "/wp-content/",
@@ -408,6 +430,32 @@ class SiteVisitStatsMiddleware:
         Pro známý skenovací bordel seskupíme cesty, aby DB nebobtnala.
         """
         path = path or ""
+
+        path_lower = path.lower()
+
+        if path_lower == "/.env" or path_lower.endswith("/.env"):
+            return "/__scan__/.env"
+
+        if (
+            "phpinfo" in path_lower
+            or path_lower in (
+                "/info.php",
+                "/php.php",
+                "/i.php",
+                "/pi.php",
+                "/pinfo.php",
+                "/test.php",
+                "/debug.php",
+                "/p.php",
+            )
+        ):
+            return "/__scan__/phpinfo"
+
+        if path_lower.startswith("/_profiler") or path_lower == "/_environment":
+            return "/__scan__/debug-env"
+
+        if path_lower == "/.well-known/ucp":
+            return "/__scan__/.well-known"
 
         scanner_prefixes = (
             "/wp-admin/",

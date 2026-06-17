@@ -174,7 +174,9 @@
         <tr>
             <th>Den</th>
             <th>Unikátní návštěvníci</th>
-            <th>Lidská zobrazení</th>
+            <th>Lidská pageviews</th>
+            <th>Jiné lidské requesty</th>
+            <th>Lidské requesty celkem</th>
             <th>Boti</th>
             <th>Celkem</th>
         </tr>
@@ -182,15 +184,17 @@
     <tbody>
         {% for row in daily_stats %}
             <tr>
-                <td>{{ row.day }}</td>
+                <td>{{ row.day|date:"j. F Y" }}</td>
                 <td>{{ row.unique_visitors }}</td>
-                <td>{{ row.pageviews|default:0 }}</td>
-                <td>{{ row.bot_hits|default:0 }}</td>
-                <td>{{ row.total_hits|default:0 }}</td>
+                <td>{{ row.pageviews }}</td>
+                <td>{{ row.human_non_pageview_hits }}</td>
+                <td>{{ row.human_requests }}</td>
+                <td>{{ row.bot_hits }}</td>
+                <td>{{ row.total_hits }}</td>
             </tr>
         {% empty %}
             <tr>
-                <td colspan="5">Zatím nejsou žádná data.</td>
+                <td colspan="7">Zatím nejsou žádná data.</td>
             </tr>
         {% endfor %}
     </tbody>
@@ -241,6 +245,7 @@
                 <th>Redirecty</th>
                 <th>404</th>
                 <th>Chyby</th>
+                <th>Ostatní</th>
                 <th>Celkem</th>
             </tr>
         </thead>
@@ -256,6 +261,7 @@
                     <td>{{ row.redirect_hits }}</td>
                     <td>{{ row.not_found_hits }}</td>
                     <td>{{ row.error_hits }}</td>
+                    <td>{{ row.other_hits }}</td>
                     <td><strong>{{ row.total_hits }}</strong></td>
                 </tr>
             {% empty %}

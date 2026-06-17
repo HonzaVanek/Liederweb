@@ -229,8 +229,14 @@ def system_logs_view(request):
 
     for row in daily_stats:
         human_row = human_daily_stats.get(row["day"], {})
+
+        pageviews = human_row.get("pageviews", 0) or 0
+        human_requests = row.get("human_hits", 0) or 0
+
         row["unique_visitors"] = human_row.get("unique_visitors", 0)
-        row["pageviews"] = human_row.get("pageviews", row["human_hits"])
+        row["pageviews"] = pageviews
+        row["human_requests"] = human_requests
+        row["human_non_pageview_hits"] = max(0, human_requests - pageviews)
 
     human_page_stats = {
         (row["day"], row["path"]): row
@@ -264,6 +270,14 @@ def system_logs_view(request):
         human_row = human_page_stats.get((row["day"], row["path"]), {})
         row["unique_visitors"] = human_row.get("unique_visitors", 0)
         row["human_pageviews"] = human_row.get("human_pageviews", row["human_hits"])
+
+        row["other_hits"] = (
+            row["total_hits"]
+            - row["ok_hits"]
+            - row["redirect_hits"]
+            - row["not_found_hits"]
+            - row["error_hits"]
+        )
 
     agnes_stats = list(
         DailyPageVisitor.objects
