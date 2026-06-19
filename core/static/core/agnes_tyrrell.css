@@ -709,6 +709,86 @@ body {
     background: rgba(255, 140, 140, 0.12);
 }
 
+.agnes-support-card--custom {
+    display: block;
+    transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.agnes-support-card--custom:hover,
+.agnes-support-card--custom:focus-within {
+    transform: translateY(-3px);
+    border-color: rgba(232, 207, 155, 0.55);
+    background: rgba(255, 255, 255, 0.11);
+}
+
+.agnes-custom-amount-field {
+    display: grid;
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.agnes-custom-amount-field label {
+    color: var(--agnes-text);
+    font-size: 0.86rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.agnes-custom-amount-input-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-height: 52px;
+    padding: 0 14px;
+    border: 1px solid rgba(255, 248, 243, 0.22);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.agnes-custom-amount-input-wrap input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--agnes-text);
+    font: inherit;
+    font-weight: 800;
+    outline: none;
+}
+
+.agnes-custom-amount-input-wrap input::placeholder {
+    color: rgba(255, 248, 243, 0.45);
+}
+
+.agnes-custom-amount-input-wrap span {
+    color: var(--agnes-gold);
+    font-weight: 800;
+}
+
+.agnes-support-card-button {
+    width: 100%;
+    min-height: 50px;
+    margin-top: 18px;
+    border: 1px solid rgba(255, 248, 243, 0.34);
+    border-radius: 999px;
+    background: rgba(255, 248, 243, 0.96);
+    color: #1b1023;
+    font: inherit;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.20);
+    transition: transform 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.agnes-support-card-button:hover,
+.agnes-support-card-button:focus-visible {
+    transform: translateY(-2px);
+    background: #fff;
+    border-color: #fff;
+}
+
 /* TABLET */
 
 @media (min-width: 640px) {
@@ -745,6 +825,10 @@ body {
 
     .agnes-newsletter-form {
         padding: 28px;
+    }
+
+    .agnes-support-card--custom {
+        grid-column: 1 / -1;
     }
 }
 

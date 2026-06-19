@@ -5,7 +5,7 @@
 
 {% block extra_css %}
     {{ block.super }}
-    <link rel="stylesheet" href="{% static 'core/agnes_tyrrell.css' %}?v=7">
+    <link rel="stylesheet" href="{% static 'core/agnes_tyrrell.css' %}?v=8">
 {% endblock extra_css %}
 
 {% block content %}
@@ -123,25 +123,64 @@
 
             <p class="agnes-support-intro">
                 
-                Vyberte si jednu z možností podpory. Po kliknutí budete přesměrováni
-                na zabezpečený darovací formulář Darujme.cz s předvyplněnou částkou. <br>
+                Vyberte si jednu z možností podpory, nebo zadejte vlastní částku. Po kliknutí budete přesměrováni
+                na zabezpečený darovací formulář Darujme.cz s&nbsp;předvyplněnou částkou. <br>
                 Díky vaší podpoře může hudba Agnes Tyrrell znovu zaznít. Děkujeme!
             </p>
 
-            <div class="agnes-support-grid">
-                {% for level in support_levels %}
-                    <a
-                        class="agnes-support-card agnes-support-card--link"
-                        href="https://www.darujme.cz/darovat/1213196?portalWidget=1&frequency=once&amount={{ level.darujme_amount }}"
-                        aria-label="{{ level.title }} – {{ level.amount }}. Pokračovat na Darujme.cz."
+                <div class="agnes-support-grid">
+                    {% for level in support_levels %}
+                        <a
+                            class="agnes-support-card agnes-support-card--link"
+                            href="https://www.darujme.cz/darovat/1213196?portalWidget=1&frequency=once&amount={{ level.darujme_amount }}"
+                            aria-label="{{ level.title }} – {{ level.amount }}. Pokračovat na Darujme.cz."
+                        >
+                            <p class="agnes-support-amount">{{ level.amount }}</p>
+                            <h3>{{ level.title }}</h3>
+                            <p>{{ level.description }}</p>
+                            <span class="agnes-support-card-hint">Darovat tuto částku</span>
+                        </a>
+                    {% endfor %}
+
+                    <form
+                        class="agnes-support-card agnes-support-card--custom"
+                        method="get"
+                        action="https://www.darujme.cz/darovat/1213196"
+                        aria-label="Vlastní částka. Pokračovat na Darujme.cz."
                     >
-                        <p class="agnes-support-amount">{{ level.amount }}</p>
-                        <h3>{{ level.title }}</h3>
-                        <p>{{ level.description }}</p>
-                        <span class="agnes-support-card-hint">Darovat tuto částku</span>
-                    </a>
-                {% endfor %}
-            </div>
+                        <input type="hidden" name="portalWidget" value="1">
+                        <input type="hidden" name="frequency" value="once">
+
+                        <p class="agnes-support-amount">Vlastní částka</p>
+                        <h3>Dar podle vašich možností</h3>
+                        <p>
+                            Zadejte částku, kterou chcete vznik alba podpořit. Pokračovat budete
+                            na zabezpečený formulář Darujme.cz.
+                        </p>
+
+                        <div class="agnes-custom-amount-field">
+                            <label for="agnes-custom-darujme-amount">Částka v Kč</label>
+
+                            <div class="agnes-custom-amount-input-wrap">
+                                <input
+                                    id="agnes-custom-darujme-amount"
+                                    type="number"
+                                    name="amount"
+                                    min="100"
+                                    step="1"
+                                    inputmode="numeric"
+                                    placeholder="Např. 250"
+                                    required
+                                >
+                                <span>Kč</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="agnes-support-card-button">
+                            Darovat vlastní částku
+                        </button>
+                    </form>
+                </div>
 
             <div class="agnes-donation-options">
 
