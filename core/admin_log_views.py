@@ -35,6 +35,11 @@ HEALTHCHECK_RE = re.compile(
 )
 
 
+IP_LABELS = {
+    "185.68.212.2": "ČTÚ",
+    "212.20.115.101": "Trachta",
+}
+
 def filter_noise_log_lines(log_text, max_lines):
     hidden_count = 0
     kept_lines = []
@@ -66,12 +71,16 @@ def build_colored_log_lines(log_text):
         visitor_match = VISITOR_RE.search(line)
 
         ip = None
+        ip_label = None
         client = None
         visitor = None
         color_index = None
 
         if ip_match:
             ip = ip_match.group(1)
+        
+        if ip:
+            ip_label = IP_LABELS.get(ip)
 
         if client_match:
             client = client_match.group(1)
@@ -112,6 +121,7 @@ def build_colored_log_lines(log_text):
             "client": client,
             "visitor": visitor,
             "color_index": color_index,
+            "ip_label": ip_label,
         })
 
         if color_key:
