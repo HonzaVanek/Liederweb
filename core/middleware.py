@@ -84,6 +84,8 @@ BOT_USER_AGENT_PARTS = (
     "xai-searchbot",
     "claudebot",
     "ccbot",
+    "internetmeasurement",
+    "internet-measurement",
 
     # social previeweři
     "facebookexternalhit",
@@ -123,6 +125,12 @@ BOT_USER_AGENT_PARTS = (
 
 BOT_REFERER_PARTS = (
     "aisearchindex.space",
+)
+
+BOT_EXACT_PATHS = (
+    "/robots.txt",
+    "/sitemap.xml",
+    "/meta.json",
 )
 
 logger = logging.getLogger("liederweb.traffic")
@@ -182,6 +190,8 @@ class SiteVisitStatsMiddleware:
         path = path or ""
 
         path_lower = path.lower()
+        if path_lower in BOT_EXACT_PATHS:
+            return True
 
         if (
             path_lower == "/.env"
@@ -212,6 +222,19 @@ class SiteVisitStatsMiddleware:
             "/.env",
             "/vendor/",
             "/cgi-bin/",
+
+            # Joomla / obecné CMS skeny
+            "/administrator/",
+            "/plugins/",
+            "/components/",
+            "/modules/",
+            "/templates/",
+
+            # obecné skeny na upload/file adresáře
+            "/images/",
+            "/files/",
+            "/uploads/",
+            "/sites/default/",
         )
 
         scanner_exact = (
@@ -219,10 +242,10 @@ class SiteVisitStatsMiddleware:
             "/wp-login.php",
         )
 
-        if path in scanner_exact:
+        if path_lower in scanner_exact:
             return True
 
-        return any(path.startswith(prefix) for prefix in scanner_prefixes)
+        return any(path_lower.startswith(prefix) for prefix in scanner_prefixes)
 
 
     def track_visit(self, request, response):
@@ -466,6 +489,19 @@ class SiteVisitStatsMiddleware:
             "/.env",
             "/vendor/",
             "/cgi-bin/",
+
+            # Joomla / obecné CMS skeny
+            "/administrator/",
+            "/plugins/",
+            "/components/",
+            "/modules/",
+            "/templates/",
+
+            # obecné skeny na upload/file adresáře
+            "/images/",
+            "/files/",
+            "/uploads/",
+            "/sites/default/",
         )
 
         scanner_exact = (
@@ -473,11 +509,11 @@ class SiteVisitStatsMiddleware:
             "/wp-login.php",
         )
 
-        if path in scanner_exact:
-            return f"/__scan__{path}"
+        if path_lower in scanner_exact:
+            return f"/__scan__{path_lower}"
 
         for prefix in scanner_prefixes:
-            if path.startswith(prefix):
+            if path_lower.startswith(prefix):
                 return f"/__scan__{prefix}"
 
         # U běžných 404 chceme vidět konkrétní cestu.
