@@ -38,7 +38,8 @@ HEALTHCHECK_RE = re.compile(
 IP_LABELS = {
     "185.68.212.2": "ČTÚ",
     "212.20.115.101": "Trachta",
-    "213.235.82.162": "Monike"
+    "213.235.82.162": "Monike",
+    "90.183.235.234": "Eva z ÚPV",
 }
 
 def filter_noise_log_lines(log_text, max_lines):
