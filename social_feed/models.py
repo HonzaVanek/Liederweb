@@ -189,7 +189,9 @@ class SocialPostMedia(models.Model):
         verbose_name="URL média",
     )
 
-    
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
+
     has_audio = models.BooleanField(
         null=True,
         blank=True,
@@ -208,6 +210,12 @@ class SocialPostMedia(models.Model):
         verbose_name="Pořadí",
     )
 
+    facebook_url = models.URLField(
+        blank=True,
+        max_length=1000,
+        verbose_name="Odkaz na médium na Facebooku",
+    )
+
     class Meta:
         ordering = ["sort_order", "id"]
         verbose_name = "Médium postu"
@@ -222,3 +230,15 @@ class SocialPostMedia(models.Model):
 
     def __str__(self):
         return f"{self.post.external_post_id} | {self.media_type} | {self.sort_order}"
+    
+    @property
+    def is_portrait(self):
+        return bool(self.width and self.height and self.height > self.width)
+    
+    @property
+    def use_native_video(self):
+        return (
+            self.media_type == self.MediaType.VIDEO
+            and bool(self.media_url)
+            and self.has_audio is not False
+        )

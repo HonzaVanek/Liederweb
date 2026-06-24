@@ -1,4 +1,5 @@
 {% load social_feed_tags %}
+
 <article class="home-slide">
   {% if featured_facebook_post %}
     {% with gallery=featured_facebook_post.media_items.all %}
@@ -7,38 +8,118 @@
           {% if gallery %}
             {% with first_media=gallery.0 %}
               {% if first_media.media_type == 'video' %}
+
                 {% if first_media.has_audio %}
-                  <div class="home-slide-gallery-main home-slide-gallery-main-video">
-                    <video class="home-slide-image home-slide-video" preload="metadata" playsinline poster="{{ first_media.thumbnail_url|default:'' }}" data-carousel-video>
+                  <div class="home-slide-gallery-main home-slide-gallery-main-video {% if first_media.is_portrait %}home-slide-gallery-main-video--portrait{% endif %}">
+                    <video
+                      class="home-slide-image home-slide-video {% if first_media.is_portrait %}home-slide-video--portrait{% endif %}"
+                      preload="metadata"
+                      playsinline
+                      poster="{{ first_media.thumbnail_url|default:'' }}"
+                      data-carousel-video
+                    >
                       <source src="{{ first_media.media_url }}" type="video/mp4" />
                     </video>
 
-                    <button type="button" class="home-video-play-overlay" data-carousel-video-play aria-label="Přehrát video"><span class="home-video-play-icon">▶</span></button>
+                    <button
+                      type="button"
+                      class="home-video-play-overlay"
+                      data-carousel-video-play
+                      aria-label="Přehrát video"
+                    >
+                      <span class="home-video-play-icon">▶</span>
+                    </button>
                   </div>
+
                 {% else %}
-                  {% if '/reel/' in featured_facebook_post.permalink_url %}
-                    <div class="home-slide-gallery-main home-slide-gallery-main-video home-slide-facebook-embed home-slide-facebook-embed--reel">
-                      <iframe src="https://www.facebook.com/plugins/video.php?href={{ featured_facebook_post.permalink_url|urlencode }}&show_text=0&width=360" width="300" height="533" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
-                    </div>
+                  {% if first_media.facebook_url %}
+                    {% with video_embed_url=first_media.facebook_url %}
+                      {% if first_media.is_portrait or "/reel/" in video_embed_url %}
+                        <div class="home-slide-gallery-main home-slide-gallery-main-video home-slide-facebook-embed home-slide-facebook-embed--reel">
+                          <iframe
+                            src="https://www.facebook.com/plugins/video.php?href={{ video_embed_url|urlencode }}&show_text=0&width=360"
+                            width="300"
+                            height="533"
+                            style="border:none;overflow:hidden"
+                            scrolling="no"
+                            frameborder="0"
+                            allowfullscreen="true"
+                            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                          ></iframe>
+                        </div>
+                      {% else %}
+                        <div class="home-slide-gallery-main home-slide-gallery-main-video home-slide-facebook-embed home-slide-facebook-embed--video">
+                          <iframe
+                            src="https://www.facebook.com/plugins/video.php?href={{ video_embed_url|urlencode }}&show_text=0&width=900"
+                            width="900"
+                            height="506"
+                            style="border:none;overflow:hidden"
+                            scrolling="no"
+                            frameborder="0"
+                            allowfullscreen="true"
+                            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                          ></iframe>
+                        </div>
+                      {% endif %}
+                    {% endwith %}
                   {% else %}
-                    <div class="home-slide-gallery-main home-slide-gallery-main-video home-slide-facebook-embed home-slide-facebook-embed--video">
-                      <iframe src="https://www.facebook.com/plugins/video.php?href={{ featured_facebook_post.permalink_url|urlencode }}&show_text=0&width=900" width="900" height="506" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+                    <div class="home-slide-gallery-main home-slide-gallery-main-video {% if first_media.is_portrait %}home-slide-gallery-main-video--portrait{% endif %}">
+                      <video
+                        class="home-slide-image home-slide-video {% if first_media.is_portrait %}home-slide-video--portrait{% endif %}"
+                        preload="metadata"
+                        playsinline
+                        poster="{{ first_media.thumbnail_url|default:'' }}"
+                        data-carousel-video
+                      >
+                        <source src="{{ first_media.media_url }}" type="video/mp4" />
+                      </video>
+
+                      <button
+                        type="button"
+                        class="home-video-play-overlay"
+                        data-carousel-video-play
+                        aria-label="Přehrát video"
+                      >
+                        <span class="home-video-play-icon">▶</span>
+                      </button>
                     </div>
                   {% endif %}
                 {% endif %}
+
               {% else %}
-                <button type="button" class="home-slide-gallery-main" data-lightbox-open="0" aria-label="Otevřít galerii příspěvku">
-                  <img src="{{ first_media.media_url|default:first_media.thumbnail_url }}" alt="Hlavní obrázek příspěvku" class="home-slide-image" />
+                <button
+                  type="button"
+                  class="home-slide-gallery-main"
+                  data-lightbox-open="0"
+                  aria-label="Otevřít galerii příspěvku"
+                >
+                  <img
+                    src="{{ first_media.media_url|default:first_media.thumbnail_url }}"
+                    alt="Hlavní obrázek příspěvku"
+                    class="home-slide-image"
+                  />
 
                   {% if featured_facebook_post.has_gallery %}
-                    <span class="home-slide-gallery-badge">+{{ featured_facebook_post.media_count|add:'-1' }} další</span>
+                    <span class="home-slide-gallery-badge">
+                      +{{ featured_facebook_post.media_count|add:'-1' }} další
+                    </span>
                   {% endif %}
                 </button>
 
                 {% if featured_facebook_post.has_gallery %}
                   <div class="home-slide-thumbs">
                     {% for media in gallery %}
-                      <button type="button" class="home-slide-thumb {% if forloop.first %}is-active{% endif %}" data-lightbox-open="{{ forloop.counter0 }}" aria-label="Otevřít obrázek {{ forloop.counter }}"><img src="{{ media.thumbnail_url|default:media.media_url }}" alt="Miniatura {{ forloop.counter }}" /></button>
+                      <button
+                        type="button"
+                        class="home-slide-thumb {% if forloop.first %}is-active{% endif %}"
+                        data-lightbox-open="{{ forloop.counter0 }}"
+                        aria-label="Otevřít obrázek {{ forloop.counter }}"
+                      >
+                        <img
+                          src="{{ media.thumbnail_url|default:media.media_url }}"
+                          alt="Miniatura {{ forloop.counter }}"
+                        />
+                      </button>
                     {% endfor %}
                   </div>
                 {% endif %}
@@ -60,29 +141,72 @@
                 {{ featured_facebook_post.source.name }}
               {% endif %}
             </span>
+
             {% if featured_facebook_post.published_at %}
               <span>{{ featured_facebook_post.published_at|date:'d. m. Y H:i' }}</span>
             {% endif %}
+
             {% if featured_facebook_post.has_gallery %}
               <span>{{ featured_facebook_post.media_count }} fotky</span>
             {% endif %}
           </div>
 
           {% if featured_facebook_post.message %}
-            <div class="home-slide-text-scroll home-slide-text-scroll-social">{{ featured_facebook_post|facebook_message_html }}</div>
+            <div class="home-slide-text-scroll home-slide-text-scroll-social">
+              {{ featured_facebook_post|facebook_message_html }}
+            </div>
           {% else %}
-            <p class="muted">Tento příspěvek nemá textovou část.</p>
+            <div class="home-slide-text-scroll home-slide-text-scroll-social">
+              <p class="muted">
+                Celý text příspěvku najdete přímo na Facebooku.
+              </p>
+
+              {% if featured_facebook_post.permalink_url %}
+                <p>
+                  <a
+                    href="{{ featured_facebook_post.permalink_url }}"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    Otevřít příspěvek na Facebooku
+                  </a>
+                </p>
+              {% endif %}
+            </div>
           {% endif %}
 
           <div class="home-slide-actions home-slide-actions-social">
-            <div class="home-slide-social-copy">Sledujte Lieder Society na sociálních sítích</div>
+            <div class="home-slide-social-copy">
+              Sledujte Lieder Society na sociálních sítích
+            </div>
 
             <div class="home-slide-social-links">
-              <a href="https://www.facebook.com/LiederSociety/" target="_blank" rel="noopener" class="home-slide-button home-slide-button-social">Náš Facebook</a>
+              <a
+                href="https://www.facebook.com/LiederSociety/"
+                target="_blank"
+                rel="noopener"
+                class="home-slide-button home-slide-button-social"
+              >
+                Náš Facebook
+              </a>
 
-              <a href="https://www.instagram.com/liedersociety/" target="_blank" rel="noopener" class="home-slide-button home-slide-button-social home-slide-button-secondary">Instagram</a>
+              <a
+                href="https://www.instagram.com/liedersociety/"
+                target="_blank"
+                rel="noopener"
+                class="home-slide-button home-slide-button-social home-slide-button-secondary"
+              >
+                Instagram
+              </a>
 
-              <a href="https://www.youtube.com/channel/UCOBzc-a-yvCh-03bXUplTVw" target="_blank" rel="noopener" class="home-slide-button home-slide-button-social home-slide-button-secondary">YouTube</a>
+              <a
+                href="https://www.youtube.com/channel/UCOBzc-a-yvCh-03bXUplTVw"
+                target="_blank"
+                rel="noopener"
+                class="home-slide-button home-slide-button-social home-slide-button-secondary"
+              >
+                YouTube
+              </a>
             </div>
           </div>
         </div>
