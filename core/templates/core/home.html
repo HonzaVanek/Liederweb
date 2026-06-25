@@ -838,7 +838,171 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+{% comment %}
+  následující skript zajišťuje, že výška karuselu se dynamicky přizpůsobuje obsahu aktuálního slidu. To je důležité zejména pro slidy s různou výškou obsahu, aby se zabránilo nežádoucímu poskakování nebo přetečení obsahu.
+{% endcomment %}
+<script>
+(function () {
+  function initCarouselDynamicHeight() {
+    const viewport = document.getElementById("home-carousel-viewport");
+    const track = viewport ? viewport.querySelector(".home-carousel-track") : null;
+    const shell = viewport ? viewport.closest(".home-carousel-shell") : null;
 
+    if (!viewport || !track) {
+      return;
+    }
+
+    let rafId = null;
+    let lastHeight = 0;
+    let settleTimer = null;
+
+    function getSlides() {
+      return Array.from(track.children).filter((child) => {
+        return child.classList && child.classList.contains("home-slide");
+      });
+    }
+
+    function findActiveSlide() {
+      /*
+        Desktop: hlavní carouselový script přidává .is-active.
+        Mobil: .is-active se aktivně nepřehazuje, proto bereme slide nejblíž středu viewportu.
+      */
+      const activeDesktopSlide = track.querySelector(".home-slide.is-active");
+
+      if (
+        activeDesktopSlide &&
+        activeDesktopSlide.getBoundingClientRect().width > 0 &&
+        !window.matchMedia("(max-width: 760px)").matches
+      ) {
+        return activeDesktopSlide;
+      }
+
+      const slides = getSlides();
+      const viewportRect = viewport.getBoundingClientRect();
+      const viewportCenterX = viewportRect.left + viewportRect.width / 2;
+
+      let bestSlide = slides[0] || null;
+      let bestDistance = Infinity;
+
+      slides.forEach((slide) => {
+        const rect = slide.getBoundingClientRect();
+
+        if (rect.width <= 0) {
+          return;
+        }
+
+        const slideCenterX = rect.left + rect.width / 2;
+        const distance = Math.abs(slideCenterX - viewportCenterX);
+
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestSlide = slide;
+        }
+      });
+
+      return bestSlide;
+    }
+
+    function measureSlide(slide) {
+      if (!slide) {
+        return 0;
+      }
+
+      /*
+        Důležité: neměříme slide.scrollHeight ani child.scrollHeight.
+        Ty se můžou rozjet podle už nastavené výšky viewportu.
+        Měříme jen skutečný viditelný card/grid uvnitř slidu.
+      */
+      const card =
+        slide.querySelector(".home-slide-grid") ||
+        slide.firstElementChild ||
+        slide;
+
+      const rect = card.getBoundingClientRect();
+
+      if (!rect.height) {
+        return 0;
+      }
+
+      const slideStyles = window.getComputedStyle(slide);
+      const paddingTop = parseFloat(slideStyles.paddingTop) || 0;
+      const paddingBottom = parseFloat(slideStyles.paddingBottom) || 0;
+
+      return Math.ceil(rect.height + paddingTop + paddingBottom + 8);
+    }
+
+    function updateHeight() {
+      rafId = null;
+
+      const activeSlide = findActiveSlide();
+      const targetHeight = measureSlide(activeSlide);
+
+      if (!targetHeight || targetHeight < 80) {
+        return;
+      }
+
+      if (Math.abs(targetHeight - lastHeight) <= 2) {
+        return;
+      }
+
+      const currentHeight = Math.ceil(viewport.getBoundingClientRect().height);
+
+      viewport.classList.add("home-carousel-dynamic-height");
+
+      viewport.style.transition = "none";
+      viewport.style.height = currentHeight + "px";
+
+      viewport.offsetHeight;
+
+      window.requestAnimationFrame(() => {
+        viewport.style.transition = "height 0.35s ease";
+        viewport.style.height = targetHeight + "px";
+        lastHeight = targetHeight;
+      });
+    }
+
+    function scheduleUpdate() {
+      if (rafId) {
+        window.cancelAnimationFrame(rafId);
+      }
+
+      rafId = window.requestAnimationFrame(updateHeight);
+    }
+
+    function scheduleSettledUpdate() {
+      scheduleUpdate();
+
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(scheduleUpdate, 120);
+
+      window.setTimeout(scheduleUpdate, 350);
+    }
+
+    viewport.addEventListener("scroll", scheduleUpdate, { passive: true });
+    track.addEventListener("transitionend", scheduleSettledUpdate);
+
+    if (shell) {
+      shell.addEventListener("click", scheduleSettledUpdate);
+    }
+
+    track.querySelectorAll("img, iframe, video").forEach((media) => {
+      media.addEventListener("load", scheduleSettledUpdate);
+      media.addEventListener("loadedmetadata", scheduleSettledUpdate);
+    });
+
+    window.addEventListener("resize", scheduleSettledUpdate);
+    window.addEventListener("load", scheduleSettledUpdate);
+
+    scheduleSettledUpdate();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initCarouselDynamicHeight);
+  } else {
+    initCarouselDynamicHeight();
+  }
+})();
+</script>
 
 {% endblock %}
 {% block partners_section %}

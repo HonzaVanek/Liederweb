@@ -1521,6 +1521,23 @@ body {
     box-shadow: 0 10px 20px rgba(0,0,0,0.12);
 }
 
+
+.home-carousel-viewport.home-carousel-dynamic-height {
+    overflow-y: hidden;
+}
+
+.home-carousel-viewport.home-carousel-dynamic-height .home-carousel-track {
+    align-items: flex-start;
+}
+
+@media (max-width: 760px) {
+    .home-carousel-viewport.home-carousel-dynamic-height {
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+}
+
+
 @media (min-width: 1400px) {
     .home-slide-content-social {
         justify-content: flex-start;
