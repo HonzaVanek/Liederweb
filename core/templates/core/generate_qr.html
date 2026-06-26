@@ -1,0 +1,211 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block title %}QR generátor | Lieder Society{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'core/qr_generator.css' %}">
+{% endblock extra_css %}
+
+{% block rozesilac_content %}
+
+<div class="qr-tool-page">
+  <div class="qr-tool-header">
+    <p class="qr-tool-eyebrow">Interní nástroj</p>
+    <h1>QR generátor</h1>
+    <p>
+      Pochopil jsem, že všichni potřebujeme čas od času generovat statický QR code, tak sem tuhle vychytávku přidal rovnou sem. Takže zadej libovolný text nebo URL a aplikace vygeneruje statický QR kód ve formátu PNG.
+    </p>
+  </div>
+
+    {% if messages %}
+        <div class="qr-messages">
+        {% for message in messages %}
+            <div class="qr-message qr-message--{{ message.tags }}">
+            {{ message }}
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+
+  <form id="qr-form" method="post" class="qr-form" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="qr-form-field">
+      <label for="qr_text">Text nebo URL pro QR kód</label>
+      <input
+        type="text"
+        id="qr_text"
+        name="qr_text"
+        value="{{ data|default:'' }}"
+        placeholder="Např. https://lieder-society.cz/"
+        required
+      >
+    </div>
+
+    <div class="qr-form-grid">
+      <div class="qr-form-field">
+        <label for="qr_size">Velikost QR kódu</label>
+        <input
+          type="number"
+          id="qr_size"
+          name="qr_size"
+          min="1"
+          max="20"
+          value="10"
+          required
+        >
+        <small>Rozsah 1–20. Běžně stačí 8–12.</small>
+      </div>
+
+      <div class="qr-form-field">
+        <label for="qr_border">Tloušťka okraje</label>
+        <input
+          type="number"
+          id="qr_border"
+          name="qr_border"
+          min="0"
+          max="10"
+          value="4"
+          required
+        >
+        <small>Pro spolehlivé načtení je lepší nechat aspoň 4.</small>
+      </div>
+    </div>
+
+    <div class="qr-form-grid">
+      <div class="qr-form-field">
+        <label for="qr_color">Barva QR kódu</label>
+        <input
+          type="color"
+          id="qr_color"
+          name="qr_color"
+          value="#000000"
+          required
+        >
+      </div>
+
+      <div class="qr-form-field">
+        <label for="qr_background_color">Barva pozadí</label>
+        <input
+          type="color"
+          id="qr_background_color"
+          name="qr_background_color"
+          value="#ffffff"
+          required
+        >
+      </div>
+    </div>
+
+    <label class="qr-checkbox">
+      <input type="checkbox" id="use_custom_logo" name="use_custom_logo">
+      <span>Chci doprostřed QR kódu umístit obrázek, například logo</span>
+    </label>
+
+    <div id="logo-upload-wrapper" class="qr-form-field qr-logo-upload" style="display:none;">
+      <label for="custom_logo_file">Logo</label>
+      <input
+        type="file"
+        id="custom_logo_file"
+        name="custom_logo_file"
+        accept="image/*"
+      >
+      <small>
+        Doporučené je jednoduché PNG/SVG převedené do PNG. Příliš složité nebo velké logo může zhoršit čitelnost QR kódu.
+      </small>
+    </div>
+
+    <div class="qr-actions">
+      <button type="submit" class="qr-submit">
+        Generovat QR kód
+      </button>
+    </div>
+  </form>
+
+  {% if qr_image_url %}
+    <div id="qr-result" class="qr-output">
+      <div>
+        <h2>Vygenerovaný QR kód</h2>
+        <p>
+          Klikni pravým tlačítkem na obrázek a ulož ho jako PNG.
+        </p>
+      </div>
+
+      <div class="qr-image-card">
+        <img id="qr-image" src="{{ qr_image_url }}" alt="QR kód">
+      </div>
+
+    <div class="qr-download-actions">
+    <a href="{{ qr_image_url }}" download class="qr-download-button">
+        Stáhnout QR kód
+    </a>
+    </div>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+function smoothScrollTo(endY, duration = 900) {
+  const startY = window.scrollY;
+  const distance = endY - startY;
+  let startTime = null;
+
+  function easeInOut(t) {
+    return t < 0.5
+      ? 4 * t * t * t
+      : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  function step(timestamp) {
+    if (!startTime) startTime = timestamp;
+
+    const progress = timestamp - startTime;
+    const percent = Math.min(progress / duration, 1);
+    const eased = easeInOut(percent);
+
+    window.scrollTo(0, startY + distance * eased);
+
+    if (percent < 1) {
+      requestAnimationFrame(step);
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("qr-form");
+  const checkbox = document.getElementById("use_custom_logo");
+  const uploadWrapper = document.getElementById("logo-upload-wrapper");
+  const result = document.getElementById("qr-result");
+
+  if (form) {
+    form.addEventListener("submit", function () {
+      sessionStorage.setItem("qr_scroll_after_submit", "1");
+    });
+  }
+
+  if (result && sessionStorage.getItem("qr_scroll_after_submit") === "1") {
+    sessionStorage.removeItem("qr_scroll_after_submit");
+
+    setTimeout(() => {
+      const resultTop = result.getBoundingClientRect().top + window.scrollY - 24;
+      smoothScrollTo(resultTop, 900);
+    }, 250);
+  }
+
+  function toggleUpload() {
+    if (!checkbox || !uploadWrapper) return;
+    uploadWrapper.style.display = checkbox.checked ? "block" : "none";
+  }
+
+  toggleUpload();
+
+  if (checkbox) {
+    checkbox.addEventListener("change", toggleUpload);
+  }
+});
+</script>
+
+{% endblock rozesilac_content %}

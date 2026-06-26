@@ -60,22 +60,43 @@
     <div class="rozesilac-nav-group">
       <p class="rozesilac-nav-heading">Správa webu</p>
 
-      <nav class="rozesilac-nav">
-        <a href="{% url 'core:person_admin_list' %}"
-           class="{% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'person_admin_list' or request.resolver_match.url_name == 'person_create' or request.resolver_match.url_name == 'person_update' %}active{% endif %}">
-           Lidé
-        </a>
-        
-        <a href="{% url 'media_assets:asset_list' %}"
-           class="{% if request.resolver_match.namespace == 'media_assets' and request.resolver_match.url_name == 'asset_list' or request.resolver_match.namespace == 'media_assets' and request.resolver_match.url_name == 'asset_create' or request.resolver_match.namespace == 'media_assets' and request.resolver_match.url_name == 'asset_update' %}active{% endif %}">
-           Mediální knihovna
-        </a>
+         {% with match=request.resolver_match %}
+         <nav class="rozesilac-nav">
 
-        <a href="{% url 'core:home_quote_slide_list' %}"
-            class="{% if request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'home_quote_slide_list' or request.resolver_match.url_name == 'home_quote_slide_create' or request.resolver_match.url_name == 'home_quote_slide_update' or request.resolver_match.url_name == 'home_quote_slide_delete' %}active{% endif %}">
-            Homepage citace
-         </a>
-      </nav>
+            <a href="{% url 'core:person_admin_list' %}"
+               class="{% if match.namespace == 'core' and match.url_name == 'person_admin_list' or match.namespace == 'core' and match.url_name == 'person_create' or match.namespace == 'core' and match.url_name == 'person_update' %}active{% endif %}">
+               Lidé
+            </a>
+
+            <a href="{% url 'media_assets:asset_list' %}"
+               class="{% if match.namespace == 'media_assets' and match.url_name == 'asset_list' or match.namespace == 'media_assets' and match.url_name == 'asset_create' or match.namespace == 'media_assets' and match.url_name == 'asset_update' %}active{% endif %}">
+               Mediální knihovna
+            </a>
+
+            <a href="{% url 'core:home_quote_slide_list' %}"
+               class="{% if match.namespace == 'core' and match.url_name == 'home_quote_slide_list' or match.namespace == 'core' and match.url_name == 'home_quote_slide_create' or match.namespace == 'core' and match.url_name == 'home_quote_slide_update' or match.namespace == 'core' and match.url_name == 'home_quote_slide_delete' %}active{% endif %}">
+               Homepage citace
+            </a>
+
+         </nav>
+         {% endwith %}
+    </div>
+
+      <div class="rozesilac-nav-divider"></div>
+
+    <div class="rozesilac-nav-group">
+      <p class="rozesilac-nav-heading">Pomocné nástroje</p>
+
+         {% with match=request.resolver_match %}
+         <nav class="rozesilac-nav">
+
+            <a href="{% url 'core:generate_qr' %}"
+               class="{% if match.namespace == 'core' and match.url_name == 'generate_qr' %}active{% endif %}">
+               QR generátor
+            </a>
+
+         </nav>
+         {% endwith %}
     </div>
   </aside>
 
