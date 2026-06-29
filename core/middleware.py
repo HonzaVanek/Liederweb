@@ -244,6 +244,15 @@ class SiteVisitStatsMiddleware:
 
         if path_lower in scanner_exact:
             return True
+        
+        if "/wp-includes/" in path_lower:
+            return True
+
+        if path_lower.endswith("wlwmanifest.xml"):
+            return True
+        
+        if ("/.env" in path_lower or path_lower.endswith("sftp-config.json") or "/.vscode/" in path_lower):
+            return True
 
         return any(path_lower.startswith(prefix) for prefix in scanner_prefixes)
 
@@ -479,6 +488,15 @@ class SiteVisitStatsMiddleware:
 
         if path_lower == "/.well-known/ucp":
             return "/__scan__/.well-known"
+        
+        if "/wp-includes/" in path_lower or path_lower.endswith("wlwmanifest.xml"):
+            return "/__scan__/wp-includes/wlwmanifest.xml"
+        
+        if "/.env" in path_lower:
+            return "/__scan__/.env"
+
+        if path_lower.endswith("sftp-config.json") or "/.vscode/" in path_lower:
+            return "/__scan__/dev-config"
 
         scanner_prefixes = (
             "/wp-admin/",
