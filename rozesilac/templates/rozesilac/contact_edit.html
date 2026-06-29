@@ -13,7 +13,11 @@
 </ul>
 {% endif %}
 
-<form method="post">
+<form
+  method="post"
+  id="contact-edit-form"
+  data-was-inactive="{% if not contact_obj.is_active %}1{% else %}0{% endif %}"
+>
   {% csrf_token %}
 
   <div class="template-form-row">
@@ -61,4 +65,29 @@
     <a href="{% url 'rozesilac:contacts' %}" class="btn-link">Zpět na kontakty</a>
   </div>
 </form>
+
+<script>
+(function () {
+  const form = document.getElementById("contact-edit-form");
+  if (!form) return;
+
+  const wasInactive = form.dataset.wasInactive === "1";
+  const activeCheckbox = document.getElementById("{{ form.is_active.id_for_label }}");
+
+  if (!wasInactive || !activeCheckbox) return;
+
+  form.addEventListener("submit", function (event) {
+    if (!activeCheckbox.checked) return;
+
+    const confirmed = window.confirm(
+      "Tento kontakt je teď neaktivní, pravděpodobně proto, že se někdy odhlásil z odběru newsletteru.\n\n" +
+      "Opravdu ho chceš znovu aktivovat? Měla bys to dělat jen v případě, že k tomu máš jeho souhlas..."
+    );
+
+    if (!confirmed) {
+      event.preventDefault();
+    }
+  });
+})();
+</script>
 {% endblock rozesilac_content %}
