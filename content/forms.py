@@ -100,6 +100,10 @@ class ContentBlockForm(forms.ModelForm):
             self.block_type = self.block_type or self.instance.block_type
 
         if self.block_type == ContentBlock.BLOCK_TEXT:
+            self.fields["text"].help_text = (
+                "Základní formátování: **tučně**, *kurzíva*, "
+                "odrážky přes řádky začínající '- ', pevná mezera přes &nbsp;."
+            )
             self.fields = {
                 "text": self.fields["text"],
             }

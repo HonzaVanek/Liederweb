@@ -53,8 +53,13 @@
         {% for field in form %}
           <div class="content-form-row">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {{ field.errors }}
+                {{ field }}
+
+                {% if field.help_text %}
+                <small class="content-form-help">{{ field.help_text }}</small>
+                {% endif %}
+
+                {{ field.errors }}
           </div>
         {% empty %}
           <p class="content-form-help">

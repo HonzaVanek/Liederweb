@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static content_tags czech_typography %}
 
 {% block extra_css %}
   {{ block.super }}
@@ -15,25 +15,34 @@
     <div class="content-post-hero__inner">
       <p class="content-post-kicker">Objevujte</p>
 
-      <h1>{{ post.title }}</h1>
+      <h1>{{ post.title|cz_nbsp }}</h1>
 
       {% if post.perex %}
         <p class="content-post-perex">
-          {{ post.perex }}
+          {{ post.perex|cz_nbsp }}
         </p>
       {% endif %}
 
       <div class="content-post-meta">
         {% if post.author_name %}
-          <span>{{ post.author_name }}</span>
+          <span>
+            <strong>Autor/ka:</strong> {{ post.author_name|cz_nbsp }}
+          </span>
         {% endif %}
 
         {% if post.published_at %}
-          <span>{{ post.published_at|date:"j. n. Y" }}</span>
+          <span>
+            <strong>Publikováno:</strong> {{ post.published_at|date:"j. n. Y" }}
+          </span>
         {% endif %}
 
         {% if post.event %}
-          <span>Související koncert: {{ post.event.title }}</span>
+          <span>
+            <strong>Související koncert:</strong>
+            <a href="{% url 'events:public_event_detail' post.event.slug %}">
+              {{ post.event.title|cz_nbsp }}
+            </a>
+          </span>
         {% endif %}
       </div>
     </div>
@@ -46,89 +55,113 @@
         >
 
         {% if post.cover_image.credit %}
-          <figcaption>{{ post.cover_image.credit }}</figcaption>
+          <figcaption>{{ post.cover_image.credit|cz_nbsp }}</figcaption>
         {% endif %}
       </figure>
     {% endif %}
   </header>
 
-  <div class="content-post-body">
-    {% if blocks %}
-      {% for item in blocks %}
-        {% if item.block_type == "text" %}
-          <section class="content-block content-block--text">
-            {{ item.text|linebreaks }}
-          </section>
-
-        {% elif item.block_type == "gallery" %}
-          <section class="content-block content-block--gallery">
-            {% with image_count=item.images.count %}
-              <div class="content-gallery content-gallery--count-{{ image_count }}">
-                {% for gallery_item in item.images.all %}
-                  <figure class="content-gallery__item">
-                    {% if gallery_item.image.file %}
-                      <img
-                        src="{{ gallery_item.image.file.url }}"
-                        alt="{{ gallery_item.effective_alt_text }}"
-                      >
-                    {% endif %}
-
-                    {% if gallery_item.caption %}
-                      <figcaption>{{ gallery_item.caption }}</figcaption>
-                    {% endif %}
-                  </figure>
-                {% endfor %}
-              </div>
-            {% endwith %}
-          </section>
-
-        {% elif item.block_type == "youtube" %}
-          {% if item.youtube_embed_url %}
-            <section class="content-block content-block--youtube">
-              <div class="content-youtube">
-                <iframe
-                  src="{{ item.youtube_embed_url }}"
-                  title="YouTube video"
-                  loading="lazy"
-                  referrerpolicy="strict-origin-when-cross-origin"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowfullscreen
-                ></iframe>
-              </div>
+  <div class="content-post-layout {% if not post.event %}content-post-layout--no-aside{% endif %}">
+    <div class="content-post-body">
+      {% if blocks %}
+        {% for item in blocks %}
+          {% if item.block_type == "text" %}
+            <section class="content-block content-block--text">
+              {{ item.text|content_richtext }}
             </section>
-          {% endif %}
 
-        {% elif item.block_type == "cta" %}
-          {% if item.button_label and item.button_url %}
-            <section class="content-block content-block--cta">
-              <a class="content-post-cta" href="{{ item.button_url }}">
-                {{ item.button_label }}
-              </a>
+          {% elif item.block_type == "gallery" %}
+            <section class="content-block content-block--gallery">
+              {% with image_count=item.images.count %}
+                <div class="content-gallery content-gallery--count-{{ image_count }}">
+                  {% for gallery_item in item.images.all %}
+                    <figure class="content-gallery__item">
+                      {% if gallery_item.image.file %}
+                        <img
+                          src="{{ gallery_item.image.file.url }}"
+                          alt="{{ gallery_item.effective_alt_text }}"
+                        >
+                      {% endif %}
+
+                      {% if gallery_item.caption %}
+                        <figcaption>{{ gallery_item.caption|cz_nbsp }}</figcaption>
+                      {% endif %}
+                    </figure>
+                  {% endfor %}
+                </div>
+              {% endwith %}
             </section>
+
+          {% elif item.block_type == "youtube" %}
+            {% if item.youtube_embed_url %}
+              <section class="content-block content-block--youtube">
+                <div class="content-youtube">
+                  <iframe
+                    src="{{ item.youtube_embed_url }}"
+                    title="YouTube video"
+                    loading="lazy"
+                    referrerpolicy="strict-origin-when-cross-origin"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen
+                  ></iframe>
+                </div>
+              </section>
+            {% endif %}
+
+          {% elif item.block_type == "cta" %}
+            {% if item.button_label and item.button_url %}
+              <section class="content-block content-block--cta">
+                <a class="content-post-cta" href="{{ item.button_url }}">
+                  {{ item.button_label|cz_nbsp }}
+                </a>
+              </section>
+            {% endif %}
           {% endif %}
+        {% endfor %}
+      {% else %}
+        <p class="content-post-empty">
+          Tento příspěvek zatím nemá žádný obsah.
+        </p>
+      {% endif %}
+    </div>
+
+    {% if post.event %}
+      <aside class="content-related-event">
+        <p class="content-post-kicker">Související koncert</p>
+
+        <h2>
+          <a href="{% url 'events:public_event_detail' post.event.slug %}">
+            {{ post.event.title|cz_nbsp }}
+          </a>
+        </h2>
+
+        {% if post.event.starts_at %}
+          <p class="content-related-event__date">
+            {{ post.event.starts_at|date:"j. n. Y H:i" }}
+          </p>
         {% endif %}
-      {% endfor %}
-    {% else %}
-      <p class="content-post-empty">
-        Tento příspěvek zatím nemá žádný obsah.
-      </p>
+
+        {% if post.event.venue %}
+          <p class="content-related-event__venue">
+            {{ post.event.venue|cz_nbsp }}
+          </p>
+        {% endif %}
+
+        {% if post.event.public_text %}
+          <p class="content-related-event__text">
+            {{ post.event.public_text|striptags|truncatechars:190|cz_nbsp }}
+          </p>
+        {% endif %}
+
+        <a
+          class="content-related-event__button"
+          href="{% url 'events:public_event_detail' post.event.slug %}"
+        >
+          Přejít na koncert
+        </a>
+      </aside>
     {% endif %}
   </div>
-
-  {% if post.event %}
-    <aside class="content-related-event">
-      <p class="content-post-kicker">Související koncert</p>
-      <h2>{{ post.event.title }}</h2>
-
-      {% if post.event.starts_at %}
-        <p>{{ post.event.starts_at|date:"j. n. Y H:i" }}</p>
-      {% endif %}
-
-      {% if post.event.venue %}
-        <p>{{ post.event.venue }}</p>
-      {% endif %}
-    </aside>
-  {% endif %}
 
   {% if related_posts %}
     <section class="content-related-posts">
@@ -145,10 +178,10 @@
               >
             {% endif %}
 
-            <strong>{{ related.title }}</strong>
+            <strong>{{ related.title|cz_nbsp }}</strong>
 
             {% if related.perex %}
-              <span>{{ related.perex|truncatechars:120 }}</span>
+              <span>{{ related.perex|truncatechars:120|cz_nbsp }}</span>
             {% endif %}
           </a>
         {% endfor %}
