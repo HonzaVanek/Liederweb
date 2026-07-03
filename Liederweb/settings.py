@@ -181,6 +181,7 @@ INSTALLED_APPS = [
     'events',
     'media_assets',
     'social_feed',
+    'content',
     'anymail'
 ]
 

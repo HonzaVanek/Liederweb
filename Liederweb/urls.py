@@ -30,6 +30,7 @@ urlpatterns = [
     path("events/", include("events.urls")),
     path("koncerty/", event_views.public_event_list, name="public_event_list"),
     path("media-assets/", include(("media_assets.urls", "media_assets"), namespace="media_assets")),
+    path("objevujte/", include(("content.urls", "content"), namespace="content")),
 ]
 
 if settings.DEBUG:

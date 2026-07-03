@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from content.urls import staff_urlpatterns
 from . import views
 
 app_name = "rozesilac"
@@ -28,4 +29,6 @@ urlpatterns = [
 
     path("click/<str:token>/", views.click_tracking, name="click_tracking"),
     path("unsubscribe/<uuid:token>/", views.unsubscribe, name="unsubscribe"),
+
+    path("content/", include((staff_urlpatterns, "content_staff"), namespace="content_staff"),)
 ]
