@@ -51,16 +51,37 @@
         <h3>{{ content_block.get_block_type_display }}</h3>
 
         {% for field in form %}
-          <div class="content-form-row">
+        <div class="content-form-row">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
 
-                {% if field.help_text %}
-                <small class="content-form-help">{{ field.help_text }}</small>
-                {% endif %}
+            {% if field.name == "text" %}
+            <div class="content-richtext-toolbar" aria-label="Jednoduché formátování textu">
+                <button type="button" class="content-richtext-btn" data-richtext-action="bold">
+                Tučně
+                </button>
 
-                {{ field.errors }}
-          </div>
+                <button type="button" class="content-richtext-btn" data-richtext-action="italic">
+                Kurzíva
+                </button>
+
+                <button type="button" class="content-richtext-btn" data-richtext-action="bullet">
+                Odrážka
+                </button>
+
+                <button type="button" class="content-richtext-btn" data-richtext-action="nbsp">
+                Pevná mezera
+                </button>
+            </div>
+            {% endif %}
+
+            {{ field }}
+
+            {% if field.help_text %}
+            <small class="content-form-help">{{ field.help_text }}</small>
+            {% endif %}
+
+            {{ field.errors }}
+        </div>
         {% empty %}
           <p class="content-form-help">
             Tento typ bloku nemá vlastní textová pole. U galerie spravuj obrázky níže.
@@ -182,4 +203,5 @@
       </section>
     {% endif %}
   </div>
+  <script src="{% static 'content/content_staff.js' %}"></script>
 {% endblock rozesilac_content %}

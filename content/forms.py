@@ -85,7 +85,7 @@ class ContentBlockForm(forms.ModelForm):
             "button_url",
         ]
         widgets = {
-            "text": forms.Textarea(attrs={"class": "form-control", "rows": 12}),
+            "text": forms.Textarea(attrs={"class": "form-control content-richtext-textarea", "rows": 12, "data-content-richtext": "1"}),
             "youtube_url": forms.URLInput(attrs={"class": "form-control"}),
             "button_label": forms.TextInput(attrs={"class": "form-control"}),
             "button_url": forms.URLInput(attrs={"class": "form-control"}),
@@ -101,8 +101,10 @@ class ContentBlockForm(forms.ModelForm):
 
         if self.block_type == ContentBlock.BLOCK_TEXT:
             self.fields["text"].help_text = (
-                "Základní formátování: **tučně**, *kurzíva*, "
-                "odrážky přes řádky začínající '- ', pevná mezera přes &nbsp;."
+                "Označ text a použij tlačítka nad polem: tučně vloží **text**, "
+                "kurzíva vloží *text*, odrážka přidá '- ' na začátek řádku. "
+                "Tlačítko pevná mezera vloží &nbsp; na místo kurzoru. "
+                "Prázdný řádek vytvoří nový odstavec, běžný Enter vytvoří nový řádek."
             )
             self.fields = {
                 "text": self.fields["text"],

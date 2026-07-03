@@ -801,3 +801,57 @@ body.dark-mode .rozesilac-main button.content-admin-button--danger:hover {
     background: #fff;
     color: #9f2f2f;
 }
+
+/* =========================================================
+   SIMPLE RICHTEXT TOOLBAR
+   ========================================================= */
+
+.content-richtext-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 10px;
+    padding: 10px;
+    border: 1px solid #dcdcdc;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.rozesilac-main button.content-richtext-btn {
+    min-height: 34px;
+    padding: 7px 11px;
+    border: 1.5px solid #000;
+    border-radius: 999px;
+    background: #fff;
+    color: #000;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.rozesilac-main button.content-richtext-btn:hover {
+    background: #000;
+    color: #fff;
+}
+
+.content-richtext-textarea {
+    font-family: "Barlow", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.55;
+}
+
+body.dark-mode .content-richtext-toolbar {
+    background: #1f1f1f;
+    border-color: #444;
+}
+
+body.dark-mode .rozesilac-main button.content-richtext-btn {
+    background: #1b1b1b;
+    color: #eee;
+    border-color: #666;
+}
+
+body.dark-mode .rozesilac-main button.content-richtext-btn:hover {
+    background: #eee;
+    color: #111;
+}
