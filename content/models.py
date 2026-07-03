@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+from urllib.parse import parse_qs, urlparse
 
 
 class ContentPost(models.Model):
@@ -185,6 +186,44 @@ class ContentBlock(models.Model):
 
     def __str__(self):
         return f"{self.post.title} – {self.get_block_type_display()} #{self.position}"
+    
+    @property
+    def youtube_embed_url(self):
+        """
+        Z běžné YouTube URL udělá embed URL.
+        Podporuje:
+        - https://www.youtube.com/watch?v=...
+        - https://youtu.be/...
+        - https://www.youtube.com/embed/...
+        - https://www.youtube.com/shorts/...
+        """
+        url = (self.youtube_url or "").strip()
+
+        if not url:
+            return ""
+
+        parsed = urlparse(url)
+        host = parsed.netloc.lower().replace("www.", "")
+        path = parsed.path.strip("/")
+
+        if "youtube.com" in host and path.startswith("embed/"):
+            return url
+
+        video_id = ""
+
+        if "youtu.be" in host:
+            video_id = path.split("/")[0]
+
+        elif "youtube.com" in host:
+            if path == "watch":
+                video_id = parse_qs(parsed.query).get("v", [""])[0]
+            elif path.startswith("shorts/"):
+                video_id = path.split("/")[1] if len(path.split("/")) > 1 else ""
+
+        if not video_id:
+            return ""
+
+        return f"https://www.youtube-nocookie.com/embed/{video_id}"    
 
 
 class ContentBlockImage(models.Model):
@@ -241,12 +280,12 @@ class ContentBlockImage(models.Model):
     def clean(self):
         super().clean()
 
-        if self.block and self.block.block_type != ContentBlock.BLOCK_GALLERY:
+        if self.block_id and self.block.block_type != ContentBlock.BLOCK_GALLERY:
             raise ValidationError({
                 "block": "Obrázky lze přidávat pouze do galerijního bloku."
             })
 
-        if self.image and not self.image.is_image:
+        if self.image_id and not self.image.is_image:
             raise ValidationError({
                 "image": "Vybraný asset musí být obrázek."
             })

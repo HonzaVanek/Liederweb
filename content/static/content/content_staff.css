@@ -531,3 +531,273 @@ body.dark-mode .rozesilac-main button.content-admin-button--primary:hover {
     color: #eee;
     border-color: #eee;
 }
+
+
+/* =========================================================
+   BLOCK EDITOR
+   ========================================================= */
+
+.content-block-editor,
+.content-gallery-editor {
+    margin-top: 28px;
+}
+
+.content-block-editor-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+    padding: 22px 24px;
+    background: #fff;
+    border: 1px solid #dcdcdc;
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.04);
+}
+
+.rozesilac-main .content-block-editor-title {
+    margin: 0 0 8px;
+    text-align: left;
+    font-size: 1.55rem;
+}
+
+.content-block-add-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    gap: 10px;
+    flex: 0 0 300px;
+}
+
+.content-block-add-grid form,
+.content-block-card-actions form,
+.content-gallery-image-actions form {
+    margin: 0;
+}
+
+.content-block-list {
+    display: grid;
+    gap: 14px;
+}
+
+.content-block-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: center;
+    padding: 18px 20px;
+    background: #fff;
+    border: 1px solid #dcdcdc;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+
+.content-block-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.content-block-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    min-height: 28px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #111;
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.content-block-preview {
+    color: #333;
+    line-height: 1.5;
+}
+
+.content-block-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.rozesilac-main a.content-admin-button--danger,
+.rozesilac-main button.content-admin-button--danger {
+    background: #9f2f2f;
+    color: #fff;
+    border-color: #9f2f2f;
+}
+
+.rozesilac-main a.content-admin-button--danger:hover,
+.rozesilac-main button.content-admin-button--danger:hover {
+    background: #fff;
+    color: #9f2f2f;
+    border-color: #9f2f2f;
+}
+
+.content-empty-state--blocks {
+    margin-top: 18px;
+    background: #fff;
+    border: 1px solid #dcdcdc;
+    border-radius: 14px;
+}
+
+/* =========================================================
+   GALLERY EDITOR
+   ========================================================= */
+
+.content-gallery-add-form {
+    margin-bottom: 20px;
+}
+
+.content-form-grid-gallery {
+    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.content-gallery-image-list {
+    display: grid;
+    gap: 14px;
+}
+
+.content-gallery-image-card {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding: 14px;
+    background: #fff;
+    border: 1px solid #dcdcdc;
+    border-radius: 14px;
+}
+
+.content-gallery-thumb {
+    width: 150px;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #f2f2f2;
+    border: 1px solid #dedede;
+}
+
+.content-gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.content-gallery-image-info strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.content-gallery-image-info p {
+    margin: 0 0 5px;
+}
+
+.content-gallery-image-info small {
+    color: #666;
+}
+
+.content-gallery-image-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* =========================================================
+   BLOCK EDITOR RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 980px) {
+    .content-block-editor-header,
+    .content-block-card,
+    .content-gallery-image-card {
+        grid-template-columns: 1fr;
+        display: grid;
+    }
+
+    .content-block-editor-header {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .content-block-add-grid {
+        width: 100%;
+        flex: 0 0 auto;
+    }
+
+    .content-block-card-actions,
+    .content-gallery-image-actions {
+        justify-content: flex-start;
+    }
+
+    .content-form-grid-gallery {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .content-block-add-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .content-block-card,
+    .content-block-editor-header,
+    .content-gallery-image-card {
+        padding: 16px;
+        border-radius: 10px;
+    }
+
+    .content-gallery-thumb {
+        width: 100%;
+        max-width: 240px;
+    }
+}
+
+/* =========================================================
+   BLOCK EDITOR DARK MODE
+   ========================================================= */
+
+body.dark-mode .content-block-editor-header,
+body.dark-mode .content-block-card,
+body.dark-mode .content-gallery-image-card,
+body.dark-mode .content-empty-state--blocks {
+    background: #1b1b1b;
+    border-color: #444;
+    box-shadow: none;
+}
+
+body.dark-mode .content-block-preview {
+    color: #ccc;
+}
+
+body.dark-mode .content-block-number {
+    background: #eee;
+    color: #111;
+}
+
+body.dark-mode .content-gallery-thumb {
+    background: #111;
+    border-color: #444;
+}
+
+body.dark-mode .content-gallery-image-info small {
+    color: #aaa;
+}
+
+body.dark-mode .rozesilac-main a.content-admin-button--danger,
+body.dark-mode .rozesilac-main button.content-admin-button--danger {
+    background: #9f2f2f;
+    color: #fff;
+    border-color: #9f2f2f;
+}
+
+body.dark-mode .rozesilac-main a.content-admin-button--danger:hover,
+body.dark-mode .rozesilac-main button.content-admin-button--danger:hover {
+    background: #fff;
+    color: #9f2f2f;
+}

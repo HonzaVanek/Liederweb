@@ -1,5 +1,160 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'content/content_public.css' %}">
+{% endblock extra_css %}
+
+{% block title %}{{ post.title }} | Lieder Society{% endblock title %}
 
 {% block content %}
-  <h1>{{ post.title }}</h1>
-{% endblock %}
+<article class="content-post-page">
+
+  <header class="content-post-hero">
+    <div class="content-post-hero__inner">
+      <p class="content-post-kicker">Objevujte</p>
+
+      <h1>{{ post.title }}</h1>
+
+      {% if post.perex %}
+        <p class="content-post-perex">
+          {{ post.perex }}
+        </p>
+      {% endif %}
+
+      <div class="content-post-meta">
+        {% if post.author_name %}
+          <span>{{ post.author_name }}</span>
+        {% endif %}
+
+        {% if post.published_at %}
+          <span>{{ post.published_at|date:"j. n. Y" }}</span>
+        {% endif %}
+
+        {% if post.event %}
+          <span>Související koncert: {{ post.event.title }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if post.cover_image and post.cover_image.file %}
+      <figure class="content-post-cover">
+        <img
+          src="{{ post.cover_image.file.url }}"
+          alt="{{ post.cover_image.alt_text|default:post.cover_image.title }}"
+        >
+
+        {% if post.cover_image.credit %}
+          <figcaption>{{ post.cover_image.credit }}</figcaption>
+        {% endif %}
+      </figure>
+    {% endif %}
+  </header>
+
+  <div class="content-post-body">
+    {% if blocks %}
+      {% for item in blocks %}
+        {% if item.block_type == "text" %}
+          <section class="content-block content-block--text">
+            {{ item.text|linebreaks }}
+          </section>
+
+        {% elif item.block_type == "gallery" %}
+          <section class="content-block content-block--gallery">
+            {% with image_count=item.images.count %}
+              <div class="content-gallery content-gallery--count-{{ image_count }}">
+                {% for gallery_item in item.images.all %}
+                  <figure class="content-gallery__item">
+                    {% if gallery_item.image.file %}
+                      <img
+                        src="{{ gallery_item.image.file.url }}"
+                        alt="{{ gallery_item.effective_alt_text }}"
+                      >
+                    {% endif %}
+
+                    {% if gallery_item.caption %}
+                      <figcaption>{{ gallery_item.caption }}</figcaption>
+                    {% endif %}
+                  </figure>
+                {% endfor %}
+              </div>
+            {% endwith %}
+          </section>
+
+        {% elif item.block_type == "youtube" %}
+          {% if item.youtube_embed_url %}
+            <section class="content-block content-block--youtube">
+              <div class="content-youtube">
+                <iframe
+                  src="{{ item.youtube_embed_url }}"
+                  title="YouTube video"
+                  loading="lazy"
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowfullscreen
+                ></iframe>
+              </div>
+            </section>
+          {% endif %}
+
+        {% elif item.block_type == "cta" %}
+          {% if item.button_label and item.button_url %}
+            <section class="content-block content-block--cta">
+              <a class="content-post-cta" href="{{ item.button_url }}">
+                {{ item.button_label }}
+              </a>
+            </section>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <p class="content-post-empty">
+        Tento příspěvek zatím nemá žádný obsah.
+      </p>
+    {% endif %}
+  </div>
+
+  {% if post.event %}
+    <aside class="content-related-event">
+      <p class="content-post-kicker">Související koncert</p>
+      <h2>{{ post.event.title }}</h2>
+
+      {% if post.event.starts_at %}
+        <p>{{ post.event.starts_at|date:"j. n. Y H:i" }}</p>
+      {% endif %}
+
+      {% if post.event.venue %}
+        <p>{{ post.event.venue }}</p>
+      {% endif %}
+    </aside>
+  {% endif %}
+
+  {% if related_posts %}
+    <section class="content-related-posts">
+      <p class="content-post-kicker">Zjistěte více</p>
+      <h2>Další příspěvky k tomuto koncertu</h2>
+
+      <div class="content-related-posts__grid">
+        {% for related in related_posts %}
+          <a class="content-related-card" href="{{ related.get_absolute_url }}">
+            {% if related.cover_image and related.cover_image.file %}
+              <img
+                src="{{ related.cover_image.file.url }}"
+                alt="{{ related.cover_image.alt_text|default:related.cover_image.title }}"
+              >
+            {% endif %}
+
+            <strong>{{ related.title }}</strong>
+
+            {% if related.perex %}
+              <span>{{ related.perex|truncatechars:120 }}</span>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+
+</article>
+{% endblock content %}

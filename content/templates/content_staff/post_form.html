@@ -10,28 +10,39 @@
 
 {% block rozesilac_content %}
   <div class="content-admin">
-    <div class="content-admin-header">
-      <div>
-        <p class="content-admin-kicker">Blogposty</p>
-        <h1 class="content-admin-title">{{ page_title }}</h1>
-        <p class="content-admin-lead">
-          Tady se nastavuje základ příspěvku. Samotné bloky textu, obrázků a videí
-          přidáme následně pod editaci příspěvku.
-        </p>
-      </div>
 
-      <div class="content-admin-actions">
-        <a class="content-admin-button content-admin-button--ghost" href="{% url 'rozesilac:content_staff:post_list' %}">
-          Zpět na seznam
-        </a>
-
-        {% if post and post.is_published %}
-          <a class="content-admin-button content-admin-button--ghost" href="{{ post.get_absolute_url }}" target="_blank" rel="noopener">
-            Zobrazit veřejně
-          </a>
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">
+                {{ message }}
+            </li>
+            {% endfor %}
+        </ul>
         {% endif %}
-      </div>
-    </div>
+
+        <div class="content-admin-header">
+            <div>
+                <p class="content-admin-kicker">Blogposty</p>
+                <h1 class="content-admin-title">{{ page_title }}</h1>
+                <p class="content-admin-lead">
+                Tady se nastavuje základ příspěvku. Samotné bloky textu, obrázků a videí
+                přidáme následně pod editaci příspěvku.
+                </p>
+            </div>
+
+            <div class="content-admin-actions">
+                <a class="content-admin-button content-admin-button--ghost" href="{% url 'rozesilac:content_staff:post_list' %}">
+                Zpět na seznam
+                </a>
+
+                {% if post and post.is_published %}
+                <a class="content-admin-button content-admin-button--ghost" href="{{ post.get_absolute_url }}" target="_blank" rel="noopener">
+                    Zobrazit veřejně
+                </a>
+                {% endif %}
+            </div>
+        </div>
 
     <form method="post" novalidate class="content-form-card">
       {% csrf_token %}
@@ -131,5 +142,119 @@
         </a>
       </div>
     </form>
+
+
+{% if post %}
+  <section class="content-block-editor">
+    <div class="content-block-editor-header">
+      <div>
+        <p class="content-admin-kicker">Obsah článku</p>
+        <h2 class="content-block-editor-title">Bloky příspěvku</h2>
+        <p class="content-admin-lead">
+          Skládej článek z bloků. Zatím podporujeme text, galerii, YouTube video a tlačítko.
+        </p>
+      </div>
+
+      <div class="content-block-add-grid">
+        <form method="post" action="{% url 'rozesilac:content_staff:block_add' post.id 'text' %}">
+          {% csrf_token %}
+          <button type="submit" class="content-admin-button content-admin-button--ghost">+ Text</button>
+        </form>
+
+        <form method="post" action="{% url 'rozesilac:content_staff:block_add' post.id 'gallery' %}">
+          {% csrf_token %}
+          <button type="submit" class="content-admin-button content-admin-button--ghost">+ Galerie</button>
+        </form>
+
+        <form method="post" action="{% url 'rozesilac:content_staff:block_add' post.id 'youtube' %}">
+          {% csrf_token %}
+          <button type="submit" class="content-admin-button content-admin-button--ghost">+ YouTube</button>
+        </form>
+
+        <form method="post" action="{% url 'rozesilac:content_staff:block_add' post.id 'cta' %}">
+          {% csrf_token %}
+          <button type="submit" class="content-admin-button content-admin-button--ghost">+ Tlačítko</button>
+        </form>
+      </div>
+    </div>
+
+    {% if blocks %}
+      <div class="content-block-list">
+        {% for block in blocks %}
+          <article class="content-block-card">
+            <div class="content-block-card-main">
+              <div class="content-block-card-meta">
+                <span class="content-block-number">#{{ forloop.counter }}</span>
+                <strong>{{ block.get_block_type_display }}</strong>
+              </div>
+
+              <div class="content-block-preview">
+                {% if block.block_type == "text" %}
+                  {% if block.text %}
+                    {{ block.text|truncatechars:220|linebreaksbr }}
+                  {% else %}
+                    <span class="muted">Textový blok zatím nemá obsah.</span>
+                  {% endif %}
+
+                {% elif block.block_type == "gallery" %}
+                  <span class="muted">
+                    Galerie: {{ block.images.count }} obrázků
+                  </span>
+
+                {% elif block.block_type == "youtube" %}
+                  {% if block.youtube_url %}
+                    {{ block.youtube_url }}
+                  {% else %}
+                    <span class="muted">YouTube URL zatím není vyplněné.</span>
+                  {% endif %}
+
+                {% elif block.block_type == "cta" %}
+                  {% if block.button_label or block.button_url %}
+                    <strong>{{ block.button_label|default:"Bez textu tlačítka" }}</strong><br>
+                    <span class="muted">{{ block.button_url|default:"Bez URL" }}</span>
+                  {% else %}
+                    <span class="muted">Tlačítko zatím není vyplněné.</span>
+                  {% endif %}
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="content-block-card-actions">
+              <a class="content-admin-button content-admin-button--ghost"
+                 href="{% url 'rozesilac:content_staff:block_edit' post.id block.id %}">
+                Upravit
+              </a>
+
+              <form method="post" action="{% url 'rozesilac:content_staff:block_move_up' post.id block.id %}">
+                {% csrf_token %}
+                <button type="submit" class="content-admin-button content-admin-button--ghost">↑</button>
+              </form>
+
+              <form method="post" action="{% url 'rozesilac:content_staff:block_move_down' post.id block.id %}">
+                {% csrf_token %}
+                <button type="submit" class="content-admin-button content-admin-button--ghost">↓</button>
+              </form>
+
+              <form method="post"
+                    action="{% url 'rozesilac:content_staff:block_delete' post.id block.id %}"
+                    onsubmit="return confirm('Opravdu smazat tento blok?');">
+                {% csrf_token %}
+                <button type="submit" class="content-admin-button content-admin-button--danger">Smazat</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="content-empty-state content-empty-state--blocks">
+        <h3>Zatím tu nejsou žádné obsahové bloky</h3>
+        <p>
+          Přidej první textový blok, galerii, YouTube video nebo tlačítko.
+        </p>
+      </div>
+    {% endif %}
+  </section>
+{% endif %}
+
   </div>
 {% endblock rozesilac_content %}
