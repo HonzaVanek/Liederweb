@@ -1,0 +1,135 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'content/content_staff.css' %}">
+{% endblock extra_css %}
+
+{% block title %}Rozesílač | {{ page_title }}{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="content-admin">
+    <div class="content-admin-header">
+      <div>
+        <p class="content-admin-kicker">Blogposty</p>
+        <h1 class="content-admin-title">{{ page_title }}</h1>
+        <p class="content-admin-lead">
+          Tady se nastavuje základ příspěvku. Samotné bloky textu, obrázků a videí
+          přidáme následně pod editaci příspěvku.
+        </p>
+      </div>
+
+      <div class="content-admin-actions">
+        <a class="content-admin-button content-admin-button--ghost" href="{% url 'rozesilac:content_staff:post_list' %}">
+          Zpět na seznam
+        </a>
+
+        {% if post and post.is_published %}
+          <a class="content-admin-button content-admin-button--ghost" href="{{ post.get_absolute_url }}" target="_blank" rel="noopener">
+            Zobrazit veřejně
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <form method="post" novalidate class="content-form-card">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="content-form-errors">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div class="content-form-grid">
+        <div>
+          <section class="content-form-section">
+            <h3>Základ příspěvku</h3>
+
+            <div class="content-form-row">
+              <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+              {{ form.title }}
+              {{ form.title.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <label for="{{ form.slug.id_for_label }}">{{ form.slug.label }}</label>
+              {{ form.slug }}
+              <small>Když necháš prázdné, vytvoří se automaticky z názvu.</small>
+              {{ form.slug.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <label for="{{ form.perex.id_for_label }}">{{ form.perex.label }}</label>
+              {{ form.perex }}
+              {{ form.perex.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <label for="{{ form.keywords.id_for_label }}">{{ form.keywords.label }}</label>
+              {{ form.keywords }}
+              <small>Např. Agnes Tyrrell, Tyrell, Tyrel, Schumannovi.</small>
+              {{ form.keywords.errors }}
+            </div>
+          </section>
+        </div>
+
+        <aside>
+          <section class="content-form-section">
+            <h3>Zařazení</h3>
+
+            <div class="content-form-row">
+              <label for="{{ form.event.id_for_label }}">{{ form.event.label }}</label>
+              {{ form.event }}
+              {{ form.event.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <label for="{{ form.cover_image.id_for_label }}">{{ form.cover_image.label }}</label>
+              {{ form.cover_image }}
+              {{ form.cover_image.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <label for="{{ form.author_name.id_for_label }}">{{ form.author_name.label }}</label>
+              {{ form.author_name }}
+              {{ form.author_name.errors }}
+            </div>
+          </section>
+
+          <section class="content-form-section">
+            <h3>Publikace</h3>
+
+            <div class="content-form-row">
+              <label for="{{ form.published_at.id_for_label }}">{{ form.published_at.label }}</label>
+              {{ form.published_at }}
+              <small>Když publikuješ bez data, doplní se automaticky aktuální čas.</small>
+              {{ form.published_at.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <div class="content-form-checkbox">
+                {{ form.is_published }}
+                <label for="{{ form.is_published.id_for_label }}">
+                  {{ form.is_published.label }}
+                </label>
+              </div>
+              {{ form.is_published.errors }}
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <div class="content-form-actions">
+        <button type="submit" class="content-admin-button content-admin-button--primary">
+          {{ submit_label }}
+        </button>
+
+        <a class="content-admin-button content-admin-button--ghost" href="{% url 'rozesilac:content_staff:post_list' %}">
+          Zrušit
+        </a>
+      </div>
+    </form>
+  </div>
+{% endblock rozesilac_content %}

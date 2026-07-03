@@ -78,6 +78,11 @@
                Homepage citace
             </a>
 
+            <a href="{% url 'rozesilac:content_staff:post_list' %}"
+               class="{% if match.namespace == 'rozesilac:content_staff' %}active{% endif %}">
+               Blogposty
+            </a>
+
          </nav>
          {% endwith %}
     </div>

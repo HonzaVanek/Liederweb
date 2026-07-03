@@ -1,0 +1,124 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'content/content_staff.css' %}">
+{% endblock extra_css %}
+
+{% block title %}Rozesílač | Obsahové příspěvky{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="content-admin">
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">
+            {{ message }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <div class="content-admin-header">
+      <div>
+        <p class="content-admin-kicker">Správa webu</p>
+        <h1 class="content-admin-title">Blogposty</h1>
+        <p class="content-admin-lead">
+          Redakční příspěvky navázané na koncerty i samostatný obsah.
+          Později z nich půjde skládat stránka Objevujte.
+        </p>
+      </div>
+
+      <div class="content-admin-actions">
+        <a class="content-admin-button content-admin-button--primary" href="{% url 'rozesilac:content_staff:post_create' %}">
+          Nový příspěvek
+        </a>
+      </div>
+    </div>
+
+
+
+    <div class="content-list-card">
+      {% if posts %}
+        <div class="content-list-scroll">
+          <table class="content-post-table">
+            <thead>
+              <tr>
+                <th>Název</th>
+                <th>Koncert</th>
+                <th>Autor/ka</th>
+                <th>Stav</th>
+                <th>Publikace</th>
+                <th></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for post in posts %}
+                <tr>
+                  <td class="content-post-main">
+                    <strong>{{ post.title }}</strong>
+                    <small>{{ post.slug }}</small>
+                  </td>
+
+                  <td class="content-post-event">
+                    {% if post.event %}
+                      {{ post.event.title }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    {{ post.author_name|default:"—" }}
+                  </td>
+
+                  <td>
+                    {% if post.is_published %}
+                      <span class="content-post-status content-post-status--published">Publikováno</span>
+                    {% else %}
+                      <span class="content-post-status content-post-status--draft">Koncept</span>
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    {% if post.published_at %}
+                      {{ post.published_at|date:"j. n. Y H:i" }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+
+                  <td class="content-post-actions">
+                    <a href="{% url 'rozesilac:content_staff:post_edit' post.id %}">
+                      Upravit
+                    </a>
+
+                    {% if post.is_published %}
+                      <a href="{{ post.get_absolute_url }}" target="_blank" rel="noopener">
+                        Zobrazit
+                      </a>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="content-empty-state">
+          <h3>Zatím tu není žádný blogpost</h3>
+          <p>
+            Začni vytvořením prvního příspěvku. Obsahové bloky s textem,
+            obrázky a videi přidáme v dalším kroku.
+          </p>
+          <a class="content-admin-button content-admin-button--primary" href="{% url 'rozesilac:content_staff:post_create' %}">
+            Vytvořit první příspěvek
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock rozesilac_content %}
