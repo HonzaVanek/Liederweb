@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.db.models import Max
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import JsonResponse
 
 from core.decorators import staff_required
 
@@ -28,6 +29,9 @@ def _get_block(post, block_id):
 
 def _get_block_image(block, image_id):
     return get_object_or_404(ContentBlockImage, id=image_id, block=block)
+
+def _is_ajax(request):
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
 
 
 @staff_required
@@ -197,6 +201,8 @@ def block_move_up(request, post_id, block_id):
     post = _get_post(post_id)
     block = _get_block(post, block_id)
 
+    moved = False
+
     previous_block = (
         post.blocks
         .filter(position__lt=block.position)
@@ -208,6 +214,15 @@ def block_move_up(request, post_id, block_id):
         block.position, previous_block.position = previous_block.position, block.position
         block.save(update_fields=["position"])
         previous_block.save(update_fields=["position"])
+        moved = True
+
+    if _is_ajax(request):
+        return JsonResponse({
+            "ok": True,
+            "moved": moved,
+            "direction": "up",
+            "block_id": block.id,
+        })
 
     return redirect("rozesilac:content_staff:post_edit", post_id=post.id)
 
@@ -216,6 +231,8 @@ def block_move_up(request, post_id, block_id):
 def block_move_down(request, post_id, block_id):
     post = _get_post(post_id)
     block = _get_block(post, block_id)
+
+    moved = False
 
     next_block = (
         post.blocks
@@ -228,6 +245,15 @@ def block_move_down(request, post_id, block_id):
         block.position, next_block.position = next_block.position, block.position
         block.save(update_fields=["position"])
         next_block.save(update_fields=["position"])
+        moved = True
+
+    if _is_ajax(request):
+        return JsonResponse({
+            "ok": True,
+            "moved": moved,
+            "direction": "down",
+            "block_id": block.id,
+        })
 
     return redirect("rozesilac:content_staff:post_edit", post_id=post.id)
 

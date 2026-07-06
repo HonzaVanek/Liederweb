@@ -181,7 +181,7 @@
     {% if blocks %}
       <div class="content-block-list">
         {% for block in blocks %}
-          <article class="content-block-card">
+          <article class="content-block-card" data-content-block-card data-block-id="{{ block.id }}">
             <div class="content-block-card-main">
               <div class="content-block-card-meta">
                 <span class="content-block-number">#{{ forloop.counter }}</span>
@@ -232,14 +232,24 @@
                 Upravit
               </a>
 
-              <form method="post" action="{% url 'rozesilac:content_staff:block_move_up' post.id block.id %}">
+              <form
+                method="post"
+                action="{% url 'rozesilac:content_staff:block_move_up' post.id block.id %}"
+                data-block-move-form
+                data-direction="up"
+              >
                 {% csrf_token %}
-                <button type="submit" class="content-admin-button content-admin-button--ghost">↑</button>
+                <button type="submit" class="content-admin-button content-admin-button--ghost" {% if forloop.first %}disabled{% endif %}>↑</button>
               </form>
 
-              <form method="post" action="{% url 'rozesilac:content_staff:block_move_down' post.id block.id %}">
+              <form
+                method="post"
+                action="{% url 'rozesilac:content_staff:block_move_down' post.id block.id %}"
+                data-block-move-form
+                data-direction="down"
+              >
                 {% csrf_token %}
-                <button type="submit" class="content-admin-button content-admin-button--ghost">↓</button>
+                <button type="submit" class="content-admin-button content-admin-button--ghost" {% if forloop.last %}disabled{% endif %}>↓</button>
               </form>
 
               <form method="post"
@@ -264,4 +274,6 @@
 {% endif %}
 
   </div>
+
+<script src="{% static 'content/content_staff.js' %}"></script>
 {% endblock rozesilac_content %}

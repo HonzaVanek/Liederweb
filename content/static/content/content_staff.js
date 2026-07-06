@@ -1,4 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
+  /*
+   * Jednoduché formátování textového bloku
+   */
   const toolbarButtons = document.querySelectorAll("[data-richtext-action]");
 
   function replaceSelection(textarea, replacement, selectionStart, selectionEnd) {
@@ -99,4 +102,123 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+
+  /*
+   * Přesun bloků bez reloadu stránky
+   */
+  const moveForms = document.querySelectorAll("[data-block-move-form]");
+
+  function getCsrfToken(form) {
+    const input = form.querySelector("input[name='csrfmiddlewaretoken']");
+    return input ? input.value : "";
+  }
+
+  function renumberBlocks() {
+    const cards = document.querySelectorAll("[data-content-block-card]");
+
+    cards.forEach(function (card, index) {
+      const number = card.querySelector(".content-block-number");
+      if (number) {
+        number.textContent = "#" + String(index + 1);
+      }
+    });
+  }
+
+  function updateMoveButtons() {
+    const cards = Array.from(document.querySelectorAll("[data-content-block-card]"));
+
+    cards.forEach(function (card, index) {
+      const upButton = card.querySelector("[data-direction='up'] button");
+      const downButton = card.querySelector("[data-direction='down'] button");
+
+      if (upButton) {
+        upButton.disabled = index === 0;
+      }
+
+      if (downButton) {
+        downButton.disabled = index === cards.length - 1;
+      }
+    });
+  }
+
+  function moveCardInDom(card, direction) {
+    if (direction === "up") {
+      const previous = card.previousElementSibling;
+
+      if (previous && previous.matches("[data-content-block-card]")) {
+        card.parentNode.insertBefore(card, previous);
+        return true;
+      }
+    }
+
+    if (direction === "down") {
+      const next = card.nextElementSibling;
+
+      if (next && next.matches("[data-content-block-card]")) {
+        card.parentNode.insertBefore(next, card);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  moveForms.forEach(function (form) {
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const card = form.closest("[data-content-block-card]");
+      const button = form.querySelector("button");
+      const direction = form.dataset.direction;
+
+      if (!card || !button || button.disabled) {
+        return;
+      }
+
+      button.disabled = true;
+      card.classList.add("content-block-card--moving");
+
+      fetch(form.action, {
+        method: "POST",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+          "X-CSRFToken": getCsrfToken(form),
+        },
+        body: new FormData(form),
+      })
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error("Move request failed");
+          }
+
+          return response.json();
+        })
+        .then(function (data) {
+          if (!data.ok) {
+            throw new Error("Move failed");
+          }
+
+          if (data.moved) {
+            moveCardInDom(card, direction);
+            renumberBlocks();
+          }
+
+          updateMoveButtons();
+        })
+        .catch(function () {
+          /*
+           * Když AJAX selže, radši použijeme původní fallback:
+           * klasický POST s reloadem.
+           */
+          form.removeAttribute("data-block-move-form");
+          form.submit();
+        })
+        .finally(function () {
+          card.classList.remove("content-block-card--moving");
+          updateMoveButtons();
+        });
+    });
+  });
+
+  updateMoveButtons();
 });

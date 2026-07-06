@@ -888,3 +888,22 @@ body.dark-mode .rozesilac-main input.content-color-input[type="color"] {
     background: #181818;
     border-color: #555;
 }
+
+.content-block-card--moving {
+    opacity: 0.62;
+    transform: scale(0.995);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.content-admin-button:disabled,
+.rozesilac-main button.content-admin-button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.content-admin-button:disabled:hover,
+.rozesilac-main button.content-admin-button:disabled:hover {
+    background: inherit;
+    color: inherit;
+}
