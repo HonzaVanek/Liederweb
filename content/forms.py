@@ -15,6 +15,8 @@ class ContentPostForm(forms.ModelForm):
             "slug",
             "event",
             "cover_image",
+            "cover_image_position",
+            "cover_image_fit",
             "author_name",
             "perex",
             "keywords",
@@ -26,6 +28,8 @@ class ContentPostForm(forms.ModelForm):
             "slug": forms.TextInput(attrs={"class": "form-control"}),
             "event": forms.Select(attrs={"class": "form-control"}),
             "cover_image": forms.Select(attrs={"class": "form-control"}),
+            "cover_image_fit": forms.Select(attrs={"class": "form-control"}),
+            "cover_image_position": forms.Select(attrs={"class": "form-control"}),
             "author_name": forms.TextInput(attrs={"class": "form-control"}),
             "perex": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
             "keywords": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
@@ -167,11 +171,15 @@ class ContentBlockImageForm(forms.ModelForm):
         model = ContentBlockImage
         fields = [
             "image",
+            "image_fit",
+            "image_position",
             "caption",
             "alt_text",
         ]
         widgets = {
             "image": forms.Select(attrs={"class": "form-control"}),
+            "image_fit": forms.Select(attrs={"class": "form-control"}),
+            "image_position": forms.Select(attrs={"class": "form-control"}),
             "caption": forms.TextInput(attrs={"class": "form-control"}),
             "alt_text": forms.TextInput(attrs={"class": "form-control"}),
         }

@@ -166,7 +166,13 @@ def block_edit(request, post_id, block_id):
 
     if is_gallery:
         image_form = ContentBlockImageForm()
-        images = block.images.select_related("image").all()
+        images = list(block.images.select_related("image").all())
+
+        for image_item in images:
+            image_item.edit_form = ContentBlockImageForm(
+                instance=image_item,
+                prefix=f"image-{image_item.id}",
+            )
 
     return render(
         request,
@@ -337,5 +343,30 @@ def block_image_move_down(request, post_id, block_id, image_id):
         block_image.position, next_image.position = next_image.position, block_image.position
         block_image.save(update_fields=["position"])
         next_image.save(update_fields=["position"])
+
+    return redirect("rozesilac:content_staff:block_edit", post_id=post.id, block_id=block.id)
+
+@staff_required
+def block_image_edit(request, post_id, block_id, image_id):
+    post = _get_post(post_id)
+    block = _get_block(post, block_id)
+    block_image = _get_block_image(block, image_id)
+
+    if block.block_type != ContentBlock.BLOCK_GALLERY:
+        messages.error(request, "Obrázky lze upravovat jen u galerijního bloku.")
+        return redirect("rozesilac:content_staff:block_edit", post_id=post.id, block_id=block.id)
+
+    if request.method == "POST":
+        form = ContentBlockImageForm(
+            request.POST,
+            instance=block_image,
+            prefix=f"image-{block_image.id}",
+        )
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Obrázek v galerii byl uložen.")
+        else:
+            messages.error(request, "Obrázek se nepodařilo uložit.")
 
     return redirect("rozesilac:content_staff:block_edit", post_id=post.id, block_id=block.id)

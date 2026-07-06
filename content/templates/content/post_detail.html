@@ -52,6 +52,7 @@
         <img
           src="{{ post.cover_image.file.url }}"
           alt="{{ post.cover_image.alt_text|default:post.cover_image.title }}"
+          style="object-fit: {{ post.cover_image_fit|default:'cover' }}; object-position: {{ post.cover_image_position|default:'center center' }};"
         >
 
         {% if post.cover_image.credit %}
@@ -80,6 +81,7 @@
                         <img
                           src="{{ gallery_item.image.file.url }}"
                           alt="{{ gallery_item.effective_alt_text }}"
+                          style="object-fit: {{ gallery_item.image_fit|default:'cover' }}; object-position: {{ gallery_item.image_position|default:'center center' }};"
                         >
                       {% endif %}
 

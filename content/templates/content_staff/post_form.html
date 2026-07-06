@@ -103,6 +103,18 @@
             </div>
 
             <div class="content-form-row">
+              <label for="{{ form.cover_image_fit.id_for_label }}">{{ form.cover_image_fit.label }}</label>
+              {{ form.cover_image_fit }}
+              {{ form.cover_image_fit.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <label for="{{ form.cover_image_position.id_for_label }}">{{ form.cover_image_position.label }}</label>
+              {{ form.cover_image_position }}
+              {{ form.cover_image_position.errors }}
+            </div>
+
+            <div class="content-form-row">
               <label for="{{ form.author_name.id_for_label }}">{{ form.author_name.label }}</label>
               {{ form.author_name }}
               {{ form.author_name.errors }}

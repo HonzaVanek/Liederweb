@@ -15,6 +15,28 @@ class ContentPost(models.Model):
     Později z těchto položek půjde skládat stránka Objevujte.
     """
 
+    IMAGE_FIT_COVER = "cover"
+    IMAGE_FIT_CONTAIN = "contain"
+
+    IMAGE_FIT_CHOICES = [
+        (IMAGE_FIT_COVER, "Vyplnit prostor / oříznout"),
+        (IMAGE_FIT_CONTAIN, "Zobrazit celý obrázek"),
+    ]
+
+    IMAGE_POSITION_CENTER = "center center"
+    IMAGE_POSITION_TOP = "center top"
+    IMAGE_POSITION_BOTTOM = "center bottom"
+    IMAGE_POSITION_LEFT = "left center"
+    IMAGE_POSITION_RIGHT = "right center"
+
+    IMAGE_POSITION_CHOICES = [
+        (IMAGE_POSITION_CENTER, "Střed"),
+        (IMAGE_POSITION_TOP, "Nahoře"),
+        (IMAGE_POSITION_BOTTOM, "Dole"),
+        (IMAGE_POSITION_LEFT, "Vlevo uprostřed"),
+        (IMAGE_POSITION_RIGHT, "Vpravo uprostřed"),
+    ]
+
     title = models.CharField("Název", max_length=255)
 
     slug = models.SlugField(
@@ -46,6 +68,20 @@ class ContentPost(models.Model):
         },
         help_text="Nepovinné. Hodí se později pro výpis na stránce Objevujte.",
     )
+
+    cover_image_fit = models.CharField(
+            "Zobrazení úvodního obrázku",
+            max_length=20,
+            choices=IMAGE_FIT_CHOICES,
+            default=IMAGE_FIT_COVER,
+        )
+
+    cover_image_position = models.CharField(
+            "Pozice úvodního obrázku",
+            max_length=30,
+            choices=IMAGE_POSITION_CHOICES,
+            default=IMAGE_POSITION_CENTER,
+        )
 
     author_name = models.CharField(
         "Autor/ka textu",
@@ -279,6 +315,42 @@ class ContentBlockImage(models.Model):
     Samotný soubor je v media_assets.MediaAsset.
     Tady řešíme jen použití obrázku v konkrétním bloku článku.
     """
+
+    IMAGE_FIT_COVER = "cover"
+    IMAGE_FIT_CONTAIN = "contain"
+
+    IMAGE_FIT_CHOICES = [
+        (IMAGE_FIT_COVER, "Vyplnit prostor / oříznout"),
+        (IMAGE_FIT_CONTAIN, "Zobrazit celý obrázek"),
+    ]
+
+    IMAGE_POSITION_CENTER = "center center"
+    IMAGE_POSITION_TOP = "center top"
+    IMAGE_POSITION_BOTTOM = "center bottom"
+    IMAGE_POSITION_LEFT = "left center"
+    IMAGE_POSITION_RIGHT = "right center"
+
+    IMAGE_POSITION_CHOICES = [
+        (IMAGE_POSITION_CENTER, "Střed"),
+        (IMAGE_POSITION_TOP, "Nahoře"),
+        (IMAGE_POSITION_BOTTOM, "Dole"),
+        (IMAGE_POSITION_LEFT, "Vlevo"),
+        (IMAGE_POSITION_RIGHT, "Vpravo"),
+    ]
+
+    image_fit = models.CharField(
+        "Zobrazení obrázku",
+        max_length=20,
+        choices=IMAGE_FIT_CHOICES,
+        default=IMAGE_FIT_COVER,
+    )
+
+    image_position = models.CharField(
+        "Pozice obrázku",
+        max_length=30,
+        choices=IMAGE_POSITION_CHOICES,
+        default=IMAGE_POSITION_CENTER,
+    )
 
     block = models.ForeignKey(
         ContentBlock,

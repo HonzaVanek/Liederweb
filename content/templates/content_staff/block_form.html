@@ -51,37 +51,37 @@
         <h3>{{ content_block.get_block_type_display }}</h3>
 
         {% for field in form %}
-        <div class="content-form-row">
+          <div class="content-form-row">
             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
 
             {% if field.name == "text" %}
-            <div class="content-richtext-toolbar" aria-label="Jednoduché formátování textu">
+              <div class="content-richtext-toolbar" aria-label="Jednoduché formátování textu">
                 <button type="button" class="content-richtext-btn" data-richtext-action="bold">
-                Tučně
+                  Tučně
                 </button>
 
                 <button type="button" class="content-richtext-btn" data-richtext-action="italic">
-                Kurzíva
+                  Kurzíva
                 </button>
 
                 <button type="button" class="content-richtext-btn" data-richtext-action="bullet">
-                Odrážka
+                  Odrážka
                 </button>
 
                 <button type="button" class="content-richtext-btn" data-richtext-action="nbsp">
-                Pevná mezera
+                  Pevná mezera
                 </button>
-            </div>
+              </div>
             {% endif %}
 
             {{ field }}
 
             {% if field.help_text %}
-            <small class="content-form-help">{{ field.help_text }}</small>
+              <small class="content-form-help">{{ field.help_text }}</small>
             {% endif %}
 
             {{ field.errors }}
-        </div>
+          </div>
         {% empty %}
           <p class="content-form-help">
             Tento typ bloku nemá vlastní textová pole. U galerie spravuj obrázky níže.
@@ -121,23 +121,18 @@
           {% csrf_token %}
 
           <div class="content-form-grid content-form-grid-gallery">
-            <div class="content-form-row">
-              <label for="{{ image_form.image.id_for_label }}">{{ image_form.image.label }}</label>
-              {{ image_form.image }}
-              {{ image_form.image.errors }}
-            </div>
+            {% for field in image_form %}
+              <div class="content-form-row">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
 
-            <div class="content-form-row">
-              <label for="{{ image_form.caption.id_for_label }}">{{ image_form.caption.label }}</label>
-              {{ image_form.caption }}
-              {{ image_form.caption.errors }}
-            </div>
+                {% if field.help_text %}
+                  <small class="content-form-help">{{ field.help_text }}</small>
+                {% endif %}
 
-            <div class="content-form-row">
-              <label for="{{ image_form.alt_text.id_for_label }}">{{ image_form.alt_text.label }}</label>
-              {{ image_form.alt_text }}
-              {{ image_form.alt_text.errors }}
-            </div>
+                {{ field.errors }}
+              </div>
+            {% endfor %}
           </div>
 
           <div class="content-form-actions">
@@ -157,19 +152,34 @@
                   {% endif %}
                 </div>
 
-                <div class="content-gallery-image-info">
-                  <strong>{{ item.image.title }}</strong>
+                <form
+                  method="post"
+                  action="{% url 'rozesilac:content_staff:block_image_edit' post.id content_block.id item.id %}"
+                  class="content-gallery-image-edit-form"
+                >
+                  {% csrf_token %}
 
-                  {% if item.caption %}
-                    <p>{{ item.caption }}</p>
-                  {% endif %}
+                  <div class="content-gallery-image-edit-grid">
+                    {% for field in item.edit_form %}
+                      <div class="content-form-row">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
 
-                  {% if item.alt_text %}
-                    <small>Alt: {{ item.alt_text }}</small>
-                  {% elif item.image.alt_text %}
-                    <small>Alt z knihovny: {{ item.image.alt_text }}</small>
-                  {% endif %}
-                </div>
+                        {% if field.help_text %}
+                          <small class="content-form-help">{{ field.help_text }}</small>
+                        {% endif %}
+
+                        {{ field.errors }}
+                      </div>
+                    {% endfor %}
+                  </div>
+
+                  <div class="content-gallery-image-save">
+                    <button type="submit" class="content-admin-button content-admin-button--primary">
+                      Uložit obrázek
+                    </button>
+                  </div>
+                </form>
 
                 <div class="content-gallery-image-actions">
                   <form method="post" action="{% url 'rozesilac:content_staff:block_image_move_up' post.id content_block.id item.id %}">
@@ -182,9 +192,11 @@
                     <button type="submit" class="content-admin-button content-admin-button--ghost">↓</button>
                   </form>
 
-                  <form method="post"
-                        action="{% url 'rozesilac:content_staff:block_image_delete' post.id content_block.id item.id %}"
-                        onsubmit="return confirm('Opravdu odebrat obrázek z galerie?');">
+                  <form
+                    method="post"
+                    action="{% url 'rozesilac:content_staff:block_image_delete' post.id content_block.id item.id %}"
+                    onsubmit="return confirm('Opravdu odebrat obrázek z galerie?');"
+                  >
                     {% csrf_token %}
                     <button type="submit" class="content-admin-button content-admin-button--danger">
                       Odebrat
@@ -203,5 +215,6 @@
       </section>
     {% endif %}
   </div>
+
   <script src="{% static 'content/content_staff.js' %}"></script>
 {% endblock rozesilac_content %}

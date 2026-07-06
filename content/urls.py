@@ -22,6 +22,7 @@ staff_urlpatterns = [
     path("<int:post_id>/blocks/<int:block_id>/images/<int:image_id>/delete/", staff_views.block_image_delete, name="block_image_delete"),
     path("<int:post_id>/blocks/<int:block_id>/images/<int:image_id>/move-up/", staff_views.block_image_move_up, name="block_image_move_up"),
     path("<int:post_id>/blocks/<int:block_id>/images/<int:image_id>/move-down/", staff_views.block_image_move_down, name="block_image_move_down"),
+    path("<int:post_id>/blocks/<int:block_id>/images/<int:image_id>/edit/", staff_views.block_image_edit, name="block_image_edit"),
 ]
 
 urlpatterns = public_urlpatterns
