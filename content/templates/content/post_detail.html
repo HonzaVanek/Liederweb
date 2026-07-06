@@ -111,7 +111,11 @@
           {% elif item.block_type == "cta" %}
             {% if item.button_label and item.button_url %}
               <section class="content-block content-block--cta">
-                <a class="content-post-cta" href="{{ item.button_url }}">
+                <a
+                  class="content-post-cta"
+                  href="{{ item.button_url }}"
+                  style="--content-cta-bg: {{ item.button_color|default:'#111111' }}; --content-cta-fg: {{ item.button_foreground_color|default:'#ffffff' }};"
+                >
                   {{ item.button_label|cz_nbsp }}
                 </a>
               </section>

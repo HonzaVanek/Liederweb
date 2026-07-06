@@ -211,7 +211,14 @@
                 {% elif block.block_type == "cta" %}
                   {% if block.button_label or block.button_url %}
                     <strong>{{ block.button_label|default:"Bez textu tlačítka" }}</strong><br>
-                    <span class="muted">{{ block.button_url|default:"Bez URL" }}</span>
+                    <span class="muted">{{ block.button_url|default:"Bez URL" }}</span><br>
+                    <span class="muted">
+                      Barva:
+                      <span
+                        style="display:inline-block;width:14px;height:14px;border-radius:50%;border:1px solid #999;vertical-align:-2px;background:{{ block.button_color|default:'#111111' }};"
+                      ></span>
+                      {{ block.button_color|default:"#111111" }}
+                    </span>
                   {% else %}
                     <span class="muted">Tlačítko zatím není vyplněné.</span>
                   {% endif %}

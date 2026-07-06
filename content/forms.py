@@ -83,12 +83,14 @@ class ContentBlockForm(forms.ModelForm):
             "youtube_url",
             "button_label",
             "button_url",
+            "button_color",
         ]
         widgets = {
             "text": forms.Textarea(attrs={"class": "form-control content-richtext-textarea", "rows": 12, "data-content-richtext": "1"}),
             "youtube_url": forms.URLInput(attrs={"class": "form-control"}),
             "button_label": forms.TextInput(attrs={"class": "form-control"}),
             "button_url": forms.URLInput(attrs={"class": "form-control"}),
+            "button_color": forms.TextInput(attrs={"class": "form-control content-color-input", "type": "color"}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -116,13 +118,22 @@ class ContentBlockForm(forms.ModelForm):
             }
 
         elif self.block_type == ContentBlock.BLOCK_CTA:
+            self.fields["button_color"].help_text = (
+                "Vyber barvu tlačítka. Barva textu se na veřejné stránce dopočítá automaticky podle kontrastu."
+            )
+
             self.fields = {
                 "button_label": self.fields["button_label"],
                 "button_url": self.fields["button_url"],
+                "button_color": self.fields["button_color"],
             }
 
         elif self.block_type == ContentBlock.BLOCK_GALLERY:
             self.fields = {}
+
+    def clean_button_color(self):
+        color = self.cleaned_data.get("button_color") or "#111111"
+        return color.lower()
 
     def clean(self):
         cleaned_data = super().clean()

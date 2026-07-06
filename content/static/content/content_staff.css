@@ -855,3 +855,36 @@ body.dark-mode .rozesilac-main button.content-richtext-btn:hover {
     background: #eee;
     color: #111;
 }
+
+/* =========================================================
+   CTA COLOR PICKER
+   ========================================================= */
+
+.rozesilac-main input.content-color-input[type="color"] {
+    width: 100%;
+    min-height: 46px;
+    padding: 4px;
+    border: 1.5px solid #000;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.rozesilac-main input.content-color-input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.rozesilac-main input.content-color-input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 5px;
+}
+
+.rozesilac-main input.content-color-input[type="color"]::-moz-color-swatch {
+    border: none;
+    border-radius: 5px;
+}
+
+body.dark-mode .rozesilac-main input.content-color-input[type="color"] {
+    background: #181818;
+    border-color: #555;
+}

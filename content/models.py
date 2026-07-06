@@ -4,6 +4,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from urllib.parse import parse_qs, urlparse
+from django.core.validators import RegexValidator
 
 
 class ContentPost(models.Model):
@@ -176,6 +177,20 @@ class ContentBlock(models.Model):
         help_text="Používá se u tlačítkového bloku.",
     )
 
+    button_color = models.CharField(
+        "Barva tlačítka",
+        max_length=7,
+        blank=True,
+        default="#111111",
+        validators=[
+            RegexValidator(
+                regex=r"^#[0-9A-Fa-f]{6}$",
+                message="Barva musí být ve formátu #RRGGBB, například #111111.",
+            )
+        ],
+        help_text="Používá se u tlačítkového bloku.",
+    )
+
     created_at = models.DateTimeField("Vytvořeno", auto_now_add=True)
     updated_at = models.DateTimeField("Upraveno", auto_now=True)
 
@@ -224,6 +239,37 @@ class ContentBlock(models.Model):
             return ""
 
         return f"https://www.youtube-nocookie.com/embed/{video_id}"    
+
+    @property
+    def button_foreground_color(self):
+        """
+        Vrátí černou nebo bílou barvu textu podle světlosti vybrané barvy tlačítka.
+        """
+        color = (self.button_color or "#111111").strip()
+
+        if not color.startswith("#") or len(color) != 7:
+            return "#ffffff"
+
+        try:
+            red = int(color[1:3], 16)
+            green = int(color[3:5], 16)
+            blue = int(color[5:7], 16)
+        except ValueError:
+            return "#ffffff"
+
+        def channel_luminance(channel):
+            channel = channel / 255
+            if channel <= 0.03928:
+                return channel / 12.92
+            return ((channel + 0.055) / 1.055) ** 2.4
+
+        luminance = (
+            0.2126 * channel_luminance(red)
+            + 0.7152 * channel_luminance(green)
+            + 0.0722 * channel_luminance(blue)
+        )
+
+        return "#111111" if luminance > 0.55 else "#ffffff"
 
 
 class ContentBlockImage(models.Model):

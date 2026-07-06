@@ -284,25 +284,27 @@
     justify-content: center;
     min-height: 48px;
     padding: 12px 22px;
-    border: 1.5px solid #000;
+    border: 1.5px solid var(--content-cta-bg, #111);
     border-radius: 999px;
-    background: #111;
-    color: #fff;
+    background: var(--content-cta-bg, #111);
+    color: var(--content-cta-fg, #fff);
     font-size: 0.86rem;
     font-weight: 700;
     text-decoration: none;
     text-transform: uppercase;
     letter-spacing: 0.12em;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
     transition:
-        background-color 0.25s ease,
-        color 0.25s ease,
-        transform 0.2s ease;
+        transform 0.2s ease,
+        opacity 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .content-post-cta:hover {
-    background: #fff;
-    color: #111;
+    color: var(--content-cta-fg, #fff);
+    opacity: 0.86;
     transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.16);
 }
 
 /* =========================================================
@@ -577,14 +579,12 @@ body.dark-mode .content-related-card:hover {
     background: #222;
 }
 
-body.dark-mode .content-post-cta,
 body.dark-mode .content-related-event__button {
     background: #eee;
     color: #111;
     border-color: #eee;
 }
 
-body.dark-mode .content-post-cta:hover,
 body.dark-mode .content-related-event__button:hover {
     background: #111;
     color: #eee;
