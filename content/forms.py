@@ -103,7 +103,8 @@ class ContentBlockForm(forms.ModelForm):
 
         if self.block_type == ContentBlock.BLOCK_TEXT:
             self.fields["text"].help_text = (
-                "Označ text a použij tlačítka nad polem: tučně vloží **text**, "
+                "Sem normálně nakopíruj jeden nebo více odstavců textu článku. "
+                "Chceš-li nějaké základní formátování, označ text který chceš mít jinak a použij tlačítka nad polem: tučně vloží **text**, "
                 "kurzíva vloží *text*, odrážka přidá '- ' na začátek řádku. "
                 "Tlačítko pevná mezera vloží &nbsp; na místo kurzoru. "
                 "Prázdný řádek vytvoří nový odstavec, běžný Enter vytvoří nový řádek."

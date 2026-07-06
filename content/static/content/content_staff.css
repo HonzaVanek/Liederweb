@@ -2,6 +2,10 @@
    CONTENT STAFF – blogposty / obsahové příspěvky
    ========================================================= */
 
+/* =========================================================
+   PAGE LAYOUT
+   ========================================================= */
+
 .content-admin {
     max-width: 1180px;
     margin: 0 auto;
@@ -49,53 +53,114 @@
     flex: 0 0 auto;
 }
 
-.content-admin-button {
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.content-admin-button,
+.rozesilac-main a.content-admin-button,
+.rozesilac-main button.content-admin-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 42px;
-    padding: 10px 16px;
+    width: auto;
+    min-width: 0;
+    min-height: 38px;
+    padding: 8px 14px;
     border: 2px solid #000;
     border-radius: 999px;
     background: #fff;
     color: #000;
-    font-size: 0.88rem;
+    font-size: 0.84rem;
     font-weight: 700;
+    line-height: 1.1;
+    text-align: center;
     text-decoration: none;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+    white-space: nowrap;
     cursor: pointer;
     transition:
         background-color 0.25s ease,
         color 0.25s ease,
+        border-color 0.25s ease,
         transform 0.18s ease,
         opacity 0.25s ease;
 }
 
-.content-admin-button:hover {
+.content-admin-button:hover,
+.rozesilac-main a.content-admin-button:hover,
+.rozesilac-main button.content-admin-button:hover {
     background: #000;
     color: #fff;
     text-decoration: none;
     transform: translateY(-1px);
 }
 
-.content-admin-button--primary {
+.content-admin-button--primary,
+.rozesilac-main a.content-admin-button--primary,
+.rozesilac-main button.content-admin-button--primary {
     background: #000;
     color: #fff;
+    border-color: #000;
 }
 
-.content-admin-button--primary:hover {
+.content-admin-button--primary:hover,
+.rozesilac-main a.content-admin-button--primary:hover,
+.rozesilac-main button.content-admin-button--primary:hover {
     background: #fff;
     color: #000;
+    border-color: #000;
 }
 
-.content-admin-button--ghost {
+.content-admin-button--ghost,
+.rozesilac-main a.content-admin-button--ghost,
+.rozesilac-main button.content-admin-button--ghost {
     background: #fff;
     color: #000;
+    border-color: #000;
+}
+
+.content-admin-button--ghost:hover,
+.rozesilac-main a.content-admin-button--ghost:hover,
+.rozesilac-main button.content-admin-button--ghost:hover {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+}
+
+.content-admin-button--danger,
+.rozesilac-main a.content-admin-button--danger,
+.rozesilac-main button.content-admin-button--danger {
+    background: #9f2f2f;
+    color: #fff;
+    border-color: #9f2f2f;
+}
+
+.content-admin-button--danger:hover,
+.rozesilac-main a.content-admin-button--danger:hover,
+.rozesilac-main button.content-admin-button--danger:hover {
+    background: #fff;
+    color: #9f2f2f;
+    border-color: #9f2f2f;
+}
+
+.content-admin-button:disabled,
+.rozesilac-main button.content-admin-button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.content-admin-button:disabled:hover,
+.rozesilac-main button.content-admin-button:disabled:hover {
+    background: #fff;
+    color: #000;
+    transform: none;
 }
 
 /* =========================================================
-   LIST
+   POST LIST
    ========================================================= */
 
 .content-list-card,
@@ -234,8 +299,15 @@
     margin-right: auto;
 }
 
+.content-empty-state--blocks {
+    margin-top: 18px;
+    background: #fff;
+    border: 1px solid #dcdcdc;
+    border-radius: 14px;
+}
+
 /* =========================================================
-   FORM
+   POST FORM
    ========================================================= */
 
 .content-form-card {
@@ -328,213 +400,73 @@
 }
 
 /* =========================================================
-   RESPONSIVE
+   SIMPLE RICHTEXT TOOLBAR
    ========================================================= */
 
-@media (max-width: 980px) {
-    .content-admin-header {
-        flex-direction: column;
-    }
-
-    .content-admin-actions {
-        justify-content: flex-start;
-    }
-
-    .content-form-grid {
-        grid-template-columns: 1fr;
-    }
+.content-richtext-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 10px;
+    padding: 10px;
+    border: 1px solid #dcdcdc;
+    border-radius: 10px;
+    background: #fff;
 }
 
-@media (max-width: 700px) {
-    .content-admin-header,
-    .content-form-card,
-    .content-form-section {
-        padding: 16px;
-        border-radius: 10px;
-    }
-
-    .content-admin-actions,
-    .content-form-actions {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .content-admin-button,
-    .content-form-actions button,
-    .content-form-actions a {
-        width: 100%;
-        text-align: center;
-    }
-
-    .content-post-table {
-        min-width: 760px;
-    }
-}
-
-
-/* =========================================================
-   FIX – odkazy jako tlačítka uvnitř rozesílače
-   base_rozesilac.css má .rozesilac-main a { color: #000; },
-   takže musíme být specifičtější.
-   ========================================================= */
-
-.rozesilac-main a.content-admin-button,
-.rozesilac-main button.content-admin-button {
-    text-decoration: none;
-}
-
-.rozesilac-main a.content-admin-button--primary,
-.rozesilac-main button.content-admin-button--primary {
-    background: #000;
-    color: #fff;
-    border-color: #000;
-}
-
-.rozesilac-main a.content-admin-button--primary:hover,
-.rozesilac-main button.content-admin-button--primary:hover {
+.rozesilac-main button.content-richtext-btn {
+    min-height: 34px;
+    padding: 7px 11px;
+    border: 1.5px solid #000;
+    border-radius: 999px;
     background: #fff;
     color: #000;
-    border-color: #000;
-    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
-.rozesilac-main a.content-admin-button--ghost,
-.rozesilac-main button.content-admin-button--ghost {
-    background: #fff;
-    color: #000;
-    border-color: #000;
-}
-
-.rozesilac-main a.content-admin-button--ghost:hover,
-.rozesilac-main button.content-admin-button--ghost:hover {
+.rozesilac-main button.content-richtext-btn:hover {
     background: #000;
     color: #fff;
-    border-color: #000;
-    text-decoration: none;
+}
+
+.content-richtext-textarea {
+    font-family: "Barlow", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.55;
 }
 
 /* =========================================================
-   DARK MODE
+   CTA COLOR PICKER
    ========================================================= */
 
-body.dark-mode .content-admin-header,
-body.dark-mode .content-list-card,
-body.dark-mode .content-form-card {
-    background: #1b1b1b;
-    border-color: #444;
-    box-shadow: none;
+.rozesilac-main input.content-color-input[type="color"] {
+    width: 100%;
+    min-height: 46px;
+    padding: 4px;
+    border: 1.5px solid #000;
+    border-radius: 8px;
+    background: #fff;
+    cursor: pointer;
 }
 
-body.dark-mode .content-admin-kicker,
-body.dark-mode .content-admin-lead,
-body.dark-mode .content-post-main small,
-body.dark-mode .content-form-row small,
-body.dark-mode .content-form-help {
-    color: #aaa;
+.rozesilac-main input.content-color-input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
 }
 
-body.dark-mode .content-form-section {
-    background: #171717;
-    border-color: #444;
+.rozesilac-main input.content-color-input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 5px;
 }
 
-body.dark-mode .content-form-row label {
-    color: #eee;
+.rozesilac-main input.content-color-input[type="color"]::-moz-color-swatch {
+    border: none;
+    border-radius: 5px;
 }
-
-body.dark-mode .content-form-checkbox {
-    background: #1f1f1f;
-    border-color: #444;
-}
-
-body.dark-mode .content-post-table th {
-    background: #eee;
-    color: #111;
-}
-
-body.dark-mode .content-post-table td {
-    border-bottom-color: #444;
-}
-
-body.dark-mode .content-post-table tbody tr:nth-child(even) {
-    background: #181818;
-}
-
-body.dark-mode .content-post-table tbody tr:hover {
-    background: #242424;
-}
-
-body.dark-mode .content-post-actions a,
-body.dark-mode .content-admin-button--ghost {
-    background: #1b1b1b;
-    color: #eee;
-    border-color: #666;
-}
-
-body.dark-mode .content-post-actions a:hover,
-body.dark-mode .content-admin-button--ghost:hover {
-    background: #eee;
-    color: #111;
-}
-
-body.dark-mode .content-admin-button--primary {
-    background: #eee;
-    color: #111;
-    border-color: #eee;
-}
-
-body.dark-mode .content-admin-button--primary:hover {
-    background: #111;
-    color: #eee;
-}
-
-body.dark-mode .content-post-status--draft {
-    background: #2a2410;
-    border-color: #7a6520;
-    color: #f0d983;
-}
-
-body.dark-mode .content-post-status--published {
-    background: #122417;
-    border-color: #2f7d4f;
-    color: #9ee0b8;
-}
-
-body.dark-mode .content-empty-state {
-    color: #eee;
-}
-
-body.dark-mode .rozesilac-main a.content-admin-button--ghost,
-body.dark-mode .rozesilac-main button.content-admin-button--ghost {
-    background: #1b1b1b;
-    color: #eee;
-    border-color: #666;
-}
-
-body.dark-mode .rozesilac-main a.content-admin-button--ghost:hover,
-body.dark-mode .rozesilac-main button.content-admin-button--ghost:hover {
-    background: #eee;
-    color: #111;
-    border-color: #eee;
-}
-
-body.dark-mode .rozesilac-main a.content-admin-button--primary,
-body.dark-mode .rozesilac-main button.content-admin-button--primary {
-    background: #eee;
-    color: #111;
-    border-color: #eee;
-}
-
-body.dark-mode .rozesilac-main a.content-admin-button--primary:hover,
-body.dark-mode .rozesilac-main button.content-admin-button--primary:hover {
-    background: #111;
-    color: #eee;
-    border-color: #eee;
-}
-
 
 /* =========================================================
-   BLOCK EDITOR
+   BLOCK EDITOR HEADER
    ========================================================= */
 
 .content-block-editor,
@@ -574,6 +506,10 @@ body.dark-mode .rozesilac-main button.content-admin-button--primary:hover {
     margin: 0;
 }
 
+/* =========================================================
+   BLOCK LIST / BLOCK CARDS
+   ========================================================= */
+
 .content-block-list {
     display: grid;
     gap: 14px;
@@ -583,19 +519,23 @@ body.dark-mode .rozesilac-main button.content-admin-button--primary:hover {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 18px;
-    align-items: center;
-    padding: 18px 20px;
+    align-items: start;
+    padding: 20px;
     background: #fff;
     border: 1px solid #dcdcdc;
     border-radius: 14px;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
 }
 
+.content-block-card-main {
+    min-width: 0;
+}
+
 .content-block-card-meta {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-bottom: 8px;
+    margin-bottom: 9px;
 }
 
 .content-block-number {
@@ -613,36 +553,95 @@ body.dark-mode .rozesilac-main button.content-admin-button--primary:hover {
 }
 
 .content-block-preview {
+    max-width: 100%;
     color: #333;
     line-height: 1.5;
+}
+
+.content-block-preview-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    max-width: 920px;
+    overflow: hidden;
+    color: #333;
+    line-height: 1.55;
+}
+
+.content-block-preview-url {
+    max-width: 760px;
+    overflow-wrap: anywhere;
+    color: #333;
+}
+
+.content-block-preview-cta {
+    max-width: 760px;
+}
+
+.content-block-preview-color {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    margin: 0 4px;
+    border: 1px solid #999;
+    border-radius: 50%;
+    vertical-align: -3px;
+}
+
+.content-block-preview-gallery {
+    display: grid;
+    gap: 9px;
+}
+
+.content-block-preview-thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    max-width: 900px;
+}
+
+.content-block-preview-thumb {
+    width: 58px;
+    height: 58px;
+    overflow: hidden;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
+    background: #f2f2f2;
+}
+
+.content-block-preview-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.content-block-preview-gallery-meta {
+    color: #666;
+    font-size: 0.88rem;
+    font-weight: 600;
 }
 
 .content-block-card-actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
     justify-content: flex-end;
     gap: 8px;
+    min-width: 260px;
 }
 
-.rozesilac-main a.content-admin-button--danger,
-.rozesilac-main button.content-admin-button--danger {
-    background: #9f2f2f;
-    color: #fff;
-    border-color: #9f2f2f;
+.content-block-card-actions .content-admin-button,
+.content-block-card-actions a.content-admin-button,
+.content-block-card-actions button.content-admin-button {
+    align-self: flex-start;
+    min-height: 38px;
+    padding: 8px 13px;
 }
 
-.rozesilac-main a.content-admin-button--danger:hover,
-.rozesilac-main button.content-admin-button--danger:hover {
-    background: #fff;
-    color: #9f2f2f;
-    border-color: #9f2f2f;
-}
-
-.content-empty-state--blocks {
-    margin-top: 18px;
-    background: #fff;
-    border: 1px solid #dcdcdc;
-    border-radius: 14px;
+.content-block-card--moving {
+    opacity: 0.62;
+    transform: scale(0.995);
+    transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 /* =========================================================
@@ -704,25 +703,42 @@ body.dark-mode .rozesilac-main button.content-admin-button--primary:hover {
 .content-gallery-image-actions {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
     justify-content: flex-end;
     gap: 8px;
 }
 
 /* =========================================================
-   BLOCK EDITOR RESPONSIVE
+   RESPONSIVE
    ========================================================= */
 
+@media (min-width: 1200px) {
+    .content-block-card {
+        grid-template-columns: minmax(0, 1fr) 310px;
+        padding: 22px 24px;
+    }
+
+    .content-block-preview-thumb {
+        width: 62px;
+        height: 62px;
+    }
+}
+
 @media (max-width: 980px) {
-    .content-block-editor-header,
+    .content-admin-header,
+    .content-block-editor-header {
+        flex-direction: column;
+    }
+
+    .content-admin-actions {
+        justify-content: flex-start;
+    }
+
+    .content-form-grid,
+    .content-form-grid-gallery,
     .content-block-card,
     .content-gallery-image-card {
         grid-template-columns: 1fr;
-        display: grid;
-    }
-
-    .content-block-editor-header {
-        display: flex;
-        flex-direction: column;
     }
 
     .content-block-add-grid {
@@ -733,23 +749,46 @@ body.dark-mode .rozesilac-main button.content-admin-button--primary:hover {
     .content-block-card-actions,
     .content-gallery-image-actions {
         justify-content: flex-start;
+        min-width: 0;
     }
 
-    .content-form-grid-gallery {
-        grid-template-columns: 1fr;
+    .content-block-preview-text,
+    .content-block-preview-thumbs {
+        max-width: 100%;
     }
 }
 
 @media (max-width: 700px) {
-    .content-block-add-grid {
-        grid-template-columns: 1fr;
-    }
-
+    .content-admin-header,
+    .content-form-card,
+    .content-form-section,
     .content-block-card,
     .content-block-editor-header,
     .content-gallery-image-card {
         padding: 16px;
         border-radius: 10px;
+    }
+
+    .content-admin-actions,
+    .content-form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .content-admin-actions .content-admin-button,
+    .content-form-actions .content-admin-button,
+    .content-form-actions button,
+    .content-form-actions a {
+        width: 100%;
+        text-align: center;
+    }
+
+    .content-block-add-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .content-post-table {
+        min-width: 760px;
     }
 
     .content-gallery-thumb {
@@ -759,9 +798,12 @@ body.dark-mode .rozesilac-main button.content-admin-button--primary:hover {
 }
 
 /* =========================================================
-   BLOCK EDITOR DARK MODE
+   DARK MODE
    ========================================================= */
 
+body.dark-mode .content-admin-header,
+body.dark-mode .content-list-card,
+body.dark-mode .content-form-card,
 body.dark-mode .content-block-editor-header,
 body.dark-mode .content-block-card,
 body.dark-mode .content-gallery-image-card,
@@ -771,7 +813,108 @@ body.dark-mode .content-empty-state--blocks {
     box-shadow: none;
 }
 
-body.dark-mode .content-block-preview {
+body.dark-mode .content-admin-kicker,
+body.dark-mode .content-admin-lead,
+body.dark-mode .content-post-main small,
+body.dark-mode .content-form-row small,
+body.dark-mode .content-form-help {
+    color: #aaa;
+}
+
+body.dark-mode .content-form-section {
+    background: #171717;
+    border-color: #444;
+}
+
+body.dark-mode .content-form-row label {
+    color: #eee;
+}
+
+body.dark-mode .content-form-checkbox,
+body.dark-mode .content-richtext-toolbar {
+    background: #1f1f1f;
+    border-color: #444;
+}
+
+body.dark-mode .content-post-table th {
+    background: #eee;
+    color: #111;
+}
+
+body.dark-mode .content-post-table td {
+    border-bottom-color: #444;
+}
+
+body.dark-mode .content-post-table tbody tr:nth-child(even) {
+    background: #181818;
+}
+
+body.dark-mode .content-post-table tbody tr:hover {
+    background: #242424;
+}
+
+body.dark-mode .content-post-actions a {
+    background: #1b1b1b;
+    color: #eee;
+    border-color: #666;
+}
+
+body.dark-mode .content-post-actions a:hover {
+    background: #eee;
+    color: #111;
+}
+
+body.dark-mode .content-admin-button--ghost,
+body.dark-mode .rozesilac-main a.content-admin-button--ghost,
+body.dark-mode .rozesilac-main button.content-admin-button--ghost {
+    background: #1b1b1b;
+    color: #eee;
+    border-color: #666;
+}
+
+body.dark-mode .content-admin-button--ghost:hover,
+body.dark-mode .rozesilac-main a.content-admin-button--ghost:hover,
+body.dark-mode .rozesilac-main button.content-admin-button--ghost:hover {
+    background: #eee;
+    color: #111;
+    border-color: #eee;
+}
+
+body.dark-mode .content-admin-button--primary,
+body.dark-mode .rozesilac-main a.content-admin-button--primary,
+body.dark-mode .rozesilac-main button.content-admin-button--primary {
+    background: #eee;
+    color: #111;
+    border-color: #eee;
+}
+
+body.dark-mode .content-admin-button--primary:hover,
+body.dark-mode .rozesilac-main a.content-admin-button--primary:hover,
+body.dark-mode .rozesilac-main button.content-admin-button--primary:hover {
+    background: #111;
+    color: #eee;
+    border-color: #eee;
+}
+
+body.dark-mode .content-post-status--draft {
+    background: #2a2410;
+    border-color: #7a6520;
+    color: #f0d983;
+}
+
+body.dark-mode .content-post-status--published {
+    background: #122417;
+    border-color: #2f7d4f;
+    color: #9ee0b8;
+}
+
+body.dark-mode .content-empty-state {
+    color: #eee;
+}
+
+body.dark-mode .content-block-preview,
+body.dark-mode .content-block-preview-text,
+body.dark-mode .content-block-preview-url {
     color: #ccc;
 }
 
@@ -780,69 +923,19 @@ body.dark-mode .content-block-number {
     color: #111;
 }
 
+body.dark-mode .content-block-preview-gallery-meta,
+body.dark-mode .content-gallery-image-info small {
+    color: #aaa;
+}
+
+body.dark-mode .content-block-preview-thumb,
 body.dark-mode .content-gallery-thumb {
     background: #111;
     border-color: #444;
 }
 
-body.dark-mode .content-gallery-image-info small {
-    color: #aaa;
-}
-
-body.dark-mode .rozesilac-main a.content-admin-button--danger,
-body.dark-mode .rozesilac-main button.content-admin-button--danger {
-    background: #9f2f2f;
-    color: #fff;
-    border-color: #9f2f2f;
-}
-
-body.dark-mode .rozesilac-main a.content-admin-button--danger:hover,
-body.dark-mode .rozesilac-main button.content-admin-button--danger:hover {
-    background: #fff;
-    color: #9f2f2f;
-}
-
-/* =========================================================
-   SIMPLE RICHTEXT TOOLBAR
-   ========================================================= */
-
-.content-richtext-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 0 0 10px;
-    padding: 10px;
-    border: 1px solid #dcdcdc;
-    border-radius: 10px;
-    background: #fff;
-}
-
-.rozesilac-main button.content-richtext-btn {
-    min-height: 34px;
-    padding: 7px 11px;
-    border: 1.5px solid #000;
-    border-radius: 999px;
-    background: #fff;
-    color: #000;
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-
-.rozesilac-main button.content-richtext-btn:hover {
-    background: #000;
-    color: #fff;
-}
-
-.content-richtext-textarea {
-    font-family: "Barlow", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.55;
-}
-
-body.dark-mode .content-richtext-toolbar {
-    background: #1f1f1f;
-    border-color: #444;
+body.dark-mode .content-block-preview-color {
+    border-color: #777;
 }
 
 body.dark-mode .rozesilac-main button.content-richtext-btn {
@@ -856,54 +949,18 @@ body.dark-mode .rozesilac-main button.content-richtext-btn:hover {
     color: #111;
 }
 
-/* =========================================================
-   CTA COLOR PICKER
-   ========================================================= */
-
-.rozesilac-main input.content-color-input[type="color"] {
-    width: 100%;
-    min-height: 46px;
-    padding: 4px;
-    border: 1.5px solid #000;
-    border-radius: 8px;
-    background: #fff;
-    cursor: pointer;
-}
-
-.rozesilac-main input.content-color-input[type="color"]::-webkit-color-swatch-wrapper {
-    padding: 0;
-}
-
-.rozesilac-main input.content-color-input[type="color"]::-webkit-color-swatch {
-    border: none;
-    border-radius: 5px;
-}
-
-.rozesilac-main input.content-color-input[type="color"]::-moz-color-swatch {
-    border: none;
-    border-radius: 5px;
-}
-
 body.dark-mode .rozesilac-main input.content-color-input[type="color"] {
     background: #181818;
     border-color: #555;
 }
 
-.content-block-card--moving {
-    opacity: 0.62;
-    transform: scale(0.995);
-    transition: opacity 0.15s ease, transform 0.15s ease;
-}
-
-.content-admin-button:disabled,
-.rozesilac-main button.content-admin-button:disabled {
+body.dark-mode .content-admin-button:disabled,
+body.dark-mode .rozesilac-main button.content-admin-button:disabled {
     opacity: 0.35;
-    cursor: not-allowed;
-    transform: none;
 }
 
-.content-admin-button:disabled:hover,
-.rozesilac-main button.content-admin-button:disabled:hover {
-    background: inherit;
-    color: inherit;
+body.dark-mode .content-admin-button:disabled:hover,
+body.dark-mode .rozesilac-main button.content-admin-button:disabled:hover {
+    background: #1b1b1b;
+    color: #eee;
 }
