@@ -893,3 +893,7 @@ def agnes_tyrrell_landing(request):
             "donation_account_display": settings.LIEDER_DONATION_ACCOUNT_DISPLAY,
         },
     )
+
+
+def mlady_salon(request):
+    return render(request, "core/mlady_salon.html")

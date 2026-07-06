@@ -55,13 +55,14 @@ main {
 }
 
 .nav-wrapper {
-    max-width: 1460px;
-    margin: 0 auto;
-    padding: 18px 28px 16px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 18px clamp(18px, 2.4vw, 42px) 16px;
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: minmax(150px, 190px) minmax(0, 1fr) max-content;
     align-items: center;
-    gap: 28px;
+    gap: clamp(14px, 1.8vw, 28px);
 }
 
 /* =========================================================
@@ -96,7 +97,7 @@ main {
     align-items: center;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 18px 30px;
+    gap: 18px clamp(18px, 1.7vw, 30px);
     min-width: 0;
 }
 
@@ -141,6 +142,25 @@ main {
 
 .public-nav .nav-button:hover::after {
     transform: scaleX(1);
+}
+
+body.is-authenticated .public-nav {
+    gap: 14px clamp(14px, 1.35vw, 24px);
+}
+
+body.is-authenticated .public-nav .nav-button {
+    font-size: 0.94rem;
+    letter-spacing: 0.14em;
+}
+
+body.is-authenticated .nav-user-panel {
+    gap: 8px;
+}
+
+body.is-authenticated .nav-user-panel .nav-rozesilac,
+body.is-authenticated .logout-button {
+    padding-left: 12px;
+    padding-right: 12px;
 }
 
 /* =========================================================

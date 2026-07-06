@@ -1,0 +1,293 @@
+.mlady-salon-page {
+    position: relative;
+    overflow: hidden;
+    min-height: calc(100vh - 220px);
+    padding: 5rem 1.5rem 6rem;
+    background:
+        radial-gradient(circle at top left, rgba(199, 154, 67, 0.2), transparent 34rem),
+        linear-gradient(135deg, #fffaf0 0%, #f8f1e4 42%, #ffffff 100%);
+}
+
+.mlady-salon-shell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+    gap: 2.5rem;
+    align-items: center;
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+.mlady-salon-main {
+    max-width: 720px;
+}
+
+.mlady-salon-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid rgba(138, 106, 45, 0.28);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7);
+    color: #8a6a2d;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.mlady-salon-kicker::before {
+    content: "";
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: #b78b37;
+    box-shadow: 0 0 0 0.35rem rgba(183, 139, 55, 0.16);
+}
+
+.mlady-salon-main h1 {
+    margin: 0;
+    color: #1f1b16;
+    font-size: clamp(2.8rem, 8vw, 6.4rem);
+    line-height: 0.95;
+    letter-spacing: -0.07em;
+}
+
+.mlady-salon-lead {
+    max-width: 650px;
+    margin: 1.5rem 0 0;
+    color: #2f2922;
+    font-size: clamp(1.25rem, 2.4vw, 1.85rem);
+    line-height: 1.35;
+    font-weight: 600;
+}
+
+.mlady-salon-text {
+    max-width: 610px;
+    margin: 1.1rem 0 0;
+    color: #62584c;
+    font-size: 1.05rem;
+    line-height: 1.75;
+}
+
+.mlady-salon-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin-top: 2rem;
+}
+
+.mlady-salon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.75rem 1.15rem;
+    border-radius: 999px;
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease,
+        background-color 0.18s ease,
+        color 0.18s ease;
+}
+
+.mlady-salon-button:hover {
+    transform: translateY(-2px);
+}
+
+.mlady-salon-button--primary {
+    background: #1f1b16;
+    color: #fff;
+    box-shadow: 0 12px 26px rgba(31, 27, 22, 0.2);
+}
+
+.mlady-salon-button--primary:hover {
+    background: #8a6a2d;
+    color: #fff;
+}
+
+.mlady-salon-button--secondary {
+    border: 1px solid rgba(31, 27, 22, 0.16);
+    background: rgba(255, 255, 255, 0.72);
+    color: #1f1b16;
+}
+
+.mlady-salon-button--secondary:hover {
+    background: #fff;
+    color: #8a6a2d;
+    box-shadow: 0 10px 24px rgba(31, 27, 22, 0.08);
+}
+
+.mlady-salon-card {
+    position: relative;
+    padding: 2rem;
+    border: 1px solid rgba(138, 106, 45, 0.18);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 24px 70px rgba(64, 45, 18, 0.12);
+    backdrop-filter: blur(16px);
+}
+
+.mlady-salon-card-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 4.2rem;
+    height: 4.2rem;
+    margin-bottom: 1.2rem;
+    border-radius: 50%;
+    background: #f2dfb8;
+    color: #8a6a2d;
+    font-size: 2.4rem;
+    line-height: 1;
+}
+
+.mlady-salon-card h2 {
+    margin: 0 0 1rem;
+    color: #1f1b16;
+    font-size: 1.45rem;
+}
+
+.mlady-salon-card ul {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mlady-salon-card li {
+    display: flex;
+    gap: 0.65rem;
+    align-items: flex-start;
+    color: #443b31;
+    line-height: 1.45;
+}
+
+.mlady-salon-card li span {
+    flex: 0 0 auto;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-top: 0.45rem;
+    border-radius: 50%;
+    background: #b78b37;
+}
+
+.mlady-salon-card p {
+    margin: 1.35rem 0 0;
+    color: #73685b;
+    line-height: 1.6;
+}
+
+.mlady-salon-orb {
+    position: absolute;
+    border-radius: 999px;
+    pointer-events: none;
+    filter: blur(3px);
+    opacity: 0.55;
+}
+
+.mlady-salon-orb--one {
+    right: -6rem;
+    top: 6rem;
+    width: 18rem;
+    height: 18rem;
+    background: rgba(183, 139, 55, 0.16);
+}
+
+.mlady-salon-orb--two {
+    left: 8%;
+    bottom: -7rem;
+    width: 15rem;
+    height: 15rem;
+    background: rgba(31, 27, 22, 0.08);
+}
+
+/* Dark mode */
+body.dark-mode .mlady-salon-page {
+    background:
+        radial-gradient(circle at top left, rgba(199, 154, 67, 0.16), transparent 34rem),
+        linear-gradient(135deg, #15120f 0%, #211b14 52%, #111 100%);
+}
+
+body.dark-mode .mlady-salon-main h1,
+body.dark-mode .mlady-salon-lead,
+body.dark-mode .mlady-salon-card h2 {
+    color: #f7efe0;
+}
+
+body.dark-mode .mlady-salon-text,
+body.dark-mode .mlady-salon-card p,
+body.dark-mode .mlady-salon-card li {
+    color: #d6c8b4;
+}
+
+body.dark-mode .mlady-salon-kicker,
+body.dark-mode .mlady-salon-card,
+body.dark-mode .mlady-salon-button--secondary {
+    border-color: rgba(242, 223, 184, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+body.dark-mode .mlady-salon-kicker {
+    color: #f2dfb8;
+}
+
+body.dark-mode .mlady-salon-button--primary {
+    background: #f2dfb8;
+    color: #1f1b16;
+}
+
+body.dark-mode .mlady-salon-button--primary:hover {
+    background: #ffffff;
+    color: #1f1b16;
+}
+
+body.dark-mode .mlady-salon-button--secondary {
+    color: #f7efe0;
+}
+
+body.dark-mode .mlady-salon-button--secondary:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #f2dfb8;
+}
+
+body.dark-mode .mlady-salon-card {
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+}
+
+body.dark-mode .mlady-salon-card-mark {
+    background: rgba(242, 223, 184, 0.12);
+    color: #f2dfb8;
+}
+
+@media (max-width: 820px) {
+    .mlady-salon-page {
+        padding: 3.5rem 1rem 4.5rem;
+    }
+
+    .mlady-salon-shell {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .mlady-salon-card {
+        padding: 1.5rem;
+        border-radius: 22px;
+    }
+}
+
+@media (max-width: 520px) {
+    .mlady-salon-actions {
+        flex-direction: column;
+    }
+
+    .mlady-salon-button {
+        width: 100%;
+    }
+}

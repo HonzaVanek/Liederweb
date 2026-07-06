@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mladý salón | Lieder Society{% endblock title %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'core/mlady_salon.css' %}">
+{% endblock extra_css %}
+
+{% block content %}
+<section class="mlady-salon-page" aria-labelledby="mlady-salon-title">
+    <div class="mlady-salon-orb mlady-salon-orb--one" aria-hidden="true"></div>
+    <div class="mlady-salon-orb mlady-salon-orb--two" aria-hidden="true"></div>
+
+    <div class="mlady-salon-shell">
+        <div class="mlady-salon-main">
+            <p class="mlady-salon-kicker">Připravujeme</p>
+
+            <h1 id="mlady-salon-title">
+                Mladý salón
+            </h1>
+
+            <p class="mlady-salon-lead">
+                Chystáme nový prostor pro mladé interprety, nové hlasy a současný pohled
+                na písňovou tvorbu.
+            </p>
+
+            <p class="mlady-salon-text">
+                Stránka je zatím ve výstavbě. Brzy zde najdete program, účinkující
+                a další informace k připravovanému projektu Lieder Society.
+            </p>
+
+            <div class="mlady-salon-actions">
+                <a href="{% url 'public_event_list' %}" class="mlady-salon-button mlady-salon-button--primary">
+                    Zobrazit koncerty
+                </a>
+
+                <a href="{% url 'core:contact' %}" class="mlady-salon-button mlady-salon-button--secondary">
+                    Napište nám
+                </a>
+            </div>
+        </div>
+
+        <aside class="mlady-salon-card" aria-label="Stav přípravy stránky">
+            <div class="mlady-salon-card-mark" aria-hidden="true">
+                ♪
+            </div>
+
+            <h2>Na čem pracujeme</h2>
+
+            <ul>
+                <li>
+                    <span></span>
+                    Program mladého salónu
+                </li>
+                <li>
+                    <span></span>
+                    Představení účinkujících
+                </li>
+                <li>
+                    <span></span>
+                    Praktické informace pro návštěvníky
+                </li>
+            </ul>
+
+            <p>
+                Dáváme stránce finální podobu. Děkujeme za trpělivost.
+            </p>
+        </aside>
+    </div>
+</section>
+{% endblock content %}

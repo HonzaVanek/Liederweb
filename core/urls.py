@@ -27,6 +27,8 @@ urlpatterns = [
 
     path("kontakt/", views.contact, name="contact"),
 
+    path("mlady-salon/", views.mlady_salon, name="mlady_salon"),
+
     path("staff/homepage-carousel/", views.home_manual_slide_edit, name="home_manual_slide_edit"),
     path("staff/homepage/podpora/", views.home_support_promo_edit, name="home_support_promo_edit"),
     path("staff/homepage/citace/", views.home_quote_slide_list, name="home_quote_slide_list"),
