@@ -471,6 +471,61 @@
       </div>
 
       <div class="detail-card">
+        <div class="form-actions" style="margin-top: 0; margin-bottom: 16px;">
+          <a
+            href="{% url 'rozesilac:content_staff:post_create' %}?event_id={{ event.id }}"
+            class="btn-link"
+          >
+            Přidat blogpost
+          </a>
+        </div>
+
+        <h3>Blogposty</h3>
+
+        {% if related_content_posts %}
+          <ul class="event-related-list">
+            {% for post in related_content_posts %}
+              <li>
+                <a href="{% url 'rozesilac:content_staff:post_edit' post.id %}">
+                  {{ post.title }}
+                </a>
+
+                <span class="muted small">
+                  |
+                  {% if post.is_published %}
+                    publikováno
+                  {% else %}
+                    koncept
+                  {% endif %}
+
+                  {% if post.published_at %}
+                    | {{ post.published_at|date:"d.m.Y H:i" }}
+                  {% endif %}
+                </span>
+
+                {% if post.is_published %}
+                  <br>
+                  <a
+                    href="{{ post.get_absolute_url }}"
+                    target="_blank"
+                    rel="noopener"
+                    class="muted small"
+                  >
+                    Otevřít veřejný článek
+                  </a>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">Zatím k tomuto koncertu není navázaný žádný blogpost.</p>
+          <p class="muted small">
+            Klikni na „Přidat blogpost“ a pole související koncert se předvyplní automaticky.
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="detail-card">
         <h3>Kampaně</h3>
 
         {% if campaigns %}

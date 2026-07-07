@@ -182,12 +182,23 @@
           </section>
         {% endif %}
 
-        {% if event.resources.exists %}
+        {% if event.resources.exists or related_content_posts %}
           <section class="public-event-section">
             <h2>Zjistěte více</h2>
+
             <ul class="resource-list">
+              {% for post in related_content_posts %}
+                <li class="resource-list__item resource-list__item--article">
+                  <a href="{{ post.get_absolute_url }}" class="resource-article-link">
+                    <span class="resource-article-link__label">Článek</span>
+                    <span class="resource-article-link__title">{{ post.title }}</span>
+                    <span class="resource-article-link__arrow" aria-hidden="true">→</span>
+                  </a>
+                </li>
+              {% endfor %}
+
               {% for resource in event.resources.all %}
-                <li>
+                <li class="resource-list__item">
                   <a href="{{ resource.url }}" target="_blank" rel="noopener">{{ resource.title }}</a>
                 </li>
               {% endfor %}

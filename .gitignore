@@ -13,3 +13,9 @@ users.json
 .vscode/settings.json
 rozesilac/send_zaloha.py
 tmp/
+Stesk_test.txt
+tts_test.py
+tts_outputs/Stesk_test_cedar_part01.mp3
+tts_outputs/Stesk_test_coral_part01.mp3
+tts_outputs/Stesk_test_marin_part01.mp3
+tts_outputs/API_KEY_OPENAI.docx

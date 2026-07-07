@@ -7,6 +7,7 @@ from core.decorators import staff_required
 
 from .forms import ContentBlockForm, ContentBlockImageForm, ContentPostForm
 from .models import ContentBlock, ContentBlockImage, ContentPost
+from events.models import Event
 
 
 def _next_block_position(post):
@@ -54,6 +55,16 @@ def post_list(request):
 
 @staff_required
 def post_create(request):
+    initial = {}
+
+    event_id = request.GET.get("event_id")
+
+    if event_id:
+        event = Event.objects.filter(id=event_id).first()
+
+        if event:
+            initial["event"] = event
+
     if request.method == "POST":
         form = ContentPostForm(request.POST)
 
@@ -65,13 +76,14 @@ def post_create(request):
             messages.success(request, "Příspěvek byl vytvořen. Teď můžeš přidat obsahové bloky.")
             return redirect("rozesilac:content_staff:post_edit", post_id=post.id)
     else:
-        form = ContentPostForm()
+        form = ContentPostForm(initial=initial)
 
     return render(
         request,
         "content_staff/post_form.html",
         {
             "form": form,
+            "post": None,
             "page_title": "Nový příspěvek",
             "submit_label": "Vytvořit příspěvek",
         },
