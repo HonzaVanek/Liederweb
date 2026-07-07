@@ -12,6 +12,9 @@ from core.decorators import staff_required
 from .forms import MediaAssetForm, MEDIA_ASSETS_TOTAL_LIMIT
 from .models import MediaAsset
 
+from django.apps import apps
+from django.db import models
+
 
 def get_media_assets_total_size():
     return MediaAsset.objects.aggregate(total=Sum("file_size"))["total"] or 0
@@ -19,21 +22,41 @@ def get_media_assets_total_size():
 
 def get_asset_usage(asset):
     usage_items = []
+    asset_model = asset.__class__
 
-    checks = [
-        ("Profily lidí", asset.person_profiles.count()),
-        ("Partneři – logo", asset.partner_logos.count()),
-        ("Koncerty – plakát", asset.events_as_poster_asset.count()),
-        ("Koncerty – hero", asset.events_as_hero_asset.count()),
-        ("Koncerty – sekundární obrázek", asset.events_as_secondary_asset.count()),
-        ("Interpreti koncertů", asset.event_artist_photo_assets.count()),
-        ("Loga sponzorů", asset.event_sponsor_logo_assets.count()),
-        ("Loga na vstupenkách", asset.events_as_ticket_logo_asset.count()),
-    ]
+    for model in apps.get_models():
+        # samotný MediaAsset nás nezajímá
+        if model == asset_model:
+            continue
 
-    for label, count in checks:
-        if count:
-            usage_items.append((label, count))
+        for field in model._meta.get_fields():
+            # Přeskakujeme automatické reverzní vazby.
+            # Hledáme jen skutečná pole definovaná na modelech.
+            if field.auto_created and not field.concrete:
+                continue
+
+            if not getattr(field, "is_relation", False):
+                continue
+
+            if not getattr(field, "remote_field", None):
+                continue
+
+            if field.remote_field.model != asset_model:
+                continue
+
+            label = f"{model._meta.verbose_name_plural} – {field.verbose_name}"
+
+            if isinstance(field, (models.ForeignKey, models.OneToOneField)):
+                count = model.objects.filter(**{field.name: asset}).count()
+
+            elif isinstance(field, models.ManyToManyField):
+                count = model.objects.filter(**{field.name: asset}).distinct().count()
+
+            else:
+                continue
+
+            if count:
+                usage_items.append((label, count))
 
     total = sum(count for _, count in usage_items)
 
@@ -152,6 +175,14 @@ def asset_delete(request, pk):
         return HttpResponseForbidden("Pouze POST.")
 
     asset = get_object_or_404(MediaAsset, pk=pk)
+
+    asset_usage = get_asset_usage(asset)
+    if asset_usage["is_used"]:
+        messages.error(
+            request,
+            "Soubor nelze smazat, protože se stále používá jinde na webu."
+        )
+        return redirect("media_assets:asset_update", pk=asset.pk)
 
     storage = asset.file.storage if asset.file else None
     file_name = asset.file.name if asset.file else None
