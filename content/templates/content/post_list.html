@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load static czech_typography %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'content/content_public.css' %}">
+{% endblock extra_css %}
+
+{% block title %}Objevujte{% endblock title %}
+
+{% block content %}
+  <main class="content-discover-page">
+    <section class="content-discover-hero">
+      <p class="content-discover-kicker">Lieder Society</p>
+      <h1>Objevujte</h1>
+      <p>
+        Čtěte příběhy, souvislosti a dramaturgické texty ke koncertům, skladatelům
+        a hudbě, kterou uvádíme.
+      </p>
+    </section>
+
+    <section class="content-discover-search-section" aria-labelledby="content-search-title">
+      <div class="content-discover-section-heading">
+        <p class="content-discover-kicker">Hledejte</p>
+        <h2 id="content-search-title">Najděte text podle tématu nebo klíčového slova</h2>
+      </div>
+
+      <form method="get" action="{% url 'content:post_list' %}" class="content-discover-search-form">
+        <label class="visually-hidden" for="content-search-input">
+          Hledat v příspěvcích
+        </label>
+
+        <input
+          id="content-search-input"
+          type="search"
+          name="q"
+          value="{{ query }}"
+          placeholder="Např. Agnes Tyrrell, Schumann, písně, Janáček…"
+        >
+
+        <button type="submit">
+          Hledat
+        </button>
+      </form>
+
+      {% if query %}
+        <div class="content-discover-search-results">
+          <h3>Výsledky hledání pro „{{ query }}“</h3>
+
+          {% if search_results %}
+            <div class="content-discover-card-grid content-discover-card-grid--compact">
+              {% for post in search_results %}
+                {% include "content/includes/post_card.html" with post=post %}
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="content-discover-empty">
+              <p>
+                Nenašli jsme žádný publikovaný příspěvek pro tento výraz.
+                Zkus jiné slovo nebo obecnější téma.
+              </p>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </section>
+
+    <div class="content-discover-layout">
+      <section class="content-discover-main-section" aria-labelledby="content-read-title">
+        <div class="content-discover-section-heading">
+          <p class="content-discover-kicker">Čtěte</p>
+          <h2 id="content-read-title">Příspěvky</h2>
+        </div>
+
+        {% if read_posts %}
+          <div class="content-discover-card-grid">
+            {% for post in read_posts %}
+              {% include "content/includes/post_card.html" with post=post %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="content-discover-empty">
+            <p>Zatím tu nejsou žádné publikované příspěvky.</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <aside class="content-discover-feed" aria-labelledby="content-feed-title">
+        <div class="content-discover-feed-card">
+          <p class="content-discover-kicker">Feed</p>
+          <h2 id="content-feed-title">Nejnovější příspěvky</h2>
+
+          {% if latest_posts %}
+            <ol class="content-discover-latest-list">
+              {% for post in latest_posts %}
+                <li>
+                  <a href="{{ post.get_absolute_url }}">
+                    {{ post.title|cz_nbsp }}
+                  </a>
+
+                  <span>
+                    {% if post.published_at %}
+                      {{ post.published_at|date:"d. m. Y" }}
+                    {% else %}
+                      {{ post.created_at|date:"d. m. Y" }}
+                    {% endif %}
+                  </span>
+                </li>
+              {% endfor %}
+            </ol>
+          {% else %}
+            <p class="content-discover-muted">
+              Zatím tu nejsou žádné příspěvky.
+            </p>
+          {% endif %}
+        </div>
+      </aside>
+    </div>
+  </main>
+{% endblock content %}
+
+{% block newsletter_signup %}
+  {% include "core/includes/newsletter_signup.html" %}
+{% endblock newsletter_signup %}

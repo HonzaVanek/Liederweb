@@ -1,0 +1,44 @@
+{% load czech_typography %}
+
+<article class="content-discover-card">
+  <a href="{{ post.get_absolute_url }}" class="content-discover-card__media" aria-label="Číst článek: {{ post.title }}">
+    {% if post.cover_image and post.cover_image.file %}
+      <img
+        src="{{ post.cover_image.file.url }}"
+        alt="{{ post.cover_image.alt_text|default:post.cover_image.title|default:post.title }}"
+        style="object-fit: {{ post.cover_image_fit|default:'cover' }}; object-position: {{ post.cover_image_position|default:'center center' }};"
+      >
+    {% else %}
+      <div class="content-discover-card__placeholder">
+        LS
+      </div>
+    {% endif %}
+  </a>
+
+  <div class="content-discover-card__body">
+    <div class="content-discover-card__meta">
+      {% if post.published_at %}
+        <span>{{ post.published_at|date:"d. m. Y" }}</span>
+      {% endif %}
+
+      {% if post.event %}
+        <span>{{ post.event.title|cz_nbsp }}</span>
+      {% endif %}
+    </div>
+
+    <h3>
+      <a href="{{ post.get_absolute_url }}">
+        {{ post.title|cz_nbsp }}
+      </a>
+    </h3>
+
+    {% if post.perex %}
+      <p>{{ post.perex|striptags|truncatewords:28|cz_nbsp }}</p>
+    {% endif %}
+
+    <a href="{{ post.get_absolute_url }}" class="content-discover-card__link">
+      Číst článek
+      <span aria-hidden="true">→</span>
+    </a>
+  </div>
+</article>
