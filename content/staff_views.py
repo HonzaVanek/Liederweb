@@ -5,7 +5,7 @@ from django.http import JsonResponse
 
 from core.decorators import staff_required
 
-from .forms import ContentBlockForm, ContentBlockImageForm, ContentPostForm, ContentGalleryForm, ContentGalleryImageForm
+from .forms import ContentBlockForm, ContentBlockImageForm, ContentPostForm, ContentGalleryForm, ContentGalleryImageForm, ContentGalleryImagesAddForm
 from .models import ContentBlock, ContentBlockImage, ContentPost, ContentGallery, ContentGalleryImage
 from events.models import Event
 
@@ -480,7 +480,7 @@ def gallery_edit(request, gallery_id):
     else:
         form = ContentGalleryForm(instance=gallery)
 
-    image_form = ContentGalleryImageForm()
+    image_form = ContentGalleryImagesAddForm()
     images = list(gallery.images.select_related("image").all())
 
     for image_item in images:
@@ -508,20 +508,58 @@ def gallery_image_add(request, gallery_id):
     gallery = _get_gallery(gallery_id)
 
     if request.method == "POST":
-        form = ContentGalleryImageForm(
-            request.POST,
-            instance=ContentGalleryImage(gallery=gallery),
-        )
+        form = ContentGalleryImagesAddForm(request.POST)
 
         if form.is_valid():
-            image_item = form.save(commit=False)
-            image_item.gallery = gallery
-            image_item.position = _next_gallery_image_position(gallery)
-            image_item.save()
+            selected_images = form.cleaned_data["images"]
+            image_fit = form.cleaned_data["image_fit"]
+            image_position = form.cleaned_data["image_position"]
 
-            messages.success(request, "Obrázek byl přidán do fotogalerie.")
+            selected_image_ids = [image.id for image in selected_images]
+
+            existing_image_ids = set(
+                gallery.images
+                .filter(image_id__in=selected_image_ids)
+                .values_list("image_id", flat=True)
+            )
+
+            position = _next_gallery_image_position(gallery)
+            created_count = 0
+            skipped_count = 0
+
+            for image in selected_images:
+                if image.id in existing_image_ids:
+                    skipped_count += 1
+                    continue
+
+                ContentGalleryImage.objects.create(
+                    gallery=gallery,
+                    image=image,
+                    image_fit=image_fit,
+                    image_position=image_position,
+                    position=position,
+                )
+
+                position += 10
+                created_count += 1
+
+            if created_count and skipped_count:
+                messages.success(
+                    request,
+                    f"Přidáno obrázků: {created_count}. Přeskočeno duplicit: {skipped_count}.",
+                )
+            elif created_count:
+                messages.success(
+                    request,
+                    f"Přidáno obrázků: {created_count}.",
+                )
+            elif skipped_count:
+                messages.info(
+                    request,
+                    "Vybrané obrázky už ve fotogalerii jsou.",
+                )
         else:
-            messages.error(request, "Obrázek se nepodařilo přidat.")
+            messages.error(request, "Vyber aspoň jeden obrázek.")
 
     return redirect(
         "rozesilac:content_staff:gallery_edit",
@@ -585,6 +623,20 @@ def gallery_image_move_up(request, gallery_id, image_id):
         image_item.save(update_fields=["position"])
         previous_item.save(update_fields=["position"])
 
+        if _is_ajax(request):
+            return JsonResponse({
+                "ok": True,
+                "moved_id": image_item.id,
+                "swap_id": previous_item.id,
+                "direction": "up",
+            })
+
+    if _is_ajax(request):
+        return JsonResponse({
+            "ok": False,
+            "message": "Obrázek už je první.",
+        }, status=400)
+
     return redirect(
         "rozesilac:content_staff:gallery_edit",
         gallery_id=gallery.id,
@@ -607,6 +659,20 @@ def gallery_image_move_down(request, gallery_id, image_id):
         image_item.position, next_item.position = next_item.position, image_item.position
         image_item.save(update_fields=["position"])
         next_item.save(update_fields=["position"])
+
+        if _is_ajax(request):
+            return JsonResponse({
+                "ok": True,
+                "moved_id": image_item.id,
+                "swap_id": next_item.id,
+                "direction": "down",
+            })
+
+    if _is_ajax(request):
+        return JsonResponse({
+            "ok": False,
+            "message": "Obrázek už je poslední.",
+        }, status=400)
 
     return redirect(
         "rozesilac:content_staff:gallery_edit",

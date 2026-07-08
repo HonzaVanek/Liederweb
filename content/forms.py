@@ -288,3 +288,37 @@ class ContentGalleryImageForm(forms.ModelForm):
         ).order_by("-uploaded_at")
 
         self.fields["image"].empty_label = "— vyber obrázek —"
+
+
+class ContentGalleryImagesAddForm(forms.Form):
+    images = forms.ModelMultipleChoiceField(
+        label="Obrázky",
+        queryset=MediaAsset.objects.none(),
+        required=True,
+        widget=forms.CheckboxSelectMultiple,
+        error_messages={
+            "required": "Vyber aspoň jeden obrázek.",
+        },
+    )
+
+    image_fit = forms.ChoiceField(
+        label="Zobrazení obrázků",
+        choices=ContentGalleryImage.IMAGE_FIT_CHOICES,
+        initial=ContentGalleryImage.IMAGE_FIT_COVER,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
+    image_position = forms.ChoiceField(
+        label="Pozice obrázků",
+        choices=ContentGalleryImage.IMAGE_POSITION_CHOICES,
+        initial=ContentGalleryImage.IMAGE_POSITION_CENTER,
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["images"].queryset = MediaAsset.objects.filter(
+            asset_type=MediaAsset.AssetType.IMAGE,
+            is_active=True,
+        ).order_by("-uploaded_at")

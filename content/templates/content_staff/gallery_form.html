@@ -171,24 +171,63 @@
               class="content-form-card content-gallery-add-form">
           {% csrf_token %}
 
-          <div class="content-form-grid content-form-grid-gallery">
-            {% for field in image_form %}
+          <div class="content-gallery-bulk-add-header">
+            <div>
+              <h3>Přidat obrázky do galerie</h3>
+              <p class="content-form-help">
+                Vyber jeden nebo více obrázků z mediální knihovny. Výchozí zobrazení a pozice se použijí pro všechny nově přidané fotky.
+              </p>
+            </div>
+
+            <div class="content-gallery-bulk-add-options">
               <div class="content-form-row">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
+                <label for="{{ image_form.image_fit.id_for_label }}">{{ image_form.image_fit.label }}</label>
+                {{ image_form.image_fit }}
+              </div>
 
-                {% if field.help_text %}
-                  <small class="content-form-help">{{ field.help_text }}</small>
-                {% endif %}
+              <div class="content-form-row">
+                <label for="{{ image_form.image_position.id_for_label }}">{{ image_form.image_position.label }}</label>
+                {{ image_form.image_position }}
+              </div>
+            </div>
+          </div>
 
-                {{ field.errors }}
+          {% if image_form.images.errors %}
+            <div class="content-form-errors">
+              {{ image_form.images.errors }}
+            </div>
+          {% endif %}
+
+          <div class="content-image-picker-grid">
+            {% for asset in image_form.fields.images.queryset %}
+              <label class="content-image-picker-card">
+                <input
+                  type="checkbox"
+                  name="{{ image_form.images.html_name }}"
+                  value="{{ asset.id }}"
+                >
+
+                <span class="content-image-picker-card__thumb">
+                  {% if asset.file %}
+                    <img src="{{ asset.file.url }}" alt="{{ asset.alt_text|default:asset.title }}">
+                  {% endif %}
+                </span>
+
+                <span class="content-image-picker-card__title">
+                  {{ asset.title|default:"Bez názvu" }}
+                </span>
+              </label>
+            {% empty %}
+              <div class="content-empty-state content-empty-state--blocks">
+                <h3>V mediální knihovně nejsou žádné aktivní obrázky</h3>
+                <p>Nejdřív nahraj obrázky do mediální knihovny.</p>
               </div>
             {% endfor %}
           </div>
 
           <div class="content-form-actions">
             <button type="submit" class="content-admin-button content-admin-button--primary">
-              Přidat obrázek
+              Přidat vybrané obrázky
             </button>
           </div>
         </form>
@@ -196,7 +235,7 @@
         {% if images %}
           <div class="content-gallery-image-list">
             {% for item in images %}
-              <article class="content-gallery-image-card">
+              <article class="content-gallery-image-card" data-gallery-image-card data-image-id="{{ item.id }}">
                 <div class="content-gallery-thumb">
                   {% if item.image.file %}
                     <img src="{{ item.image.file.url }}" alt="{{ item.effective_alt_text }}">
@@ -233,14 +272,28 @@
                 </form>
 
                 <div class="content-gallery-image-actions">
-                  <form method="post" action="{% url 'rozesilac:content_staff:gallery_image_move_up' gallery.id item.id %}">
+                  <form method="post"
+                        action="{% url 'rozesilac:content_staff:gallery_image_move_up' gallery.id item.id %}"
+                        data-gallery-image-move-form
+                        data-direction="up">
                     {% csrf_token %}
-                    <button type="submit" class="content-admin-button content-admin-button--ghost">↑</button>
+                    <button type="submit"
+                            class="content-admin-button content-admin-button--ghost"
+                            {% if forloop.first %}disabled{% endif %}>
+                      ↑
+                    </button>
                   </form>
 
-                  <form method="post" action="{% url 'rozesilac:content_staff:gallery_image_move_down' gallery.id item.id %}">
+                  <form method="post"
+                        action="{% url 'rozesilac:content_staff:gallery_image_move_down' gallery.id item.id %}"
+                        data-gallery-image-move-form
+                        data-direction="down">
                     {% csrf_token %}
-                    <button type="submit" class="content-admin-button content-admin-button--ghost">↓</button>
+                    <button type="submit"
+                            class="content-admin-button content-admin-button--ghost"
+                            {% if forloop.last %}disabled{% endif %}>
+                      ↓
+                    </button>
                   </form>
 
                   <form
@@ -266,4 +319,6 @@
       </section>
     {% endif %}
   </div>
+
+  <script src="{% static 'content/content_staff.js' %}"></script>
 {% endblock rozesilac_content %}
