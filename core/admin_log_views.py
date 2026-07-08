@@ -1,6 +1,7 @@
 from pathlib import Path
 import subprocess
 import re
+from datetime import datetime
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponseForbidden
@@ -22,7 +23,7 @@ LOG_FILES = {
 }
 
 DEFAULT_LINES = 100
-MAX_LINES = 1000
+MAX_LINES = 10000
 
 # Pro barevné rozlišení traffic logu.
 IP_RE = re.compile(r"\bip=([0-9a-fA-F:.]+)")
@@ -148,6 +149,83 @@ def filter_common_staff_get_lines(log_text, max_lines):
     return "\n".join(kept_lines), hidden_count
 
 
+def build_time_search_terms(value):
+    value = (value or "").strip()
+
+    if not value:
+        return []
+
+    formats = (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y/%m/%d %H:%M:%S",
+        "%Y/%m/%d %H:%M",
+    )
+
+    parsed = None
+
+    for fmt in formats:
+        try:
+            parsed = datetime.strptime(value, fmt)
+            break
+        except ValueError:
+            continue
+
+    # Když to neumíme rozparsovat jako datum, použijeme to prostě jako text.
+    if parsed is None:
+        return [value]
+
+    return [
+        parsed.strftime("%Y-%m-%d %H:%M"),
+        parsed.strftime("%Y/%m/%d %H:%M"),
+        parsed.strftime("%d/%b/%Y:%H:%M"),
+    ]
+
+
+def filter_log_lines_with_context(log_text, search_terms, context_lines, max_output_lines):
+    search_terms = [
+        term.lower()
+        for term in search_terms
+        if term and term.strip()
+    ]
+
+    if not search_terms:
+        return log_text, 0
+
+    lines = log_text.splitlines()
+    selected_indexes = set()
+    match_count = 0
+
+    for index, line in enumerate(lines):
+        line_lower = line.lower()
+
+        if any(term in line_lower for term in search_terms):
+            match_count += 1
+
+            start = max(0, index - context_lines)
+            end = min(len(lines), index + context_lines + 1)
+
+            selected_indexes.update(range(start, end))
+
+    if not selected_indexes:
+        return "", 0
+
+    output_lines = []
+    previous_index = None
+
+    for index in sorted(selected_indexes):
+        if previous_index is not None and index > previous_index + 1:
+            output_lines.append("…")
+
+        output_lines.append(lines[index])
+        previous_index = index
+
+    if len(output_lines) > max_output_lines:
+        output_lines = output_lines[-max_output_lines:]
+
+    return "\n".join(output_lines), match_count
+
+
 @staff_member_required
 def system_logs_view(request):
     if not request.user.is_superuser:
@@ -170,6 +248,33 @@ def system_logs_view(request):
 
     lines = max(10, min(lines, MAX_LINES))
 
+    search_query = request.GET.get("q", "").strip()
+    around_time = request.GET.get("around_time", "").strip()
+
+    try:
+        context_lines = int(request.GET.get("context_lines", 30))
+    except ValueError:
+        context_lines = 30
+
+    context_lines = max(0, min(context_lines, 200))
+
+    try:
+        scan_lines = int(request.GET.get("scan_lines", 50000))
+    except ValueError:
+        scan_lines = 50000
+
+    scan_lines = max(lines, min(scan_lines, 200000))
+
+    search_terms = []
+
+    if search_query:
+        search_terms.append(search_query)
+
+    search_terms.extend(build_time_search_terms(around_time))
+
+    search_active = bool(search_terms)
+    search_match_count = 0
+
     hide_noise = request.GET.get("hide_noise", "1") == "1"
     hidden_noise_count = 0
 
@@ -180,11 +285,14 @@ def system_logs_view(request):
     # aby po odfiltrování pořád zůstalo dost relevantních záznamů.
     tail_lines = lines
 
-    if hide_noise and selected_log in ("python", "python.old"):
-        tail_lines = min(lines * 5, 5000)
+    if search_active:
+        tail_lines = scan_lines
+    else:
+        if hide_noise and selected_log in ("python", "python.old"):
+            tail_lines = min(lines * 5, 5000)
 
-    if hide_common_staff_get and selected_log == "staff_audit":
-        tail_lines = min(lines * 10, 10000)
+        if hide_common_staff_get and selected_log == "staff_audit":
+            tail_lines = min(lines * 10, 10000)
 
     if not log_path.exists():
         error_message = f"Soubor neexistuje: {log_path}"
@@ -209,10 +317,24 @@ def system_logs_view(request):
             error_message = f"Chyba při čtení logu: {e}"
 
     if hide_noise and selected_log in ("python", "python.old"):
-        log_text, hidden_noise_count = filter_noise_log_lines(log_text, lines)
+        log_text, hidden_noise_count = filter_noise_log_lines(
+            log_text,
+            scan_lines if search_active else lines,
+        )
 
     if hide_common_staff_get and selected_log == "staff_audit":
-        log_text, hidden_common_staff_get_count = filter_common_staff_get_lines(log_text, lines)
+        log_text, hidden_common_staff_get_count = filter_common_staff_get_lines(
+            log_text,
+            scan_lines if search_active else lines,
+        )
+
+    if search_active:
+        log_text, search_match_count = filter_log_lines_with_context(
+            log_text,
+            search_terms,
+            context_lines,
+            lines,
+        )
 
     colored_log_lines = build_colored_log_lines(log_text)
 
@@ -280,8 +402,14 @@ def system_logs_view(request):
 
     for row in page_stats:
         human_row = human_page_stats.get((row["day"], row["path"]), {})
+
+        human_pageviews = human_row.get("human_pageviews", 0) or 0
+        human_requests = row.get("human_hits", 0) or 0
+
         row["unique_visitors"] = human_row.get("unique_visitors", 0)
-        row["human_pageviews"] = human_row.get("human_pageviews", row["human_hits"])
+        row["human_pageviews"] = human_pageviews
+        row["human_requests"] = human_requests
+        row["human_non_pageview_hits"] = max(0, human_requests - human_pageviews)
 
         row["other_hits"] = (
             row["total_hits"]
@@ -322,5 +450,11 @@ def system_logs_view(request):
             "hidden_noise_count": hidden_noise_count,
             "hide_common_staff_get": hide_common_staff_get,
             "hidden_common_staff_get_count": hidden_common_staff_get_count,
+            "search_query": search_query,
+            "around_time": around_time,
+            "context_lines": context_lines,
+            "scan_lines": scan_lines,
+            "search_active": search_active,
+            "search_match_count": search_match_count,
         },
     )

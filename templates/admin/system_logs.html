@@ -29,6 +29,48 @@
         style="width: 90px;"
     >
 
+    <label>
+    Hledat text:
+    <input
+        type="text"
+        name="q"
+        value="{{ search_query }}"
+        placeholder="např. galleries, ERROR, 500, Traceback"
+    >
+    </label>
+
+    <label>
+    Okolo času:
+    <input
+        type="text"
+        name="around_time"
+        value="{{ around_time }}"
+        placeholder="např. 2026-07-01 07:13"
+    >
+    </label>
+
+    <label>
+    Kontext řádků:
+    <input
+        type="number"
+        name="context_lines"
+        value="{{ context_lines }}"
+        min="0"
+        max="200"
+    >
+    </label>
+
+    <label>
+    Skenovat posledních řádků:
+    <input
+        type="number"
+        name="scan_lines"
+        value="{{ scan_lines }}"
+        min="1000"
+        max="200000"
+    >
+    </label>
+
     {% if selected_log == "python" or selected_log == "python.old" %}
         <label style="margin-left: 12px;">
             <input type="hidden" name="hide_noise" value="0">
@@ -63,6 +105,14 @@
         <strong>Soubor:</strong>
         <code>{{ selected_path }}</code>
     </p>
+
+    {% if search_active %}
+        <p class="system-log-note">
+            Hledání aktivní. Prohledáno posledních {{ scan_lines }} řádků,
+            nalezeno {{ search_match_count }} výskytů,
+            zobrazen kontext ±{{ context_lines }} řádků.
+        </p>
+    {% endif %}
 
     {% if hidden_noise_count %}
         <p class="help">
@@ -266,7 +316,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="10">Zatím žádná data podle stránek.</td>
+                    <td colspan="11">Zatím žádná data podle stránek.</td>
                 </tr>
             {% endfor %}
         </tbody>
