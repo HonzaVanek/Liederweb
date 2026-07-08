@@ -24,6 +24,10 @@
             <div class="media-assets-header-actions top-action">
                 <a href="{% url 'media_assets:asset_create' %}">+ Nahrát nový asset</a>
             </div>
+
+            <a href="{% url 'media_assets:asset_bulk_upload' %}" class="btn-link">
+                Nahrát více fotek najednou
+            </a>
         </header>
 
         <section class="media-assets-storage content-section">

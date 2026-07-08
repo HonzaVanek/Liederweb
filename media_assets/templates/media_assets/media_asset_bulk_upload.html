@@ -1,0 +1,115 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'media_assets/media_asset_form.css' %}">
+{% endblock %}
+
+{% block title %}{{ page_title }} | Lieder Society{% endblock %}
+
+{% block rozesilac_content %}
+<section class="media-asset-form-page">
+    <div class="media-asset-form-inner">
+
+        <header class="media-asset-form-header">
+            <h1>{{ page_title }}</h1>
+
+            <div class="media-asset-form-header-links">
+                <a href="{% url 'media_assets:asset_list' %}">← Zpět na knihovnu</a>
+            </div>
+        </header>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for m in messages %}
+                    <li class="{{ m.tags }}">{{ m }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if form.errors %}
+            <div class="form-errors">
+                Oprav prosím chyby ve formuláři.
+            </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="media-asset-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <section class="content-section">
+                <h3>Fotky k nahrání</h3>
+
+                <div class="form-row">
+                    <label for="{{ form.files.id_for_label }}">{{ form.files.label }}</label>
+                    {{ form.files }}
+
+                    {% if form.files.help_text %}
+                        <div class="help-text">{{ form.files.help_text }}</div>
+                    {% endif %}
+
+                    {% if form.files.errors %}
+                        <div class="field-errors">{{ form.files.errors }}</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="content-section">
+                <h3>Společné údaje</h3>
+
+                <div class="form-row">
+                    <label for="{{ form.credit.id_for_label }}">{{ form.credit.label }}</label>
+                    {{ form.credit }}
+
+                    {% if form.credit.help_text %}
+                        <div class="help-text">{{ form.credit.help_text }}</div>
+                    {% endif %}
+
+                    {% if form.credit.errors %}
+                        <div class="field-errors">{{ form.credit.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-row">
+                    <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+                    {{ form.description }}
+
+                    {% if form.description.help_text %}
+                        <div class="help-text">{{ form.description.help_text }}</div>
+                    {% endif %}
+
+                    {% if form.description.errors %}
+                        <div class="field-errors">{{ form.description.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-row form-row-checkbox">
+                    <label for="{{ form.is_active.id_for_label }}">{{ form.is_active.label }}</label>
+                    <div class="checkbox-field-wrap">
+                        {{ form.is_active }}
+                    </div>
+
+                    {% if form.is_active.help_text %}
+                        <div class="help-text">{{ form.is_active.help_text }}</div>
+                    {% endif %}
+
+                    {% if form.is_active.errors %}
+                        <div class="field-errors">{{ form.is_active.errors }}</div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <div class="form-actions media-asset-form-actions">
+                <button type="submit">{{ submit_label }}</button>
+                <a href="{% url 'media_assets:asset_list' %}" class="btn-link">Zpět na seznam</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

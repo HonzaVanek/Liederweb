@@ -9,11 +9,15 @@ from django.db import transaction
 from django.db.models.deletion import ProtectedError
 
 from core.decorators import staff_required
-from .forms import MediaAssetForm, MEDIA_ASSETS_TOTAL_LIMIT
+from .forms import MediaAssetForm, MEDIA_ASSETS_TOTAL_LIMIT, MediaAssetBulkImageUploadForm
 from .models import MediaAsset
 
 from django.apps import apps
 from django.db import models
+
+from pathlib import Path
+from django.template.defaultfilters import filesizeformat
+from django.views.generic.edit import FormView
 
 
 def get_media_assets_total_size():
@@ -201,3 +205,62 @@ def asset_delete(request, pk):
 
     messages.success(request, "Soubor byl smazán.")
     return redirect("media_assets:asset_list")
+
+
+@method_decorator(staff_required, name="dispatch")
+class MediaAssetBulkImageUploadView(FormView):
+    template_name = "media_assets/media_asset_bulk_upload.html"
+    form_class = MediaAssetBulkImageUploadForm
+
+    def form_valid(self, form):
+        files = form.cleaned_data["files"]
+        credit = form.cleaned_data["credit"]
+        description = form.cleaned_data["description"]
+        is_active = form.cleaned_data["is_active"]
+
+        current_total_size = get_media_assets_total_size()
+        upload_total_size = sum(uploaded_file.size for uploaded_file in files)
+
+        if MEDIA_ASSETS_TOTAL_LIMIT and current_total_size + upload_total_size > MEDIA_ASSETS_TOTAL_LIMIT:
+            remaining_size = max(MEDIA_ASSETS_TOTAL_LIMIT - current_total_size, 0)
+
+            form.add_error(
+                "files",
+                (
+                    "Vybrané soubory se nevejdou do limitu knihovny. "
+                    f"Zbývá {filesizeformat(remaining_size)}, "
+                    f"vybrané soubory mají {filesizeformat(upload_total_size)}."
+                ),
+            )
+            return self.form_invalid(form)
+
+        created_count = 0
+
+        with transaction.atomic():
+            for uploaded_file in files:
+                title = Path(uploaded_file.name).stem.replace("_", " ").replace("-", " ").strip()
+
+                asset = MediaAsset(
+                    title=title,
+                    file=uploaded_file,
+                    credit=credit,
+                    description=description,
+                    is_active=is_active,
+                    uploaded_by=self.request.user,
+                )
+
+                asset.save()
+                created_count += 1
+
+        messages.success(
+            self.request,
+            f"Nahráno souborů: {created_count}."
+        )
+
+        return redirect("media_assets:asset_list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Nahrát více fotek"
+        context["submit_label"] = "Nahrát fotky"
+        return context
