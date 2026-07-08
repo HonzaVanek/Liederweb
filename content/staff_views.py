@@ -5,8 +5,8 @@ from django.http import JsonResponse
 
 from core.decorators import staff_required
 
-from .forms import ContentBlockForm, ContentBlockImageForm, ContentPostForm
-from .models import ContentBlock, ContentBlockImage, ContentPost
+from .forms import ContentBlockForm, ContentBlockImageForm, ContentPostForm, ContentGalleryForm, ContentGalleryImageForm
+from .models import ContentBlock, ContentBlockImage, ContentPost, ContentGallery, ContentGalleryImage
 from events.models import Event
 
 
@@ -382,3 +382,233 @@ def block_image_edit(request, post_id, block_id, image_id):
             messages.error(request, "Obrázek se nepodařilo uložit.")
 
     return redirect("rozesilac:content_staff:block_edit", post_id=post.id, block_id=block.id)
+
+
+def _next_gallery_image_position(gallery):
+    max_position = gallery.images.aggregate(max_position=Max("position"))["max_position"]
+    return (max_position or 0) + 10
+
+
+def _get_gallery(gallery_id):
+    return get_object_or_404(ContentGallery, id=gallery_id)
+
+
+def _get_gallery_image(gallery, image_id):
+    return get_object_or_404(ContentGalleryImage, id=image_id, gallery=gallery)
+
+
+@staff_required
+def gallery_list(request):
+    galleries = (
+        ContentGallery.objects
+        .select_related("event", "cover_image")
+        .prefetch_related("images")
+        .order_by("-published_at", "-created_at")
+    )
+
+    return render(
+        request,
+        "content_staff/gallery_list.html",
+        {
+            "galleries": galleries,
+            "page_title": "Fotogalerie",
+        },
+    )
+
+
+@staff_required
+def gallery_create(request):
+    initial = {}
+
+    event_id = request.GET.get("event_id")
+
+    if event_id:
+        event = Event.objects.filter(id=event_id).first()
+
+        if event:
+            initial["event"] = event
+
+    if request.method == "POST":
+        form = ContentGalleryForm(request.POST)
+
+        if form.is_valid():
+            gallery = form.save(commit=False)
+            gallery.created_by = request.user
+            gallery.save()
+
+            messages.success(request, "Fotogalerie byla vytvořena. Teď můžeš přidat obrázky.")
+            return redirect(
+                "rozesilac:content_staff:gallery_edit",
+                gallery_id=gallery.id,
+            )
+    else:
+        form = ContentGalleryForm(initial=initial)
+
+    return render(
+        request,
+        "content_staff/gallery_form.html",
+        {
+            "form": form,
+            "gallery": None,
+            "image_form": None,
+            "images": [],
+            "page_title": "Nová fotogalerie",
+            "submit_label": "Vytvořit fotogalerii",
+        },
+    )
+
+
+@staff_required
+def gallery_edit(request, gallery_id):
+    gallery = get_object_or_404(
+        ContentGallery.objects
+        .select_related("event", "cover_image")
+        .prefetch_related("images", "images__image"),
+        id=gallery_id,
+    )
+
+    if request.method == "POST":
+        form = ContentGalleryForm(request.POST, instance=gallery)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Fotogalerie byla uložena.")
+            return redirect(
+                "rozesilac:content_staff:gallery_edit",
+                gallery_id=gallery.id,
+            )
+    else:
+        form = ContentGalleryForm(instance=gallery)
+
+    image_form = ContentGalleryImageForm()
+    images = list(gallery.images.select_related("image").all())
+
+    for image_item in images:
+        image_item.edit_form = ContentGalleryImageForm(
+            instance=image_item,
+            prefix=f"image-{image_item.id}",
+        )
+
+    return render(
+        request,
+        "content_staff/gallery_form.html",
+        {
+            "form": form,
+            "gallery": gallery,
+            "image_form": image_form,
+            "images": images,
+            "page_title": f"Upravit fotogalerii: {gallery.title}",
+            "submit_label": "Uložit fotogalerii",
+        },
+    )
+
+
+@staff_required
+def gallery_image_add(request, gallery_id):
+    gallery = _get_gallery(gallery_id)
+
+    if request.method == "POST":
+        form = ContentGalleryImageForm(
+            request.POST,
+            instance=ContentGalleryImage(gallery=gallery),
+        )
+
+        if form.is_valid():
+            image_item = form.save(commit=False)
+            image_item.gallery = gallery
+            image_item.position = _next_gallery_image_position(gallery)
+            image_item.save()
+
+            messages.success(request, "Obrázek byl přidán do fotogalerie.")
+        else:
+            messages.error(request, "Obrázek se nepodařilo přidat.")
+
+    return redirect(
+        "rozesilac:content_staff:gallery_edit",
+        gallery_id=gallery.id,
+    )
+
+
+@staff_required
+def gallery_image_edit(request, gallery_id, image_id):
+    gallery = _get_gallery(gallery_id)
+    image_item = _get_gallery_image(gallery, image_id)
+
+    if request.method == "POST":
+        form = ContentGalleryImageForm(
+            request.POST,
+            instance=image_item,
+            prefix=f"image-{image_item.id}",
+        )
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Obrázek ve fotogalerii byl uložen.")
+        else:
+            messages.error(request, "Obrázek se nepodařilo uložit.")
+
+    return redirect(
+        "rozesilac:content_staff:gallery_edit",
+        gallery_id=gallery.id,
+    )
+
+
+@staff_required
+def gallery_image_delete(request, gallery_id, image_id):
+    gallery = _get_gallery(gallery_id)
+    image_item = _get_gallery_image(gallery, image_id)
+
+    if request.method == "POST":
+        image_item.delete()
+        messages.success(request, "Obrázek byl odebrán z fotogalerie.")
+
+    return redirect(
+        "rozesilac:content_staff:gallery_edit",
+        gallery_id=gallery.id,
+    )
+
+
+@staff_required
+def gallery_image_move_up(request, gallery_id, image_id):
+    gallery = _get_gallery(gallery_id)
+    image_item = _get_gallery_image(gallery, image_id)
+
+    previous_item = (
+        gallery.images
+        .filter(position__lt=image_item.position)
+        .order_by("-position", "-id")
+        .first()
+    )
+
+    if request.method == "POST" and previous_item:
+        image_item.position, previous_item.position = previous_item.position, image_item.position
+        image_item.save(update_fields=["position"])
+        previous_item.save(update_fields=["position"])
+
+    return redirect(
+        "rozesilac:content_staff:gallery_edit",
+        gallery_id=gallery.id,
+    )
+
+
+@staff_required
+def gallery_image_move_down(request, gallery_id, image_id):
+    gallery = _get_gallery(gallery_id)
+    image_item = _get_gallery_image(gallery, image_id)
+
+    next_item = (
+        gallery.images
+        .filter(position__gt=image_item.position)
+        .order_by("position", "id")
+        .first()
+    )
+
+    if request.method == "POST" and next_item:
+        image_item.position, next_item.position = next_item.position, image_item.position
+        image_item.save(update_fields=["position"])
+        next_item.save(update_fields=["position"])
+
+    return redirect(
+        "rozesilac:content_staff:gallery_edit",
+        gallery_id=gallery.id,
+    )

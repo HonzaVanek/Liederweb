@@ -4,7 +4,7 @@ from django.utils.text import slugify
 from events.models import Event
 from media_assets.models import MediaAsset
 
-from .models import ContentBlock, ContentBlockImage, ContentPost
+from .models import ContentBlock, ContentBlockImage, ContentPost, ContentGallery, ContentGalleryImage
 
 
 class ContentPostForm(forms.ModelForm):
@@ -182,6 +182,101 @@ class ContentBlockImageForm(forms.ModelForm):
             "image_position": forms.Select(attrs={"class": "form-control"}),
             "caption": forms.TextInput(attrs={"class": "form-control"}),
             "alt_text": forms.TextInput(attrs={"class": "form-control"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["image"].queryset = MediaAsset.objects.filter(
+            asset_type=MediaAsset.AssetType.IMAGE,
+            is_active=True,
+        ).order_by("-uploaded_at")
+
+        self.fields["image"].empty_label = "— vyber obrázek —"
+
+
+class ContentGalleryForm(forms.ModelForm):
+    class Meta:
+        model = ContentGallery
+        fields = [
+            "title",
+            "slug",
+            "event",
+            "cover_image",
+            "cover_image_fit",
+            "cover_image_position",
+            "description",
+            "is_published",
+            "published_at",
+        ]
+        widgets = {
+            "title": forms.TextInput(attrs={"class": "form-control"}),
+            "slug": forms.TextInput(attrs={"class": "form-control"}),
+            "event": forms.Select(attrs={"class": "form-control"}),
+            "cover_image": forms.Select(attrs={"class": "form-control"}),
+            "cover_image_fit": forms.Select(attrs={"class": "form-control"}),
+            "cover_image_position": forms.Select(attrs={"class": "form-control"}),
+            "description": forms.Textarea(attrs={"class": "form-control", "rows": 5}),
+            "published_at": forms.DateTimeInput(
+                attrs={"class": "form-control", "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
+            ),
+        }
+        input_formats = {
+            "published_at": ["%Y-%m-%dT%H:%M"],
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["slug"].required = False
+
+        self.fields["event"].queryset = Event.objects.all().order_by("-starts_at")
+        self.fields["event"].empty_label = "— bez navázaného koncertu —"
+
+        self.fields["cover_image"].queryset = MediaAsset.objects.filter(
+            asset_type=MediaAsset.AssetType.IMAGE,
+            is_active=True,
+        ).order_by("-uploaded_at")
+        self.fields["cover_image"].empty_label = "— bez úvodního obrázku —"
+
+    def clean_slug(self):
+        slug = (self.cleaned_data.get("slug") or "").strip()
+
+        if not slug:
+            title = self.cleaned_data.get("title") or ""
+            slug = slugify(title)
+
+        if not slug:
+            raise forms.ValidationError("Slug se nepodařilo vytvořit. Vyplň název nebo slug ručně.")
+
+        queryset = ContentGallery.objects.filter(slug=slug)
+
+        if self.instance.pk:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            raise forms.ValidationError("Galerie s tímto slugem už existuje.")
+
+        return slug
+    
+
+class ContentGalleryImageForm(forms.ModelForm):
+    class Meta:
+        model = ContentGalleryImage
+        fields = [
+            "image",
+            "caption",
+            "alt_text",
+            "image_fit",
+            "image_position",
+        ]
+        widgets = {
+            "image": forms.Select(attrs={"class": "form-control"}),
+            "caption": forms.TextInput(attrs={"class": "form-control"}),
+            "alt_text": forms.TextInput(attrs={"class": "form-control"}),
+            "image_fit": forms.Select(attrs={"class": "form-control"}),
+            "image_position": forms.Select(attrs={"class": "form-control"}),
         }
 
     def __init__(self, *args, **kwargs):

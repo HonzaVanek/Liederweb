@@ -525,6 +525,64 @@
         {% endif %}
       </div>
 
+
+      <div class="detail-card">
+        <div class="form-actions" style="margin-top: 0; margin-bottom: 16px;">
+          <a
+            href="{% url 'rozesilac:content_staff:gallery_create' %}?event_id={{ event.id }}"
+            class="btn-link"
+          >
+            Přidat fotogalerii
+          </a>
+        </div>
+
+        <h3>Fotogalerie</h3>
+
+        {% if related_content_galleries %}
+          <ul class="event-related-list">
+            {% for gallery in related_content_galleries %}
+              <li>
+                <a href="{% url 'rozesilac:content_staff:gallery_edit' gallery.id %}">
+                  {{ gallery.title }}
+                </a>
+
+                <span class="muted small">
+                  |
+                  {% if gallery.is_published %}
+                    publikováno
+                  {% else %}
+                    koncept
+                  {% endif %}
+
+                  | obrázky: {{ gallery.images.count }}
+
+                  {% if gallery.published_at %}
+                    | {{ gallery.published_at|date:"d.m.Y H:i" }}
+                  {% endif %}
+                </span>
+
+                {% if gallery.is_published %}
+                  <br>
+                  <a
+                    href="{{ gallery.get_absolute_url }}"
+                    target="_blank"
+                    rel="noopener"
+                    class="muted small"
+                  >
+                    Otevřít veřejnou fotogalerii
+                  </a>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">Zatím k tomuto koncertu není navázaná žádná fotogalerie.</p>
+          <p class="muted small">
+            Klikni na „Přidat fotogalerii“ a koncert se ve formuláři předvyplní automaticky.
+          </p>
+        {% endif %}
+      </div>
+
       <div class="detail-card">
         <h3>Kampaně</h3>
 

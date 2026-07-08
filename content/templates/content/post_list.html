@@ -14,20 +14,21 @@
       <p class="content-discover-kicker">Lieder Society</p>
       <h1>Objevujte</h1>
       <p>
-        Čtěte příběhy, souvislosti a dramaturgické texty ke koncertům, skladatelům
-        a hudbě, kterou uvádíme.
+        Čtěte příběhy, souvislosti a dramaturgické texty ke koncertům,
+        skladatelům a hudbě, kterou uvádíme. Postupně zde najdete také
+        fotogalerie a další materiály.
       </p>
     </section>
 
     <section class="content-discover-search-section" aria-labelledby="content-search-title">
       <div class="content-discover-section-heading">
         <p class="content-discover-kicker">Hledejte</p>
-        <h2 id="content-search-title">Najděte text podle tématu nebo klíčového slova</h2>
+        <h2 id="content-search-title">Najděte obsah podle tématu nebo klíčového slova</h2>
       </div>
 
       <form method="get" action="{% url 'content:post_list' %}" class="content-discover-search-form">
         <label class="visually-hidden" for="content-search-input">
-          Hledat v příspěvcích
+          Hledat v obsahu
         </label>
 
         <input
@@ -47,16 +48,28 @@
         <div class="content-discover-search-results">
           <h3>Výsledky hledání pro „{{ query }}“</h3>
 
-          {% if search_results %}
-            <div class="content-discover-card-grid content-discover-card-grid--compact">
-              {% for post in search_results %}
-                {% include "content/includes/post_card.html" with post=post %}
-              {% endfor %}
-            </div>
+          {% if search_results or gallery_search_results %}
+            {% if search_results %}
+              <h4 class="content-discover-result-heading">Články</h4>
+              <div class="content-discover-card-grid content-discover-card-grid--compact">
+                {% for post in search_results %}
+                  {% include "content/includes/post_card.html" with post=post %}
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            {% if gallery_search_results %}
+              <h4 class="content-discover-result-heading">Fotogalerie</h4>
+              <div class="content-discover-card-grid content-discover-card-grid--compact">
+                {% for gallery in gallery_search_results %}
+                  {% include "content/includes/gallery_card.html" with gallery=gallery %}
+                {% endfor %}
+              </div>
+            {% endif %}
           {% else %}
             <div class="content-discover-empty">
               <p>
-                Nenašli jsme žádný publikovaný příspěvek pro tento výraz.
+                Nenašli jsme žádný publikovaný obsah pro tento výraz.
                 Zkus jiné slovo nebo obecnější téma.
               </p>
             </div>
@@ -66,43 +79,63 @@
     </section>
 
     <div class="content-discover-layout">
-      <section class="content-discover-main-section" aria-labelledby="content-read-title">
-        <div class="content-discover-section-heading">
-          <p class="content-discover-kicker">Čtěte</p>
-          <h2 id="content-read-title">Příspěvky</h2>
-        </div>
+      <div class="content-discover-main-column">
+        <section class="content-discover-main-section" aria-labelledby="content-read-title">
+          <div class="content-discover-section-heading">
+            <p class="content-discover-kicker">Čtěte</p>
+            <h2 id="content-read-title">Příspěvky</h2>
+          </div>
 
-        {% if read_posts %}
-          <div class="content-discover-card-grid">
-            {% for post in read_posts %}
-              {% include "content/includes/post_card.html" with post=post %}
-            {% endfor %}
+          {% if read_posts %}
+            <div class="content-discover-card-grid">
+              {% for post in read_posts %}
+                {% include "content/includes/post_card.html" with post=post %}
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="content-discover-empty">
+              <p>Zatím tu nejsou žádné publikované příspěvky.</p>
+            </div>
+          {% endif %}
+        </section>
+
+        <section class="content-discover-main-section" aria-labelledby="content-gallery-title">
+          <div class="content-discover-section-heading">
+            <p class="content-discover-kicker">Prohlížejte</p>
+            <h2 id="content-gallery-title">Fotogalerie</h2>
           </div>
-        {% else %}
-          <div class="content-discover-empty">
-            <p>Zatím tu nejsou žádné publikované příspěvky.</p>
-          </div>
-        {% endif %}
-      </section>
+
+          {% if galleries %}
+            <div class="content-discover-card-grid">
+              {% for gallery in galleries %}
+                {% include "content/includes/gallery_card.html" with gallery=gallery %}
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="content-discover-empty">
+              <p>Zatím tu nejsou žádné publikované fotogalerie.</p>
+            </div>
+          {% endif %}
+        </section>
+      </div>
 
       <aside class="content-discover-feed" aria-labelledby="content-feed-title">
         <div class="content-discover-feed-card">
           <p class="content-discover-kicker">Feed</p>
-          <h2 id="content-feed-title">Nejnovější příspěvky</h2>
+          <h2 id="content-feed-title">Nejnovější obsah</h2>
 
-          {% if latest_posts %}
+          {% if latest_items %}
             <ol class="content-discover-latest-list">
-              {% for post in latest_posts %}
+              {% for item in latest_items %}
                 <li>
-                  <a href="{{ post.get_absolute_url }}">
-                    {{ post.title|cz_nbsp }}
+                  <a href="{{ item.url }}">
+                    {{ item.title|cz_nbsp }}
                   </a>
 
                   <span>
-                    {% if post.published_at %}
-                      {{ post.published_at|date:"d. m. Y" }}
-                    {% else %}
-                      {{ post.created_at|date:"d. m. Y" }}
+                    {{ item.type }}
+                    {% if item.date %}
+                      · {{ item.date|date:"d. m. Y" }}
                     {% endif %}
                   </span>
                 </li>
@@ -110,7 +143,7 @@
             </ol>
           {% else %}
             <p class="content-discover-muted">
-              Zatím tu nejsou žádné příspěvky.
+              Zatím tu není žádný publikovaný obsah.
             </p>
           {% endif %}
         </div>
@@ -118,7 +151,3 @@
     </div>
   </main>
 {% endblock content %}
-
-{% block newsletter_signup %}
-  {% include "core/includes/newsletter_signup.html" %}
-{% endblock newsletter_signup %}

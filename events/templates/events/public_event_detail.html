@@ -166,6 +166,41 @@
           </section>
         {% endif %}
 
+        {% if related_content_galleries %}
+          <section class="public-event-section">
+            <h2>Fotogalerie k tomuto koncertu</h2>
+
+            <div class="public-event-content-gallery-list">
+              {% for gallery in related_content_galleries %}
+                <a href="{{ gallery.get_absolute_url }}" class="public-event-content-gallery-card">
+                  {% with cover_image=gallery.effective_cover_image %}
+                    {% if cover_image and cover_image.file %}
+                      <span class="public-event-content-gallery-card__image">
+                        <img
+                          src="{{ cover_image.file.url }}"
+                          alt="{{ cover_image.alt_text|default:cover_image.title|default:gallery.title }}"
+                          style="object-fit: {{ gallery.cover_image_fit|default:'cover' }}; object-position: {{ gallery.cover_image_position|default:'center center' }};"
+                        >
+                      </span>
+                    {% endif %}
+                  {% endwith %}
+
+                  <span class="public-event-content-gallery-card__body">
+                    <span class="public-event-content-gallery-card__label">Fotogalerie</span>
+                    <strong>{{ gallery.title }}</strong>
+
+                    {% if gallery.description %}
+                      <span>{{ gallery.description|striptags|truncatewords:18 }}</span>
+                    {% endif %}
+                  </span>
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+
+
         {% if event.educational_text %}
           <section class="public-event-section">
             <h2>O hudbě</h2>

@@ -1,0 +1,44 @@
+{% load czech_typography %}
+
+<article class="content-discover-card content-discover-card--gallery">
+  <a href="{{ gallery.get_absolute_url }}" class="content-discover-card__media" aria-label="Otevřít fotogalerii: {{ gallery.title }}">
+    {% with cover_image=gallery.effective_cover_image %}
+      {% if cover_image and cover_image.file %}
+        <img
+          src="{{ cover_image.file.url }}"
+          alt="{{ cover_image.alt_text|default:cover_image.title|default:gallery.title }}"
+          style="object-fit: {{ gallery.cover_image_fit|default:'cover' }}; object-position: {{ gallery.cover_image_position|default:'center center' }};"
+        >
+      {% else %}
+        <div class="content-discover-card__placeholder">
+          Foto
+        </div>
+      {% endif %}
+    {% endwith %}
+  </a>
+
+  <div class="content-discover-card__body">
+    <div class="content-discover-card__meta">
+      <span>Fotogalerie</span>
+
+      {% if gallery.published_at %}
+        <span>{{ gallery.published_at|date:"d. m. Y" }}</span>
+      {% endif %}
+    </div>
+
+    <h3>
+      <a href="{{ gallery.get_absolute_url }}">
+        {{ gallery.title|cz_nbsp }}
+      </a>
+    </h3>
+
+    {% if gallery.description %}
+      <p>{{ gallery.description|striptags|truncatewords:24|cz_nbsp }}</p>
+    {% endif %}
+
+    <a href="{{ gallery.get_absolute_url }}" class="content-discover-card__link">
+      Prohlížet galerii
+      <span aria-hidden="true">→</span>
+    </a>
+  </div>
+</article>

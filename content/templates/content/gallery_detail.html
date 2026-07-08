@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load static czech_typography content_tags %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'content/content_public.css' %}">
+{% endblock extra_css %}
+
+{% block title %}{{ gallery.title }}{% endblock title %}
+
+{% block content %}
+  <main class="content-gallery-page">
+    <article class="content-gallery-detail">
+      <header class="content-gallery-detail__header">
+        <p class="content-post-kicker">Fotogalerie</p>
+
+        <h1>{{ gallery.title|cz_nbsp }}</h1>
+
+        <div class="content-gallery-detail__meta">
+          {% if gallery.published_at %}
+            <span>{{ gallery.published_at|date:"d. m. Y" }}</span>
+          {% endif %}
+
+          {% if gallery.event %}
+            <span>
+              Ke koncertu:
+              <a href="{% url 'events:public_event_detail' gallery.event.slug %}">
+                {{ gallery.event.title|cz_nbsp }}
+              </a>
+            </span>
+          {% endif %}
+        </div>
+
+        {% if gallery.description %}
+          <div class="content-gallery-detail__description">
+            {{ gallery.description|content_richtext }}
+          </div>
+        {% endif %}
+      </header>
+
+      {% if images %}
+        <section class="content-gallery-detail__grid" data-content-gallery>
+          {% for item in images %}
+            <button
+              type="button"
+              class="content-gallery-detail__item {% if forloop.counter == 1 %}content-gallery-detail__item--featured{% endif %}"
+              data-content-gallery-open="{{ forloop.counter0 }}"
+              aria-label="Otevřít obrázek {{ forloop.counter }} z galerie"
+            >
+              <img
+                src="{{ item.image.file.url }}"
+                alt="{{ item.effective_alt_text }}"
+                style="object-fit: {{ item.image_fit|default:'cover' }}; object-position: {{ item.image_position|default:'center center' }};"
+              >
+
+              {% if item.caption %}
+                <span>{{ item.caption|cz_nbsp }}</span>
+              {% endif %}
+            </button>
+          {% endfor %}
+        </section>
+      {% else %}
+        <div class="content-discover-empty">
+          <p>Fotogalerie zatím nemá žádné obrázky.</p>
+        </div>
+      {% endif %}
+    </article>
+  </main>
+
+  {% if images %}
+    <div id="content-gallery-modal" class="content-gallery-modal" hidden>
+      <div class="content-gallery-modal__backdrop" data-content-gallery-close></div>
+
+      <div class="content-gallery-modal__dialog" role="dialog" aria-modal="true" aria-label="Fotogalerie">
+        <button type="button" class="content-gallery-modal__close" data-content-gallery-close aria-label="Zavřít galerii">×</button>
+
+        <button type="button" class="content-gallery-modal__nav content-gallery-modal__nav--prev" data-content-gallery-prev aria-label="Předchozí fotka">←</button>
+
+        <div class="content-gallery-modal__stage">
+          {% for item in images %}
+            <figure class="content-gallery-modal__slide {% if forloop.first %}is-active{% endif %}" data-content-gallery-slide="{{ forloop.counter0 }}">
+              <img src="{{ item.image.file.url }}" alt="{{ item.effective_alt_text }}" class="content-gallery-modal__image">
+
+              {% if item.caption %}
+                <figcaption>{{ item.caption|cz_nbsp }}</figcaption>
+              {% endif %}
+            </figure>
+          {% endfor %}
+        </div>
+
+        <button type="button" class="content-gallery-modal__nav content-gallery-modal__nav--next" data-content-gallery-next aria-label="Další fotka">→</button>
+
+        <div class="content-gallery-modal__counter" data-content-gallery-counter>
+          1 / {{ images|length }}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const body = document.body
+      const modal = document.getElementById('content-gallery-modal')
+      const openButtons = document.querySelectorAll('[data-content-gallery-open]')
+
+      if (!modal || !openButtons.length) return
+
+      const slides = Array.from(modal.querySelectorAll('[data-content-gallery-slide]'))
+      const closeButtons = modal.querySelectorAll('[data-content-gallery-close]')
+      const prevButton = modal.querySelector('[data-content-gallery-prev]')
+      const nextButton = modal.querySelector('[data-content-gallery-next]')
+      const counter = modal.querySelector('[data-content-gallery-counter]')
+
+      let activeIndex = 0
+
+      function setSlide(index) {
+        if (!slides.length) return
+
+        if (index < 0) {
+          activeIndex = slides.length - 1
+        } else if (index >= slides.length) {
+          activeIndex = 0
+        } else {
+          activeIndex = index
+        }
+
+        slides.forEach((slide, slideIndex) => {
+          slide.classList.toggle('is-active', slideIndex === activeIndex)
+        })
+
+        if (counter) {
+          counter.textContent = `${activeIndex + 1} / ${slides.length}`
+        }
+      }
+
+      function openGallery(index) {
+        setSlide(index)
+        modal.hidden = false
+        body.classList.add('poster-modal-open')
+      }
+
+      function closeGallery() {
+        modal.hidden = true
+        body.classList.remove('poster-modal-open')
+      }
+
+      openButtons.forEach((button) => {
+        button.addEventListener('click', function () {
+          openGallery(Number(button.dataset.contentGalleryOpen || 0))
+        })
+      })
+
+      closeButtons.forEach((button) => {
+        button.addEventListener('click', closeGallery)
+      })
+
+      if (prevButton) {
+        prevButton.addEventListener('click', function () {
+          setSlide(activeIndex - 1)
+        })
+      }
+
+      if (nextButton) {
+        nextButton.addEventListener('click', function () {
+          setSlide(activeIndex + 1)
+        })
+      }
+
+      document.addEventListener('keydown', function (event) {
+        if (modal.hidden) return
+
+        if (event.key === 'Escape') {
+          closeGallery()
+        }
+
+        if (event.key === 'ArrowLeft') {
+          setSlide(activeIndex - 1)
+        }
+
+        if (event.key === 'ArrowRight') {
+          setSlide(activeIndex + 1)
+        }
+      })
+
+      setSlide(0)
+    })
+  </script>
+{% endblock content %}

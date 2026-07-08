@@ -7,6 +7,7 @@ app_name = "content"
 
 public_urlpatterns = [
     path("", views.post_list, name="post_list"),
+    path("galerie/<slug:slug>/", views.gallery_detail, name="gallery_detail"),
     path("<slug:slug>/", views.post_detail, name="post_detail"),
 ]
 
@@ -24,6 +25,15 @@ staff_urlpatterns = [
     path("<int:post_id>/blocks/<int:block_id>/images/<int:image_id>/move-up/", staff_views.block_image_move_up, name="block_image_move_up"),
     path("<int:post_id>/blocks/<int:block_id>/images/<int:image_id>/move-down/", staff_views.block_image_move_down, name="block_image_move_down"),
     path("<int:post_id>/blocks/<int:block_id>/images/<int:image_id>/edit/", staff_views.block_image_edit, name="block_image_edit"),
+
+    path("galleries/", staff_views.gallery_list, name="gallery_list"),
+    path("galleries/new/", staff_views.gallery_create, name="gallery_create"),
+    path("galleries/<int:gallery_id>/edit/", staff_views.gallery_edit, name="gallery_edit"),
+    path("galleries/<int:gallery_id>/images/add/", staff_views.gallery_image_add, name="gallery_image_add"),
+    path("galleries/<int:gallery_id>/images/<int:image_id>/edit/", staff_views.gallery_image_edit, name="gallery_image_edit"),
+    path("galleries/<int:gallery_id>/images/<int:image_id>/delete/", staff_views.gallery_image_delete, name="gallery_image_delete"),
+    path("galleries/<int:gallery_id>/images/<int:image_id>/move-up/", staff_views.gallery_image_move_up, name="gallery_image_move_up"),
+    path("galleries/<int:gallery_id>/images/<int:image_id>/move-down/", staff_views.gallery_image_move_down, name="gallery_image_move_down"),
 ]
 
 urlpatterns = public_urlpatterns

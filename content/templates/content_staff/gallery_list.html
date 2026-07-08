@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="{% static 'content/content_staff.css' %}">
 {% endblock extra_css %}
 
-{% block title %}Rozesílač | Obsahové příspěvky{% endblock title %}
+{% block title %}Rozesílač | Fotogalerie{% endblock title %}
 
 {% block rozesilac_content %}
   <div class="content-admin">
@@ -14,90 +14,86 @@
     {% if messages %}
       <ul class="messages">
         {% for message in messages %}
-          <li class="{{ message.tags }}">
-            {{ message }}
-          </li>
+          <li class="{{ message.tags }}">{{ message }}</li>
         {% endfor %}
       </ul>
     {% endif %}
 
     <div class="content-admin-header">
       <div>
-        <p class="content-admin-kicker">Správa webu</p>
-        <h1 class="content-admin-title">Blogposty</h1>
+        <p class="content-admin-kicker">Objevujte</p>
+        <h1 class="content-admin-title">Fotogalerie</h1>
         <p class="content-admin-lead">
-          Různé články navázané na koncerty i případně samostatné články.
-          Zobrazují se na stránce Objevujte + na veřejné stránce koncertu (pokud článek navážeš na koncert).
+          Správa samostatných redakčních fotogalerií. Galerie mohou být volitelně navázané na koncert. Zde nahrané fotogalerie se zobrazují na stránce objevujte + případně na stránce příslušného koncertu (pokud jí s koncertem propojíš). 
         </p>
       </div>
 
       <div class="content-admin-actions">
-        <a class="content-admin-button content-admin-button--primary" href="{% url 'rozesilac:content_staff:post_create' %}">
-          Nový příspěvek
+        <a href="{% url 'rozesilac:content_staff:gallery_create' %}"
+           class="content-admin-button content-admin-button--primary">
+          Nová fotogalerie
         </a>
       </div>
     </div>
 
-
-
     <div class="content-list-card">
-      {% if posts %}
+      {% if galleries %}
         <div class="content-list-scroll">
           <table class="content-post-table">
             <thead>
               <tr>
                 <th>Název</th>
                 <th>Koncert</th>
-                <th>Autor/ka</th>
                 <th>Stav</th>
+                <th>Obrázky</th>
                 <th>Publikace</th>
-                <th></th>
+                <th>Akce</th>
               </tr>
             </thead>
 
             <tbody>
-              {% for post in posts %}
+              {% for gallery in galleries %}
                 <tr>
-                  <td class="content-post-main">
-                    <strong>{{ post.title }}</strong>
-                    <small>{{ post.slug }}</small>
+                  <td>
+                    <div class="content-post-main">
+                      <strong>{{ gallery.title }}</strong>
+                      <small>/objevujte/galerie/{{ gallery.slug }}/</small>
+                    </div>
                   </td>
 
                   <td class="content-post-event">
-                    {% if post.event %}
-                      {{ post.event.title }}
+                    {% if gallery.event %}
+                      {{ gallery.event.title }}
                     {% else %}
-                      —
+                      <span class="muted">—</span>
                     {% endif %}
                   </td>
 
                   <td>
-                    {{ post.author_name|default:"—" }}
-                  </td>
-
-                  <td>
-                    {% if post.is_published %}
+                    {% if gallery.is_published %}
                       <span class="content-post-status content-post-status--published">Publikováno</span>
                     {% else %}
                       <span class="content-post-status content-post-status--draft">Koncept</span>
                     {% endif %}
                   </td>
 
+                  <td>{{ gallery.images.count }}</td>
+
                   <td>
-                    {% if post.published_at %}
-                      {{ post.published_at|date:"j. n. Y H:i" }}
+                    {% if gallery.published_at %}
+                      {{ gallery.published_at|date:"d. m. Y H:i" }}
                     {% else %}
-                      —
+                      <span class="muted">—</span>
                     {% endif %}
                   </td>
 
                   <td class="content-post-actions">
-                    <a href="{% url 'rozesilac:content_staff:post_edit' post.id %}">
+                    <a href="{% url 'rozesilac:content_staff:gallery_edit' gallery.id %}">
                       Upravit
                     </a>
 
-                    {% if post.is_published %}
-                      <a href="{{ post.get_absolute_url }}" target="_blank" rel="noopener">
+                    {% if gallery.is_published %}
+                      <a href="{{ gallery.get_absolute_url }}" target="_blank" rel="noopener">
                         Zobrazit
                       </a>
                     {% endif %}
@@ -109,13 +105,12 @@
         </div>
       {% else %}
         <div class="content-empty-state">
-          <h3>Zatím tu není žádný blogpost</h3>
-          <p>
-            Začni vytvořením prvního příspěvku. Obsahové bloky s textem,
-            obrázky a videi přidáme v dalším kroku.
-          </p>
-          <a class="content-admin-button content-admin-button--primary" href="{% url 'rozesilac:content_staff:post_create' %}">
-            Vytvořit první příspěvek
+          <h3>Zatím tu nejsou žádné fotogalerie</h3>
+          <p>Vytvoř první galerii a přidej do ní obrázky z mediální knihovny.</p>
+
+          <a href="{% url 'rozesilac:content_staff:gallery_create' %}"
+             class="content-admin-button content-admin-button--primary">
+            Nová fotogalerie
           </a>
         </div>
       {% endif %}

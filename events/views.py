@@ -245,6 +245,12 @@ def event_detail(request, pk):
     )
 
     related_content_posts = (event.content_posts.select_related("cover_image").order_by("-published_at", "-created_at"))
+    related_content_galleries = (
+        event.content_galleries
+        .select_related("cover_image")
+        .prefetch_related("images")
+        .order_by("-published_at", "-created_at")
+    )
     campaigns = event.campaigns.all()
     vip_reservations = event.vip_reservations.all()
     ticket_settings = event.ticket_settings if hasattr(event, "ticket_settings") else None
@@ -266,6 +272,7 @@ def event_detail(request, pk):
             "active_vip_reservations_count": active_vip_reservations_count,
             "active_vip_tickets_count": active_vip_tickets_count,
             "related_content_posts": related_content_posts,
+            "related_content_galleries": related_content_galleries,
         },
     )
 
@@ -298,6 +305,14 @@ def public_event_detail(request, slug):
         .order_by("-published_at", "-created_at")
     )
 
+    related_content_galleries = (
+        event.content_galleries
+        .filter(is_published=True)
+        .select_related("cover_image")
+        .prefetch_related("images", "images__image")
+        .order_by("-published_at", "-created_at")
+    )
+
     gallery_images = list(event.gallery_images.all())
 
     if len(gallery_images) > 4:
@@ -322,6 +337,7 @@ def public_event_detail(request, slug):
             "gallery_preview_images": gallery_preview_images,
             "gallery_extra_count": gallery_extra_count,
             "related_content_posts": related_content_posts,
+            "related_content_galleries": related_content_galleries,
         },
     )
 

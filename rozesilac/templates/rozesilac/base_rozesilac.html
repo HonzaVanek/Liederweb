@@ -79,8 +79,13 @@
             </a>
 
             <a href="{% url 'rozesilac:content_staff:post_list' %}"
-               class="{% if match.namespace == 'rozesilac:content_staff' %}active{% endif %}">
+               class="{% if match.namespace == 'rozesilac:content_staff' and not 'gallery' in match.url_name %}active{% endif %}">
                Blogposty
+            </a>
+
+            <a href="{% url 'rozesilac:content_staff:gallery_list' %}"
+               class="{% if match.namespace == 'rozesilac:content_staff' and 'gallery' in match.url_name %}active{% endif %}">
+               Galerie v objevujte
             </a>
 
          </nav>

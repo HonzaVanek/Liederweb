@@ -1,0 +1,269 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'content/content_staff.css' %}">
+{% endblock extra_css %}
+
+{% block title %}Rozesílač | {{ page_title }}{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="content-admin">
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <div class="content-admin-header">
+      <div>
+        <p class="content-admin-kicker">Fotogalerie</p>
+        <h1 class="content-admin-title">{{ page_title }}</h1>
+
+        {% if gallery %}
+          <p class="content-admin-lead">
+            Obrázky se vybírají z mediální knihovny. Pořadí i zobrazení jednotlivých fotek upravíš níže.
+          </p>
+        {% else %}
+          <p class="content-admin-lead">
+            Nejprve založ základ galerie, potom do ní přidáš jednotlivé obrázky.
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="content-admin-actions">
+        <a href="{% url 'rozesilac:content_staff:gallery_list' %}"
+           class="content-admin-button content-admin-button--ghost">
+          Zpět na galerie
+        </a>
+
+        {% if gallery and gallery.is_published %}
+          <a href="{{ gallery.get_absolute_url }}"
+             target="_blank"
+             rel="noopener"
+             class="content-admin-button content-admin-button--ghost">
+            Veřejná stránka
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <form method="post" novalidate class="content-form-card">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="content-form-errors">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div class="content-form-grid">
+        <div>
+          <section class="content-form-section">
+            <h3>Základ galerie</h3>
+
+            <div class="content-form-row">
+              <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+              {{ form.title }}
+              {{ form.title.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <label for="{{ form.slug.id_for_label }}">{{ form.slug.label }}</label>
+              {{ form.slug }}
+              {% if form.slug.help_text %}
+                <small class="content-form-help">{{ form.slug.help_text }}</small>
+              {% endif %}
+              {{ form.slug.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+              {{ form.description }}
+              {% if form.description.help_text %}
+                <small class="content-form-help">{{ form.description.help_text }}</small>
+              {% endif %}
+              {{ form.description.errors }}
+            </div>
+          </section>
+        </div>
+
+        <div>
+          <section class="content-form-section">
+            <h3>Zařazení</h3>
+
+            <div class="content-form-row">
+              <label for="{{ form.event.id_for_label }}">{{ form.event.label }}</label>
+              {{ form.event }}
+              {{ form.event.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <label for="{{ form.cover_image.id_for_label }}">{{ form.cover_image.label }}</label>
+              {{ form.cover_image }}
+              {% if form.cover_image.help_text %}
+                <small class="content-form-help">{{ form.cover_image.help_text }}</small>
+              {% endif %}
+              {{ form.cover_image.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <label for="{{ form.cover_image_fit.id_for_label }}">{{ form.cover_image_fit.label }}</label>
+              {{ form.cover_image_fit }}
+              {{ form.cover_image_fit.errors }}
+            </div>
+
+            <div class="content-form-row">
+              <label for="{{ form.cover_image_position.id_for_label }}">{{ form.cover_image_position.label }}</label>
+              {{ form.cover_image_position }}
+              {{ form.cover_image_position.errors }}
+            </div>
+          </section>
+
+          <section class="content-form-section">
+            <h3>Publikace</h3>
+
+            <div class="content-form-row">
+              <label for="{{ form.published_at.id_for_label }}">{{ form.published_at.label }}</label>
+              {{ form.published_at }}
+              {{ form.published_at.errors }}
+            </div>
+
+            <div class="content-form-checkbox">
+              {{ form.is_published }}
+              <label for="{{ form.is_published.id_for_label }}">{{ form.is_published.label }}</label>
+              {{ form.is_published.errors }}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="content-form-actions">
+        <button type="submit" class="content-admin-button content-admin-button--primary">
+          {{ submit_label }}
+        </button>
+
+        <a href="{% url 'rozesilac:content_staff:gallery_list' %}"
+           class="content-admin-button content-admin-button--ghost">
+          Zrušit
+        </a>
+      </div>
+    </form>
+
+    {% if gallery %}
+      <section class="content-gallery-editor">
+        <div class="content-block-editor-header">
+          <div>
+            <p class="content-admin-kicker">Obrázky</p>
+            <h2 class="content-block-editor-title">Obrázky ve fotogalerii</h2>
+            <p class="content-admin-lead">
+              Přidej obrázky z mediální knihovny. U každého můžeš nastavit popisek, alt text, ořez a pozici.
+            </p>
+          </div>
+        </div>
+
+        <form method="post"
+              action="{% url 'rozesilac:content_staff:gallery_image_add' gallery.id %}"
+              class="content-form-card content-gallery-add-form">
+          {% csrf_token %}
+
+          <div class="content-form-grid content-form-grid-gallery">
+            {% for field in image_form %}
+              <div class="content-form-row">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+
+                {% if field.help_text %}
+                  <small class="content-form-help">{{ field.help_text }}</small>
+                {% endif %}
+
+                {{ field.errors }}
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="content-form-actions">
+            <button type="submit" class="content-admin-button content-admin-button--primary">
+              Přidat obrázek
+            </button>
+          </div>
+        </form>
+
+        {% if images %}
+          <div class="content-gallery-image-list">
+            {% for item in images %}
+              <article class="content-gallery-image-card">
+                <div class="content-gallery-thumb">
+                  {% if item.image.file %}
+                    <img src="{{ item.image.file.url }}" alt="{{ item.effective_alt_text }}">
+                  {% endif %}
+                </div>
+
+                <form
+                  method="post"
+                  action="{% url 'rozesilac:content_staff:gallery_image_edit' gallery.id item.id %}"
+                  class="content-gallery-image-edit-form"
+                >
+                  {% csrf_token %}
+
+                  <div class="content-gallery-image-edit-grid">
+                    {% for field in item.edit_form %}
+                      <div class="content-form-row">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+
+                        {% if field.help_text %}
+                          <small class="content-form-help">{{ field.help_text }}</small>
+                        {% endif %}
+
+                        {{ field.errors }}
+                      </div>
+                    {% endfor %}
+                  </div>
+
+                  <div class="content-gallery-image-save">
+                    <button type="submit" class="content-admin-button content-admin-button--primary">
+                      Uložit obrázek
+                    </button>
+                  </div>
+                </form>
+
+                <div class="content-gallery-image-actions">
+                  <form method="post" action="{% url 'rozesilac:content_staff:gallery_image_move_up' gallery.id item.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="content-admin-button content-admin-button--ghost">↑</button>
+                  </form>
+
+                  <form method="post" action="{% url 'rozesilac:content_staff:gallery_image_move_down' gallery.id item.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="content-admin-button content-admin-button--ghost">↓</button>
+                  </form>
+
+                  <form
+                    method="post"
+                    action="{% url 'rozesilac:content_staff:gallery_image_delete' gallery.id item.id %}"
+                    onsubmit="return confirm('Opravdu odebrat obrázek z fotogalerie?');"
+                  >
+                    {% csrf_token %}
+                    <button type="submit" class="content-admin-button content-admin-button--danger">
+                      Odebrat
+                    </button>
+                  </form>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="content-empty-state content-empty-state--blocks">
+            <h3>Fotogalerie zatím nemá žádné obrázky</h3>
+            <p>Vyber první obrázek z mediální knihovny.</p>
+          </div>
+        {% endif %}
+      </section>
+    {% endif %}
+  </div>
+{% endblock rozesilac_content %}
