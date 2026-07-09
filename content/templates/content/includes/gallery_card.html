@@ -1,6 +1,6 @@
 {% load czech_typography %}
 
-<article class="content-discover-card content-discover-card--gallery">
+<article class="content-discover-card content-discover-card--gallery {% if compact %}content-discover-card--compact{% endif %}">
   <a href="{{ gallery.get_absolute_url }}" class="content-discover-card__media" aria-label="Otevřít fotogalerii: {{ gallery.title }}">
     {% with cover_image=gallery.effective_cover_image %}
       {% if cover_image and cover_image.file %}
@@ -33,7 +33,11 @@
     </h3>
 
     {% if gallery.description %}
-      <p>{{ gallery.description|striptags|truncatewords:24|cz_nbsp }}</p>
+      {% if compact %}
+        <p>{{ gallery.description|striptags|truncatewords:12|cz_nbsp }}</p>
+      {% else %}
+        <p>{{ gallery.description|striptags|truncatewords:24|cz_nbsp }}</p>
+      {% endif %}
     {% endif %}
 
     <a href="{{ gallery.get_absolute_url }}" class="content-discover-card__link">

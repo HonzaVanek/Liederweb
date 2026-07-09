@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'content/content_public.css' %}">
+{% endblock extra_css %}
+
+{% block title %}Čtěte | Objevujte{% endblock title %}
+
+{% block content %}
+  <main class="content-discover-page">
+    <section class="content-archive-header">
+      <p class="content-discover-kicker">Objevujte</p>
+      <h1>Čtěte</h1>
+      <p>
+        Blogposty, dramaturgické texty a příběhy související s koncerty Lieder Society.
+      </p>
+
+      <a href="{% url 'content:post_list' %}" class="content-archive-back-link">
+        ← Zpět na Objevujte
+      </a>
+    </section>
+
+    {% if posts %}
+      <div class="content-discover-card-grid">
+        {% for post in posts %}
+          {% include "content/includes/post_card.html" with post=post %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="content-discover-empty">
+        <p>Zatím tu nejsou žádné publikované příspěvky.</p>
+      </div>
+    {% endif %}
+  </main>
+{% endblock content %}

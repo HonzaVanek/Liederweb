@@ -7,6 +7,8 @@ app_name = "content"
 
 public_urlpatterns = [
     path("", views.post_list, name="post_list"),
+    path("ctete/", views.post_archive, name="post_archive"),
+    path("galerie/", views.gallery_list, name="gallery_list"),
     path("galerie/<slug:slug>/", views.gallery_detail, name="gallery_detail"),
     path("<slug:slug>/", views.post_detail, name="post_detail"),
 ]

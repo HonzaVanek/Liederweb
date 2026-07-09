@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'content/content_public.css' %}">
+{% endblock extra_css %}
+
+{% block title %}Fotogalerie | Objevujte{% endblock title %}
+
+{% block content %}
+  <main class="content-discover-page">
+    <section class="content-archive-header">
+      <p class="content-discover-kicker">Objevujte</p>
+      <h1>Prohlížejte</h1>
+      <p>
+        Fotogalerie z koncertů, zákulisí a dalších aktivit Lieder Society.
+      </p>
+
+      <a href="{% url 'content:post_list' %}" class="content-archive-back-link">
+        ← Zpět na Objevujte
+      </a>
+    </section>
+
+    {% if galleries %}
+      <div class="content-discover-card-grid">
+        {% for gallery in galleries %}
+          {% include "content/includes/gallery_card.html" with gallery=gallery %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="content-discover-empty">
+        <p>Zatím tu nejsou žádné publikované fotogalerie.</p>
+      </div>
+    {% endif %}
+  </main>
+{% endblock content %}

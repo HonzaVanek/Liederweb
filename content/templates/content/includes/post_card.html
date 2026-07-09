@@ -1,6 +1,6 @@
 {% load czech_typography %}
 
-<article class="content-discover-card">
+<article class="content-discover-card {% if compact %}content-discover-card--compact{% endif %}">
   <a href="{{ post.get_absolute_url }}" class="content-discover-card__media" aria-label="Číst článek: {{ post.title }}">
     {% if post.cover_image and post.cover_image.file %}
       <img
@@ -33,7 +33,11 @@
     </h3>
 
     {% if post.perex %}
-      <p>{{ post.perex|striptags|truncatewords:28|cz_nbsp }}</p>
+      {% if compact %}
+        <p>{{ post.perex|striptags|truncatewords:14|cz_nbsp }}</p>
+      {% else %}
+        <p>{{ post.perex|striptags|truncatewords:28|cz_nbsp }}</p>
+      {% endif %}
     {% endif %}
 
     <a href="{{ post.get_absolute_url }}" class="content-discover-card__link">

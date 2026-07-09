@@ -15,8 +15,8 @@
       <h1>Objevujte</h1>
       <p>
         Čtěte příběhy, souvislosti a dramaturgické texty ke koncertům,
-        skladatelům a hudbě, kterou uvádíme. Postupně zde najdete také
-        fotogalerie a další materiály.
+        skladatelům a hudbě, kterou uvádíme. Prohlížejte fotogalerie
+        a postupně objevujte další materiály.
       </p>
     </section>
 
@@ -51,18 +51,18 @@
           {% if search_results or gallery_search_results %}
             {% if search_results %}
               <h4 class="content-discover-result-heading">Články</h4>
-              <div class="content-discover-card-grid content-discover-card-grid--compact">
+              <div class="content-discover-preview-grid">
                 {% for post in search_results %}
-                  {% include "content/includes/post_card.html" with post=post %}
+                  {% include "content/includes/post_card.html" with post=post compact=True %}
                 {% endfor %}
               </div>
             {% endif %}
 
             {% if gallery_search_results %}
               <h4 class="content-discover-result-heading">Fotogalerie</h4>
-              <div class="content-discover-card-grid content-discover-card-grid--compact">
+              <div class="content-discover-preview-grid">
                 {% for gallery in gallery_search_results %}
-                  {% include "content/includes/gallery_card.html" with gallery=gallery %}
+                  {% include "content/includes/gallery_card.html" with gallery=gallery compact=True %}
                 {% endfor %}
               </div>
             {% endif %}
@@ -78,18 +78,38 @@
       {% endif %}
     </section>
 
-    <div class="content-discover-layout">
+    <section class="content-discover-section-switch" aria-label="Hlavní sekce Objevujte">
+      <a href="{% url 'content:post_archive' %}" class="content-discover-section-tile">
+        <span class="content-discover-kicker">Čtěte</span>
+        <strong>Blogposty a články</strong>
+        <span>{{ post_count }} publikovaných příspěvků</span>
+      </a>
+
+      <a href="{% url 'content:gallery_list' %}" class="content-discover-section-tile">
+        <span class="content-discover-kicker">Prohlížejte</span>
+        <strong>Fotogalerie</strong>
+        <span>{{ gallery_count }} publikovaných fotogalerií</span>
+      </a>
+    </section>
+
+    <div class="content-discover-layout content-discover-layout--landing">
       <div class="content-discover-main-column">
-        <section class="content-discover-main-section" aria-labelledby="content-read-title">
-          <div class="content-discover-section-heading">
-            <p class="content-discover-kicker">Čtěte</p>
-            <h2 id="content-read-title">Příspěvky</h2>
+        <section class="content-discover-main-section content-discover-main-section--compact" aria-labelledby="content-read-title">
+          <div class="content-discover-section-heading content-discover-section-heading--with-action">
+            <div>
+              <p class="content-discover-kicker">Čtěte</p>
+              <h2 id="content-read-title">Nejnovější příspěvky</h2>
+            </div>
+
+            <a href="{% url 'content:post_archive' %}" class="content-discover-section-action">
+              Všechny články →
+            </a>
           </div>
 
           {% if read_posts %}
-            <div class="content-discover-card-grid">
+            <div class="content-discover-preview-grid">
               {% for post in read_posts %}
-                {% include "content/includes/post_card.html" with post=post %}
+                {% include "content/includes/post_card.html" with post=post compact=True %}
               {% endfor %}
             </div>
           {% else %}
@@ -99,16 +119,22 @@
           {% endif %}
         </section>
 
-        <section class="content-discover-main-section" aria-labelledby="content-gallery-title">
-          <div class="content-discover-section-heading">
-            <p class="content-discover-kicker">Prohlížejte</p>
-            <h2 id="content-gallery-title">Fotogalerie</h2>
+        <section class="content-discover-main-section content-discover-main-section--compact" aria-labelledby="content-gallery-title">
+          <div class="content-discover-section-heading content-discover-section-heading--with-action">
+            <div>
+              <p class="content-discover-kicker">Prohlížejte</p>
+              <h2 id="content-gallery-title">Nejnovější fotogalerie</h2>
+            </div>
+
+            <a href="{% url 'content:gallery_list' %}" class="content-discover-section-action">
+              Všechny fotogalerie →
+            </a>
           </div>
 
           {% if galleries %}
-            <div class="content-discover-card-grid">
+            <div class="content-discover-preview-grid">
               {% for gallery in galleries %}
-                {% include "content/includes/gallery_card.html" with gallery=gallery %}
+                {% include "content/includes/gallery_card.html" with gallery=gallery compact=True %}
               {% endfor %}
             </div>
           {% else %}
