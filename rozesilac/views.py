@@ -687,18 +687,8 @@ def contact_edit(request, contact_id):
 
 @staff_required
 def images(request):
-    upload_form = NewsletterImageUploadForm()
-
     if request.method == "POST":
-        if request.POST.get("action") == "upload":
-            upload_form = NewsletterImageUploadForm(request.POST, request.FILES)
-
-            if upload_form.is_valid():
-                upload_form.save(uploaded_by=request.user)
-                messages.success(request, "Obrázek byl nahrán.")
-                return redirect("rozesilac:images")
-
-        elif request.POST.get("action") == "rename":
+        if request.POST.get("action") == "rename":
             image_id = request.POST.get("image_id")
             new_title = (request.POST.get("title") or "").strip()
 
@@ -739,7 +729,6 @@ def images(request):
         request,
         "rozesilac/images_gallery.html",
         {
-            "upload_form": upload_form,
             "images": images,
             "total_size": total_size,
             "limit_size": limit_size,
