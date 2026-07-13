@@ -200,12 +200,84 @@ def get_asset_template_usage(asset):
 
 
 
+def path_is_inside(child, parent):
+    try:
+        child.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
+def get_asset_python_source_usage(asset):
+    """
+    Najde natvrdo vložené odkazy na asset v Python kódu.
+    Tohle pokryje případy, kdy se URL skládá ve view a do šablony jde jen jako proměnná.
+    """
+    usage_items = []
+    needles = get_asset_reference_needles(asset)
+
+    if not needles:
+        return usage_items
+
+    base_dir = Path(settings.BASE_DIR).resolve()
+    roots = set()
+
+    # Projdeme jen lokální appky projektu, ne celý site-packages.
+    for app_config in apps.get_app_configs():
+        app_path = Path(app_config.path).resolve()
+
+        if path_is_inside(app_path, base_dir):
+            roots.add(app_path)
+
+    ignored_parts = {
+        "__pycache__",
+        "migrations",
+        ".git",
+        ".venv",
+        "venv",
+        "env",
+        "node_modules",
+    }
+
+    for root in roots:
+        if not root.exists():
+            continue
+
+        for path in root.rglob("*.py"):
+            if not path.is_file():
+                continue
+
+            if any(part in ignored_parts for part in path.parts):
+                continue
+
+            try:
+                content = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                try:
+                    content = path.read_text(encoding="utf-8", errors="ignore")
+                except Exception:
+                    continue
+            except Exception:
+                continue
+
+            if any(needle in content for needle in needles):
+                try:
+                    display_path = path.relative_to(base_dir)
+                except ValueError:
+                    display_path = path
+
+                usage_items.append((f"Python kód – {display_path}", 1))
+
+    return usage_items
+
+
 def get_asset_usage(asset):
     usage_items = []
 
     usage_items.extend(get_asset_relation_usage(asset))
     usage_items.extend(get_asset_database_text_usage(asset))
     usage_items.extend(get_asset_template_usage(asset))
+    usage_items.extend(get_asset_python_source_usage(asset))
 
     total = sum(count for _, count in usage_items)
 
