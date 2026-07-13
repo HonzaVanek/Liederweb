@@ -7,12 +7,14 @@ from django.utils.decorators import method_decorator
 from django.views.generic import ListView, CreateView, UpdateView
 from django.db import transaction
 from django.db.models.deletion import ProtectedError
+from urllib.parse import unquote
 
 from core.decorators import staff_required
 from .forms import MediaAssetForm, MEDIA_ASSETS_TOTAL_LIMIT, MediaAssetBulkImageUploadForm
 from .models import MediaAsset
 
 from django.apps import apps
+from django.conf import settings
 from django.db import models
 
 from pathlib import Path
@@ -24,18 +26,52 @@ def get_media_assets_total_size():
     return MediaAsset.objects.aggregate(total=Sum("file_size"))["total"] or 0
 
 
-def get_asset_usage(asset):
+def get_asset_reference_needles(asset):
+    """
+    Vrací různé podoby odkazu/cesty k assetu, které můžou být někde uložené
+    v databázi nebo natvrdo v šabloně.
+    """
+    needles = set()
+
+    if not asset.file:
+        return needles
+
+    if asset.file.name:
+        # Např. media_assets/document/2026/07/soubor.pdf
+        needles.add(asset.file.name)
+
+        # Např. /media_assets/document/2026/07/soubor.pdf
+        needles.add("/" + asset.file.name.lstrip("/"))
+
+        # Samotný uložený název souboru, typicky hash.pdf
+        needles.add(Path(asset.file.name).name)
+
+    try:
+        file_url = asset.file.url
+    except ValueError:
+        file_url = ""
+
+    if file_url:
+        # Např. /media/media_assets/document/2026/07/soubor.pdf
+        needles.add(file_url)
+        needles.add(unquote(file_url))
+
+    return {needle for needle in needles if needle}
+
+
+def get_asset_relation_usage(asset):
+    """
+    Najde použití přes skutečné databázové vazby na MediaAsset.
+    Tedy ForeignKey, OneToOneField a ManyToManyField.
+    """
     usage_items = []
     asset_model = asset.__class__
 
     for model in apps.get_models():
-        # samotný MediaAsset nás nezajímá
         if model == asset_model:
             continue
 
         for field in model._meta.get_fields():
-            # Přeskakujeme automatické reverzní vazby.
-            # Hledáme jen skutečná pole definovaná na modelech.
             if field.auto_created and not field.concrete:
                 continue
 
@@ -48,19 +84,128 @@ def get_asset_usage(asset):
             if field.remote_field.model != asset_model:
                 continue
 
-            label = f"{model._meta.verbose_name_plural} – {field.verbose_name}"
-
             if isinstance(field, (models.ForeignKey, models.OneToOneField)):
                 count = model.objects.filter(**{field.name: asset}).count()
-
             elif isinstance(field, models.ManyToManyField):
                 count = model.objects.filter(**{field.name: asset}).distinct().count()
-
             else:
                 continue
 
             if count:
+                label = f"{model._meta.verbose_name_plural} – {field.verbose_name}"
                 usage_items.append((label, count))
+
+    return usage_items
+
+
+def get_asset_database_text_usage(asset):
+    """
+    Najde výskyty cesty/URL assetu v textových polích databáze.
+    Hodí se pro HTML obsah, textové bloky, ručně vložené odkazy atd.
+    """
+    usage_items = []
+    needles = get_asset_reference_needles(asset)
+
+    if not needles:
+        return usage_items
+
+    text_field_types = (
+        models.CharField,
+        models.TextField,
+        models.URLField,
+    )
+
+    for model in apps.get_models():
+        # Nechceme najít asset sám v MediaAsset tabulce.
+        if model == asset.__class__:
+            continue
+
+        q = Q()
+
+        for field in model._meta.fields:
+            if isinstance(field, text_field_types):
+                for needle in needles:
+                    q |= Q(**{f"{field.name}__icontains": needle})
+
+        if not q.children:
+            continue
+
+        try:
+            count = model.objects.filter(q).distinct().count()
+        except Exception:
+            continue
+
+        if count:
+            label = f"{model._meta.verbose_name_plural} – textový/HTML odkaz"
+            usage_items.append((label, count))
+
+    return usage_items
+
+
+def get_asset_template_usage(asset):
+    """
+    Najde natvrdo vložené odkazy v Django šablonách.
+    Tohle pokryje přesně případy typu contact.html.
+    """
+    usage_items = []
+    needles = get_asset_reference_needles(asset)
+
+    if not needles:
+        return usage_items
+
+    roots = set()
+
+    # Globální template dirs ze settings.py
+    for template_config in settings.TEMPLATES:
+        for template_dir in template_config.get("DIRS", []):
+            roots.add(Path(template_dir))
+
+        # App templates: app/templates/...
+        if template_config.get("APP_DIRS"):
+            for app_config in apps.get_app_configs():
+                roots.add(Path(app_config.path) / "templates")
+
+    allowed_suffixes = {".html", ".txt"}
+
+    for root in roots:
+        if not root.exists():
+            continue
+
+        for path in root.rglob("*"):
+            if not path.is_file():
+                continue
+
+            if path.suffix.lower() not in allowed_suffixes:
+                continue
+
+            try:
+                content = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                try:
+                    content = path.read_text(encoding="utf-8", errors="ignore")
+                except Exception:
+                    continue
+            except Exception:
+                continue
+
+            if any(needle in content for needle in needles):
+                try:
+                    display_path = path.relative_to(settings.BASE_DIR)
+                except ValueError:
+                    display_path = path
+
+                usage_items.append((f"Šablona – {display_path}", 1))
+
+    return usage_items
+
+
+
+def get_asset_usage(asset):
+    usage_items = []
+
+    usage_items.extend(get_asset_relation_usage(asset))
+    usage_items.extend(get_asset_database_text_usage(asset))
+    usage_items.extend(get_asset_template_usage(asset))
 
     total = sum(count for _, count in usage_items)
 
