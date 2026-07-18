@@ -161,3 +161,97 @@ class CartQuantityForm(forms.Form):
         min_value=1,
         max_value=SessionCart.MAX_QUANTITY_PER_ITEM,
     )
+
+
+
+class CheckoutForm(forms.Form):
+    first_name = forms.CharField(
+        label="Jméno",
+        max_length=100,
+    )
+
+    last_name = forms.CharField(
+        label="Příjmení",
+        max_length=100,
+    )
+
+    email = forms.EmailField(
+        label="E-mail",
+    )
+
+    phone = forms.CharField(
+        label="Telefon",
+        max_length=40,
+        required=False,
+    )
+
+    address_line1 = forms.CharField(
+        label="Ulice a číslo",
+        max_length=200,
+    )
+
+    address_line2 = forms.CharField(
+        label="Doplnění adresy",
+        max_length=200,
+        required=False,
+    )
+
+    city = forms.CharField(
+        label="Město",
+        max_length=120,
+    )
+
+    postal_code = forms.CharField(
+        label="PSČ",
+        max_length=20,
+    )
+
+    customer_note = forms.CharField(
+        label="Poznámka k objednávce",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 4,
+                "placeholder": (
+                    "Nepovinná poznámka k objednávce."
+                ),
+            }
+        ),
+    )
+
+    newsletter_consent = forms.BooleanField(
+        label=(
+            "Chci dostávat novinky o koncertech, "
+            "nahrávkách a aktivitách Lieder Society."
+        ),
+        required=False,
+    )
+
+    terms_accepted = forms.BooleanField(
+        label=(
+            "Souhlasím s obchodními podmínkami "
+            "a potvrzuji správnost objednávky."
+        ),
+        required=True,
+    )
+
+    def __init__(
+        self,
+        *args,
+        requires_shipping,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+
+        self.requires_shipping = requires_shipping
+
+        if not requires_shipping:
+            self.fields.pop("address_line1")
+            self.fields.pop("address_line2")
+            self.fields.pop("city")
+            self.fields.pop("postal_code")
+
+    def clean_postal_code(self):
+        postal_code = self.cleaned_data["postal_code"]
+
+        return postal_code.strip().upper()

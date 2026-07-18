@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Objednávka {{ order.number }} | Lieder Society{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block header_extra_actions %}
+  {% include "shop/includes/cart_header_link.html" %}
+{% endblock header_extra_actions %}
+
+{% block content %}
+  <main class="shop-page">
+
+    {% if shop_preview_mode %}
+      <div class="shop-preview-banner">
+        <strong>Testovací objednávka</strong>
+        <span>
+          Platba ani potvrzovací e-mail zatím nejsou zapojené.
+        </span>
+      </div>
+    {% endif %}
+
+    <section class="shop-order-success">
+      <p class="shop-eyebrow">
+        Objednávka byla vytvořena
+      </p>
+
+      <h1>Děkujeme za objednávku</h1>
+
+      <p>
+        Číslo objednávky:
+        <strong>{{ order.number }}</strong>
+      </p>
+
+      <p>
+        Objednávku jsme uložili pro:
+        <strong>{{ order.email }}</strong>
+      </p>
+
+      <div class="shop-order-success__items">
+        <h2>Objednané položky</h2>
+
+        {% for item in order.items.all %}
+          <div>
+            <span>
+              {{ item.product_name }}
+              – {{ item.variant_name }}
+              × {{ item.quantity }}
+            </span>
+
+            <strong>
+              {{ item.line_total|floatformat:"-2" }} Kč
+            </strong>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="shop-order-success__total">
+        <span>Celkem</span>
+
+        <strong>
+          {{ order.total|floatformat:"-2" }} Kč
+        </strong>
+      </div>
+
+      <p>
+        Platební údaje doplníme v následující etapě.
+      </p>
+
+      <a
+        class="shop-primary-button"
+        href="{% url 'shop:home' %}"
+      >
+        Zpět do e-shopu
+      </a>
+    </section>
+
+  </main>
+{% endblock content %}

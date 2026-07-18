@@ -8,8 +8,9 @@ from django.views.decorators.http import require_POST
 from .decorators import shop_public_or_staff_preview
 from core.decorators import staff_required
 from .cart import CartQuantityError, SessionCart
-from .forms import ProductForm, ProductVariantFormSet, AddToCartForm, CartQuantityForm
-from .models import Product, ProductVariant
+from .forms import ProductForm, ProductVariantFormSet, AddToCartForm, CartQuantityForm, CheckoutForm
+from .models import Product, ProductVariant, Order
+from .services.checkout import (CheckoutError, create_order_from_cart,)
 
 
 
@@ -373,3 +374,99 @@ def cart_remove(request, variant_id):
     )
 
     return redirect("shop:cart_detail")
+
+
+@shop_public_or_staff_preview
+def checkout(request):
+    cart = SessionCart(request)
+    cart_items = cart.items
+
+    if not cart_items:
+        messages.info(
+            request,
+            "Košík je prázdný.",
+        )
+        return redirect("shop:cart_detail")
+
+    unavailable_items = [
+        item
+        for item in cart_items
+        if not item.is_available
+    ]
+
+    if unavailable_items:
+        messages.error(
+            request,
+            "Některé položky už nejsou v požadovaném "
+            "množství skladem.",
+        )
+        return redirect("shop:cart_detail")
+
+    form = CheckoutForm(
+        request.POST or None,
+        requires_shipping=cart.requires_shipping,
+    )
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            order = create_order_from_cart(
+                cart=cart,
+                cleaned_data=form.cleaned_data,
+                user=(
+                    request.user
+                    if request.user.is_authenticated
+                    else None
+                ),
+                allow_unpublished=request.user.is_staff,
+            )
+
+        except CheckoutError as exc:
+            form.add_error(None, str(exc))
+
+        else:
+            cart.clear()
+
+            return redirect(
+                "shop:order_success",
+                token=order.public_token,
+            )
+
+    return render(
+        request,
+        "shop/checkout.html",
+        {
+            "form": form,
+            "cart": cart,
+            "cart_items": cart_items,
+            "cart_item_count": len(cart),
+            "shop_preview_mode": not getattr(
+                settings,
+                "SHOP_PUBLIC_ENABLED",
+                False,
+            ),
+        },
+    )
+
+
+@shop_public_or_staff_preview
+def order_success(request, token):
+    order = get_object_or_404(
+        Order.objects.prefetch_related("items"),
+        public_token=token,
+    )
+
+    cart = SessionCart(request)
+
+    return render(
+        request,
+        "shop/order_success.html",
+        {
+            "order": order,
+            "cart_item_count": len(cart),
+            "shop_preview_mode": not getattr(
+                settings,
+                "SHOP_PUBLIC_ENABLED",
+                False,
+            ),
+        },
+    )
