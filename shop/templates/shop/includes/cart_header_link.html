@@ -1,0 +1,35 @@
+<a
+  class="shop-cart-nav{% if request.resolver_match.url_name == 'cart_detail' %} shop-cart-nav--active{% endif %}"
+  href="{% url 'shop:cart_detail' %}"
+  aria-label="Košík, počet položek: {{ cart_item_count|default:0 }}"
+  title="Košík"
+>
+  <svg
+    class="shop-cart-nav__icon"
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path
+      d="M3 3h2l2.2 10.1a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.6L21 7H7"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <circle cx="10" cy="19" r="1.4" fill="currentColor" />
+    <circle cx="18" cy="19" r="1.4" fill="currentColor" />
+  </svg>
+
+  <span class="shop-cart-nav__label">
+    Košík
+  </span>
+
+  <span
+    class="shop-cart-nav__count"
+    aria-hidden="true"
+  >
+    {{ cart_item_count|default:0 }}
+  </span>
+</a>

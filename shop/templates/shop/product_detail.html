@@ -11,6 +11,11 @@
   >
 {% endblock extra_css %}
 
+{% block header_extra_actions %}
+  {% include "shop/includes/cart_header_link.html" %}
+{% endblock header_extra_actions %}
+
+
 {% block content %}
   <main class="shop-page">
 
@@ -21,6 +26,16 @@
           Objednávání zatím není veřejně spuštěno.
         </span>
       </div>
+    {% endif %}
+
+    {% if messages %}
+      <ul class="shop-messages">
+        {% for message in messages %}
+          <li class="shop-message shop-message--{{ message.tags }}">
+            {{ message }}
+          </li>
+        {% endfor %}
+      </ul>
     {% endif %}
 
     <nav
@@ -83,6 +98,7 @@
 
           {% if product.visible_variants %}
             <div class="shop-variant-options">
+
               {% for variant in product.visible_variants %}
                 <div class="shop-variant-option">
 
@@ -101,7 +117,8 @@
                   </div>
 
                   <div class="shop-variant-option__availability">
-                    {% if variant.fulfilment_type == "digital" %}
+
+                    {% if variant.is_digital %}
                       <span class="shop-availability shop-availability--available">
                         Digitální obsah
                       </span>
@@ -128,20 +145,73 @@
                         Dostupné
                       </span>
                     {% endif %}
+
                   </div>
+
+                  <form
+                    method="post"
+                    action="{% url 'shop:cart_add' product.slug %}"
+                    class="shop-add-to-cart-form"
+                  >
+                    {% csrf_token %}
+
+                    <input
+                      type="hidden"
+                      name="variant"
+                      value="{{ variant.id }}"
+                    >
+
+                    {% if variant.is_digital %}
+                      <input
+                        type="hidden"
+                        name="quantity"
+                        value="1"
+                      >
+                    {% else %}
+                      <label>
+                        Množství
+
+                        {% if variant.track_stock %}
+                          <input
+                            type="number"
+                            name="quantity"
+                            value="1"
+                            min="1"
+                            max="{{ variant.stock_quantity }}"
+                            {% if variant.stock_quantity == 0 %}
+                              disabled
+                            {% endif %}
+                          >
+                        {% else %}
+                          <input
+                            type="number"
+                            name="quantity"
+                            value="1"
+                            min="1"
+                            max="99"
+                          >
+                        {% endif %}
+                      </label>
+                    {% endif %}
+
+                    <button
+                      type="submit"
+                      {% if variant.track_stock and variant.stock_quantity == 0 %}
+                        disabled
+                      {% endif %}
+                    >
+                      {% if variant.track_stock and variant.stock_quantity == 0 %}
+                        Vyprodáno
+                      {% else %}
+                        Přidat do košíku
+                      {% endif %}
+                    </button>
+                  </form>
 
                 </div>
               {% endfor %}
+
             </div>
-
-            <button
-              class="shop-disabled-cart-button"
-              type="button"
-              disabled
-            >
-              Objednávání připravujeme
-            </button>
-
           {% else %}
             <p class="shop-no-variants">
               Tento produkt momentálně nemá žádnou dostupnou variantu.
@@ -151,9 +221,7 @@
 
         {% if request.user.is_staff %}
           <div class="shop-staff-actions">
-            <a
-              href="{% url 'shop_staff:product_edit' product.id %}"
-            >
+            <a href="{% url 'shop_staff:product_edit' product.id %}">
               Upravit produkt
             </a>
           </div>

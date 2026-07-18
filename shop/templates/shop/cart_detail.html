@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Košík | Lieder Society{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block header_extra_actions %}
+  {% include "shop/includes/cart_header_link.html" %}
+{% endblock header_extra_actions %}
+
+{% block content %}
+  <main class="shop-page">
+
+    {% if shop_preview_mode %}
+      <div class="shop-preview-banner">
+        <strong>Náhled e-shopu</strong>
+        <span>
+          Objednávání zatím není veřejně spuštěno.
+        </span>
+      </div>
+    {% endif %}
+
+    {% if messages %}
+      <ul class="shop-messages">
+        {% for message in messages %}
+          <li class="shop-message shop-message--{{ message.tags }}">
+            {{ message }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <nav
+      class="shop-breadcrumbs"
+      aria-label="Drobečková navigace"
+    >
+      <a href="{% url 'shop:home' %}">
+        Vyberte si
+      </a>
+
+      <span aria-hidden="true">/</span>
+
+      <span>Košík</span>
+    </nav>
+
+    <header class="shop-cart-header">
+      <p class="shop-eyebrow">Vaše objednávka</p>
+      <h1>Košík</h1>
+    </header>
+
+    {% if cart_items %}
+      <div class="shop-cart-layout">
+
+        <section class="shop-cart-items">
+          {% for item in cart_items %}
+            <article class="shop-cart-item">
+
+              <div class="shop-cart-item__image">
+                {% if item.variant.product.main_image %}
+                  <img
+                    src="{{ item.variant.product.main_image.file.url }}"
+                    alt="{{ item.variant.product.name }}"
+                  >
+                {% endif %}
+              </div>
+
+              <div class="shop-cart-item__content">
+                <h2>
+                  <a href="{% url 'shop:product_detail' item.variant.product.slug %}">
+                    {{ item.variant.product.name }}
+                  </a>
+                </h2>
+
+                <p>
+                  Varianta: <strong>{{ item.variant.name }}</strong>
+                </p>
+
+                <p>
+                  {{ item.unit_price|floatformat:"-2" }} Kč / ks
+                </p>
+
+                {% if not item.is_available %}
+                  <p class="shop-cart-warning">
+                    Požadované množství už není skladem.
+                    K dispozici je
+                    {{ item.variant.stock_quantity }} ks.
+                  </p>
+                {% endif %}
+
+                {% if item.variant.is_digital %}
+                  <p>Množství: 1</p>
+                {% else %}
+                  <form
+                    method="post"
+                    action="{% url 'shop:cart_update' item.variant.id %}"
+                  >
+                    {% csrf_token %}
+
+                    <label>
+                      Množství
+
+                      <input
+                        type="number"
+                        name="quantity"
+                        value="{{ item.quantity }}"
+                        min="1"
+                        {% if item.variant.track_stock %}
+                          max="{{ item.variant.stock_quantity }}"
+                        {% else %}
+                          max="99"
+                        {% endif %}
+                      >
+                    </label>
+
+                    <button type="submit">
+                      Upravit
+                    </button>
+                  </form>
+                {% endif %}
+
+                <form
+                  method="post"
+                  action="{% url 'shop:cart_remove' item.variant.id %}"
+                >
+                  {% csrf_token %}
+
+                  <button type="submit">
+                    Odebrat
+                  </button>
+                </form>
+              </div>
+
+              <strong class="shop-cart-item__subtotal">
+                {{ item.subtotal|floatformat:"-2" }} Kč
+              </strong>
+
+            </article>
+          {% endfor %}
+        </section>
+
+        <aside class="shop-cart-summary">
+          <h2>Souhrn</h2>
+
+          <div>
+            <span>Počet položek</span>
+            <strong>{{ cart|length }}</strong>
+          </div>
+
+          <div>
+            <span>Mezisoučet</span>
+            <strong>
+              {{ cart.total|floatformat:"-2" }} Kč
+            </strong>
+          </div>
+
+          {% if cart.requires_shipping %}
+            <p>
+              Cena dopravy bude doplněna v dalším kroku.
+            </p>
+          {% else %}
+            <p>
+              Objednávka nevyžaduje fyzickou dopravu.
+            </p>
+          {% endif %}
+
+          <button
+            type="button"
+            disabled
+          >
+            Pokračování objednávky připravujeme
+          </button>
+
+          <a
+            class="shop-continue-shopping"
+            href="{% url 'shop:home' %}"
+          >
+            <span aria-hidden="true">←</span>
+            Pokračovat v nákupu
+          </a>
+        </aside>
+
+      </div>
+
+    {% else %}
+      <section class="shop-empty">
+        <h2>Košík je prázdný</h2>
+
+        <p>
+          Zatím jste do košíku nepřidali žádný produkt.
+        </p>
+
+        <a
+          class="shop-primary-button"
+          href="{% url 'shop:home' %}"
+        >
+          Zpět k produktům
+        </a>
+      </section>
+    {% endif %}
+
+  </main>
+{% endblock content %}

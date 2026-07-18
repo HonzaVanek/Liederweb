@@ -2,7 +2,7 @@ from django import forms
 from django.forms import inlineformset_factory
 
 from .models import Product, ProductVariant
-
+from .cart import SessionCart
 
 class ProductForm(forms.ModelForm):
     class Meta:
@@ -133,3 +133,31 @@ ProductVariantFormSet = inlineformset_factory(
     validate_min=True,
     can_delete=True,
 )
+
+
+class AddToCartForm(forms.Form):
+    variant = forms.ModelChoiceField(
+        queryset=ProductVariant.objects.none(),
+        widget=forms.HiddenInput,
+    )
+    quantity = forms.IntegerField(
+        min_value=1,
+        max_value=SessionCart.MAX_QUANTITY_PER_ITEM,
+        initial=1,
+    )
+
+    def __init__(self, *args, product, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["variant"].queryset = (
+            product.variants
+            .filter(is_active=True)
+            .order_by("sort_order", "name")
+        )
+
+
+class CartQuantityForm(forms.Form):
+    quantity = forms.IntegerField(
+        min_value=1,
+        max_value=SessionCart.MAX_QUANTITY_PER_ITEM,
+    )

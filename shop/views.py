@@ -3,11 +3,12 @@ from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count, Max, Min, Q, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from .decorators import shop_public_or_staff_preview
 from core.decorators import staff_required
-
-from .forms import ProductForm, ProductVariantFormSet
+from .cart import CartQuantityError, SessionCart
+from .forms import ProductForm, ProductVariantFormSet, AddToCartForm, CartQuantityForm
 from .models import Product, ProductVariant
 
 
@@ -73,6 +74,7 @@ def shop_home(request):
         {
             "products": products,
             "shop_preview_mode": not shop_public_enabled,
+            "cart_item_count": len(SessionCart(request)),
         },
     )
 
@@ -100,6 +102,7 @@ def product_detail(request, slug):
         "shop/product_detail.html",
         {
             "product": product,
+            "cart_item_count": len(SessionCart(request)),
             "shop_preview_mode": not shop_public_enabled,
         },
     )
@@ -235,3 +238,138 @@ def staff_product_edit(request, product_id):
             "submit_label": "Uložit změny",
         },
     )
+
+
+@shop_public_or_staff_preview
+def cart_detail(request):
+    cart = SessionCart(request)
+
+    return render(
+        request,
+        "shop/cart_detail.html",
+        {
+            "cart": cart,
+            "cart_items": cart.items,
+            "cart_item_count": len(cart),
+            "shop_preview_mode": not getattr(
+                settings,
+                "SHOP_PUBLIC_ENABLED",
+                False,
+            ),
+        },
+    )
+
+
+@shop_public_or_staff_preview
+@require_POST
+def cart_add(request, slug):
+    products = _public_product_queryset()
+
+    if not request.user.is_staff:
+        products = products.filter(is_published=True)
+
+    product = get_object_or_404(
+        products,
+        slug=slug,
+    )
+
+    form = AddToCartForm(
+        request.POST,
+        product=product,
+    )
+
+    if not form.is_valid():
+        messages.error(
+            request,
+            "Produkt se nepodařilo přidat do košíku.",
+        )
+        return redirect(
+            "shop:product_detail",
+            slug=product.slug,
+        )
+
+    variant = form.cleaned_data["variant"]
+    quantity = form.cleaned_data["quantity"]
+    cart = SessionCart(request)
+
+    try:
+        # U digitální nahrávky zatím držíme nejvýše jednu kopii.
+        if variant.is_digital:
+            cart.set_quantity(variant, 1)
+        else:
+            cart.add(variant, quantity)
+
+    except CartQuantityError as exc:
+        messages.error(request, str(exc))
+
+        return redirect(
+            "shop:product_detail",
+            slug=product.slug,
+        )
+
+    messages.success(
+        request,
+        f"Varianta „{variant.name}“ byla přidána do košíku.",
+    )
+
+    return redirect("shop:cart_detail")
+
+
+@shop_public_or_staff_preview
+@require_POST
+def cart_update(request, variant_id):
+    cart = SessionCart(request)
+
+    cart_item = next(
+        (
+            item
+            for item in cart.items
+            if item.variant.id == variant_id
+        ),
+        None,
+    )
+
+    if cart_item is None:
+        messages.error(
+            request,
+            "Položka už v košíku není.",
+        )
+        return redirect("shop:cart_detail")
+
+    form = CartQuantityForm(request.POST)
+
+    if not form.is_valid():
+        messages.error(
+            request,
+            "Zadejte platné množství.",
+        )
+        return redirect("shop:cart_detail")
+
+    try:
+        cart.set_quantity(
+            cart_item.variant,
+            form.cleaned_data["quantity"],
+        )
+    except CartQuantityError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(
+            request,
+            "Množství bylo upraveno.",
+        )
+
+    return redirect("shop:cart_detail")
+
+
+@shop_public_or_staff_preview
+@require_POST
+def cart_remove(request, variant_id):
+    cart = SessionCart(request)
+    cart.remove(variant_id)
+
+    messages.success(
+        request,
+        "Položka byla z košíku odebrána.",
+    )
+
+    return redirect("shop:cart_detail")

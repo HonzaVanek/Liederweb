@@ -468,6 +468,107 @@
     color: #555;
 }
 
+
+/* =========================================================
+   KOŠÍK V HLAVIČCE
+   ========================================================= */
+
+.shop-cart-nav {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 40px;
+    padding: 8px 12px;
+    border: 1.5px solid #000;
+    border-radius: 999px;
+    background-color: #fff;
+    color: #111;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    white-space: nowrap;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.25s ease;
+}
+
+.shop-cart-nav:hover,
+.shop-cart-nav--active {
+    background-color: #111;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.shop-cart-nav__icon {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 auto;
+}
+
+.shop-cart-nav__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background-color: #111;
+    color: #fff;
+    font-size: 0.75rem;
+    line-height: 1;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease;
+}
+
+.shop-cart-nav:hover .shop-cart-nav__count,
+.shop-cart-nav--active .shop-cart-nav__count {
+    background-color: #fff;
+    color: #111;
+}
+
+/* =========================================================
+   POKRAČOVÁNÍ V NÁKUPU
+   ========================================================= */
+
+.shop-continue-shopping {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 44px;
+    margin-top: 12px;
+    padding: 10px 16px;
+    border: 1px solid #111;
+    border-radius: 999px;
+    background-color: transparent;
+    color: #111;
+    font-size: 0.84rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.25s ease;
+}
+
+.shop-continue-shopping:hover {
+    background-color: #111;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+
 /* =========================================================
    RESPONSIVE
    ========================================================= */
@@ -529,6 +630,18 @@
 
     .shop-variant-option__price {
         font-size: 1.12rem;
+    }
+}
+
+@media (max-width: 520px) {
+    .shop-cart-nav {
+        min-width: 44px;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .shop-cart-nav__label {
+        display: none;
     }
 }
 
@@ -645,6 +758,40 @@ body.dark-mode .shop-staff-actions a {
 }
 
 body.dark-mode .shop-staff-actions a:hover {
+    background-color: #eee;
+    color: #111;
+}
+
+body.dark-mode .shop-cart-nav {
+    background-color: #1b1b1b;
+    color: #f0f0f0;
+    border-color: #5a5a5a;
+}
+
+body.dark-mode .shop-cart-nav__count {
+    background-color: #f0f0f0;
+    color: #111;
+}
+
+body.dark-mode .shop-cart-nav:hover,
+body.dark-mode .shop-cart-nav--active {
+    background-color: #f0f0f0;
+    color: #111;
+    border-color: #f0f0f0;
+}
+
+body.dark-mode .shop-cart-nav:hover .shop-cart-nav__count,
+body.dark-mode .shop-cart-nav--active .shop-cart-nav__count {
+    background-color: #111;
+    color: #f0f0f0;
+}
+
+body.dark-mode .shop-continue-shopping {
+    border-color: #ddd;
+    color: #eee;
+}
+
+body.dark-mode .shop-continue-shopping:hover {
     background-color: #eee;
     color: #111;
 }
