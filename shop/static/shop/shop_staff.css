@@ -1,0 +1,181 @@
+.shop-admin-page {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.shop-empty-state {
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.shop-product-table strong {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.shop-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 9px;
+    border: 1px solid #cfcfcf;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.shop-status--published {
+    background-color: #eef7f1;
+    border-color: #83b995;
+    color: #195c35;
+}
+
+.shop-status--draft {
+    background-color: #f3f3f3;
+    color: #555;
+}
+
+.shop-form-grid,
+.shop-variant-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.shop-form-grid--primary {
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+}
+
+.shop-form-grid--settings {
+    grid-template-columns: minmax(0, 1fr) 140px 180px;
+    align-items: end;
+}
+
+.shop-section-header,
+.shop-variant-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.shop-section-header {
+    margin-bottom: 18px;
+}
+
+.shop-section-header h3,
+.shop-section-header p {
+    margin-bottom: 0;
+}
+
+.shop-variant-list {
+    display: grid;
+    gap: 16px;
+}
+
+.shop-variant-card {
+    padding: 18px;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+.shop-variant-card__header {
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e4e4e4;
+}
+
+.shop-variant-grid--main {
+    grid-template-columns:
+        minmax(170px, 1.25fr)
+        minmax(170px, 1fr)
+        minmax(170px, 1fr)
+        130px;
+}
+
+.shop-variant-grid--settings {
+    grid-template-columns: 180px 170px 150px 110px;
+    align-items: end;
+}
+
+.shop-checkbox-field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px;
+    min-height: 44px;
+    margin-bottom: 18px;
+}
+
+.shop-checkbox-field label {
+    display: inline;
+    margin: 0;
+}
+
+.shop-checkbox-field .errorlist {
+    flex-basis: 100%;
+}
+
+.shop-delete-field {
+    display: none;
+}
+
+.shop-remove-variant {
+    padding: 7px 12px !important;
+    border-width: 1px !important;
+    font-size: 0.85rem !important;
+}
+
+body.dark-mode .shop-status--published {
+    background-color: #183021;
+    border-color: #4c805d;
+    color: #bce3c8;
+}
+
+body.dark-mode .shop-status--draft {
+    background-color: #242424;
+    border-color: #555;
+    color: #ccc;
+}
+
+body.dark-mode .shop-variant-card {
+    background-color: #181818;
+    border-color: #444;
+}
+
+body.dark-mode .shop-variant-card__header {
+    border-bottom-color: #444;
+}
+
+@media (max-width: 1100px) {
+    .shop-variant-grid--main {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .shop-variant-grid--settings {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .shop-form-grid--primary,
+    .shop-form-grid--settings,
+    .shop-variant-grid--main,
+    .shop-variant-grid--settings {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-section-header {
+        flex-direction: column;
+    }
+
+    .shop-section-header button {
+        width: 100%;
+    }
+
+    .shop-variant-card {
+        padding: 14px;
+    }
+}

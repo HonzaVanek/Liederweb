@@ -92,6 +92,24 @@
          {% endwith %}
     </div>
 
+
+    <div class="rozesilac-nav-divider"></div>
+
+    <div class="rozesilac-nav-group">
+      <p class="rozesilac-nav-heading">E-shop</p>
+
+      {% with match=request.resolver_match %}
+        <nav class="rozesilac-nav">
+
+          <a href="{% url 'shop_staff:product_list' %}"
+             class="{% if match.namespace == 'shop_staff' %}active{% endif %}">
+            Produkty
+          </a>
+
+        </nav>
+      {% endwith %}
+    </div>
+
       <div class="rozesilac-nav-divider"></div>
 
     <div class="rozesilac-nav-group">

@@ -1,0 +1,138 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop_staff.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block title %}E-shop | Produkty{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="shop-admin-page">
+
+    <div class="admin-page-header">
+      <div>
+        <h2>Produkty e-shopu</h2>
+        <p class="muted">
+          Správa fyzických produktů, digitálních nahrávek
+          a budoucích vstupenek.
+        </p>
+      </div>
+
+      <div class="top-action">
+        <a href="{% url 'shop_staff:product_create' %}">
+          Přidat produkt
+        </a>
+      </div>
+    </div>
+
+    <p class="help-text">
+      Jeden produkt může mít více variant. Album může mít například
+      variantu CD a MP3, placka zase několik barevných variant.
+    </p>
+
+    {% if products %}
+      <div class="table-responsive">
+        <table class="table shop-product-table">
+          <thead>
+            <tr>
+              <th>Produkt</th>
+              <th>Varianty</th>
+              <th>Cena</th>
+              <th>Stav</th>
+              <th>Pořadí</th>
+              <th>Akce</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for product in products %}
+              <tr>
+                <td>
+                  <strong>{{ product.name }}</strong>
+
+                  {% if product.short_description %}
+                    <div class="small muted">
+                      {{ product.short_description|truncatechars:90 }}
+                    </div>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {{ product.active_variant_count }}
+                  aktivní
+
+                  {% if product.variant_count != product.active_variant_count %}
+                    <div class="small muted">
+                      Celkem {{ product.variant_count }}
+                    </div>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if product.active_variant_count %}
+                    {% if product.min_price == product.max_price %}
+                      {{ product.min_price|floatformat:"-2" }} Kč
+                    {% else %}
+                      {{ product.min_price|floatformat:"-2" }}
+                      až
+                      {{ product.max_price|floatformat:"-2" }} Kč
+                    {% endif %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+
+                <td>
+                  {% if product.is_published %}
+                    <span class="shop-status shop-status--published">
+                      Zveřejněno
+                    </span>
+                  {% else %}
+                    <span class="shop-status shop-status--draft">
+                      Koncept
+                    </span>
+                  {% endif %}
+                </td>
+
+                <td>
+                  {{ product.sort_order }}
+                </td>
+
+                <td class="actions">
+                  <a
+                    href="{% url 'shop_staff:product_edit' product.id %}"
+                  >
+                    Upravit
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    {% else %}
+      <div class="content-section shop-empty-state">
+        <h3>Zatím tu nejsou žádné produkty</h3>
+
+        <p>
+          Jako první můžeš založit album a přidat k němu
+          varianty CD a MP3.
+        </p>
+
+        <a
+          class="btn-link"
+          href="{% url 'shop_staff:product_create' %}"
+        >
+          Vytvořit první produkt
+        </a>
+      </div>
+    {% endif %}
+
+  </div>
+{% endblock rozesilac_content %}

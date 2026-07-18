@@ -32,6 +32,7 @@ urlpatterns = [
     path("media-assets/", include(("media_assets.urls", "media_assets"), namespace="media_assets")),
     path("objevujte/", include(("content.urls", "content"), namespace="content")),
     path("vyberte-si/", include("shop.urls", namespace="shop")),
+    path("rozesilac/shop/", include("shop.staff_urls")),
 ]
 
 if settings.DEBUG:

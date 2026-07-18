@@ -1,0 +1,163 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop_staff.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block title %}E-shop | {{ page_title }}{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="shop-admin-page">
+
+    <div class="admin-page-header">
+      <div>
+        <h2>{{ page_title }}</h2>
+        <p class="muted">
+          Produkt představuje společnou stránku. Konkrétní prodávané
+          podoby se zadávají jako varianty.
+        </p>
+      </div>
+
+      <div class="top-action">
+        <a href="{% url 'shop_staff:product_list' %}">
+          Zpět na produkty
+        </a>
+      </div>
+    </div>
+
+    <form method="post" class="shop-product-form">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="form-errors">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <section class="content-section">
+        <h3>Základní údaje</h3>
+
+        <div class="shop-form-grid shop-form-grid--primary">
+          <div class="form-group">
+            {{ form.name.label_tag }}
+            {{ form.name }}
+            {{ form.name.errors }}
+          </div>
+
+          <div class="form-group">
+            {{ form.slug.label_tag }}
+            {{ form.slug }}
+            {{ form.slug.errors }}
+
+            {% if form.slug.help_text %}
+              <p class="small muted">
+                {{ form.slug.help_text }}
+              </p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          {{ form.short_description.label_tag }}
+          {{ form.short_description }}
+          {{ form.short_description.errors }}
+        </div>
+
+        <div class="form-group">
+          {{ form.description.label_tag }}
+          {{ form.description }}
+          {{ form.description.errors }}
+        </div>
+
+        <div class="shop-form-grid shop-form-grid--settings">
+          <div class="form-group">
+            {{ form.main_image.label_tag }}
+            {{ form.main_image }}
+            {{ form.main_image.errors }}
+
+            {% if form.main_image.help_text %}
+              <p class="small muted">
+                {{ form.main_image.help_text }}
+              </p>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            {{ form.sort_order.label_tag }}
+            {{ form.sort_order }}
+            {{ form.sort_order.errors }}
+          </div>
+
+          <div class="shop-checkbox-field">
+            {{ form.is_published }}
+            {{ form.is_published.label_tag }}
+            {{ form.is_published.errors }}
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section">
+        <div class="shop-section-header">
+          <div>
+            <h3>Varianty produktu</h3>
+
+            <p class="muted">
+              Každá varianta má vlastní cenu, sklad a způsob vyřízení.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="shop-add-variant"
+            data-add-variant
+          >
+            Přidat variantu
+          </button>
+        </div>
+
+        {{ variant_formset.management_form }}
+
+        {% if variant_formset.non_form_errors %}
+          <div class="form-errors">
+            {{ variant_formset.non_form_errors }}
+          </div>
+        {% endif %}
+
+        <div
+          class="shop-variant-list"
+          data-variant-formset
+          data-prefix="{{ variant_formset.prefix }}"
+        >
+          {% for variant_form in variant_formset %}
+            {% include "shop/includes/variant_form.html" with variant_form=variant_form %}
+          {% endfor %}
+        </div>
+
+        <template data-empty-variant-form>
+          {% include "shop/includes/variant_form.html" with variant_form=variant_formset.empty_form %}
+        </template>
+      </section>
+
+      <div class="form-actions">
+        <button type="submit">
+          {{ submit_label }}
+        </button>
+
+        <a
+          class="btn-link"
+          href="{% url 'shop_staff:product_list' %}"
+        >
+          Zrušit
+        </a>
+      </div>
+    </form>
+
+  </div>
+
+  <script src="{% static 'shop/product_formset.js' %}"></script>
+{% endblock rozesilac_content %}
