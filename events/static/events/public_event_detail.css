@@ -1300,3 +1300,14 @@ body.poster-modal-open {
     }
 }
 
+.public-event-section-text p {
+    margin: 0;
+}
+
+.public-event-section-text p + p {
+    margin-top: 1.15rem;
+}
+
+.public-event-section-text p:last-child {
+    margin-bottom: 0;
+}
