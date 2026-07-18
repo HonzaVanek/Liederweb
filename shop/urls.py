@@ -7,4 +7,5 @@ app_name = "shop"
 
 urlpatterns = [
     path("", views.shop_home, name="home"),
+    path("<slug:slug>/", views.product_detail, name="product_detail"),
 ]

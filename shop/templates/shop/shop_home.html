@@ -1,17 +1,153 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Vyberte si | Lieder Society{% endblock title %}
 
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop.css' %}"
+  >
+{% endblock extra_css %}
+
 {% block content %}
   <main class="shop-page">
+
     {% if shop_preview_mode %}
-      <p>
-        Náhled e-shopu – stránka zatím není veřejně přístupná.
-      </p>
+      <div class="shop-preview-banner">
+        <strong>Náhled e-shopu</strong>
+        <span>
+          E-shop zatím není veřejně přístupný. Vidí ho jen přihlášený uživatel
+        </span>
+      </div>
     {% endif %}
 
-    <h1>Vyberte si</h1>
+    <header class="shop-hero">
+      <p class="shop-eyebrow">Lieder Society</p>
 
-    <p>E-shop připravujeme.</p>
+      <h1>Vyberte si</h1>
+
+      <p class="shop-hero__text">
+        Nahrávky, publikace a další předměty spojené
+        s tvorbou a činností Lieder Society.
+      </p>
+    </header>
+
+    {% if products %}
+      <section
+        class="shop-product-grid"
+        aria-label="Produkty"
+      >
+        {% for product in products %}
+          <article class="shop-product-card">
+
+            <a
+              class="shop-product-card__image-link"
+              href="{% url 'shop:product_detail' product.slug %}"
+              aria-label="Zobrazit produkt {{ product.name }}"
+            >
+              {% if product.main_image %}
+                <img
+                  class="shop-product-card__image"
+                  src="{{ product.main_image.file.url }}"
+                  alt="{{ product.name }}"
+                  loading="lazy"
+                >
+              {% else %}
+                <div class="shop-product-card__placeholder">
+                  <span>Lieder Society</span>
+                </div>
+              {% endif %}
+            </a>
+
+            <div class="shop-product-card__content">
+
+              {% if request.user.is_staff and not product.is_published %}
+                <span class="shop-product-state">
+                  Koncept
+                </span>
+              {% endif %}
+
+              <h2>
+                <a href="{% url 'shop:product_detail' product.slug %}">
+                  {{ product.name }}
+                </a>
+              </h2>
+
+              {% if product.short_description %}
+                <p class="shop-product-card__description">
+                  {{ product.short_description }}
+                </p>
+              {% endif %}
+
+              {% if product.visible_variants %}
+                <div
+                  class="shop-product-card__variants"
+                  aria-label="Dostupné varianty"
+                >
+                  {% for variant in product.visible_variants %}
+                    <span>{{ variant.name }}</span>
+                  {% endfor %}
+                </div>
+              {% endif %}
+
+              <div class="shop-product-card__footer">
+                <div class="shop-product-card__price">
+                  {% if product.active_variant_count %}
+                    {% if product.min_price == product.max_price %}
+                      {{ product.min_price|floatformat:"-2" }} Kč
+                    {% else %}
+                      {{ product.min_price|floatformat:"-2" }}
+                      až
+                      {{ product.max_price|floatformat:"-2" }} Kč
+                    {% endif %}
+                  {% else %}
+                    Momentálně bez nabídky
+                  {% endif %}
+                </div>
+
+                <a
+                  class="shop-product-card__detail"
+                  href="{% url 'shop:product_detail' product.slug %}"
+                >
+                  Prohlédnout
+                  <span aria-hidden="true">→</span>
+                </a>
+              </div>
+
+              {% if request.user.is_staff %}
+                <a
+                  class="shop-product-card__edit"
+                  href="{% url 'shop_staff:product_edit' product.id %}"
+                >
+                  Upravit produkt
+                </a>
+              {% endif %}
+
+            </div>
+          </article>
+        {% endfor %}
+      </section>
+
+    {% else %}
+      <section class="shop-empty">
+        <h2>Zatím tu nic není</h2>
+
+        <p>
+          Produkty pro vás právě připravujeme.
+        </p>
+
+        {% if request.user.is_staff %}
+          <a
+            class="shop-primary-button"
+            href="{% url 'shop_staff:product_create' %}"
+          >
+            Přidat produkt
+          </a>
+        {% endif %}
+      </section>
+    {% endif %}
+
   </main>
 {% endblock content %}

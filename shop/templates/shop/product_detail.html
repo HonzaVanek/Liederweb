@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ product.name }} | Lieder Society{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block content %}
+  <main class="shop-page">
+
+    {% if shop_preview_mode %}
+      <div class="shop-preview-banner">
+        <strong>Náhled e-shopu</strong>
+        <span>
+          Objednávání zatím není veřejně spuštěno.
+        </span>
+      </div>
+    {% endif %}
+
+    <nav
+      class="shop-breadcrumbs"
+      aria-label="Drobečková navigace"
+    >
+      <a href="{% url 'shop:home' %}">
+        Vyberte si
+      </a>
+
+      <span aria-hidden="true">/</span>
+
+      <span>{{ product.name }}</span>
+    </nav>
+
+    <article class="shop-product-detail">
+
+      <div class="shop-product-detail__media">
+        {% if product.main_image %}
+          <img
+            class="shop-product-detail__image"
+            src="{{ product.main_image.file.url }}"
+            alt="{{ product.name }}"
+          >
+        {% else %}
+          <div class="shop-product-detail__placeholder">
+            <span>Lieder Society</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="shop-product-detail__content">
+
+        {% if request.user.is_staff and not product.is_published %}
+          <span class="shop-product-state">
+            Nezveřejněný koncept
+          </span>
+        {% endif %}
+
+        <p class="shop-eyebrow">
+          Produkt Lieder Society
+        </p>
+
+        <h1>{{ product.name }}</h1>
+
+        {% if product.short_description %}
+          <p class="shop-product-detail__lead">
+            {{ product.short_description }}
+          </p>
+        {% endif %}
+
+        {% if product.description %}
+          <div class="shop-product-detail__description">
+            {{ product.description|linebreaks }}
+          </div>
+        {% endif %}
+
+        <section class="shop-variant-section">
+          <h2>Vyberte variantu</h2>
+
+          {% if product.visible_variants %}
+            <div class="shop-variant-options">
+              {% for variant in product.visible_variants %}
+                <div class="shop-variant-option">
+
+                  <div class="shop-variant-option__main">
+                    <div>
+                      <h3>{{ variant.name }}</h3>
+
+                      <p>
+                        {{ variant.get_fulfilment_type_display }}
+                      </p>
+                    </div>
+
+                    <strong class="shop-variant-option__price">
+                      {{ variant.price|floatformat:"-2" }} Kč
+                    </strong>
+                  </div>
+
+                  <div class="shop-variant-option__availability">
+                    {% if variant.fulfilment_type == "digital" %}
+                      <span class="shop-availability shop-availability--available">
+                        Digitální obsah
+                      </span>
+
+                    {% elif variant.track_stock %}
+                      {% if variant.stock_quantity > 0 %}
+                        <span class="shop-availability shop-availability--available">
+                          Skladem
+                        </span>
+
+                        {% if request.user.is_staff %}
+                          <span class="shop-stock-detail">
+                            {{ variant.stock_quantity }} ks
+                          </span>
+                        {% endif %}
+                      {% else %}
+                        <span class="shop-availability shop-availability--unavailable">
+                          Vyprodáno
+                        </span>
+                      {% endif %}
+
+                    {% else %}
+                      <span class="shop-availability shop-availability--available">
+                        Dostupné
+                      </span>
+                    {% endif %}
+                  </div>
+
+                </div>
+              {% endfor %}
+            </div>
+
+            <button
+              class="shop-disabled-cart-button"
+              type="button"
+              disabled
+            >
+              Objednávání připravujeme
+            </button>
+
+          {% else %}
+            <p class="shop-no-variants">
+              Tento produkt momentálně nemá žádnou dostupnou variantu.
+            </p>
+          {% endif %}
+        </section>
+
+        {% if request.user.is_staff %}
+          <div class="shop-staff-actions">
+            <a
+              href="{% url 'shop_staff:product_edit' product.id %}"
+            >
+              Upravit produkt
+            </a>
+          </div>
+        {% endif %}
+
+      </div>
+    </article>
+
+  </main>
+{% endblock content %}
