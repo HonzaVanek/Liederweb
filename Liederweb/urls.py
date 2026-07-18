@@ -31,6 +31,7 @@ urlpatterns = [
     path("koncerty/", event_views.public_event_list, name="public_event_list"),
     path("media-assets/", include(("media_assets.urls", "media_assets"), namespace="media_assets")),
     path("objevujte/", include(("content.urls", "content"), namespace="content")),
+    path("vyberte-si/", include("shop.urls", namespace="shop")),
 ]
 
 if settings.DEBUG:

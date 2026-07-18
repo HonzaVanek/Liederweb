@@ -18,6 +18,12 @@ from dotenv import load_dotenv
 import logging 
 import logging.handlers
 
+
+
+SHOP_PUBLIC_ENABLED = False
+
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / "settings.env")
@@ -178,6 +184,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rozesilac',
     'core',
+    'shop',
     'events',
     'media_assets',
     'social_feed',
