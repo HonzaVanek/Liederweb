@@ -330,7 +330,8 @@
 
     <p class="small muted">
       Kurzívu lze zapsat jako <code>&lt;em&gt;text&lt;/em&gt;</code>
-      nebo jednoduše jako <code>*text*</code>. Ostatní HTML se na veřejné stránce nepoužije.
+      nebo jednoduše jako <code>*text*</code>.
+      Nový odstavec vytvoříš prázdným řádkem. Ostatní HTML se na veřejné stránce nepoužije.
     </p>
 
     <div class="template-form-row">
@@ -352,6 +353,9 @@
     <div class="template-form-row">
       <label for="{{ form.educational_text.id_for_label }}">Text „O hudbě“ / doprovodný text</label>
       {{ form.educational_text }}
+      <p class="small muted">
+        Pro další odstavec vlož prázdný řádek. Není potřeba psát <code>&lt;br&gt;</code>.
+      </p>
       {% for e in form.educational_text.errors %}
         <div class="form-errors">{{ e }}</div>
       {% endfor %}

@@ -3,7 +3,7 @@
 
 {% block extra_css %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'events/public_event_detail.css' %}?v=20260612-1" />
+  <link rel="stylesheet" href="{% static 'events/public_event_detail.css' %}?v=20260718-2" />
 {% endblock %}
 
 {% block title %}
@@ -142,19 +142,31 @@
           </section>
         {% endif %}
 
+
+        {% if event.educational_text %}
+          <section class="public-event-section">
+            <h2>O hudbě</h2>
+            <div class="public-event-section-text">{{ event.educational_text|event_richtext }}</div>
+          </section>
+        {% endif %}
+
         {% if event.gallery_images.exists %}
-          {% with gallery_count=event.gallery_images.count %}
-            <section id="gallery" class="public-event-section public-event-gallery-section {% if gallery_count == 1 %}public-event-gallery-section--single{% endif %}">
-              <h2>Galerie</h2>
+          {% with graphics_count=event.gallery_images.count %}
+            <section id="grafiky" class="public-event-section public-event-gallery-section public-event-graphics-section {% if graphics_count == 1 %}public-event-graphics-section--single{% endif %}">
+              <span id="gallery" class="public-event-anchor-alias" aria-hidden="true"></span>
 
-              <div class="event-gallery-preview {% if gallery_count == 1 %}event-gallery-preview--single{% endif %}" data-event-gallery>
-                {% for gallery_item in gallery_preview_images %}
-                  <button type="button" class="event-gallery-preview__item event-gallery-preview__item--{{ forloop.counter }}" data-gallery-open="{{ forloop.counter0 }}" aria-label="Otevřít fotku {{ forloop.counter }} v galerii">
-                    <img src="{{ gallery_item.image_asset.file.url }}" alt="{{ gallery_item.caption|default:gallery_item.image_asset.title|default:event.title }}" />
-
-                    {% if forloop.counter == 5 and gallery_extra_count > 0 %}
-                      <span class="event-gallery-preview__more">+{{ gallery_extra_count }} dalších</span>
-                    {% endif %}
+              <div class="event-graphics-preview event-graphics-preview--count-{{ graphics_count }}" data-event-gallery>
+                {% for gallery_item in event.gallery_images.all|slice:":5" %}
+                  <button
+                    type="button"
+                    class="event-graphics-preview__item"
+                    data-gallery-open="{{ forloop.counter0 }}"
+                    aria-label="Otevřít grafiku {{ forloop.counter }}"
+                  >
+                    <img
+                      src="{{ gallery_item.image_asset.file.url }}"
+                      alt="{{ gallery_item.caption|default:gallery_item.image_asset.title|default:event.title }}"
+                    >
                   </button>
                 {% endfor %}
               </div>
@@ -167,8 +179,8 @@
         {% endif %}
 
         {% if related_content_galleries %}
-          <section class="public-event-section">
-            <h2>Fotogalerie k tomuto koncertu</h2>
+          <section id="fotogalerie" class="public-event-section public-event-content-gallery-section">
+            <h2>Fotogalerie z koncertu</h2>
 
             <div class="public-event-content-gallery-list">
               {% for gallery in related_content_galleries %}
@@ -201,12 +213,7 @@
 
 
 
-        {% if event.educational_text %}
-          <section class="public-event-section">
-            <h2>O hudbě</h2>
-            <div class="public-event-section-text">{{ event.educational_text|event_richtext }}</div>
-          </section>
-        {% endif %}
+
 
         {% if event.youtube_embed_url %}
           <section class="public-event-section">
@@ -452,8 +459,8 @@
     <div id="event-gallery-modal" class="event-gallery-modal" hidden>
       <div class="event-gallery-modal__backdrop" data-gallery-close></div>
 
-      <div class="event-gallery-modal__dialog" role="dialog" aria-modal="true" aria-label="Galerie koncertu">
-        <button type="button" class="event-gallery-modal__close" data-gallery-close aria-label="Zavřít galerii">×</button>
+      <div class="event-gallery-modal__dialog" role="dialog" aria-modal="true" aria-label="Grafiky ke koncertu">
+        <button type="button" class="event-gallery-modal__close" data-gallery-close aria-label="Zavřít náhled">×</button>
 
         <button type="button" class="event-gallery-modal__nav event-gallery-modal__nav--prev" data-gallery-prev aria-label="Předchozí fotka">←</button>
 
