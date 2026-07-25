@@ -4,6 +4,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from shop.models import Order, OrderItem, ProductVariant
+from shop.services.newsletter import add_order_contact_to_newsletter
 
 
 class CheckoutError(Exception):
@@ -156,5 +157,7 @@ def create_order_from_cart(
     )
 
     order.ensure_number()
+
+    add_order_contact_to_newsletter(order)
 
     return order
