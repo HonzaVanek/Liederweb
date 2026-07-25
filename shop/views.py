@@ -13,7 +13,7 @@ from .forms import ProductForm, ProductVariantFormSet, AddToCartForm, CartQuanti
 from .models import Product, ProductVariant, Order
 from .services.checkout import CheckoutError, create_order_from_cart
 from .services.orders import OrderManagementError, update_order_states, cancel_order
-
+from .services.payments import get_bank_transfer_payment_data
 
 
 def _active_variant_queryset():
@@ -459,11 +459,21 @@ def order_success(request, token):
 
     cart = SessionCart(request)
 
+    payment_data = None
+
+    if (
+        order.payment_method
+        == Order.PaymentMethod.BANK_TRANSFER
+        and order.payment_status == Order.PaymentStatus.AWAITING
+    ):
+        payment_data = get_bank_transfer_payment_data(order)
+
     return render(
         request,
         "shop/order_success.html",
         {
             "order": order,
+            "payment_data": payment_data,
             "cart_item_count": len(cart),
             "shop_preview_mode": not getattr(
                 settings,
@@ -570,6 +580,10 @@ def staff_order_detail(request, order_id):
         id=order_id,
     )
 
+    payment_data = None
+    if order.payment_method == Order.PaymentMethod.BANK_TRANSFER:
+        payment_data = get_bank_transfer_payment_data(order)
+
     return render(
         request,
         "shop/staff_order_detail.html",
@@ -579,6 +593,7 @@ def staff_order_detail(request, order_id):
                 order=order
             ),
             "cancel_form": CancelOrderForm(),
+            "payment_data": payment_data,
         },
     )
 

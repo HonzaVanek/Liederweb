@@ -203,6 +203,35 @@
       </section>
     {% endif %}
 
+
+    <section class="content-section">
+      <h3>Platba</h3>
+
+      <dl class="shop-order-data">
+        <div>
+          <dt>Způsob platby</dt>
+          <dd>{{ order.get_payment_method_display }}</dd>
+        </div>
+
+        {% if payment_data %}
+          <div>
+            <dt>Variabilní symbol</dt>
+            <dd>{{ payment_data.variable_symbol }}</dd>
+          </div>
+
+          <div>
+            <dt>Částka</dt>
+            <dd>{{ payment_data.amount|floatformat:"-2" }} Kč</dd>
+          </div>
+
+          <div>
+            <dt>Účet</dt>
+            <dd>{{ payment_data.account_display }}</dd>
+          </div>
+        {% endif %}
+      </dl>
+    </section>
+
     {% if order.status != "cancelled" %}
       <section class="content-section">
         <h3>Změnit stavy</h3>

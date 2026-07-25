@@ -154,6 +154,10 @@ class Order(models.Model):
         CANCELLED = "cancelled", "Stornovaná"
         COMPLETED = "completed", "Dokončená"
 
+    class PaymentMethod(models.TextChoices):
+        BANK_TRANSFER = "bank_transfer", "Bankovní převod"
+        STRIPE = "stripe", "Platební karta"
+
     class PaymentStatus(models.TextChoices):
         AWAITING = "awaiting", "Čeká na platbu"
         PAID = "paid", "Zaplaceno"
@@ -326,6 +330,13 @@ class Order(models.Model):
         auto_now=True,
     )
 
+    payment_method = models.CharField(
+        "způsob platby",
+        max_length=30,
+        choices=PaymentMethod.choices,
+        default=PaymentMethod.BANK_TRANSFER,
+    )
+
     class Meta:
         ordering = ("-created_at",)
         verbose_name = "objednávka"
@@ -352,6 +363,13 @@ class Order(models.Model):
         )
 
         self.save(update_fields=["number"])
+
+    @property
+    def variable_symbol(self):
+        if not self.pk or not self.created_at:
+            return ""
+
+        return f"{self.created_at:%Y}{self.pk:06d}"
 
 
 class OrderItem(models.Model):

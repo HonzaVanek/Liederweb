@@ -70,9 +70,70 @@
         </strong>
       </div>
 
-      <p>
-        Platební údaje doplníme v následující etapě.
-      </p>
+      {% if payment_data %}
+        <section class="shop-payment-instructions">
+          <div class="shop-payment-instructions__content">
+            <p class="shop-eyebrow">
+              Platba bankovním převodem
+            </p>
+
+            <h2>Platební údaje</h2>
+
+            <p>
+              Objednávku uhradíte převodem na následující účet.
+              Do variabilního symbolu uveďte číslo uvedené níže.
+            </p>
+
+            <dl class="shop-payment-data">
+              <div>
+                <dt>Příjemce</dt>
+                <dd>{{ payment_data.recipient }}</dd>
+              </div>
+
+              <div>
+                <dt>Číslo účtu</dt>
+                <dd>{{ payment_data.account_display }}</dd>
+              </div>
+
+              <div>
+                <dt>IBAN</dt>
+                <dd>{{ payment_data.iban }}</dd>
+              </div>
+
+              <div>
+                <dt>Částka</dt>
+                <dd>
+                  <strong>
+                    {{ payment_data.amount|floatformat:"-2" }} Kč
+                  </strong>
+                </dd>
+              </div>
+
+              <div>
+                <dt>Variabilní symbol</dt>
+                <dd>
+                  <strong>{{ payment_data.variable_symbol }}</strong>
+                </dd>
+              </div>
+
+              <div>
+                <dt>Zpráva pro příjemce</dt>
+                <dd>{{ payment_data.message }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="shop-payment-instructions__qr">
+            <div class="shop-payment-qr">
+              {{ payment_data.qr_svg|safe }}
+            </div>
+
+            <p>
+              QR kód můžete načíst v mobilní bankovní aplikaci.
+            </p>
+          </div>
+        </section>
+      {% endif %}
 
       <a
         class="shop-primary-button"

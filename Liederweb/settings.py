@@ -20,9 +20,6 @@ import logging.handlers
 
 
 
-SHOP_PUBLIC_ENABLED = False
-
-
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -350,3 +347,12 @@ NEWSLETTER_SCHEDULED_CAMPAIGN_MIN_GAP_MINUTES = 5
 LIEDER_DONATION_IBAN = os.getenv("LIEDER_DONATION_IBAN", "")
 LIEDER_DONATION_ACCOUNT_DISPLAY = os.getenv("LIEDER_DONATION_ACCOUNT_DISPLAY", "")
 LIEDER_DONATION_RECIPIENT = os.getenv("LIEDER_DONATION_RECIPIENT", "Lieder Society z.s.")
+
+
+
+## SHOP SETTINGS
+SHOP_PUBLIC_ENABLED = False
+
+LIEDER_SHOP_IBAN = os.getenv("LIEDER_SHOP_IBAN", "")
+LIEDER_SHOP_ACCOUNT_DISPLAY = os.getenv("LIEDER_SHOP_ACCOUNT_DISPLAY", "")
+LIEDER_SHOP_RECIPIENT = os.getenv("LIEDER_SHOP_RECIPIENT", "Lieder Society, z. s.")
