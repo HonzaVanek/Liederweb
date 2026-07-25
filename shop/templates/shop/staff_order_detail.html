@@ -1,0 +1,326 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop_staff.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block title %}E-shop | {{ order.number }}{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="shop-admin-page">
+
+    <div class="admin-page-header">
+      <div>
+        <h2>Objednávka {{ order.number }}</h2>
+
+        <p class="muted">
+          Vytvořena {{ order.created_at|date:"j. n. Y H:i" }}
+        </p>
+      </div>
+
+      <div class="top-action">
+        <a href="{% url 'shop_staff:order_list' %}">
+          Zpět na objednávky
+        </a>
+      </div>
+    </div>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">
+            {{ message }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <div class="shop-order-detail-grid">
+
+      <section class="content-section">
+        <h3>Zákazník</h3>
+
+        <dl class="shop-order-data">
+          <div>
+            <dt>Jméno</dt>
+            <dd>{{ order.customer_name }}</dd>
+          </div>
+
+          <div>
+            <dt>E-mail</dt>
+            <dd>{{ order.email }}</dd>
+          </div>
+
+          <div>
+            <dt>Telefon</dt>
+            <dd>{{ order.phone|default:"—" }}</dd>
+          </div>
+
+          {% if order.requires_shipping %}
+            <div>
+              <dt>Adresa</dt>
+              <dd>
+                {{ order.address_line1 }}<br>
+
+                {% if order.address_line2 %}
+                  {{ order.address_line2 }}<br>
+                {% endif %}
+
+                {{ order.postal_code }}
+                {{ order.city }}<br>
+                {{ order.country }}
+              </dd>
+            </div>
+          {% endif %}
+
+          <div>
+            <dt>Newsletter</dt>
+            <dd>
+              {% if order.newsletter_consent %}
+                Ano
+              {% else %}
+                Ne
+              {% endif %}
+            </dd>
+          </div>
+
+          <div>
+            <dt>Podmínky přijaty</dt>
+            <dd>
+              {{ order.terms_accepted_at|date:"j. n. Y H:i" }}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="content-section">
+        <h3>Aktuální stavy</h3>
+
+        <dl class="shop-order-data">
+          <div>
+            <dt>Objednávka</dt>
+            <dd>{{ order.get_status_display }}</dd>
+          </div>
+
+          <div>
+            <dt>Platba</dt>
+            <dd>{{ order.get_payment_status_display }}</dd>
+          </div>
+
+          <div>
+            <dt>Vyřízení</dt>
+            <dd>
+              {{ order.get_fulfilment_status_display }}
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+    </div>
+
+    <section class="content-section">
+      <h3>Položky</h3>
+
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Produkt</th>
+              <th>SKU</th>
+              <th>Typ</th>
+              <th>Cena za kus</th>
+              <th>Množství</th>
+              <th>Celkem</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for item in order.items.all %}
+              <tr>
+                <td>
+                  <strong>{{ item.product_name }}</strong>
+                  <div class="small">
+                    {{ item.variant_name }}
+                  </div>
+                </td>
+
+                <td>{{ item.sku|default:"—" }}</td>
+
+                <td>
+                  {{ item.get_fulfilment_type_display }}
+                </td>
+
+                <td>
+                  {{ item.unit_price|floatformat:"-2" }} Kč
+                </td>
+
+                <td>{{ item.quantity }}</td>
+
+                <td>
+                  <strong>
+                    {{ item.line_total|floatformat:"-2" }} Kč
+                  </strong>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="shop-order-totals">
+        <div>
+          <span>Mezisoučet</span>
+          <strong>
+            {{ order.subtotal|floatformat:"-2" }} Kč
+          </strong>
+        </div>
+
+        <div>
+          <span>Doprava</span>
+          <strong>
+            {{ order.shipping_price|floatformat:"-2" }} Kč
+          </strong>
+        </div>
+
+        <div>
+          <span>Celkem</span>
+          <strong>
+            {{ order.total|floatformat:"-2" }} Kč
+          </strong>
+        </div>
+      </div>
+    </section>
+
+    {% if order.customer_note %}
+      <section class="content-section">
+        <h3>Poznámka zákazníka</h3>
+        <p>{{ order.customer_note|linebreaksbr }}</p>
+      </section>
+    {% endif %}
+
+    {% if order.status != "cancelled" %}
+      <section class="content-section">
+        <h3>Změnit stavy</h3>
+
+        <form
+          method="post"
+          action="{% url 'shop_staff:order_update_states' order.id %}"
+        >
+          {% csrf_token %}
+
+          {% if state_form.non_field_errors %}
+            <div class="form-errors">
+              {{ state_form.non_field_errors }}
+            </div>
+          {% endif %}
+
+          <div class="shop-order-state-grid">
+            <div class="form-group">
+              {{ state_form.order_status.label_tag }}
+              {{ state_form.order_status }}
+              {{ state_form.order_status.errors }}
+            </div>
+
+            <div class="form-group">
+              {{ state_form.payment_status.label_tag }}
+              {{ state_form.payment_status }}
+              {{ state_form.payment_status.errors }}
+            </div>
+
+            <div class="form-group">
+              {{ state_form.fulfilment_status.label_tag }}
+              {{ state_form.fulfilment_status }}
+              {{ state_form.fulfilment_status.errors }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            {{ state_form.note.label_tag }}
+            {{ state_form.note }}
+            {{ state_form.note.errors }}
+          </div>
+
+          <button type="submit">
+            Uložit stavy
+          </button>
+        </form>
+      </section>
+
+      <section class="content-section shop-cancel-section">
+        <h3>Stornovat objednávku</h3>
+
+        <p>
+          Storno vrátí skladové položky zpět na sklad.
+          Zaplacenou nebo již odeslanou objednávku zatím
+          tímto způsobem zrušit nelze.
+        </p>
+
+        <form
+          method="post"
+          action="{% url 'shop_staff:order_cancel' order.id %}"
+          onsubmit="return confirm('Opravdu chcete tuto objednávku stornovat?');"
+        >
+          {% csrf_token %}
+
+          <div class="form-group">
+            {{ cancel_form.reason.label_tag }}
+            {{ cancel_form.reason }}
+            {{ cancel_form.reason.errors }}
+          </div>
+
+          <button
+            type="submit"
+            class="button-danger"
+          >
+            Stornovat objednávku
+          </button>
+        </form>
+      </section>
+    {% endif %}
+
+    <section class="content-section">
+      <h3>Historie</h3>
+
+      {% if order.status_history.all %}
+        <div class="shop-order-history">
+          {% for entry in order.status_history.all %}
+            <article class="shop-order-history__item">
+              <div>
+                <strong>
+                  {{ entry.get_action_display }}
+                </strong>
+
+                <span class="small muted">
+                  {{ entry.created_at|date:"j. n. Y H:i" }}
+
+                  {% if entry.performed_by %}
+                    · {{ entry.performed_by.get_username }}
+                  {% endif %}
+                </span>
+              </div>
+
+              <p>{{ entry.description }}</p>
+
+              {% if entry.note %}
+                <blockquote>
+                  {{ entry.note|linebreaksbr }}
+                </blockquote>
+              {% endif %}
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">
+          Pro tuto starší objednávku zatím není zaznamenaná
+          historie změn.
+        </p>
+      {% endif %}
+    </section>
+
+  </div>
+{% endblock rozesilac_content %}

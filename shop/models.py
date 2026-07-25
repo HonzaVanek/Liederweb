@@ -419,3 +419,74 @@ class OrderItem(models.Model):
             f"{self.product_name} – "
             f"{self.variant_name} × {self.quantity}"
         )
+
+
+
+class OrderStatusHistory(models.Model):
+    class Action(models.TextChoices):
+        CREATED = "created", "Vytvoření objednávky"
+        STATE_CHANGE = "state_change", "Změna stavů"
+        CANCELLED = "cancelled", "Storno objednávky"
+
+    order = models.ForeignKey(
+        Order,
+        verbose_name="objednávka",
+        on_delete=models.CASCADE,
+        related_name="status_history",
+    )
+
+    action = models.CharField(
+        "akce",
+        max_length=30,
+        choices=Action.choices,
+    )
+
+    description = models.CharField(
+        "popis",
+        max_length=500,
+    )
+
+    order_status = models.CharField(
+        "stav objednávky",
+        max_length=20,
+        choices=Order.Status.choices,
+    )
+
+    payment_status = models.CharField(
+        "stav platby",
+        max_length=20,
+        choices=Order.PaymentStatus.choices,
+    )
+
+    fulfilment_status = models.CharField(
+        "stav vyřízení",
+        max_length=20,
+        choices=Order.FulfilmentStatus.choices,
+    )
+
+    note = models.TextField(
+        "poznámka",
+        blank=True,
+    )
+
+    performed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="provedl",
+        on_delete=models.SET_NULL,
+        related_name="shop_order_status_changes",
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        "vytvořeno",
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        verbose_name = "historie objednávky"
+        verbose_name_plural = "historie objednávek"
+
+    def __str__(self):
+        return f"{self.order} – {self.get_action_display()}"

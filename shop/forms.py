@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from .models import Product, ProductVariant
+from .models import Product, ProductVariant, Order
 from .cart import SessionCart
 
 class ProductForm(forms.ModelForm):
@@ -255,3 +255,138 @@ class CheckoutForm(forms.Form):
         postal_code = self.cleaned_data["postal_code"]
 
         return postal_code.strip().upper()
+
+
+
+class StaffOrderStateForm(forms.Form):
+    order_status = forms.ChoiceField(
+        label="Stav objednávky",
+    )
+
+    payment_status = forms.ChoiceField(
+        label="Stav platby",
+    )
+
+    fulfilment_status = forms.ChoiceField(
+        label="Stav vyřízení",
+    )
+
+    note = forms.CharField(
+        label="Interní poznámka ke změně",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": (
+                    "Nepovinné vysvětlení změny stavů."
+                ),
+            }
+        ),
+    )
+
+    def __init__(self, *args, order, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.order = order
+
+        # Storno musí proběhnout přes samostatnou akci,
+        # protože při něm vracíme zboží na sklad.
+        self.fields["order_status"].choices = [
+            choice
+            for choice in Order.Status.choices
+            if choice[0] != Order.Status.CANCELLED
+        ]
+
+        # Refundaci zatím neumožníme, dokud nemáme
+        # implementované skutečné vracení plateb.
+        self.fields["payment_status"].choices = [
+            choice
+            for choice in Order.PaymentStatus.choices
+            if choice[0]
+            not in {
+                Order.PaymentStatus.REFUNDED,
+                Order.PaymentStatus.CANCELLED,
+            }
+        ]
+
+        self.fields["fulfilment_status"].choices = (
+            Order.FulfilmentStatus.choices
+        )
+
+        self.initial.update(
+            {
+                "order_status": order.status,
+                "payment_status": order.payment_status,
+                "fulfilment_status": order.fulfilment_status,
+            }
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        order_status = cleaned_data.get("order_status")
+        payment_status = cleaned_data.get("payment_status")
+        fulfilment_status = cleaned_data.get(
+            "fulfilment_status"
+        )
+
+        if not all(
+            [
+                order_status,
+                payment_status,
+                fulfilment_status,
+            ]
+        ):
+            return cleaned_data
+
+        if self.order.status == Order.Status.CANCELLED:
+            raise forms.ValidationError(
+                "Stornovanou objednávku už nelze upravovat."
+            )
+
+        if (
+            fulfilment_status
+            != Order.FulfilmentStatus.UNFULFILLED
+            and payment_status != Order.PaymentStatus.PAID
+        ):
+            self.add_error(
+                "fulfilment_status",
+                "Nezaplacenou objednávku nelze začít vyřizovat.",
+            )
+
+        if (
+            fulfilment_status
+            == Order.FulfilmentStatus.SHIPPED
+            and not self.order.requires_shipping
+        ):
+            self.add_error(
+                "fulfilment_status",
+                "Objednávka bez fyzické dopravy nemůže být odeslána.",
+            )
+
+        if (
+            order_status == Order.Status.COMPLETED
+            and fulfilment_status
+            != Order.FulfilmentStatus.COMPLETED
+        ):
+            self.add_error(
+                "order_status",
+                "Dokončená objednávka musí být také označená jako vyřízená.",
+            )
+
+        return cleaned_data
+
+
+class CancelOrderForm(forms.Form):
+    reason = forms.CharField(
+        label="Důvod storna",
+        max_length=500,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+                "placeholder": (
+                    "Například: zákazník požádal o zrušení."
+                ),
+            }
+        ),
+    )

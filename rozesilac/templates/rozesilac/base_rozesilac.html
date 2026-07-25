@@ -95,20 +95,29 @@
 
     <div class="rozesilac-nav-divider"></div>
 
-    <div class="rozesilac-nav-group">
+      <div class="rozesilac-nav-group">
       <p class="rozesilac-nav-heading">E-shop</p>
 
       {% with match=request.resolver_match %}
-        <nav class="rozesilac-nav">
+         <nav class="rozesilac-nav">
 
-          <a href="{% url 'shop_staff:product_list' %}"
-             class="{% if match.namespace == 'shop_staff' %}active{% endif %}">
+            <a
+            href="{% url 'shop_staff:product_list' %}"
+            class="{% if match.namespace == 'shop_staff' and 'product' in match.url_name %}active{% endif %}"
+            >
             Produkty
-          </a>
+            </a>
 
-        </nav>
+            <a
+            href="{% url 'shop_staff:order_list' %}"
+            class="{% if match.namespace == 'shop_staff' and 'order' in match.url_name %}active{% endif %}"
+            >
+            Objednávky
+            </a>
+
+         </nav>
       {% endwith %}
-    </div>
+      </div>
 
       <div class="rozesilac-nav-divider"></div>
 

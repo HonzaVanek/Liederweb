@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
+from django.core.paginator import Paginator
 from django.db.models import Count, Max, Min, Q, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -8,9 +9,10 @@ from django.views.decorators.http import require_POST
 from .decorators import shop_public_or_staff_preview
 from core.decorators import staff_required
 from .cart import CartQuantityError, SessionCart
-from .forms import ProductForm, ProductVariantFormSet, AddToCartForm, CartQuantityForm, CheckoutForm
+from .forms import ProductForm, ProductVariantFormSet, AddToCartForm, CartQuantityForm, CheckoutForm, CancelOrderForm, StaffOrderStateForm
 from .models import Product, ProductVariant, Order
-from .services.checkout import (CheckoutError, create_order_from_cart,)
+from .services.checkout import CheckoutError, create_order_from_cart
+from .services.orders import OrderManagementError, update_order_states, cancel_order
 
 
 
@@ -469,4 +471,224 @@ def order_success(request, token):
                 False,
             ),
         },
+    )
+
+
+
+
+@staff_required
+def staff_order_list(request):
+    orders = (
+        Order.objects
+        .select_related("user")
+        .annotate(item_count=Count("items"))
+        .order_by("-created_at")
+    )
+
+    query = request.GET.get("q", "").strip()
+    status = request.GET.get("status", "").strip()
+    payment_status = request.GET.get(
+        "payment_status",
+        "",
+    ).strip()
+    fulfilment_status = request.GET.get(
+        "fulfilment_status",
+        "",
+    ).strip()
+
+    if query:
+        orders = orders.filter(
+            Q(number__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+            | Q(email__icontains=query)
+        )
+
+    valid_order_statuses = {
+        value
+        for value, label in Order.Status.choices
+    }
+    valid_payment_statuses = {
+        value
+        for value, label in Order.PaymentStatus.choices
+    }
+    valid_fulfilment_statuses = {
+        value
+        for value, label in Order.FulfilmentStatus.choices
+    }
+
+    if status in valid_order_statuses:
+        orders = orders.filter(status=status)
+
+    if payment_status in valid_payment_statuses:
+        orders = orders.filter(
+            payment_status=payment_status
+        )
+
+    if fulfilment_status in valid_fulfilment_statuses:
+        orders = orders.filter(
+            fulfilment_status=fulfilment_status
+        )
+
+    paginator = Paginator(orders, 10)  # 10 objednávek na stránku
+    page_obj = paginator.get_page(
+        request.GET.get("page")
+    )
+
+    return render(
+        request,
+        "shop/staff_order_list.html",
+        {
+            "page_obj": page_obj,
+            "orders": page_obj.object_list,
+            "query": query,
+            "selected_status": status,
+            "selected_payment_status": payment_status,
+            "selected_fulfilment_status": (
+                fulfilment_status
+            ),
+            "order_status_choices": Order.Status.choices,
+            "payment_status_choices": (
+                Order.PaymentStatus.choices
+            ),
+            "fulfilment_status_choices": (
+                Order.FulfilmentStatus.choices
+            ),
+        },
+    )
+
+
+@staff_required
+def staff_order_detail(request, order_id):
+    order = get_object_or_404(
+        Order.objects
+        .select_related("user")
+        .prefetch_related(
+            "items",
+            "status_history__performed_by",
+        ),
+        id=order_id,
+    )
+
+    return render(
+        request,
+        "shop/staff_order_detail.html",
+        {
+            "order": order,
+            "state_form": StaffOrderStateForm(
+                order=order
+            ),
+            "cancel_form": CancelOrderForm(),
+        },
+    )
+
+
+@staff_required
+@require_POST
+def staff_order_update_states(request, order_id):
+    order = get_object_or_404(
+        Order,
+        id=order_id,
+    )
+
+    form = StaffOrderStateForm(
+        request.POST,
+        order=order,
+    )
+
+    if not form.is_valid():
+        messages.error(
+            request,
+            "Stavy objednávky se nepodařilo změnit. "
+            "Zkontrolujte formulář.",
+        )
+
+        return render(
+            request,
+            "shop/staff_order_detail.html",
+            {
+                "order": (
+                    Order.objects
+                    .select_related("user")
+                    .prefetch_related(
+                        "items",
+                        "status_history__performed_by",
+                    )
+                    .get(id=order_id)
+                ),
+                "state_form": form,
+                "cancel_form": CancelOrderForm(),
+            },
+        )
+
+    try:
+        order, changed = update_order_states(
+            order_id=order.id,
+            order_status=form.cleaned_data[
+                "order_status"
+            ],
+            payment_status=form.cleaned_data[
+                "payment_status"
+            ],
+            fulfilment_status=form.cleaned_data[
+                "fulfilment_status"
+            ],
+            note=form.cleaned_data.get("note", ""),
+            performed_by=request.user,
+        )
+
+    except OrderManagementError as exc:
+        messages.error(request, str(exc))
+    else:
+        if changed:
+            messages.success(
+                request,
+                "Stavy objednávky byly upraveny.",
+            )
+        else:
+            messages.info(
+                request,
+                "Nebyly provedeny žádné změny.",
+            )
+
+    return redirect(
+        "shop_staff:order_detail",
+        order_id=order_id,
+    )
+
+
+@staff_required
+@require_POST
+def staff_order_cancel(request, order_id):
+    form = CancelOrderForm(request.POST)
+
+    if not form.is_valid():
+        messages.error(
+            request,
+            "Vyplňte důvod storna.",
+        )
+        return redirect(
+            "shop_staff:order_detail",
+            order_id=order_id,
+        )
+
+    try:
+        cancel_order(
+            order_id=order_id,
+            reason=form.cleaned_data["reason"],
+            performed_by=request.user,
+        )
+
+    except OrderManagementError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(
+            request,
+            "Objednávka byla stornována a dostupné "
+            "skladové položky byly vráceny na sklad.",
+        )
+
+    return redirect(
+        "shop_staff:order_detail",
+        order_id=order_id,
     )

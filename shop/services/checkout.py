@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
-from shop.models import Order, OrderItem, ProductVariant
+from shop.models import Order, OrderItem, OrderStatusHistory, ProductVariant
 from shop.services.newsletter import add_order_contact_to_newsletter
 
 
@@ -157,6 +157,16 @@ def create_order_from_cart(
     )
 
     order.ensure_number()
+
+    OrderStatusHistory.objects.create(
+        order=order,
+        action=OrderStatusHistory.Action.CREATED,
+        description="Objednávka byla vytvořena.",
+        order_status=order.status,
+        payment_status=order.payment_status,
+        fulfilment_status=order.fulfilment_status,
+        performed_by=user,
+    )
 
     add_order_contact_to_newsletter(order)
 
