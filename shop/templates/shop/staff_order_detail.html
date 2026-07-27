@@ -232,6 +232,17 @@
       </dl>
     </section>
 
+    <section class="content-section">
+      <h3>Faktura</h3>
+      <a
+        href="{% url 'shop_staff:order_invoice_pdf' order.id %}"
+        target="_blank"
+        rel="noopener"
+      >
+        Otevřít fakturu v PDF
+      </a>
+    </section>
+
     {% if order.status != "cancelled" %}
       <section class="content-section">
         <h3>Změnit stavy</h3>

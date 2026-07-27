@@ -2,6 +2,7 @@ from django.db import models
 import uuid
 
 from django.conf import settings
+from django.utils import timezone
 
 
 class Product(models.Model):
@@ -337,6 +338,17 @@ class Order(models.Model):
         default=PaymentMethod.BANK_TRANSFER,
     )
 
+    confirmation_email_sent_at = models.DateTimeField(
+        "potvrzovací e-mail odeslán",
+        null=True,
+        blank=True,
+    )
+
+    confirmation_email_error = models.TextField(
+        "chyba potvrzovacího e-mailu",
+        blank=True,
+    )
+
     class Meta:
         ordering = ("-created_at",)
         verbose_name = "objednávka"
@@ -508,3 +520,153 @@ class OrderStatusHistory(models.Model):
 
     def __str__(self):
         return f"{self.order} – {self.get_action_display()}"
+
+
+class Invoice(models.Model):
+    class Status(models.TextChoices):
+        ISSUED = "issued", "Vystavená"
+        CANCELLED = "cancelled", "Stornovaná"
+
+    order = models.OneToOneField(
+        Order,
+        verbose_name="objednávka",
+        on_delete=models.PROTECT,
+        related_name="invoice",
+    )
+
+    number = models.CharField(
+        "číslo faktury",
+        max_length=40,
+        unique=True,
+        null=True,
+        blank=True,
+        editable=False,
+    )
+
+    status = models.CharField(
+        "stav",
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ISSUED,
+    )
+
+    issued_at = models.DateTimeField(
+        "datum vystavení",
+        default=timezone.now,
+    )
+
+    due_date = models.DateField(
+        "datum splatnosti",
+    )
+
+    cancelled_at = models.DateTimeField(
+        "datum storna",
+        null=True,
+        blank=True,
+    )
+
+    # Snapshot prodávajícího
+    seller_name = models.CharField(
+        "prodávající",
+        max_length=200,
+    )
+    seller_address = models.TextField(
+        "adresa prodávajícího",
+    )
+    seller_company_id = models.CharField(
+        "IČO prodávajícího",
+        max_length=30,
+    )
+    seller_vat_id = models.CharField(
+        "DIČ prodávajícího",
+        max_length=30,
+        blank=True,
+    )
+    seller_is_vat_payer = models.BooleanField(
+        "prodávající je plátce DPH",
+        default=False,
+    )
+
+    # Snapshot zákazníka
+    customer_name = models.CharField(
+        "zákazník",
+        max_length=200,
+    )
+    customer_email = models.EmailField(
+        "e-mail zákazníka",
+    )
+    customer_address = models.TextField(
+        "adresa zákazníka",
+        blank=True,
+    )
+
+    subtotal = models.DecimalField(
+        "mezisoučet",
+        max_digits=12,
+        decimal_places=2,
+    )
+    shipping_price = models.DecimalField(
+        "doprava",
+        max_digits=12,
+        decimal_places=2,
+    )
+    total = models.DecimalField(
+        "celkem",
+        max_digits=12,
+        decimal_places=2,
+    )
+    currency = models.CharField(
+        "měna",
+        max_length=3,
+        default="CZK",
+    )
+
+    payment_method = models.CharField(
+        "způsob platby",
+        max_length=30,
+        default="bank_transfer",
+    )
+    bank_account = models.CharField(
+        "číslo účtu",
+        max_length=100,
+    )
+    iban = models.CharField(
+        "IBAN",
+        max_length=100,
+    )
+    variable_symbol = models.CharField(
+        "variabilní symbol",
+        max_length=20,
+    )
+
+    created_at = models.DateTimeField(
+        "vytvořeno",
+        auto_now_add=True,
+    )
+    updated_at = models.DateTimeField(
+        "upraveno",
+        auto_now=True,
+    )
+
+    class Meta:
+        ordering = ("-issued_at", "-id")
+        verbose_name = "faktura"
+        verbose_name_plural = "faktury"
+
+    def __str__(self):
+        return self.number or f"Faktura objednávky {self.order}"
+
+    def ensure_number(self):
+        if self.number:
+            return self.number
+
+        year = timezone.localtime(self.issued_at).year
+        number = f"FV-{year}-{self.pk:06d}"
+
+        type(self).objects.filter(
+            pk=self.pk,
+            number__isnull=True,
+        ).update(number=number)
+
+        self.number = number
+        return number

@@ -13,4 +13,5 @@ urlpatterns = [
     path("objednavky/<int:order_id>/", views.staff_order_detail, name="order_detail"),
     path("objednavky/<int:order_id>/stavy/", views.staff_order_update_states, name="order_update_states"),
     path("objednavky/<int:order_id>/stornovat/", views.staff_order_cancel, name="order_cancel"),
+    path("objednavky/<int:order_id>/faktura/", views.staff_order_invoice_pdf, name="order_invoice_pdf"),
 ]

@@ -15,6 +15,7 @@ urlpatterns = [
     
     path("objednavka/", views.checkout, name="checkout"),
     path("objednavka/hotovo/<uuid:token>/", views.order_success, name="order_success"),
+    path("objednavka/<uuid:token>/faktura/", views.order_invoice_pdf, name="order_invoice_pdf"),
     
     path("<slug:slug>/", views.product_detail, name="product_detail"),
 ]

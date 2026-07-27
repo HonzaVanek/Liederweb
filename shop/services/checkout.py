@@ -1,10 +1,13 @@
 from decimal import Decimal
+from functools import partial
 
 from django.db import transaction
 from django.utils import timezone
 
 from shop.models import Order, OrderItem, OrderStatusHistory, ProductVariant
 from shop.services.newsletter import add_order_contact_to_newsletter
+from shop.services.emails import send_order_confirmation_email
+from shop.services.invoices import issue_invoice_for_order
 
 
 class CheckoutError(Exception):
@@ -167,6 +170,17 @@ def create_order_from_cart(
         fulfilment_status=order.fulfilment_status,
         performed_by=user,
     )
+
+    invoice = issue_invoice_for_order(order)
+
+    transaction.on_commit(
+        partial(
+            send_order_confirmation_email,
+            order.pk,
+        ),
+        robust=True,
+    )
+
 
     add_order_contact_to_newsletter(order)
 

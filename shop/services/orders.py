@@ -1,10 +1,7 @@
 from django.db import transaction
+from django.utils import timezone
 
-from shop.models import (
-    Order,
-    OrderStatusHistory,
-    ProductVariant,
-)
+from shop.models import Order, OrderStatusHistory, ProductVariant, Invoice
 
 
 class OrderManagementError(Exception):
@@ -238,6 +235,23 @@ def cancel_order(
     order.fulfilment_status = (
         Order.FulfilmentStatus.UNFULFILLED
     )
+
+    try:
+        invoice = order.invoice
+    except Invoice.DoesNotExist:
+        invoice = None
+
+    if invoice and invoice.status != Invoice.Status.CANCELLED:
+        invoice.status = Invoice.Status.CANCELLED
+        invoice.cancelled_at = timezone.now()
+
+        invoice.save(
+            update_fields=[
+                "status",
+                "cancelled_at",
+                "updated_at",
+            ]
+        )
 
     order.save(
         update_fields=[

@@ -136,6 +136,28 @@
       {% endif %}
 
       <a
+        href="{% url 'shop:order_invoice_pdf' order.public_token %}"
+        target="_blank"
+        rel="noopener"
+      >
+        Otevřít fakturu v PDF
+      </a>
+
+      {% if order.confirmation_email_sent_at %}
+        <p>
+          Potvrzení bylo odesláno
+          {{ order.confirmation_email_sent_at|date:"j. n. Y H:i" }}.
+        </p>
+      {% elif order.confirmation_email_error %}
+        <p class="form-errors">
+          E-mail se nepodařilo odeslat:
+          {{ order.confirmation_email_error }}
+        </p>
+      {% else %}
+        <p>Potvrzovací e-mail zatím nebyl odeslán.</p>
+      {% endif %}
+
+      <a
         class="shop-primary-button"
         href="{% url 'shop:home' %}"
       >

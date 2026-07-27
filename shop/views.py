@@ -4,6 +4,7 @@ from django.db import transaction
 from django.core.paginator import Paginator
 from django.db.models import Count, Max, Min, Q, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 
 from .decorators import shop_public_or_staff_preview
@@ -14,6 +15,7 @@ from .models import Product, ProductVariant, Order
 from .services.checkout import CheckoutError, create_order_from_cart
 from .services.orders import OrderManagementError, update_order_states, cancel_order
 from .services.payments import get_bank_transfer_payment_data
+from .services.invoice_pdf import build_invoice_pdf, build_invoice_pdf_filename
 
 
 def _active_variant_queryset():
@@ -707,3 +709,41 @@ def staff_order_cancel(request, order_id):
         "shop_staff:order_detail",
         order_id=order_id,
     )
+
+
+
+
+def _invoice_pdf_response(invoice):
+    pdf_bytes = build_invoice_pdf(invoice)
+
+    response = HttpResponse(
+        pdf_bytes,
+        content_type="application/pdf",
+    )
+
+    response["Content-Disposition"] = (
+        f'inline; filename="'
+        f'{build_invoice_pdf_filename(invoice)}"'
+    )
+
+    return response
+
+
+@shop_public_or_staff_preview
+def order_invoice_pdf(request, token):
+    order = get_object_or_404(
+        Order.objects.select_related("invoice"),
+        public_token=token,
+    )
+
+    return _invoice_pdf_response(order.invoice)
+
+
+@staff_required
+def staff_order_invoice_pdf(request, order_id):
+    order = get_object_or_404(
+        Order.objects.select_related("invoice"),
+        id=order_id,
+    )
+
+    return _invoice_pdf_response(order.invoice)
