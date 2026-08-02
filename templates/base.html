@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Lieder Society{% endblock %}</title>
 
-    <link rel="stylesheet" href="{% static 'style.css' %}">
+    <link rel="stylesheet" href="{% static 'style.css' %}?v=3">
     {% block extra_css %}{% endblock %}
 
     <link rel="icon" href="{% static 'Lieder-favicon.png' %}" type="image/png">
@@ -31,47 +31,63 @@
                 >
             </a>
 
-            <nav class="public-nav" aria-label="Hlavní navigace">
-                <a href="{% url 'core:person_list' %}" class="nav-button">Kdo jsme</a>
-                <a href="{% url 'public_event_list' %}" class="nav-button">Koncerty</a>
-                <a href="https://eshop.lieder-society.cz/" class="nav-button">Vyberte si</a>
-                <a href="{% url 'content:post_list' %}" class="nav-button">Objevujte</a>
-                <a href="{% url 'core:mlady_salon' %}" class="nav-button">Mladý salón</a>
-                <a href="{% url 'core:contact' %}" class="nav-button">Napište nám</a>
-            </nav>
+            <button
+                type="button"
+                id="mobile-menu-toggle"
+                class="mobile-menu-toggle"
+                aria-controls="site-navigation-panel"
+                aria-expanded="false"
+                aria-label="Otevřít hlavní menu"
+            >
+                <span class="mobile-menu-toggle__line"></span>
+                <span class="mobile-menu-toggle__line"></span>
+                <span class="mobile-menu-toggle__line"></span>
+            </button>
 
-            <div class="nav-user-panel">
-                <button
-                    type="button"
-                    id="dark-mode-toggle"
-                    class="dark-mode-toggle"
-                    aria-label="Přepnout tmavý režim"
-                    title="Přepnout tmavý režim"
-                    aria-pressed="false"
-                >
-                    <span class="dark-mode-toggle__track" aria-hidden="true">
-                        <span class="dark-mode-toggle__icon dark-mode-toggle__icon--sun">☀</span>
-                        <span class="dark-mode-toggle__icon dark-mode-toggle__icon--moon">☾</span>
-                        <span class="dark-mode-toggle__thumb"></span>
-                    </span>
-                </button>
+            <div class="header-navigation" id="site-navigation-panel">
 
-                {% if request.user.is_authenticated %}
-                    <a href="/rozesilac/" class="nav-button nav-rozesilac">
-                        Admin panel <span>→</span>
-                    </a>
+                <nav class="public-nav" aria-label="Hlavní navigace">
+                    <a href="{% url 'core:person_list' %}" class="nav-button">Kdo jsme</a>
+                    <a href="{% url 'public_event_list' %}" class="nav-button">Koncerty</a>
+                    <a href="https://eshop.lieder-society.cz/" class="nav-button">Vyberte si</a>
+                    <a href="{% url 'content:post_list' %}" class="nav-button">Objevujte</a>
+                    <a href="{% url 'core:mlady_salon' %}" class="nav-button">Mladý salón</a>
+                    <a href="{% url 'core:contact' %}" class="nav-button">Napište nám</a>
+                </nav>
 
-                    <span class="logged-user">{{ request.user.username }}</span>
+                <div class="nav-user-panel">
+                    <button
+                        type="button"
+                        id="dark-mode-toggle"
+                        class="dark-mode-toggle"
+                        aria-label="Přepnout tmavý režim"
+                        title="Přepnout tmavý režim"
+                        aria-pressed="false"
+                    >
+                        <span class="dark-mode-toggle__track" aria-hidden="true">
+                            <span class="dark-mode-toggle__icon dark-mode-toggle__icon--sun">☀</span>
+                            <span class="dark-mode-toggle__icon dark-mode-toggle__icon--moon">☾</span>
+                            <span class="dark-mode-toggle__thumb"></span>
+                        </span>
+                    </button>
 
-                    <form method="post" action="{% url 'core:logout' %}" class="logout-form">
-                        {% csrf_token %}
-                        <button type="submit" class="logout-button">
-                            Odhlásit
-                        </button>
-                    </form>
-                {% endif %}
+                    {% if request.user.is_authenticated %}
+                        <a href="/rozesilac/" class="nav-button nav-rozesilac">
+                            Admin panel <span>→</span>
+                        </a>
+
+                        <span class="logged-user">{{ request.user.username }}</span>
+
+                        <form method="post" action="{% url 'core:logout' %}" class="logout-form">
+                            {% csrf_token %}
+                            <button type="submit" class="logout-button">
+                                Odhlásit
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+
             </div>
-
         </div>
     </header>
     {% endif %}
@@ -168,5 +184,62 @@
 })();
 </script>
 
+
+<script>
+(function () {
+    const toggle = document.getElementById("mobile-menu-toggle");
+    const panel = document.getElementById("site-navigation-panel");
+
+    if (!toggle || !panel) {
+        return;
+    }
+
+    const wrapper = toggle.closest(".nav-wrapper");
+    const mobileMedia = window.matchMedia("(max-width: 900px)");
+
+    function setMenuOpen(open) {
+        const shouldOpen = mobileMedia.matches && open;
+
+        wrapper.classList.toggle("is-menu-open", shouldOpen);
+        toggle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+        toggle.setAttribute(
+            "aria-label",
+            shouldOpen ? "Zavřít hlavní menu" : "Otevřít hlavní menu"
+        );
+    }
+
+    toggle.addEventListener("click", function () {
+        const isOpen = toggle.getAttribute("aria-expanded") === "true";
+        setMenuOpen(!isOpen);
+    });
+
+    panel.querySelectorAll("a").forEach(function (link) {
+        link.addEventListener("click", function () {
+            setMenuOpen(false);
+        });
+    });
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+            setMenuOpen(false);
+            toggle.focus();
+        }
+    });
+
+    document.addEventListener("click", function (event) {
+        if (
+            mobileMedia.matches &&
+            wrapper.classList.contains("is-menu-open") &&
+            !wrapper.contains(event.target)
+        ) {
+            setMenuOpen(false);
+        }
+    });
+
+    mobileMedia.addEventListener("change", function () {
+        setMenuOpen(false);
+    });
+})();
+</script>
 </body>
 </html>
