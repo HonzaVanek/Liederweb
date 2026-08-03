@@ -174,8 +174,8 @@ else:
 
 # na Produkci - nastavené ALLOWED_HOSTS
 if APP_ENV == "prod":
-    ALLOWED_HOSTS = ["liedersociety.website", "www.liedersociety.website", "liederweb-8885.rostiapp.cz", "www.liederweb-8885.rostiapp.cz"]
-    CSRF_TRUSTED_ORIGINS = ["https://liedersociety.website", "https://www.liedersociety.website", "https://liederweb-8885.rostiapp.cz"]
+    ALLOWED_HOSTS = ["liedersociety.website", "www.liedersociety.website", "liederweb-8885.rostiapp.cz", "www.liederweb-8885.rostiapp.cz", "lieder-society.cz", "www.lieder-society.cz"]
+    CSRF_TRUSTED_ORIGINS = ["https://liedersociety.website", "https://www.liedersociety.website", "https://liederweb-8885.rostiapp.cz", "https://lieder-society.cz", "https://www.lieder-society.cz"]
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 else:
