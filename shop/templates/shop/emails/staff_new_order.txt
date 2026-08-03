@@ -1,0 +1,22 @@
+Hej ty pyčo e-shop jede!!! Byla vytvořena nová objednávka {{ order.number }}.
+
+Zákazník:
+{{ order.customer_name }}
+{{ order.email }}
+{% if order.phone %}{{ order.phone }}{% endif %}
+
+Položky:
+{% for item in order.items.all %}
+- {{ item.product_name }} – {{ item.variant_name }}, {{ item.quantity }} ks, {{ item.line_total }} Kč
+{% endfor %}
+
+Celkem: {{ order.total }} Kč
+Způsob platby: {{ order.get_payment_method_display }}
+Stav platby: {{ order.get_payment_status_display }}
+
+{% if order.requires_shipping %}
+Objednávka obsahuje fyzické zboží a vyžaduje dopravu, tak koukejte makat.
+{% endif %}
+
+Detail objednávky:
+{{ order_detail_url }}

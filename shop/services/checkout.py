@@ -1,12 +1,14 @@
 from decimal import Decimal
 from functools import partial
+from datetime import timedelta
+from django.conf import settings
 
 from django.db import transaction
 from django.utils import timezone
 
 from shop.models import Order, OrderItem, OrderStatusHistory, ProductVariant
 from shop.services.newsletter import add_order_contact_to_newsletter
-from shop.services.emails import send_order_confirmation_email
+from shop.services.emails import send_order_confirmation_email, send_staff_new_order_email
 from shop.services.invoices import issue_invoice_for_order
 
 
@@ -89,6 +91,7 @@ def create_order_from_cart(
             else None
         ),
         terms_accepted_at=timezone.now(),
+        expires_at=(timezone.now() + timedelta(days=settings.SHOP_ORDER_EXPIRY_DAYS))
     )
 
     subtotal = Decimal("0.00")
@@ -172,6 +175,7 @@ def create_order_from_cart(
     )
 
     invoice = issue_invoice_for_order(order)
+    add_order_contact_to_newsletter(order)
 
     transaction.on_commit(
         partial(
@@ -182,6 +186,12 @@ def create_order_from_cart(
     )
 
 
-    add_order_contact_to_newsletter(order)
+    transaction.on_commit(
+        partial(
+            send_staff_new_order_email,
+            order.pk,
+        ),
+        robust=True,
+    )
 
     return order

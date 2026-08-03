@@ -41,6 +41,53 @@
     {% endif %}
 
     <div class="shop-order-detail-grid">
+      <section class="content-section">
+        <div>
+          <dt>Potvrzení zákazníkovi</dt>
+          <dd>
+            {% if order.confirmation_email_sent_at %}
+              Odesláno
+              {{ order.confirmation_email_sent_at|date:"j. n. Y H:i" }}
+
+            {% elif order.confirmation_email_error %}
+              <span class="form-errors">
+                Chyba: {{ order.confirmation_email_error }}
+              </span>
+
+            {% else %}
+              Neodesláno
+            {% endif %}
+          </dd>
+        </div>
+
+        <div>
+          <dt>Upozornění staffu</dt>
+          <dd>
+            {% if order.staff_notification_sent_at %}
+              Odesláno
+              {{ order.staff_notification_sent_at|date:"j. n. Y H:i" }}
+
+            {% elif order.staff_notification_error %}
+              <span class="form-errors">
+                Chyba: {{ order.staff_notification_error }}
+              </span>
+
+            {% else %}
+              Neodesláno
+            {% endif %}
+          </dd>
+        </div>
+
+        {% if order.expires_at %}
+          <div>
+            <dt>Expirace objednávky</dt>
+            <dd>
+              {{ order.expires_at|date:"j. n. Y H:i" }}
+            </dd>
+          </div>
+        {% endif %}
+      </section>
+
 
       <section class="content-section">
         <h3>Zákazník</h3>

@@ -349,6 +349,24 @@ class Order(models.Model):
         blank=True,
     )
 
+    expires_at = models.DateTimeField(
+        "objednávka expiruje",
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    staff_notification_sent_at = models.DateTimeField(
+        "upozornění staffu odesláno",
+        null=True,
+        blank=True,
+    )
+
+    staff_notification_error = models.TextField(
+        "chyba upozornění staffu",
+        blank=True,
+    )
+
     class Meta:
         ordering = ("-created_at",)
         verbose_name = "objednávka"
