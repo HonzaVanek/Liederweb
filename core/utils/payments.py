@@ -52,3 +52,16 @@ def make_qr_svg(payload: str) -> str:
     )
 
     return buffer.getvalue().decode("utf-8")
+
+def make_qr_png(payload: str) -> bytes:
+    qr = segno.make(payload, error="m")
+
+    buffer = BytesIO()
+    qr.save(
+        buffer,
+        kind="png",
+        scale=6,
+        border=2,
+    )
+
+    return buffer.getvalue()

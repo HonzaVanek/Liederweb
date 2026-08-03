@@ -1,0 +1,340 @@
+.shop-admin-page {
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.shop-empty-state {
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.shop-product-table strong {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.shop-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 9px;
+    border: 1px solid #cfcfcf;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.shop-status--published {
+    background-color: #eef7f1;
+    border-color: #83b995;
+    color: #195c35;
+}
+
+.shop-status--draft {
+    background-color: #f3f3f3;
+    color: #555;
+}
+
+.shop-form-grid,
+.shop-variant-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.shop-form-grid--primary {
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+}
+
+.shop-form-grid--settings {
+    grid-template-columns: minmax(0, 1fr) 140px 180px;
+    align-items: end;
+}
+
+.shop-section-header,
+.shop-variant-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.shop-section-header {
+    margin-bottom: 18px;
+}
+
+.shop-section-header h3,
+.shop-section-header p {
+    margin-bottom: 0;
+}
+
+.shop-variant-list {
+    display: grid;
+    gap: 16px;
+}
+
+.shop-variant-card {
+    padding: 18px;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+.shop-variant-card__header {
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e4e4e4;
+}
+
+.shop-variant-grid--main {
+    grid-template-columns:
+        minmax(170px, 1.25fr)
+        minmax(170px, 1fr)
+        minmax(170px, 1fr)
+        130px;
+}
+
+.shop-variant-grid--settings {
+    grid-template-columns: 180px 170px 150px 110px;
+    align-items: end;
+}
+
+.shop-checkbox-field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px;
+    min-height: 44px;
+    margin-bottom: 18px;
+}
+
+.shop-checkbox-field label {
+    display: inline;
+    margin: 0;
+}
+
+.shop-checkbox-field .errorlist {
+    flex-basis: 100%;
+}
+
+.shop-delete-field {
+    display: none;
+}
+
+.shop-remove-variant {
+    padding: 7px 12px !important;
+    border-width: 1px !important;
+    font-size: 0.85rem !important;
+}
+
+
+
+.shop-order-filter-grid {
+    display: grid;
+    grid-template-columns:
+        minmax(220px, 1.5fr)
+        repeat(3, minmax(160px, 1fr));
+    gap: 14px;
+    align-items: end;
+}
+
+.shop-order-filter-grid .form-actions {
+    grid-column: 1 / -1;
+}
+
+.shop-order-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.shop-order-data {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+}
+
+.shop-order-data > div {
+    display: grid;
+    grid-template-columns: minmax(130px, 0.45fr) 1fr;
+    gap: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e3e3e3;
+}
+
+.shop-order-data dt {
+    font-weight: 700;
+}
+
+.shop-order-data dd {
+    margin: 0;
+}
+
+.shop-order-state-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+.shop-order-totals {
+    width: min(100%, 420px);
+    margin: 20px 0 0 auto;
+}
+
+.shop-order-totals > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 9px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.shop-order-totals > div:last-child {
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 2px solid #000;
+    border-bottom: 0;
+    font-size: 1.12rem;
+}
+
+.shop-order-history {
+    display: grid;
+    gap: 14px;
+}
+
+.shop-order-history__item {
+    padding: 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.shop-order-history__item > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.shop-order-history__item p {
+    margin: 10px 0 0;
+}
+
+.shop-order-history__item blockquote {
+    margin: 12px 0 0;
+    padding: 10px 14px;
+    border-left: 3px solid #000;
+    background: #f5f5f5;
+}
+
+.shop-admin-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.shop-cancel-section {
+    border-color: #d6a2a2;
+}
+
+body.dark-mode .shop-order-data > div,
+body.dark-mode .shop-order-totals > div {
+    border-color: #444;
+}
+
+body.dark-mode .shop-order-totals > div:last-child {
+    border-top-color: #eee;
+}
+
+body.dark-mode .shop-order-history__item {
+    background: #181818;
+    border-color: #444;
+}
+
+body.dark-mode .shop-order-history__item blockquote {
+    background: #222;
+    border-left-color: #eee;
+}
+
+body.dark-mode .shop-cancel-section {
+    border-color: #744;
+}
+
+
+
+
+body.dark-mode .shop-status--published {
+    background-color: #183021;
+    border-color: #4c805d;
+    color: #bce3c8;
+}
+
+body.dark-mode .shop-status--draft {
+    background-color: #242424;
+    border-color: #555;
+    color: #ccc;
+}
+
+body.dark-mode .shop-variant-card {
+    background-color: #181818;
+    border-color: #444;
+}
+
+body.dark-mode .shop-variant-card__header {
+    border-bottom-color: #444;
+}
+
+@media (max-width: 1100px) {
+    .shop-variant-grid--main {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .shop-variant-grid--settings {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .shop-order-filter-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .shop-order-state-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .shop-form-grid--primary,
+    .shop-form-grid--settings,
+    .shop-variant-grid--main,
+    .shop-variant-grid--settings {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-section-header {
+        flex-direction: column;
+    }
+
+    .shop-section-header button {
+        width: 100%;
+    }
+
+    .shop-variant-card {
+        padding: 14px;
+    }
+    .shop-order-filter-grid,
+    .shop-order-detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-order-data > div {
+        grid-template-columns: 1fr;
+        gap: 3px;
+    }
+
+    .shop-order-history__item > div {
+        flex-direction: column;
+        gap: 4px;
+    }
+}

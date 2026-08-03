@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Objednávka {{ order.number }} | Lieder Society{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block header_extra_actions %}
+  {% include "shop/includes/cart_header_link.html" %}
+{% endblock header_extra_actions %}
+
+{% block content %}
+  <main class="shop-page">
+
+    {% if shop_preview_mode %}
+      <div class="shop-preview-banner">
+        <strong>Testovací objednávka</strong>
+        <span>
+          Platba ani potvrzovací e-mail zatím nejsou zapojené.
+        </span>
+      </div>
+    {% endif %}
+
+    <section class="shop-order-success">
+      <p class="shop-eyebrow">
+        Objednávka byla vytvořena
+      </p>
+
+      <h1>Děkujeme za objednávku</h1>
+
+      <p>
+        Číslo objednávky:
+        <strong>{{ order.number }}</strong>
+      </p>
+
+      <p>
+        Objednávku jsme uložili pro:
+        <strong>{{ order.email }}</strong>
+      </p>
+
+      <div class="shop-order-success__items">
+        <h2>Objednané položky</h2>
+
+        {% for item in order.items.all %}
+          <div>
+            <span>
+              {{ item.product_name }}
+              – {{ item.variant_name }}
+              × {{ item.quantity }}
+            </span>
+
+            <strong>
+              {{ item.line_total|floatformat:"-2" }} Kč
+            </strong>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="shop-order-success__total">
+        <span>Celkem</span>
+
+        <strong>
+          {{ order.total|floatformat:"-2" }} Kč
+        </strong>
+      </div>
+
+      {% if payment_data %}
+        <section class="shop-payment-instructions">
+          <div class="shop-payment-instructions__content">
+            <p class="shop-eyebrow">
+              Platba bankovním převodem
+            </p>
+
+            <h2>Platební údaje</h2>
+
+            <p>
+              Objednávku uhradíte převodem na následující účet.
+              Do variabilního symbolu uveďte číslo uvedené níže.
+            </p>
+
+            <dl class="shop-payment-data">
+              <div>
+                <dt>Příjemce</dt>
+                <dd>{{ payment_data.recipient }}</dd>
+              </div>
+
+              <div>
+                <dt>Číslo účtu</dt>
+                <dd>{{ payment_data.account_display }}</dd>
+              </div>
+
+              <div>
+                <dt>IBAN</dt>
+                <dd>{{ payment_data.iban }}</dd>
+              </div>
+
+              <div>
+                <dt>Částka</dt>
+                <dd>
+                  <strong>
+                    {{ payment_data.amount|floatformat:"-2" }} Kč
+                  </strong>
+                </dd>
+              </div>
+
+              <div>
+                <dt>Variabilní symbol</dt>
+                <dd>
+                  <strong>{{ payment_data.variable_symbol }}</strong>
+                </dd>
+              </div>
+
+              <div>
+                <dt>Zpráva pro příjemce</dt>
+                <dd>{{ payment_data.message }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="shop-payment-instructions__qr">
+            <div class="shop-payment-qr">
+              {{ payment_data.qr_svg|safe }}
+            </div>
+
+            <p>
+              QR kód můžete načíst v mobilní bankovní aplikaci.
+            </p>
+          </div>
+        </section>
+      {% endif %}
+
+      <a
+        href="{% url 'shop:order_invoice_pdf' order.public_token %}"
+        target="_blank"
+        rel="noopener"
+      >
+        Otevřít fakturu v PDF
+      </a>
+
+      {% if order.confirmation_email_sent_at %}
+        <p>
+          Potvrzení bylo odesláno
+          {{ order.confirmation_email_sent_at|date:"j. n. Y H:i" }}.
+        </p>
+      {% elif order.confirmation_email_error %}
+        <p class="form-errors">
+          E-mail se nepodařilo odeslat:
+          {{ order.confirmation_email_error }}
+        </p>
+      {% else %}
+        <p>Potvrzovací e-mail zatím nebyl odeslán.</p>
+      {% endif %}
+
+      <a
+        class="shop-primary-button"
+        href="{% url 'shop:home' %}"
+      >
+        Zpět do e-shopu
+      </a>
+    </section>
+
+  </main>
+{% endblock content %}

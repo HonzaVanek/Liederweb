@@ -18,9 +18,25 @@ from dotenv import load_dotenv
 import logging 
 import logging.handlers
 
+
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / "settings.env")
+
+def env_bool(name, default=False):
+    value = os.getenv(name)
+
+    if value is None:
+        return default
+
+    return value.strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
 
 # Quick-start development settings - unsuitable for production
@@ -178,6 +194,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rozesilac',
     'core',
+    'shop',
     'events',
     'media_assets',
     'social_feed',
@@ -343,3 +360,45 @@ NEWSLETTER_SCHEDULED_CAMPAIGN_MIN_GAP_MINUTES = 5
 LIEDER_DONATION_IBAN = os.getenv("LIEDER_DONATION_IBAN", "")
 LIEDER_DONATION_ACCOUNT_DISPLAY = os.getenv("LIEDER_DONATION_ACCOUNT_DISPLAY", "")
 LIEDER_DONATION_RECIPIENT = os.getenv("LIEDER_DONATION_RECIPIENT", "Lieder Society z.s.")
+
+
+
+## SHOP SETTINGS
+SHOP_PUBLIC_ENABLED = False
+
+LIEDER_SHOP_IBAN = os.getenv("LIEDER_SHOP_IBAN", "")
+LIEDER_SHOP_ACCOUNT_DISPLAY = os.getenv("LIEDER_SHOP_ACCOUNT_DISPLAY", "")
+LIEDER_SHOP_RECIPIENT = os.getenv("LIEDER_SHOP_RECIPIENT", "Lieder Society, z. s.")
+LIEDER_SHOP_SELLER_NAME = LIEDER_SHOP_RECIPIENT
+LIEDER_SHOP_SELLER_ADDRESS = (
+    "Střimelická 2504/24\n"
+    "Záběhlice\n"
+    "141 00 Praha 4"
+)
+LIEDER_SHOP_SELLER_COMPANY_ID = "09862455"
+LIEDER_SHOP_SELLER_VAT_ID = ""
+LIEDER_SHOP_SELLER_IS_VAT_PAYER = False
+LIEDER_SHOP_INVOICE_DUE_DAYS = 7
+
+# dalsi veci tykajici se eshopu musime nastavit jinak, protože bych chtěl posílat maily týkající se eshopu přes rosti, ale zatím bych chtěl nechat to nastavení výše tak jak je, tedy aby se registrační maily posílaly přes mailgun a rozesílač přes BREVO. Ideálně bych chtěl eshop maily mít i na dev ostré, abych mohl otestovat že se to fakt posílá, nechci to jen testovací do konzole.
+
+
+# Samostatný e-mailový backend pro e-shop.
+# Nepoužívá globální EMAIL_BACKEND, takže neovlivní
+# Mailgun, registrační e-maily ani Brevo.
+SHOP_EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+SHOP_EMAIL_HOST = os.getenv("SHOP_EMAIL_HOST", "smtp.rosti.cz")
+SHOP_EMAIL_PORT = int(os.getenv("SHOP_EMAIL_PORT", "587"))
+SHOP_EMAIL_USE_TLS = env_bool("SHOP_EMAIL_USE_TLS", True)
+SHOP_EMAIL_USE_SSL = env_bool("SHOP_EMAIL_USE_SSL", False)
+SHOP_EMAIL_HOST_USER = os.getenv("SHOP_EMAIL_HOST_USER", "")
+SHOP_EMAIL_HOST_PASSWORD = os.getenv("SHOP_EMAIL_HOST_PASSWORD", "")
+SHOP_EMAIL_TIMEOUT = int(os.getenv("SHOP_EMAIL_TIMEOUT", "20"))
+SHOP_EMAIL_FROM = os.getenv("SHOP_EMAIL_FROM", "Lieder Society - objednávky <info@liedersociety.cz>")
+SHOP_EMAIL_REPLY_TO = os.getenv("SHOP_EMAIL_REPLY_TO", "info@liedersociety.cz")
+
+SHOP_ORDER_EXPIRY_DAYS = LIEDER_SHOP_INVOICE_DUE_DAYS
+
+SHOP_BASE_URL = ("https://lieder-society.cz" if APP_ENV == "prod" else "http://127.0.0.1:8000").rstrip("/")
+
+SHOP_STAFF_NOTIFICATION_EMAILS = ["vanek.hv@gmail.com"]

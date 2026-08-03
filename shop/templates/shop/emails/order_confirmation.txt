@@ -1,0 +1,21 @@
+Dobrý den,
+
+děkujeme za objednávku s číslem {{ order.number }}.
+
+Objednané položky:
+{% for item in order.items.all %}
+- {{ item.product_name }} – {{ item.variant_name }}, {{ item.quantity }} ks, {{ item.line_total }} Kč
+{% endfor %}
+
+Celkem k úhradě: {{ order.total }} Kč
+
+Číslo účtu: {{ invoice.bank_account }}
+IBAN: {{ invoice.iban }}
+Variabilní symbol: {{ invoice.variable_symbol }}
+Datum splatnosti: {{ invoice.due_date|date:"j. n. Y" }}
+
+Fakturu a platební údaje naleznete také v příloze tohoto e-mailu.
+
+S pozdravem
+
+Lieder Society

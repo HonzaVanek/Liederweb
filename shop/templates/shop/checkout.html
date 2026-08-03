@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Objednávka | Lieder Society{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block header_extra_actions %}
+  {% include "shop/includes/cart_header_link.html" %}
+{% endblock header_extra_actions %}
+
+{% block content %}
+  <main class="shop-page">
+
+    {% if shop_preview_mode %}
+      <div class="shop-preview-banner">
+        <strong>Náhled e-shopu</strong>
+        <span>
+          Objednávka je zatím pouze v testovacím režimu.
+        </span>
+      </div>
+    {% endif %}
+
+    <nav class="shop-breadcrumbs">
+      <a href="{% url 'shop:home' %}">
+        Vyberte si
+      </a>
+
+      <span>/</span>
+
+      <a href="{% url 'shop:cart_detail' %}">
+        Košík
+      </a>
+
+      <span>/</span>
+
+      <span>Objednávka</span>
+    </nav>
+
+    <header class="shop-cart-header">
+      <p class="shop-eyebrow">Kontaktní údaje</p>
+      <h1>Dokončení objednávky</h1>
+    </header>
+
+    <div class="shop-checkout-layout">
+
+      <form
+        method="post"
+        class="shop-checkout-form"
+      >
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="shop-message shop-message--error">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <section class="shop-checkout-section">
+          <h2>Kontaktní údaje</h2>
+
+          <div class="shop-checkout-grid">
+            <div>
+              {{ form.first_name.label_tag }}
+              {{ form.first_name }}
+              {{ form.first_name.errors }}
+            </div>
+
+            <div>
+              {{ form.last_name.label_tag }}
+              {{ form.last_name }}
+              {{ form.last_name.errors }}
+            </div>
+
+            <div>
+              {{ form.email.label_tag }}
+              {{ form.email }}
+              {{ form.email.errors }}
+            </div>
+
+            <div>
+              {{ form.phone.label_tag }}
+              {{ form.phone }}
+              {{ form.phone.errors }}
+            </div>
+          </div>
+        </section>
+
+        {% if cart.requires_shipping %}
+          <section class="shop-checkout-section">
+            <h2>Doručovací adresa</h2>
+
+            <div class="shop-checkout-grid">
+              <div>
+                {{ form.address_line1.label_tag }}
+                {{ form.address_line1 }}
+                {{ form.address_line1.errors }}
+              </div>
+
+              <div>
+                {{ form.address_line2.label_tag }}
+                {{ form.address_line2 }}
+                {{ form.address_line2.errors }}
+              </div>
+
+              <div>
+                {{ form.city.label_tag }}
+                {{ form.city }}
+                {{ form.city.errors }}
+              </div>
+
+              <div>
+                {{ form.postal_code.label_tag }}
+                {{ form.postal_code }}
+                {{ form.postal_code.errors }}
+              </div>
+            </div>
+          </section>
+        {% endif %}
+
+        <section class="shop-checkout-section">
+          <h2>Poznámka</h2>
+
+          {{ form.customer_note.label_tag }}
+          {{ form.customer_note }}
+          {{ form.customer_note.errors }}
+        </section>
+
+        <section class="shop-checkout-section">
+          <div class="shop-checkout-checkbox">
+            {{ form.newsletter_consent }}
+            {{ form.newsletter_consent.label_tag }}
+          </div>
+
+          {{ form.newsletter_consent.errors }}
+
+          <div class="shop-checkout-checkbox">
+            {{ form.terms_accepted }}
+            {{ form.terms_accepted.label_tag }}
+          </div>
+
+          {{ form.terms_accepted.errors }}
+        </section>
+
+        <button
+          class="shop-primary-button"
+          type="submit"
+        >
+          Vytvořit objednávku
+        </button>
+      </form>
+
+      <aside class="shop-cart-summary">
+        <h2>Souhrn objednávky</h2>
+
+        {% for item in cart_items %}
+          <div>
+            <span>
+              {{ item.variant.product.name }}
+              – {{ item.variant.name }}
+              × {{ item.quantity }}
+            </span>
+
+            <strong>
+              {{ item.subtotal|floatformat:"-2" }} Kč
+            </strong>
+          </div>
+        {% endfor %}
+
+        <div>
+          <span>Celkem</span>
+
+          <strong>
+            {{ cart.total|floatformat:"-2" }} Kč
+          </strong>
+        </div>
+
+        {% if cart.requires_shipping %}
+          <p>
+            Cena dopravy zatím není připočtena.
+          </p>
+        {% endif %}
+      </aside>
+
+    </div>
+
+  </main>
+{% endblock content %}

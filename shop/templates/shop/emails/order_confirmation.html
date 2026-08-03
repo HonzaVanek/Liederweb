@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Potvrzení objednávky</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f3f3f3;font-family:Arial,sans-serif;color:#222;">
+  <div style="max-width:680px;margin:0 auto;padding:32px 16px;">
+
+    <div style="background:#fff;padding:32px;border:1px solid #ddd;">
+      <h1 style="margin:0 0 20px;font-size:26px;">
+        Děkujeme za objednávku
+      </h1>
+
+      <p>
+        Dobrý den,
+      </p>
+
+      <p>
+        objednávku
+        <strong>{{ order.number }}</strong>
+        jsme úspěšně přijali.
+      </p>
+
+      <table
+        role="presentation"
+        style="width:100%;border-collapse:collapse;margin:24px 0;"
+      >
+        {% for item in order.items.all %}
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid #ddd;">
+              <strong>{{ item.product_name }}</strong><br>
+              <span style="color:#666;">
+                {{ item.variant_name }} · {{ item.quantity }} ks
+              </span>
+            </td>
+
+            <td
+              style="padding:10px 0;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap;"
+            >
+              {{ item.line_total|floatformat:"-2" }} Kč
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+
+      <p style="font-size:18px;">
+        Celkem k úhradě:
+        <strong>{{ order.total|floatformat:"-2" }} Kč</strong>
+      </p>
+
+      <div style="margin:24px 0;padding:20px;background:#f4f4f4;">
+        <h2 style="margin:0 0 14px;font-size:18px;">
+          Platební údaje
+        </h2>
+
+        <p style="margin:5px 0;">
+          Číslo účtu:
+          <strong>{{ invoice.bank_account }}</strong>
+        </p>
+
+        <p style="margin:5px 0;">
+          IBAN:
+          <strong>{{ invoice.iban }}</strong>
+        </p>
+
+        <p style="margin:5px 0;">
+          Variabilní symbol:
+          <strong>{{ invoice.variable_symbol }}</strong>
+        </p>
+
+        <p style="margin:5px 0;">
+          Splatnost:
+          <strong>{{ invoice.due_date|date:"j. n. Y" }}</strong>
+        </p>
+      </div>
+
+      <p>
+        Faktura s QR platbou je přiložena k tomuto e-mailu
+        ve formátu PDF.
+      </p>
+
+      <p style="margin-top:30px;">
+        S pozdravem<br>
+        <strong>Lieder Society</strong>
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>

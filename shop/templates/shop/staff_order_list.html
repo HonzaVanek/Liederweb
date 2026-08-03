@@ -1,0 +1,244 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop_staff.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block title %}E-shop | Objednávky{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="shop-admin-page">
+
+    <div class="admin-page-header">
+      <div>
+        <h2>Objednávky</h2>
+        <p class="muted">
+          Přehled objednávek, plateb a jejich vyřízení.
+        </p>
+      </div>
+    </div>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">
+            {{ message }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <form method="get" class="content-section shop-order-filters">
+      <div class="shop-order-filter-grid">
+
+        <div class="form-group">
+          <label for="order-search">
+            Hledat
+          </label>
+
+          <input
+            id="order-search"
+            type="search"
+            name="q"
+            value="{{ query }}"
+            placeholder="Číslo, jméno nebo e-mail"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="order-status">
+            Stav objednávky
+          </label>
+
+          <select id="order-status" name="status">
+            <option value="">Všechny</option>
+
+            {% for value, label in order_status_choices %}
+              <option
+                value="{{ value }}"
+                {% if selected_status == value %}
+                  selected
+                {% endif %}
+              >
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="payment-status">
+            Platba
+          </label>
+
+          <select
+            id="payment-status"
+            name="payment_status"
+          >
+            <option value="">Všechny</option>
+
+            {% for value, label in payment_status_choices %}
+              <option
+                value="{{ value }}"
+                {% if selected_payment_status == value %}
+                  selected
+                {% endif %}
+              >
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="fulfilment-status">
+            Vyřízení
+          </label>
+
+          <select
+            id="fulfilment-status"
+            name="fulfilment_status"
+          >
+            <option value="">Všechny</option>
+
+            {% for value, label in fulfilment_status_choices %}
+              <option
+                value="{{ value }}"
+                {% if selected_fulfilment_status == value %}
+                  selected
+                {% endif %}
+              >
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit">
+            Filtrovat
+          </button>
+
+          <a
+            class="btn-link"
+            href="{% url 'shop_staff:order_list' %}"
+          >
+            Zrušit filtr
+          </a>
+        </div>
+
+      </div>
+    </form>
+
+    {% if orders %}
+      <div class="table-responsive">
+        <table class="table shop-order-table">
+          <thead>
+            <tr>
+              <th>Objednávka</th>
+              <th>Zákazník</th>
+              <th>Položky</th>
+              <th>Celkem</th>
+              <th>Objednávka</th>
+              <th>Platba</th>
+              <th>Vyřízení</th>
+              <th>Akce</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for order in orders %}
+              <tr>
+                <td>
+                  <strong>{{ order.number }}</strong>
+
+                  <div class="small muted">
+                    {{ order.created_at|date:"j. n. Y H:i" }}
+                  </div>
+                </td>
+
+                <td>
+                  {{ order.customer_name }}
+
+                  <div class="small">
+                    {{ order.email }}
+                  </div>
+                </td>
+
+                <td>
+                  {{ order.item_count }}
+                </td>
+
+                <td>
+                  <strong>
+                    {{ order.total|floatformat:"-2" }} Kč
+                  </strong>
+                </td>
+
+                <td>
+                  {{ order.get_status_display }}
+                </td>
+
+                <td>
+                  {{ order.get_payment_status_display }}
+                </td>
+
+                <td>
+                  {{ order.get_fulfilment_status_display }}
+                </td>
+
+                <td class="actions">
+                  <a
+                    href="{% url 'shop_staff:order_detail' order.id %}"
+                  >
+                    Detail
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if page_obj.has_other_pages %}
+        <nav class="shop-admin-pagination">
+          {% if page_obj.has_previous %}
+            <a
+              href="?page={{ page_obj.previous_page_number }}&q={{ query|urlencode }}&status={{ selected_status|urlencode }}&payment_status={{ selected_payment_status|urlencode }}&fulfilment_status={{ selected_fulfilment_status|urlencode }}"
+            >
+              ← Předchozí
+            </a>
+          {% endif %}
+
+          <span>
+            Strana {{ page_obj.number }}
+            z {{ page_obj.paginator.num_pages }}
+          </span>
+
+          {% if page_obj.has_next %}
+            <a
+              href="?page={{ page_obj.next_page_number }}&q={{ query|urlencode }}&status={{ selected_status|urlencode }}&payment_status={{ selected_payment_status|urlencode }}&fulfilment_status={{ selected_fulfilment_status|urlencode }}"
+            >
+              Další →
+            </a>
+          {% endif %}
+        </nav>
+      {% endif %}
+
+    {% else %}
+      <div class="content-section shop-empty-state">
+        <h3>Nebyly nalezeny žádné objednávky</h3>
+
+        <p>
+          Změň filtr nebo vytvoř testovací objednávku.
+        </p>
+      </div>
+    {% endif %}
+
+  </div>
+{% endblock rozesilac_content %}
