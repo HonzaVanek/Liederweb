@@ -123,6 +123,8 @@ BOT_USER_AGENT_PARTS = (
     "visionheight",
     "jetpack",
     "wordpress.com",
+    "commoncrawl",
+    "forestengine",
 )
 
 BOT_REFERER_PARTS = (
@@ -135,26 +137,10 @@ BOT_EXACT_PATHS = (
     "/meta.json",
 )
 
-OBVIOUS_SCANNER_PARTS = (
-    # WordPress / PHP / shell skeny
-    "wp-admin",
-    "wp-login",
-    "wp-content",
-    "wp-includes",
-    "xmlrpc.php",
-    "install.php",
-    ".php",
+OBVIOUS_SCANNER_UA_PARTS = (
     "wp2shell",
+    "wp2shell-check",
     "cms-checker",
-
-    # env / git / config skeny
-    ".env",
-    ".git",
-    "backend/.env",
-    "storage/.env",
-    "settings/.env",
-
-    # podezřelé nástroje / fake UA
     "scrapy",
     "agency/",
     "mozlila/",
@@ -162,13 +148,33 @@ OBVIOUS_SCANNER_PARTS = (
     "moblie",
 )
 
-OWN_REFERER_HOSTS = (
+OBVIOUS_SCANNER_PATH_PARTS = (
+    "wp-admin",
+    "wp-login",
+    "wp-content",
+    "wp-includes",
+    "xmlrpc.php",
+    "install.php",
+    ".php",
+    ".env",
+    ".git",
+    "sftp-config.json",
+    "/.vscode/",
+)
+
+OBVIOUS_SCANNER_OWN_REFERER_PATH_PARTS = (
+    "/.env",
+    "/.git/",
+    "/wp-admin/",
+    "/wp-login.php",
+    "/xmlrpc.php",
+    "/install.php",
+)
+
+OWN_REFERER_DOMAINS = (
     "lieder-society.cz",
-    "www.lieder-society.cz",
     "liedersociety.cz",
-    "www.liedersociety.cz",
     "liedersociety.website",
-    "www.liedersociety.website",
 )
 
 SUSPICIOUS_OWN_REFERER_HOSTS = (
@@ -181,6 +187,10 @@ SEARCH_REFERER_PARTS = (
     "seznam.",
     "bing.",
     "duckduckgo.",
+    "yahoo.",
+    "ecosia.",
+    "startpage.",
+    "search.brave.",
 )
 
 logger = logging.getLogger("liederweb.traffic")
@@ -231,6 +241,9 @@ class SiteVisitStatsMiddleware:
 
         unique_paths = {hit["path"] for hit in hits}
 
+        if len(hits) >= 8:
+            return True
+
         if len(hits) >= 5 and len(unique_paths) >= 4:
             return True
 
@@ -238,7 +251,6 @@ class SiteVisitStatsMiddleware:
 
     def is_obvious_scanner(self, path, referer, user_agent):
         path_lower = (path or "").lower()
-        referer_lower = (referer or "").lower()
         ua_lower = (user_agent or "").strip().lower()
 
         # User-Agent nemá být URL.
@@ -246,9 +258,25 @@ class SiteVisitStatsMiddleware:
         if ua_lower.startswith("http://") or ua_lower.startswith("https://"):
             return True
 
-        haystack = f"{path_lower} {referer_lower} {ua_lower}"
+        # Jasně podezřelé User-Agenty.
+        if any(part in ua_lower for part in OBVIOUS_SCANNER_UA_PARTS):
+            return True
 
-        return any(part in haystack for part in OBVIOUS_SCANNER_PARTS)
+        # Jasně skenovací path.
+        if any(part in path_lower for part in OBVIOUS_SCANNER_PATH_PARTS):
+            return True
+
+        # Referer kontrolujeme opatrněji:
+        # vadí nám hlavně fake referer na citlivou URL NAŠÍ domény.
+        referer_host = self.get_referer_host(referer)
+
+        if self.is_own_referer_host(referer_host):
+            referer_lower = (referer or "").lower()
+
+            if any(part in referer_lower for part in OBVIOUS_SCANNER_OWN_REFERER_PATH_PARTS):
+                return True
+
+        return False
 
     def get_referer_host(self, referer):
         referer = (referer or "").strip()
@@ -268,36 +296,39 @@ class SiteVisitStatsMiddleware:
 
 
     def is_own_referer_host(self, host):
-        return host in OWN_REFERER_HOSTS or host in SUSPICIOUS_OWN_REFERER_HOSTS
+        host = (host or "").lower()
+
+        return any(
+            host == domain or host.endswith("." + domain)
+            for domain in OWN_REFERER_DOMAINS
+        )
 
 
     def is_search_referer_host(self, host):
+        host = (host or "").lower()
         return any(part in host for part in SEARCH_REFERER_PARTS)
 
 
     def remember_user_agent_client(self, user_agent, client_label):
         """
-        Vrací, z kolika různých clientů jsme dnes/poslední hodiny viděli
+        Vrací, z kolika různých clientů jsme dnes viděli
         úplně stejný User-Agent.
-
-        Když se jeden přesný UA objeví z mnoha různých IP/clientů,
-        je to silný signál automatizace.
         """
         ua_key = hashlib.sha256(
             (user_agent or "").strip().lower().encode("utf-8")
         ).hexdigest()[:16]
 
-        cache_key = f"traffic_ua_clients:{ua_key}"
+        today = timezone.localdate().isoformat()
+        cache_key = f"traffic_ua_clients:{today}:{ua_key}"
 
         clients = cache.get(cache_key, [])
 
         if client_label not in clients:
             clients.append(client_label)
 
-        # Ať cache zbytečně nebobtná.
         clients = clients[-300:]
 
-        cache.set(cache_key, clients, timeout=60 * 60 * 24)
+        cache.set(cache_key, clients, timeout=60 * 60 * 26)
 
         return len(set(clients))
 
@@ -501,9 +532,26 @@ class SiteVisitStatsMiddleware:
         visitor_label = visitor_hash[:8]
 
         is_bot_like = False
+        bot_like_reason = ""
+        disguised_score = 0
+        disguised_reasons = []
 
         if not is_known_bot:
-            is_bot_like = self.is_suspicious_rapid_visitor(client_label, path)
+            disguised_score, disguised_reasons = self.score_disguised_bot(
+                path,
+                referer_raw,
+                user_agent,
+                client_label,
+            )
+
+            if disguised_score >= 5:
+                is_bot_like = True
+                bot_like_reason = "disguised_iphone:" + ",".join(disguised_reasons)
+
+        if not is_known_bot and not is_bot_like:
+            if self.is_suspicious_rapid_visitor(client_label, path):
+                is_bot_like = True
+                bot_like_reason = "rapid_navigation"
 
         is_bot_for_traffic = is_known_bot or is_bot_like
 
@@ -517,6 +565,18 @@ class SiteVisitStatsMiddleware:
         )
 
         if is_bot_like:
+            logger.info(
+                "BOT_LIKE client=%s visitor=%s method=%s status=%s path=%s referer=%s reason=%s score=%s ua=%s",
+                client_label,
+                visitor_label,
+                request.method,
+                status_code,
+                path[:300],
+                referer,
+                bot_like_reason,
+                disguised_score,
+                user_agent[:300],
+            )
             return
 
         if is_known_bot:
