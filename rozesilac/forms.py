@@ -265,7 +265,8 @@ class SendCampaignForm(forms.Form):
         choices=[
             (email, f"{name} <{email}>")
             for email, name in settings.ALLOWED_FROM_EMAILS
-        ]
+        ],
+        initial=settings.NEWSLETTER_DEFAULT_FROM_EMAIL,
     )
 
     send_mode = forms.ChoiceField(

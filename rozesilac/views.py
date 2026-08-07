@@ -1047,7 +1047,7 @@ def send_single_delivery(campaign, delivery, base_url: str, from_email: str):
             body=rendered_text_body,
             from_email=from_email,
             to=[delivery.to_email],
-            reply_to=["info@liedersociety.cz"],
+            reply_to=[settings.NEWSLETTER_REPLY_TO_EMAIL],
         )
 
         msg.attach_alternative(rendered_html_body, "text/html")
@@ -1072,7 +1072,7 @@ def send_single_delivery(campaign, delivery, base_url: str, from_email: str):
             "htmlContent": rendered_html_body,
             "textContent": rendered_text_body,
             "replyTo": {
-                "email": "info@liedersociety.cz",
+                "email": settings.NEWSLETTER_REPLY_TO_EMAIL,
                 "name": "Lieder Society",
             },
         }

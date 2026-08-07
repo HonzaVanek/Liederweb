@@ -316,8 +316,9 @@ LOGOUT_REDIRECT_URL = '/core:login/'
 
 # na produkci mailgun pro registraci, Brevo pro rozesilac, na dev emaily do konzole
 
-NEWSLETTER_DEFAULT_FROM_EMAIL = "newsletter@liedersociety.cz"
-NEWSLETTER_BASE_URL = "https://liedersociety.website"
+NEWSLETTER_DEFAULT_FROM_EMAIL = "info@lieder-society.cz"
+NEWSLETTER_REPLY_TO_EMAIL = "info@lieder-society.cz"
+NEWSLETTER_BASE_URL = "https://lieder-society.cz"
 
 ANYMAIL = {
     "MAILGUN_API_KEY": os.environ.get("MAILGUN_API_KEY"),
@@ -326,6 +327,7 @@ ANYMAIL = {
 }
 
 ALLOWED_FROM_EMAILS = [
+    ("info@lieder-society.cz", "Lieder Society"),
     ("info@liedersociety.cz", "Lieder Society"),
     ("newsletter@liedersociety.cz", "Newsletter Lieder Society")
 ]
