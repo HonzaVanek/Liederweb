@@ -133,6 +133,33 @@ BOT_EXACT_PATHS = (
     "/meta.json",
 )
 
+OBVIOUS_SCANNER_PARTS = (
+    # WordPress / PHP / shell skeny
+    "wp-admin",
+    "wp-login",
+    "wp-content",
+    "wp-includes",
+    "xmlrpc.php",
+    "install.php",
+    ".php",
+    "wp2shell",
+    "cms-checker",
+
+    # env / git / config skeny
+    ".env",
+    ".git",
+    "backend/.env",
+    "storage/.env",
+    "settings/.env",
+
+    # podezřelé nástroje / fake UA
+    "scrapy",
+    "agency/",
+    "mozlila/",
+    "bulid/",
+    "moblie",
+)
+
 logger = logging.getLogger("liederweb.traffic")
 staff_audit_logger = logging.getLogger("liederweb.staff_audit")
 
@@ -185,6 +212,20 @@ class SiteVisitStatsMiddleware:
             return True
 
         return False
+
+    def is_obvious_scanner(self, path, referer, user_agent):
+        path_lower = (path or "").lower()
+        referer_lower = (referer or "").lower()
+        ua_lower = (user_agent or "").strip().lower()
+
+        # User-Agent nemá být URL.
+        # Typicky: ua=http://liedersociety.cz/wp-admin/install.php?step=1
+        if ua_lower.startswith("http://") or ua_lower.startswith("https://"):
+            return True
+
+        haystack = f"{path_lower} {referer_lower} {ua_lower}"
+
+        return any(part in haystack for part in OBVIOUS_SCANNER_PARTS)
 
     def is_scanner_path(self, path):
         path = path or ""
@@ -274,13 +315,15 @@ class SiteVisitStatsMiddleware:
             return
 
         user_agent = request.META.get("HTTP_USER_AGENT", "")[:500]
+        referer_raw = request.META.get("HTTP_REFERER", "")
+
         has_user_agent = bool(user_agent.strip())
 
         ip = self.get_client_ip(request)
         if not ip:
             return
 
-        referer = self.clean_referer(request.META.get("HTTP_REFERER", ""))[:300]
+        referer = self.clean_referer(referer_raw)[:300]
         today = timezone.localdate()
         status_code = response.status_code
 
@@ -290,8 +333,9 @@ class SiteVisitStatsMiddleware:
             or not has_user_agent
             or self.is_probably_bot(user_agent)
             or self.is_probably_bot_referer(referer)
+            or self.is_obvious_scanner(path, referer_raw, user_agent)
         )
-
+        
         raw_client_id = f"{today}|{ip}|{settings.SECRET_KEY}"
         client_hash = hashlib.sha256(raw_client_id.encode("utf-8")).hexdigest()
         client_label = client_hash[:8]
