@@ -121,6 +121,8 @@ BOT_USER_AGENT_PARTS = (
     "node-fetch",
     "builtwith",
     "visionheight",
+    "jetpack",
+    "wordpress.com",
 )
 
 BOT_REFERER_PARTS = (
@@ -158,6 +160,27 @@ OBVIOUS_SCANNER_PARTS = (
     "mozlila/",
     "bulid/",
     "moblie",
+)
+
+OWN_REFERER_HOSTS = (
+    "lieder-society.cz",
+    "www.lieder-society.cz",
+    "liedersociety.cz",
+    "www.liedersociety.cz",
+    "liedersociety.website",
+    "www.liedersociety.website",
+)
+
+SUSPICIOUS_OWN_REFERER_HOSTS = (
+    "m.liedersociety.cz",
+    "m.lieder-society.cz",
+)
+
+SEARCH_REFERER_PARTS = (
+    "google.",
+    "seznam.",
+    "bing.",
+    "duckduckgo.",
 )
 
 logger = logging.getLogger("liederweb.traffic")
@@ -226,6 +249,139 @@ class SiteVisitStatsMiddleware:
         haystack = f"{path_lower} {referer_lower} {ua_lower}"
 
         return any(part in haystack for part in OBVIOUS_SCANNER_PARTS)
+
+    def get_referer_host(self, referer):
+        referer = (referer or "").strip()
+
+        if not referer:
+            return ""
+
+        # Někteří boti posílají referer bez schématu:
+        # www.google.com místo https://www.google.com/
+        if "://" not in referer:
+            referer = "http://" + referer
+
+        try:
+            return urlsplit(referer).netloc.lower().split(":")[0]
+        except Exception:
+            return ""
+
+
+    def is_own_referer_host(self, host):
+        return host in OWN_REFERER_HOSTS or host in SUSPICIOUS_OWN_REFERER_HOSTS
+
+
+    def is_search_referer_host(self, host):
+        return any(part in host for part in SEARCH_REFERER_PARTS)
+
+
+    def remember_user_agent_client(self, user_agent, client_label):
+        """
+        Vrací, z kolika různých clientů jsme dnes/poslední hodiny viděli
+        úplně stejný User-Agent.
+
+        Když se jeden přesný UA objeví z mnoha různých IP/clientů,
+        je to silný signál automatizace.
+        """
+        ua_key = hashlib.sha256(
+            (user_agent or "").strip().lower().encode("utf-8")
+        ).hexdigest()[:16]
+
+        cache_key = f"traffic_ua_clients:{ua_key}"
+
+        clients = cache.get(cache_key, [])
+
+        if client_label not in clients:
+            clients.append(client_label)
+
+        # Ať cache zbytečně nebobtná.
+        clients = clients[-300:]
+
+        cache.set(cache_key, clients, timeout=60 * 60 * 24)
+
+        return len(set(clients))
+
+
+    def score_disguised_bot(self, path, referer_raw, user_agent, client_label):
+        """
+        Citlivé skórování maskovaných botů.
+
+        Důležité:
+        - týká se jen konkrétního masového vzorce iPhone OS 13_2_3,
+        - samotný starý iPhone nestačí,
+        - samotná homepage nestačí,
+        - samotný vlastní referer nestačí,
+        - landing/detail stránky mají projít.
+        """
+        score = 0
+        reasons = []
+
+        path = path or ""
+        ua = (user_agent or "").strip().lower()
+        host = self.get_referer_host(referer_raw)
+
+        is_old_iphone_13 = (
+            "iphone os 13_2_3" in ua
+            and "safari/604.1" in ua
+        )
+
+        # Tohle je klíčové:
+        # Pokud to není ten konkrétní podezřelý iPhone UA,
+        # skórovací mechanismus se na request vůbec nepoužije.
+        if not is_old_iphone_13:
+            return 0, []
+
+        is_homepage = path == "/"
+        is_own_referer = self.is_own_referer_host(host)
+        is_suspicious_own_referer = host in SUSPICIOUS_OWN_REFERER_HOSTS
+        is_search_referer = self.is_search_referer_host(host)
+
+        # Slabý signál. Sám o sobě nestačí.
+        score += 1
+        reasons.append("old_iphone_13_2_3")
+
+        # Tenhle konkrétní masový vzorec.
+        if is_homepage and is_own_referer:
+            score += 2
+            reasons.append("old_iphone_self_ref_homepage")
+
+        # m.liedersociety.cz / m.lieder-society.cz,
+        # pokud takovou mobilní subdoménu reálně nepoužíváte.
+        if is_suspicious_own_referer:
+            score += 2
+            reasons.append("suspicious_mobile_subdomain_referer")
+
+        # Stejný přesný UA z mnoha různých clientů za den.
+        ua_client_count = self.remember_user_agent_client(user_agent, client_label)
+
+        if ua_client_count >= 10:
+            score += 3
+            reasons.append(f"same_ua_many_clients:{ua_client_count}")
+        elif ua_client_count >= 5:
+            score += 1
+            reasons.append(f"same_ua_some_clients:{ua_client_count}")
+
+        # Google/Seznam/Bing/DuckDuckGo referer je dobrý signál.
+        if is_search_referer:
+            score -= 2
+            reasons.append("search_referer")
+
+        # Nechceme vyhazovat člověka, který otevře konkrétní stránku a odejde.
+        if path != "/":
+            score -= 1
+            reasons.append("non_homepage")
+
+        # Důležité veřejné stránky chráníme ještě víc.
+        if (
+            path.startswith("/agnes-tyrrell/")
+            or path.startswith("/events/")
+            or path.startswith("/lide/")
+            or path.startswith("/objevujte/")
+        ):
+            score -= 1
+            reasons.append("important_public_page")
+
+        return max(score, 0), reasons
 
     def is_scanner_path(self, path):
         path = path or ""
