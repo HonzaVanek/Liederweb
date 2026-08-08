@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from .models import Product, ProductVariant, Order
+from .models import Product, ProductVariant, Order, ShippingMethod
 from .cart import SessionCart
 
 class ProductForm(forms.ModelForm):
@@ -235,6 +235,14 @@ class CheckoutForm(forms.Form):
         required=True,
     )
 
+    shipping_method = forms.ModelChoiceField(
+        label="Způsob dopravy",
+        queryset=ShippingMethod.objects.none(),
+        required=False,
+        empty_label=None,
+        widget=forms.RadioSelect,
+    )
+
     def __init__(
         self,
         *args,
@@ -250,6 +258,23 @@ class CheckoutForm(forms.Form):
             self.fields.pop("address_line2")
             self.fields.pop("city")
             self.fields.pop("postal_code")
+
+        if requires_shipping:
+            self.fields["shipping_method"].required = True
+            self.fields["shipping_method"].queryset = (
+                ShippingMethod.objects
+                .filter(is_active=True)
+                .order_by("sort_order", "name")
+            )
+
+            self.fields["shipping_method"].label_from_instance = (
+                lambda method: (
+                    f"{method.name} – "
+                    f"{method.price:.2f} Kč"
+                )
+            )
+        else:
+            self.fields.pop("shipping_method")
 
     def clean_postal_code(self):
         postal_code = self.cleaned_data["postal_code"]
@@ -390,3 +415,28 @@ class CancelOrderForm(forms.Form):
             }
         ),
     )
+
+
+
+class ShippingMethodForm(forms.ModelForm):
+    class Meta:
+        model = ShippingMethod
+        fields = (
+            "name",
+            "code",
+            "method_type",
+            "price",
+            "is_active",
+            "sort_order",
+        )
+        widgets = {
+            "price": forms.NumberInput(
+                attrs={
+                    "step": "0.01",
+                    "min": "0",
+                }
+            ),
+            "sort_order": forms.NumberInput(
+                attrs={"min": "0"}
+            ),
+        }

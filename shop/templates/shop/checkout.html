@@ -124,6 +124,22 @@
           </section>
         {% endif %}
 
+        {% if cart.requires_shipping %}
+          <section class="shop-checkout-section">
+            <h2>Doprava</h2>
+
+            {% if form.shipping_method.errors %}
+              <div class="form-errors">
+                {{ form.shipping_method.errors }}
+              </div>
+            {% endif %}
+
+            <div class="shop-shipping-methods">
+              {{ form.shipping_method }}
+            </div>
+          </section>
+        {% endif %}
+
         <section class="shop-checkout-section">
           <h2>Poznámka</h2>
 

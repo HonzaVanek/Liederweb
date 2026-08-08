@@ -7,6 +7,10 @@ Objednané položky:
 - {{ item.product_name }} – {{ item.variant_name }}, {{ item.quantity }} ks, {{ item.line_total }} Kč
 {% endfor %}
 
+{% if order.requires_shipping %}
+Doprava: {{ order.shipping_method_name }} – {{ order.shipping_price }} Kč
+{% endif %}
+
 Celkem k úhradě: {{ order.total }} Kč
 
 Číslo účtu: {{ invoice.bank_account }}

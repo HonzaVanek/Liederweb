@@ -367,6 +367,23 @@ class Order(models.Model):
         blank=True,
     )
 
+    shipping_method = models.ForeignKey(
+        "ShippingMethod",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    shipping_method_name = models.CharField(
+        max_length=120,
+        blank=True,
+    )
+
+    shipping_method_code = models.CharField(
+        max_length=50,
+        blank=True,
+    )
+
     class Meta:
         ordering = ("-created_at",)
         verbose_name = "objednávka"
@@ -688,3 +705,52 @@ class Invoice(models.Model):
 
         self.number = number
         return number
+
+
+
+class ShippingMethod(models.Model):
+    class MethodType(models.TextChoices):
+        ADDRESS = "address", "Doručení na adresu"
+        PICKUP_POINT = "pickup_point", "Výdejní místo"
+        PERSONAL = "personal", "Osobní převzetí"
+
+    name = models.CharField(
+        "název",
+        max_length=120,
+    )
+
+    code = models.SlugField(
+        "kód",
+        max_length=50,
+        unique=True,
+    )
+
+    method_type = models.CharField(
+        "typ dopravy",
+        max_length=30,
+        choices=MethodType.choices,
+    )
+
+    price = models.DecimalField(
+        "cena",
+        max_digits=10,
+        decimal_places=2,
+    )
+
+    is_active = models.BooleanField(
+        "aktivní",
+        default=True,
+    )
+
+    sort_order = models.PositiveIntegerField(
+        "pořadí",
+        default=0,
+    )
+
+    class Meta:
+        ordering = ("sort_order", "name")
+        verbose_name = "způsob dopravy"
+        verbose_name_plural = "způsoby dopravy"
+
+    def __str__(self):
+        return self.name

@@ -1,0 +1,93 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'shop/shop_staff.css' %}">
+{% endblock %}
+
+{% block title %}E-shop | Doprava{% endblock %}
+
+{% block rozesilac_content %}
+<div class="shop-admin-page">
+
+  <div class="admin-page-header">
+    <div>
+      <h2>Doprava</h2>
+      <p class="muted">
+        Způsoby dopravy nabízené zákazníkům v e-shopu.
+      </p>
+    </div>
+
+    <div class="top-action">
+      <a href="{% url 'shop_staff:shipping_method_create' %}">
+        Přidat způsob dopravy
+      </a>
+    </div>
+  </div>
+
+  {% if shipping_methods %}
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Název</th>
+            <th>Typ</th>
+            <th>Kód</th>
+            <th>Cena</th>
+            <th>Aktivní</th>
+            <th>Pořadí</th>
+            <th></th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for method in shipping_methods %}
+            <tr>
+              <td>
+                <strong>{{ method.name }}</strong>
+              </td>
+
+              <td>
+                {{ method.get_method_type_display }}
+              </td>
+
+              <td>
+                <code>{{ method.code }}</code>
+              </td>
+
+              <td>
+                {{ method.price|floatformat:"-2" }} Kč
+              </td>
+
+              <td>
+                {% if method.is_active %}
+                  Ano
+                {% else %}
+                  Ne
+                {% endif %}
+              </td>
+
+              <td>
+                {{ method.sort_order }}
+              </td>
+
+              <td>
+                <a href="{% url 'shop_staff:shipping_method_edit' method.id %}">
+                  Upravit
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  {% else %}
+    <div class="content-section">
+      <p>Zatím nejsou nastavené žádné způsoby dopravy.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

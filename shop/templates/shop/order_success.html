@@ -62,14 +62,21 @@
         {% endfor %}
       </div>
 
+      {% if order.requires_shipping %}
+        <div>
+          <span>Doprava</span>
+          <span>
+            {{ order.shipping_method_name }}
+            – {{ order.shipping_price|floatformat:"-2" }} Kč
+          </span>
+        </div>
+      {% endif %}
+
       <div class="shop-order-success__total">
         <span>Celkem</span>
-
-        <strong>
-          {{ order.total|floatformat:"-2" }} Kč
-        </strong>
+        <strong>{{ order.total|floatformat:"-2" }} Kč</strong>
       </div>
-
+      
       {% if payment_data %}
         <section class="shop-payment-instructions">
           <div class="shop-payment-instructions__content">

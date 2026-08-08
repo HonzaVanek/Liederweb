@@ -10,8 +10,8 @@ from django.views.decorators.http import require_POST
 from .decorators import shop_public_or_staff_preview
 from core.decorators import staff_required
 from .cart import CartQuantityError, SessionCart
-from .forms import ProductForm, ProductVariantFormSet, AddToCartForm, CartQuantityForm, CheckoutForm, CancelOrderForm, StaffOrderStateForm
-from .models import Product, ProductVariant, Order
+from .forms import ProductForm, ProductVariantFormSet, AddToCartForm, CartQuantityForm, CheckoutForm, CancelOrderForm, StaffOrderStateForm, ShippingMethodForm
+from .models import Product, ProductVariant, Order, ShippingMethod
 from .services.checkout import CheckoutError, create_order_from_cart
 from .services.orders import OrderManagementError, update_order_states, cancel_order
 from .services.payments import get_bank_transfer_payment_data
@@ -747,3 +747,85 @@ def staff_order_invoice_pdf(request, order_id):
     )
 
     return _invoice_pdf_response(order.invoice)
+
+
+@staff_required
+def staff_shipping_method_list(request):
+    shipping_methods = ShippingMethod.objects.all()
+
+    return render(
+        request,
+        "shop/staff_shipping_method_list.html",
+        {
+            "shipping_methods": shipping_methods,
+        },
+    )
+
+
+@staff_required
+def staff_shipping_method_create(request):
+    if request.method == "POST":
+        form = ShippingMethodForm(request.POST)
+
+        if form.is_valid():
+            shipping_method = form.save()
+
+            messages.success(
+                request,
+                f'Doprava „{shipping_method.name}“ byla vytvořena.',
+            )
+
+            return redirect(
+                "shop_staff:shipping_method_list"
+            )
+    else:
+        form = ShippingMethodForm()
+
+    return render(
+        request,
+        "shop/staff_shipping_method_form.html",
+        {
+            "form": form,
+            "page_title": "Nový způsob dopravy",
+        },
+    )
+
+
+@staff_required
+def staff_shipping_method_edit(request, shipping_method_id):
+    shipping_method = get_object_or_404(
+        ShippingMethod,
+        id=shipping_method_id,
+    )
+
+    if request.method == "POST":
+        form = ShippingMethodForm(
+            request.POST,
+            instance=shipping_method,
+        )
+
+        if form.is_valid():
+            shipping_method = form.save()
+
+            messages.success(
+                request,
+                f'Doprava „{shipping_method.name}“ byla upravena.',
+            )
+
+            return redirect(
+                "shop_staff:shipping_method_list"
+            )
+    else:
+        form = ShippingMethodForm(
+            instance=shipping_method,
+        )
+
+    return render(
+        request,
+        "shop/staff_shipping_method_form.html",
+        {
+            "form": form,
+            "shipping_method": shipping_method,
+            "page_title": "Upravit způsob dopravy",
+        },
+    )

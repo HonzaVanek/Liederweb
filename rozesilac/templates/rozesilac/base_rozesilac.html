@@ -101,20 +101,20 @@
       {% with match=request.resolver_match %}
          <nav class="rozesilac-nav">
 
-            <a
-            href="{% url 'shop_staff:product_list' %}"
-            class="{% if match.namespace == 'shop_staff' and 'product' in match.url_name %}active{% endif %}"
-            >
+            <a href="{% url 'shop_staff:product_list' %}"
+            class="{% if match.namespace == 'shop_staff' and 'product' in match.url_name %}active{% endif %}">
             Produkty
             </a>
 
-            <a
-            href="{% url 'shop_staff:order_list' %}"
-            class="{% if match.namespace == 'shop_staff' and 'order' in match.url_name %}active{% endif %}"
-            >
+            <a href="{% url 'shop_staff:order_list' %}"
+            class="{% if match.namespace == 'shop_staff' and 'order' in match.url_name %}active{% endif %}">
             Objednávky
             </a>
 
+            <a href="{% url 'shop_staff:shipping_method_list' %}"
+            class="{% if request.resolver_match.namespace == 'shop_staff' and 'shipping_method' in request.resolver_match.url_name %}active{% endif %}">
+            Doprava
+            </a>
          </nav>
       {% endwith %}
       </div>

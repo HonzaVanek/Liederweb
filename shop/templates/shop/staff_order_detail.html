@@ -123,6 +123,13 @@
                 {{ order.country }}
               </dd>
             </div>
+
+            <div>
+              <dt>Způsob dopravy</dt>
+              <dd>
+                {{ order.shipping_method_name|default:"—" }}
+              </dd>
+            </div>
           {% endif %}
 
           <div>
@@ -219,6 +226,8 @@
         </table>
       </div>
 
+      
+
       <div class="shop-order-totals">
         <div>
           <span>Mezisoučet</span>
@@ -227,12 +236,22 @@
           </strong>
         </div>
 
-        <div>
-          <span>Doprava</span>
-          <strong>
-            {{ order.shipping_price|floatformat:"-2" }} Kč
-          </strong>
-        </div>
+        {% if order.requires_shipping %}
+          <div>
+            <span>
+              Doprava
+              {% if order.shipping_method_name %}
+                <small class="muted">
+                  ({{ order.shipping_method_name }})
+                </small>
+              {% endif %}
+            </span>
+
+            <strong>
+              {{ order.shipping_price|floatformat:"-2" }} Kč
+            </strong>
+          </div>
+        {% endif %}
 
         <div>
           <span>Celkem</span>

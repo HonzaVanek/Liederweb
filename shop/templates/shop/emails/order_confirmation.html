@@ -45,6 +45,15 @@
         {% endfor %}
       </table>
 
+
+      {% if order.requires_shipping %}
+        <p>
+          Doprava:
+          <strong>{{ order.shipping_method_name }}</strong>
+          – {{ order.shipping_price|floatformat:"-2" }} Kč
+        </p>
+      {% endif %}
+
       <p style="font-size:18px;">
         Celkem k úhradě:
         <strong>{{ order.total|floatformat:"-2" }} Kč</strong>
