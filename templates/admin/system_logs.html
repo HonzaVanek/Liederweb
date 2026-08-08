@@ -130,6 +130,167 @@
 </div>
 
 
+{% if traffic_audit %}
+<section class="traffic-audit">
+  <h2>Audit návštěvnosti</h2>
+
+  <p class="help">
+    Technický přehled z posledních {{ scan_lines }} řádků traffic logu.
+    Slouží pro ladění filtrů botů.
+  </p>
+
+  <div class="traffic-audit-grid">
+    <div class="traffic-audit-card">
+      <h3>Typy záznamů</h3>
+      <table>
+        {% for label, count in traffic_audit.kind_counts %}
+          <tr>
+            <td>{{ label }}</td>
+            <td>{{ count }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="traffic-audit-card">
+      <h3>BOT_LIKE důvody</h3>
+      <table>
+        {% for label, count in traffic_audit.bot_like_reasons %}
+          <tr>
+            <td>{{ label }}</td>
+            <td>{{ count }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="2">Nic.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="traffic-audit-card">
+      <h3>VISIT stránky</h3>
+      <table>
+        {% for path, count in traffic_audit.visit_paths %}
+          <tr>
+            <td><code>{{ path }}</code></td>
+            <td>{{ count }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="traffic-audit-card">
+      <h3>404 pathy</h3>
+      <table>
+        {% for path, count in traffic_audit.not_found_paths %}
+          <tr>
+            <td><code>{{ path }}</code></td>
+            <td>{{ count }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="2">Nic.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <h3>Stejný User-Agent z mnoha clientů</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Clientů</th>
+        <th>User-Agent</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in traffic_audit.ua_many_clients %}
+        <tr>
+          <td>{{ row.client_count }}</td>
+          <td><code>{{ row.ua }}</code></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="2">Nic podezřelého.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Clienti s mnoha User-Agenty</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Počet UA</th>
+        <th>Ukázka</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in traffic_audit.clients_many_uas %}
+        <tr>
+          <td><code>{{ row.client }}</code></td>
+          <td>{{ row.ua_count }}</td>
+          <td>
+            {% for ua in row.sample_uas %}
+              <div><code>{{ ua }}</code></div>
+            {% endfor %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="3">Nic podezřelého.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Clienti, kteří mají VISIT i BOT_LIKE</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Typy</th>
+        <th>Počet UA</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in traffic_audit.mixed_clients %}
+        <tr>
+          <td><code>{{ row.client }}</code></td>
+          <td>{{ row.kinds }}</td>
+          <td>{{ row.ua_count }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="3">Nic.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Podezřelé VISIT řádky</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Čas</th>
+        <th>Client</th>
+        <th>Path</th>
+        <th>Důvod</th>
+        <th>User-Agent</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in traffic_audit.suspicious_visits %}
+        <tr>
+          <td>{{ row.time }}</td>
+          <td><code>{{ row.client }}</code></td>
+          <td><code>{{ row.path }}</code></td>
+          <td>{{ row.reasons }}</td>
+          <td><code>{{ row.ua }}</code></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">Nic podezřelého.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% elif traffic_audit_error %}
+  <p class="error">Audit návštěvnosti se nepodařilo načíst: {{ traffic_audit_error }}</p>
+{% endif %}
+
 {% if error_message %}
     <p class="errornote">{{ error_message }}</p>
 {% endif %}
@@ -206,6 +367,37 @@
 
     .stats-table-scroll td code {
         white-space: nowrap;
+    }
+
+    .traffic-audit {
+        margin: 24px 0;
+        padding: 16px;
+        border: 1px solid var(--hairline-color, #ddd);
+        border-radius: 8px;
+        background: var(--darkened-bg, #f8f8f8);
+    }
+
+    .traffic-audit-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .traffic-audit-card {
+        padding: 12px;
+        border: 1px solid var(--hairline-color, #ddd);
+        border-radius: 6px;
+        background: var(--body-bg, #fff);
+    }
+
+    .traffic-audit table {
+        width: 100%;
+    }
+
+    .traffic-audit td code {
+        white-space: normal;
+        word-break: break-word;
     }
 </style>
 

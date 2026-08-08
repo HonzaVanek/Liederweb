@@ -125,6 +125,9 @@ BOT_USER_AGENT_PARTS = (
     "wordpress.com",
     "commoncrawl",
     "forestengine",
+    "cms scanner",
+    "wordpress cms scanner",
+    "wpscan",
 )
 
 BOT_REFERER_PARTS = (
@@ -421,6 +424,9 @@ class SiteVisitStatsMiddleware:
         if path_lower in BOT_EXACT_PATHS:
             return True
 
+        if path_lower == "/wp-json" or path_lower.startswith("/wp-json/"):
+            return True
+
         if (
             path_lower == "/.env"
             or path_lower.endswith("/.env")
@@ -485,6 +491,18 @@ class SiteVisitStatsMiddleware:
         return any(path_lower.startswith(prefix) for prefix in scanner_prefixes)
 
 
+    def get_sticky_bot_like_reason(self, client_label):
+        return cache.get(f"traffic_bot_like_client:{client_label}")
+
+
+    def mark_sticky_bot_like_client(self, client_label, reason):
+        cache.set(
+            f"traffic_bot_like_client:{client_label}",
+            reason or "bot_like",
+            timeout=60 * 30,
+        )
+
+
     def track_visit(self, request, response):
         path = request.path or ""
 
@@ -533,10 +551,18 @@ class SiteVisitStatsMiddleware:
 
         is_bot_like = False
         bot_like_reason = ""
+        should_mark_sticky_bot_like = False
         disguised_score = 0
         disguised_reasons = []
 
         if not is_known_bot:
+            sticky_reason = self.get_sticky_bot_like_reason(client_label)
+
+            if sticky_reason:
+                is_bot_like = True
+                bot_like_reason = "sticky:" + sticky_reason
+
+        if not is_known_bot and not is_bot_like:
             disguised_score, disguised_reasons = self.score_disguised_bot(
                 path,
                 referer_raw,
@@ -546,11 +572,13 @@ class SiteVisitStatsMiddleware:
 
             if disguised_score >= 5:
                 is_bot_like = True
+                should_mark_sticky_bot_like = True
                 bot_like_reason = "disguised_iphone:" + ",".join(disguised_reasons)
 
         if not is_known_bot and not is_bot_like:
             if self.is_suspicious_rapid_visitor(client_label, path):
                 is_bot_like = True
+                should_mark_sticky_bot_like = True
                 bot_like_reason = "rapid_navigation"
 
         is_bot_for_traffic = is_known_bot or is_bot_like
@@ -565,6 +593,9 @@ class SiteVisitStatsMiddleware:
         )
 
         if is_bot_like:
+            if should_mark_sticky_bot_like:
+                self.mark_sticky_bot_like_client(client_label, bot_like_reason)
+
             logger.info(
                 "BOT_LIKE client=%s visitor=%s method=%s status=%s path=%s referer=%s reason=%s score=%s ua=%s",
                 client_label,
@@ -757,6 +788,9 @@ class SiteVisitStatsMiddleware:
 
         if path_lower.endswith("sftp-config.json") or "/.vscode/" in path_lower:
             return "/__scan__/dev-config"
+
+        if path_lower == "/wp-json" or path_lower.startswith("/wp-json/"):
+            return "/__scan__/wp-json"
 
         scanner_prefixes = (
             "/wp-admin/",

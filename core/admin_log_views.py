@@ -2,6 +2,7 @@ from pathlib import Path
 import subprocess
 import re
 from datetime import datetime
+from collections import Counter, defaultdict
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponseForbidden
@@ -29,6 +30,23 @@ MAX_LINES = 10000
 IP_RE = re.compile(r"\bip=([0-9a-fA-F:.]+)")
 CLIENT_RE = re.compile(r"\bclient=([a-f0-9]{8})")
 VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
+
+TRAFFIC_KIND_RE = re.compile(r"\|\s+liederweb\.traffic\s+\|\s+(VISIT|BOT_LIKE)\s+")
+TRAFFIC_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
+
+TRAFFIC_FIELD_PATTERNS = {
+    "ip": re.compile(r"\bip=([^\s]+)"),
+    "client": re.compile(r"\bclient=([a-f0-9]{8})"),
+    "visitor": re.compile(r"\bvisitor=([a-f0-9]{8})"),
+    "method": re.compile(r"\bmethod=([A-Z]+)"),
+    "status": re.compile(r"\bstatus=(\d{3})"),
+    "path": re.compile(r"\bpath=([^\s]*)"),
+    "referer": re.compile(r"\breferer=([^\s]*)"),
+    "reason": re.compile(r"\breason=([^\s]*)"),
+    "score": re.compile(r"\bscore=([^\s]*)"),
+}
+
+UA_RE = re.compile(r"\bua=(.*)$")
 
 # Pravidelný healthcheck / monitoring přes python-requests.
 HEALTHCHECK_RE = re.compile(
@@ -226,6 +244,226 @@ def filter_log_lines_with_context(log_text, search_terms, context_lines, max_out
     return "\n".join(output_lines), match_count
 
 
+def parse_traffic_log_line(line):
+    kind_match = TRAFFIC_KIND_RE.search(line)
+
+    if not kind_match:
+        return None
+
+    item = {
+        "line": line,
+        "kind": kind_match.group(1),
+        "timestamp": None,
+        "ip": "",
+        "client": "",
+        "visitor": "",
+        "method": "",
+        "status": None,
+        "path": "",
+        "referer": "",
+        "reason": "",
+        "score": "",
+        "ua": "",
+    }
+
+    timestamp_match = TRAFFIC_TS_RE.search(line)
+    if timestamp_match:
+        try:
+            item["timestamp"] = datetime.strptime(
+                timestamp_match.group(1),
+                "%Y-%m-%d %H:%M:%S",
+            )
+        except ValueError:
+            pass
+
+    for key, pattern in TRAFFIC_FIELD_PATTERNS.items():
+        match = pattern.search(line)
+        if match:
+            item[key] = match.group(1)
+
+    ua_match = UA_RE.search(line)
+    if ua_match:
+        item["ua"] = ua_match.group(1).strip()
+
+    if item["status"]:
+        try:
+            item["status"] = int(item["status"])
+        except ValueError:
+            item["status"] = None
+
+    return item
+
+
+def shorten_text(value, max_length=160):
+    value = value or ""
+
+    if len(value) <= max_length:
+        return value
+
+    return value[:max_length - 1] + "…"
+
+
+def get_reason_family(reason):
+    reason = reason or ""
+
+    if not reason:
+        return "bez důvodu"
+
+    return reason.split(":", 1)[0]
+
+
+def build_traffic_audit(log_text):
+    items = []
+
+    for line in log_text.splitlines():
+        item = parse_traffic_log_line(line)
+
+        if item:
+            items.append(item)
+
+    kind_counts = Counter(item["kind"] for item in items)
+
+    bot_like_reasons = Counter(
+        get_reason_family(item["reason"])
+        for item in items
+        if item["kind"] == "BOT_LIKE"
+    )
+
+    visit_paths = Counter(
+        item["path"]
+        for item in items
+        if item["kind"] == "VISIT" and item["path"]
+    )
+
+    bot_like_paths = Counter(
+        item["path"]
+        for item in items
+        if item["kind"] == "BOT_LIKE" and item["path"]
+    )
+
+    not_found_paths = Counter(
+        item["path"]
+        for item in items
+        if item["status"] == 404 and item["path"]
+    )
+
+    ua_clients = defaultdict(set)
+    client_uas = defaultdict(set)
+    client_kinds = defaultdict(set)
+
+    suspicious_visits = []
+
+    for item in items:
+        ua = item["ua"]
+        client = item["client"]
+        kind = item["kind"]
+
+        if ua and client:
+            ua_clients[ua].add(client)
+            client_uas[client].add(ua)
+
+        if client:
+            client_kinds[client].add(kind)
+
+        if kind == "VISIT":
+            ua_lower = ua.lower()
+            path_lower = (item["path"] or "").lower()
+            referer = item["referer"] or ""
+
+            reasons = []
+
+            if "wordpress cms scanner" in ua_lower or "cms scanner" in ua_lower:
+                reasons.append("scanner_ua")
+
+            if path_lower == "/wp-json" or path_lower.startswith("/wp-json/"):
+                reasons.append("wp_json_path")
+
+            if path_lower == "/feed" or path_lower.startswith("/feed/"):
+                reasons.append("feed_path")
+
+            if not referer and "chrome/148" in ua_lower:
+                reasons.append("empty_referer_chrome_148")
+
+            if reasons:
+                suspicious_visits.append({
+                    "time": item["timestamp"],
+                    "client": client,
+                    "path": item["path"],
+                    "status": item["status"],
+                    "reasons": ", ".join(reasons),
+                    "ua": shorten_text(ua, 140),
+                    "line": item["line"],
+                })
+
+    ua_many_clients = [
+        {
+            "ua": shorten_text(ua, 160),
+            "client_count": len(clients),
+        }
+        for ua, clients in ua_clients.items()
+        if len(clients) >= 5
+    ]
+    ua_many_clients.sort(key=lambda row: row["client_count"], reverse=True)
+
+    clients_many_uas = [
+        {
+            "client": client,
+            "ua_count": len(uas),
+            "sample_uas": [shorten_text(ua, 90) for ua in list(uas)[:5]],
+        }
+        for client, uas in client_uas.items()
+        if len(uas) >= 4
+    ]
+    clients_many_uas.sort(key=lambda row: row["ua_count"], reverse=True)
+
+    mixed_clients = [
+        {
+            "client": client,
+            "kinds": ", ".join(sorted(kinds)),
+            "ua_count": len(client_uas.get(client, set())),
+        }
+        for client, kinds in client_kinds.items()
+        if "VISIT" in kinds and "BOT_LIKE" in kinds
+    ]
+    mixed_clients.sort(key=lambda row: row["ua_count"], reverse=True)
+
+    return {
+        "total_items": len(items),
+        "kind_counts": kind_counts.most_common(),
+        "bot_like_reasons": bot_like_reasons.most_common(10),
+        "visit_paths": visit_paths.most_common(15),
+        "bot_like_paths": bot_like_paths.most_common(15),
+        "not_found_paths": not_found_paths.most_common(15),
+        "ua_many_clients": ua_many_clients[:15],
+        "clients_many_uas": clients_many_uas[:15],
+        "mixed_clients": mixed_clients[:15],
+        "suspicious_visits": suspicious_visits[:30],
+    }
+
+
+def read_log_tail(log_path, lines, timeout=5):
+    if not log_path.exists():
+        return "", f"Soubor neexistuje: {log_path}"
+
+    try:
+        result = subprocess.run(
+            ["tail", "-n", str(lines), str(log_path)],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+
+        if result.returncode == 0:
+            return result.stdout, None
+
+        return "", result.stderr or "Log se nepodařilo načíst."
+
+    except subprocess.TimeoutExpired:
+        return "", "Čtení logu trvalo příliš dlouho."
+    except Exception as e:
+        return "", f"Chyba při čtení logu: {e}"
+
 @staff_member_required
 def system_logs_view(request):
     if not request.user.is_superuser:
@@ -337,6 +575,19 @@ def system_logs_view(request):
         )
 
     colored_log_lines = build_colored_log_lines(log_text)
+
+
+    traffic_audit = None
+    traffic_audit_error = None
+
+    if selected_log == "traffic":
+        traffic_audit_text, traffic_audit_error = read_log_tail(
+            LOG_FILES["traffic"],
+            min(scan_lines, 50000),
+        )
+
+        if traffic_audit_text:
+            traffic_audit = build_traffic_audit(traffic_audit_text)
 
     human_daily_stats = {
         row["day"]: row
@@ -456,5 +707,7 @@ def system_logs_view(request):
             "scan_lines": scan_lines,
             "search_active": search_active,
             "search_match_count": search_match_count,
+            "traffic_audit": traffic_audit,
+            "traffic_audit_error": traffic_audit_error,
         },
     )
