@@ -61,7 +61,7 @@
         </div>
 
         <div>
-          <dt>Upozornění staffu</dt>
+          <dt>Upozornění Liederyním</dt>
           <dd>
             {% if order.staff_notification_sent_at %}
               Odesláno
@@ -80,7 +80,7 @@
 
         {% if order.expires_at %}
           <div>
-            <dt>Expirace objednávky</dt>
+            <dt>Expirace objednávky (po uplynutí data bude stornována)</dt>
             <dd>
               {{ order.expires_at|date:"j. n. Y H:i" }}
             </dd>

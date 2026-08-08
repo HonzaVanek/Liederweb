@@ -26,6 +26,27 @@
         {% endif %}
       </p>
 
+      {% if order.requires_shipping %}
+        <div style="margin:20px 0;padding:18px;background:#f4f4f4;">
+          <p style="margin:0 0 8px;">
+            <strong>Doprava:</strong>
+            {{ order.shipping_method_name }}
+          </p>
+
+          <p style="margin:0;">
+            <strong>Doručovací adresa:</strong><br>
+            {{ order.address_line1 }}<br>
+
+            {% if order.address_line2 %}
+              {{ order.address_line2 }}<br>
+            {% endif %}
+
+            {{ order.postal_code }} {{ order.city }}<br>
+            {{ order.country }}
+          </p>
+        </div>
+      {% endif %}
+
       <table
         role="presentation"
         style="width:100%;border-collapse:collapse;margin:24px 0;"
@@ -48,9 +69,43 @@
             </td>
           </tr>
         {% endfor %}
+
+        {% if order.requires_shipping %}
+          <tr>
+            <td style="padding:10px 0;border-bottom:1px solid #ddd;">
+              <strong>Doprava</strong><br>
+
+              <span style="color:#666;">
+                {{ order.shipping_method_name }}
+              </span>
+            </td>
+
+            <td
+              style="padding:10px 0;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap;"
+            >
+              {{ order.shipping_price|floatformat:"-2" }} Kč
+            </td>
+          </tr>
+        {% endif %}
       </table>
 
-      <p style="font-size:18px;">
+      <p style="margin:0 0 6px;">
+        Mezisoučet:
+        <strong>
+          {{ order.subtotal|floatformat:"-2" }} Kč
+        </strong>
+      </p>
+
+      {% if order.requires_shipping %}
+        <p style="margin:0 0 6px;">
+          Doprava:
+          <strong>
+            {{ order.shipping_price|floatformat:"-2" }} Kč
+          </strong>
+        </p>
+      {% endif %}
+
+      <p style="font-size:18px;margin-top:12px;">
         Celkem:
         <strong>
           {{ order.total|floatformat:"-2" }} Kč

@@ -5,12 +5,26 @@ Zákazník:
 {{ order.email }}
 {% if order.phone %}{{ order.phone }}{% endif %}
 
+{% if order.requires_shipping %}
+Doprava:
+{{ order.shipping_method_name }} – {{ order.shipping_price }} Kč
+
+Doručovací adresa:
+{{ order.address_line1 }}
+{% if order.address_line2 %}{{ order.address_line2 }}
+{% endif %}{{ order.postal_code }} {{ order.city }}
+{{ order.country }}
+{% endif %}
+
 Položky:
 {% for item in order.items.all %}
 - {{ item.product_name }} – {{ item.variant_name }}, {{ item.quantity }} ks, {{ item.line_total }} Kč
 {% endfor %}
 
-Celkem: {{ order.total }} Kč
+Mezisoučet: {{ order.subtotal }} Kč
+{% if order.requires_shipping %}Doprava: {{ order.shipping_price }} Kč
+{% endif %}Celkem: {{ order.total }} Kč
+
 Způsob platby: {{ order.get_payment_method_display }}
 Stav platby: {{ order.get_payment_status_display }}
 
