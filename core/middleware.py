@@ -128,6 +128,15 @@ BOT_USER_AGENT_PARTS = (
     "cms scanner",
     "wordpress cms scanner",
     "wpscan",
+    "cms-security-auditor",
+    "security-auditor",
+    "tlm-audit-scanner",
+    "censysinspect",
+    "censys",
+    "shodan",
+    "zgrab",
+    "zgrabber",
+    "nuclei",
 )
 
 BOT_REFERER_PARTS = (
@@ -163,6 +172,7 @@ OBVIOUS_SCANNER_PATH_PARTS = (
     ".git",
     "sftp-config.json",
     "/.vscode/",
+    "sftp.json",
 )
 
 OBVIOUS_SCANNER_OWN_REFERER_PATH_PARTS = (
@@ -244,13 +254,39 @@ class SiteVisitStatsMiddleware:
 
         unique_paths = {hit["path"] for hit in hits}
 
-        if len(hits) >= 8:
+        if len(hits) >= 5:
             return True
 
-        if len(hits) >= 5 and len(unique_paths) >= 4:
+        if len(hits) >= 4 and len(unique_paths) >= 3:
             return True
 
         return False
+
+    def is_suspicious_ua_rotating_client(self, client_label, user_agent):
+        now_ts = int(timezone.now().timestamp())
+        ua = (user_agent or "").strip().lower()
+
+        if not ua:
+            return False
+
+        cache_key = f"traffic_client_uas:{client_label}"
+        hits = cache.get(cache_key, [])
+
+        hits = [
+            hit for hit in hits
+            if now_ts - hit["ts"] <= 5 * 60
+        ]
+
+        hits.append({
+            "ts": now_ts,
+            "ua": ua,
+        })
+
+        cache.set(cache_key, hits, timeout=10 * 60)
+
+        unique_uas = {hit["ua"] for hit in hits}
+
+        return len(unique_uas) >= 5
 
     def is_obvious_scanner(self, path, referer, user_agent):
         path_lower = (path or "").lower()
@@ -376,7 +412,7 @@ class SiteVisitStatsMiddleware:
 
         # Tenhle konkrétní masový vzorec.
         if is_homepage and is_own_referer:
-            score += 2
+            score += 4
             reasons.append("old_iphone_self_ref_homepage")
 
         # m.liedersociety.cz / m.lieder-society.cz,
@@ -485,7 +521,7 @@ class SiteVisitStatsMiddleware:
         if path_lower.endswith("wlwmanifest.xml"):
             return True
         
-        if ("/.env" in path_lower or path_lower.endswith("sftp-config.json") or "/.vscode/" in path_lower):
+        if ("/.env" in path_lower or path_lower.endswith("sftp-config.json") or path_lower.endswith("sftp.json") or "/.vscode/" in path_lower):
             return True
 
         return any(path_lower.startswith(prefix) for prefix in scanner_prefixes)
@@ -561,6 +597,13 @@ class SiteVisitStatsMiddleware:
             if sticky_reason:
                 is_bot_like = True
                 bot_like_reason = "sticky:" + sticky_reason
+
+
+        if not is_known_bot and not is_bot_like:
+            if self.is_suspicious_ua_rotating_client(client_label, user_agent):
+                is_bot_like = True
+                should_mark_sticky_bot_like = True
+                bot_like_reason = "ua_rotation"
 
         if not is_known_bot and not is_bot_like:
             disguised_score, disguised_reasons = self.score_disguised_bot(
@@ -786,7 +829,7 @@ class SiteVisitStatsMiddleware:
         if "/.env" in path_lower:
             return "/__scan__/.env"
 
-        if path_lower.endswith("sftp-config.json") or "/.vscode/" in path_lower:
+        if path_lower.endswith("sftp-config.json") or path_lower.endswith("sftp.json") or "/.vscode/" in path_lower:
             return "/__scan__/dev-config"
 
         if path_lower == "/wp-json" or path_lower.startswith("/wp-json/"):
