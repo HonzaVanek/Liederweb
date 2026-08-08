@@ -312,7 +312,7 @@ def get_reason_family(reason):
     return reason.split(":", 1)[0]
 
 
-def build_traffic_audit(log_text):
+def build_traffic_audit(log_text, since=None):
     items = []
 
     for line in log_text.splitlines():
@@ -320,6 +320,9 @@ def build_traffic_audit(log_text):
 
         if item:
             items.append(item)
+
+    if since is not None:
+        items = [item for item in items if item["timestamp"] is not None and item["timestamp"] >= since]
 
     kind_counts = Counter(item["kind"] for item in items)
 
@@ -488,6 +491,16 @@ def system_logs_view(request):
 
     search_query = request.GET.get("q", "").strip()
     around_time = request.GET.get("around_time", "").strip()
+    audit_since_raw = request.GET.get("audit_since", "").strip()
+    audit_since = None
+
+    if audit_since_raw:
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+            try:
+                audit_since = datetime.strptime(audit_since_raw, fmt)
+                break
+            except ValueError:
+                pass
 
     try:
         context_lines = int(request.GET.get("context_lines", 30))
@@ -587,7 +600,10 @@ def system_logs_view(request):
         )
 
         if traffic_audit_text:
-            traffic_audit = build_traffic_audit(traffic_audit_text)
+            traffic_audit = build_traffic_audit(
+                traffic_audit_text,
+                since=audit_since,
+            )
 
     human_daily_stats = {
         row["day"]: row
@@ -709,5 +725,6 @@ def system_logs_view(request):
             "search_match_count": search_match_count,
             "traffic_audit": traffic_audit,
             "traffic_audit_error": traffic_audit_error,
+            "audit_since": audit_since_raw,
         },
     )
