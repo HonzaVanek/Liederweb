@@ -273,6 +273,10 @@ class SiteVisitStatsMiddleware:
 
         unique_paths = {hit["path"] for hit in hits}
 
+
+        if len(hits) >= 3 and unique_paths == {"/"}:
+            return True
+
         if len(hits) >= 5:
             return True
 
@@ -353,10 +357,46 @@ class SiteVisitStatsMiddleware:
 
         ua_client_count = self.remember_user_agent_client(user_agent, client_label)
 
-        if ua_client_count >= 12 and (not host or self.is_own_referer_host(host)):
+        if ua_client_count >= 8 and (not host or self.is_own_referer_host(host)):
             return True, f"same_ua_many_clients:{ua_client_count}"
 
         return False, ""
+
+
+    def is_suspicious_rapid_identity_switch(self, client_label, path, referer_raw, user_agent):
+        now_ts = int(timezone.now().timestamp())
+        ua = (user_agent or "").strip().lower()
+        host = self.get_referer_host(referer_raw)
+
+        cache_key = f"traffic_identity_switch:{client_label}"
+        hits = cache.get(cache_key, [])
+
+        hits = [
+            hit for hit in hits
+            if now_ts - hit["ts"] <= 3
+        ]
+
+        hits.append({
+            "ts": now_ts,
+            "ua": ua,
+            "path": path or "",
+            "host": host,
+        })
+
+        cache.set(cache_key, hits, timeout=30)
+
+        unique_paths = {hit["path"] for hit in hits}
+        unique_uas = {hit["ua"] for hit in hits if hit["ua"]}
+        unique_hosts = {hit["host"] for hit in hits if hit["host"]}
+
+        if len(hits) >= 3 and unique_paths == {"/"}:
+            if len(unique_uas) >= 2:
+                return True
+
+            if len(unique_hosts) >= 2:
+                return True
+
+        return False
 
     def get_referer_host(self, referer):
         referer = (referer or "").strip()
@@ -666,6 +706,17 @@ class SiteVisitStatsMiddleware:
             if sticky_reason:
                 is_bot_like = True
                 bot_like_reason = "sticky:" + sticky_reason
+
+        if not is_known_bot and not is_bot_like:
+            if self.is_suspicious_rapid_identity_switch(
+                client_label,
+                path,
+                referer_raw,
+                user_agent,
+            ):
+                is_bot_like = True
+                should_mark_sticky_bot_like = True
+                bot_like_reason = "rapid_identity_switch"
 
 
         if not is_known_bot and not is_bot_like:
