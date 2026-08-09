@@ -137,6 +137,10 @@ BOT_USER_AGENT_PARTS = (
     "zgrab",
     "zgrabber",
     "nuclei",
+    "vuln_scanner",
+    "cve-",
+    "marketsizer",
+    "domainhealth",
 )
 
 BOT_REFERER_PARTS = (
@@ -182,6 +186,14 @@ OBVIOUS_SCANNER_OWN_REFERER_PATH_PARTS = (
     "/wp-login.php",
     "/xmlrpc.php",
     "/install.php",
+    "/wp-json/",
+    "/gravitysmtp/",
+    "/_ignition/",
+    "/_debugbar/",
+    "/telescope",
+    "/geoserver/",
+    "/users/sign_in",
+    "/login/index.php",
 )
 
 OWN_REFERER_DOMAINS = (
@@ -257,7 +269,7 @@ class SiteVisitStatsMiddleware:
         if len(hits) >= 5:
             return True
 
-        if len(hits) >= 4 and len(unique_paths) >= 3:
+        if len(hits) >= 3 and len(unique_paths) >= 3:
             return True
 
         return False
@@ -316,6 +328,25 @@ class SiteVisitStatsMiddleware:
                 return True
 
         return False
+
+    def is_suspicious_shared_user_agent(self, path, referer_raw, user_agent, client_label):
+        ua = (user_agent or "").strip().lower()
+
+        if not ua:
+            return False, ""
+
+        host = self.get_referer_host(referer_raw)
+
+        # Vyhledávač je dobrý signál, nechceme vyhodit reálného člověka ze Seznamu/Googlu.
+        if self.is_search_referer_host(host):
+            return False, ""
+
+        ua_client_count = self.remember_user_agent_client(user_agent, client_label)
+
+        if ua_client_count >= 12 and (not host or self.is_own_referer_host(host)):
+            return True, f"same_ua_many_clients:{ua_client_count}"
+
+        return False, ""
 
     def get_referer_host(self, referer):
         referer = (referer or "").strip()
@@ -405,6 +436,7 @@ class SiteVisitStatsMiddleware:
         is_own_referer = self.is_own_referer_host(host)
         is_suspicious_own_referer = host in SUSPICIOUS_OWN_REFERER_HOSTS
         is_search_referer = self.is_search_referer_host(host)
+        is_public_auth_path = path in ("/login/", "/registrace/", "/password-reset/")
 
         # Slabý signál. Sám o sobě nestačí.
         score += 1
@@ -414,6 +446,11 @@ class SiteVisitStatsMiddleware:
         if is_homepage and is_own_referer:
             score += 4
             reasons.append("old_iphone_self_ref_homepage")
+
+        #nová píčovina - leze z login/ a registrace/ a password-reset/ a není to z vyhledávače
+        if is_public_auth_path and not is_search_referer:
+            score += 5
+            reasons.append("old_iphone_auth_path")
 
         # m.liedersociety.cz / m.lieder-society.cz,
         # pokud takovou mobilní subdoménu reálně nepoužíváte.
@@ -617,6 +654,19 @@ class SiteVisitStatsMiddleware:
                 is_bot_like = True
                 should_mark_sticky_bot_like = True
                 bot_like_reason = "disguised_iphone:" + ",".join(disguised_reasons)
+
+        if not is_known_bot and not is_bot_like:
+            is_shared_ua, shared_ua_reason = self.is_suspicious_shared_user_agent(
+                path,
+                referer_raw,
+                user_agent,
+                client_label,
+            )
+
+            if is_shared_ua:
+                is_bot_like = True
+                should_mark_sticky_bot_like = True
+                bot_like_reason = "shared_ua:" + shared_ua_reason
 
         if not is_known_bot and not is_bot_like:
             if self.is_suspicious_rapid_visitor(client_label, path):
