@@ -34,9 +34,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document
       .querySelectorAll("[data-product-image-button]")
       .forEach((item) => {
-        item.classList.remove("is-active");
-      });
+        const isSameImage =
+          item.dataset.imageUrl === imageUrl;
 
-    button.classList.add("is-active");
+        item.classList.toggle(
+          "is-active",
+          isSameImage
+        );
+      });
   });
 });

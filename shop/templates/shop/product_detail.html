@@ -72,7 +72,7 @@
           {% endif %}
         </div>
 
-        {% if product.main_image or product.gallery_images %}
+        {% if product.main_image or product.gallery_images or product.visible_variants %}
           <div
             class="shop-product-detail__gallery"
             aria-label="Fotografie produktu"
@@ -94,6 +94,8 @@
               </button>
             {% endif %}
 
+
+           
             {% for product_image in product.gallery_images %}
               <button
                 type="button"
@@ -101,17 +103,42 @@
                 data-product-image-button
                 data-image-url="{{ product_image.image.file.url }}"
                 data-image-alt="{{ product_image.alt_text|default:product.name }}"
-                aria-label="Zobrazit další fotografii produktu"
+                aria-label="Zobrazit fotografii produktu"
               >
                 <img
                   src="{{ product_image.image.file.url }}"
                   alt=""
+                  loading="lazy"
                 >
               </button>
             {% endfor %}
 
+
+            {# Fotografie všech variant #}
+            {% for variant in product.visible_variants %}
+              {% for variant_image in variant.visible_images %}
+                <button
+                  type="button"
+                  class="shop-product-gallery-thumb"
+                  data-product-image-button
+                  data-image-url="{{ variant_image.image.file.url }}"
+                  data-image-alt="{{ variant_image.alt_text|default:variant.name }}"
+                  aria-label="Zobrazit fotografii varianty {{ variant.name }}"
+                  title="{{ variant.name }}"
+                >
+                  <img
+                    src="{{ variant_image.image.file.url }}"
+                    alt=""
+                    loading="lazy"
+                  >
+                </button>
+              {% endfor %}
+            {% endfor %}
+
           </div>
         {% endif %}
+
+    
 
       </div>
 
@@ -304,11 +331,9 @@
 
   </main>
 
-  {% block extra_js %}
-{{ block.super }}
-<script
-  src="{% static 'shop/product_detail.js' %}"
-  defer
-></script>
-{% endblock extra_js %}
 {% endblock content %}
+
+{% block extra_js %}
+  {{ block.super }}
+    <script src="{% static 'shop/product_detail.js' %}" defer></script>
+{% endblock extra_js %}

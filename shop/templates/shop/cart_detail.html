@@ -100,6 +100,7 @@
                   <form
                     method="post"
                     action="{% url 'shop:cart_update' item.variant.id %}"
+                    class="shop-cart-quantity-form"
                   >
                     {% csrf_token %}
 
@@ -119,7 +120,7 @@
                       >
                     </label>
 
-                    <button type="submit">
+                    <button type="submit" class="shop-cart-update-button">
                       Upravit
                     </button>
                   </form>
@@ -131,7 +132,7 @@
                 >
                   {% csrf_token %}
 
-                  <button type="submit">
+                  <button type="submit" class="shop-cart-remove-button">
                     Odebrat
                   </button>
                 </form>
@@ -148,12 +149,12 @@
         <aside class="shop-cart-summary">
           <h2>Souhrn</h2>
 
-          <div>
+          <div class="shop-cart-summary__row">
             <span>Počet položek</span>
             <strong>{{ cart|length }}</strong>
           </div>
 
-          <div>
+          <div class="shop-cart-summary__row shop-cart-summary__total">
             <span>Mezisoučet</span>
             <strong>
               {{ cart.total|floatformat:"-2" }} Kč

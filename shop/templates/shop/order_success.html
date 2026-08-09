@@ -28,27 +28,24 @@
     {% endif %}
 
     <section class="shop-order-success">
-      <p class="shop-eyebrow">
-        Objednávka byla vytvořena
-      </p>
+      <div class="shop-order-success__meta">
+        <p>
+          <span>Číslo objednávky</span>
+          <strong>{{ order.number }}</strong>
+        </p>
 
-      <h1>Děkujeme za objednávku</h1>
+        <p>
+          <span>E-mail</span>
+          <strong>{{ order.email }}</strong>
+        </p>
+      </div>
 
-      <p>
-        Číslo objednávky:
-        <strong>{{ order.number }}</strong>
-      </p>
-
-      <p>
-        Objednávku jsme uložili pro:
-        <strong>{{ order.email }}</strong>
-      </p>
 
       <div class="shop-order-success__items">
         <h2>Objednané položky</h2>
 
         {% for item in order.items.all %}
-          <div>
+          <div class="shop-order-success__item">
             <span>
               {{ item.product_name }}
               – {{ item.variant_name }}
@@ -63,12 +60,15 @@
       </div>
 
       {% if order.requires_shipping %}
-        <div>
-          <span>Doprava</span>
+        <div class="shop-order-success__shipping">
           <span>
-            {{ order.shipping_method_name }}
-            – {{ order.shipping_price|floatformat:"-2" }} Kč
+            Doprava
+            <small>{{ order.shipping_method_name }}</small>
           </span>
+
+          <strong>
+            {{ order.shipping_price|floatformat:"-2" }} Kč
+          </strong>
         </div>
       {% endif %}
 
@@ -143,6 +143,7 @@
       {% endif %}
 
       <a
+        class="shop-invoice-link"
         href="{% url 'shop:order_invoice_pdf' order.public_token %}"
         target="_blank"
         rel="noopener"
@@ -151,17 +152,19 @@
       </a>
 
       {% if order.confirmation_email_sent_at %}
-        <p>
+        <p class="shop-order-email-status shop-order-email-status--success">
           Potvrzení bylo odesláno
           {{ order.confirmation_email_sent_at|date:"j. n. Y H:i" }}.
         </p>
       {% elif order.confirmation_email_error %}
-        <p class="form-errors">
+        <p class="shop-order-email-status shop-order-email-status--error">
           E-mail se nepodařilo odeslat:
           {{ order.confirmation_email_error }}
         </p>
       {% else %}
-        <p>Potvrzovací e-mail zatím nebyl odeslán.</p>
+        <p class="shop-order-email-status">
+          Potvrzovací e-mail zatím nebyl odeslán.
+        </p>
       {% endif %}
 
       <a

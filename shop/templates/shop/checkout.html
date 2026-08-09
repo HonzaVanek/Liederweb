@@ -172,25 +172,39 @@
         </button>
       </form>
 
-      <aside class="shop-cart-summary">
+      <aside class="shop-cart-summary shop-order-summary">
         <h2>Souhrn objednávky</h2>
 
-        {% for item in cart_items %}
-          <div>
-            <span>
-              {{ item.variant.product.name }}
-              – {{ item.variant.name }}
-              × {{ item.quantity }}
-            </span>
+        <div class="shop-order-summary__items">
+          {% for item in cart_items %}
+            <div class="shop-order-summary__item">
 
-            <strong>
-              {{ item.subtotal|floatformat:"-2" }} Kč
-            </strong>
-          </div>
-        {% endfor %}
+              <div class="shop-order-summary__item-info">
+                <strong class="shop-order-summary__item-name">
+                  {{ item.variant.product.name }}
+                </strong>
 
-        <div>
-          <span>Celkem</span>
+                <span class="shop-order-summary__item-variant">
+                  {{ item.variant.name }}
+                </span>
+
+                <span class="shop-order-summary__item-calculation">
+                  {{ item.quantity }} ks
+                  ×
+                  {{ item.unit_price|floatformat:"-2" }} Kč
+                </span>
+              </div>
+
+              <strong class="shop-order-summary__item-price">
+                {{ item.subtotal|floatformat:"-2" }} Kč
+              </strong>
+
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="shop-order-summary__total">
+          <span>Mezisoučet</span>
 
           <strong>
             {{ cart.total|floatformat:"-2" }} Kč
@@ -198,8 +212,8 @@
         </div>
 
         {% if cart.requires_shipping %}
-          <p>
-            Cena dopravy zatím není připočtena.
+          <p class="shop-order-summary__shipping-note">
+            Cena dopravy bude připočtena podle zvoleného způsobu dopravy.
           </p>
         {% endif %}
       </aside>
