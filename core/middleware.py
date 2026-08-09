@@ -207,6 +207,10 @@ SUSPICIOUS_OWN_REFERER_HOSTS = (
     "m.lieder-society.cz",
 )
 
+ALLOWED_OWN_REFERER_SUBDOMAIN_LABELS = (
+    "www",
+)
+
 SEARCH_REFERER_PARTS = (
     "google.",
     "seznam.",
@@ -217,6 +221,9 @@ SEARCH_REFERER_PARTS = (
     "startpage.",
     "search.brave.",
 )
+
+
+
 
 logger = logging.getLogger("liederweb.traffic")
 staff_audit_logger = logging.getLogger("liederweb.staff_audit")
@@ -324,6 +331,9 @@ class SiteVisitStatsMiddleware:
         if self.is_own_referer_host(referer_host):
             referer_lower = (referer or "").lower()
 
+            if self.is_disallowed_own_referer_subdomain(referer_host):
+                return True
+
             if any(part in referer_lower for part in OBVIOUS_SCANNER_OWN_REFERER_PATH_PARTS):
                 return True
 
@@ -372,6 +382,28 @@ class SiteVisitStatsMiddleware:
             host == domain or host.endswith("." + domain)
             for domain in OWN_REFERER_DOMAINS
         )
+
+    def get_own_referer_subdomain_label(self, host):
+        host = (host or "").lower()
+
+        for domain in OWN_REFERER_DOMAINS:
+            suffix = "." + domain
+
+            if host.endswith(suffix):
+                subdomain = host[:-len(suffix)]
+
+                if subdomain:
+                    return subdomain
+
+        return ""
+
+    def is_disallowed_own_referer_subdomain(self, host):
+        label = self.get_own_referer_subdomain_label(host)
+
+        if not label:
+            return False
+
+        return label not in ALLOWED_OWN_REFERER_SUBDOMAIN_LABELS
 
 
     def is_search_referer_host(self, host):
