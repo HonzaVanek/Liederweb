@@ -86,6 +86,8 @@ BOT_USER_AGENT_PARTS = (
     "ccbot",
     "internetmeasurement",
     "internet-measurement",
+    "claude-user",
+    "anthropic",
 
     # social previeweři
     "facebookexternalhit",
@@ -281,6 +283,38 @@ class SiteVisitStatsMiddleware:
             return True
 
         if len(hits) >= 3 and len(unique_paths) >= 3:
+            return True
+
+        return False
+
+    def is_suspicious_homepage_identity_switch(self, client_label, path, referer_raw, user_agent):
+        if path != "/":
+            return False
+
+        now_ts = int(timezone.now().timestamp())
+        ua = (user_agent or "").strip().lower()
+        host = self.get_referer_host(referer_raw)
+
+        cache_key = f"traffic_homepage_identity:{client_label}"
+        hits = cache.get(cache_key, [])
+
+        hits = [
+            hit for hit in hits
+            if now_ts - hit["ts"] <= 90
+        ]
+
+        hits.append({
+            "ts": now_ts,
+            "ua": ua,
+            "host": host,
+        })
+
+        cache.set(cache_key, hits, timeout=120)
+
+        unique_uas = {hit["ua"] for hit in hits if hit["ua"]}
+        unique_hosts = {hit["host"] for hit in hits if hit["host"]}
+
+        if len(hits) >= 3 and len(unique_uas) >= 2 and len(unique_hosts) >= 2:
             return True
 
         return False
@@ -717,6 +751,17 @@ class SiteVisitStatsMiddleware:
                 is_bot_like = True
                 should_mark_sticky_bot_like = True
                 bot_like_reason = "rapid_identity_switch"
+
+        if not is_known_bot and not is_bot_like:
+            if self.is_suspicious_homepage_identity_switch(
+                client_label,
+                path,
+                referer_raw,
+                user_agent,
+            ):
+                is_bot_like = True
+                should_mark_sticky_bot_like = True
+                bot_like_reason = "homepage_identity_switch"
 
 
         if not is_known_bot and not is_bot_like:
