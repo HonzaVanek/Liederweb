@@ -2,8 +2,8 @@
   class="shop-variant-card"
   data-variant-form
 >
-  {% for hidden_field in variant_form.hidden_fields %}
-    {{ hidden_field }}
+  {% for hidden in variant_form.hidden_fields %}
+    {{ hidden }}
   {% endfor %}
 
   {% if variant_form.non_field_errors %}
@@ -13,7 +13,9 @@
   {% endif %}
 
   <div class="shop-variant-card__header">
-    <strong>Varianta</strong>
+    <strong>
+      Varianta
+    </strong>
 
     <button
       type="button"
@@ -24,7 +26,68 @@
     </button>
   </div>
 
+  {% if variant_form.instance.pk and variant_form.image_formset %}
+
+    <div
+      class="shop-variant-images"
+      data-variant-image-formset
+      data-prefix="{{ variant_form.image_formset.prefix }}"
+    >
+
+      <div class="shop-variant-images__header">
+        <div>
+          <strong>Fotografie varianty</strong>
+
+          <p class="small muted">
+            Přidejte fotografie konkrétní varianty.
+            Obrázek s nejnižším pořadím se zobrazí jako první.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          data-add-variant-image
+        >
+          + Přidat obrázek
+        </button>
+      </div>
+
+      {{ variant_form.image_formset.management_form }}
+
+      {% if variant_form.image_formset.non_form_errors %}
+        <div class="form-errors">
+          {{ variant_form.image_formset.non_form_errors }}
+        </div>
+      {% endif %}
+
+      <div data-variant-image-list>
+
+        {% for image_form in variant_form.image_formset %}
+          {% include "shop/includes/variant_image_form.html" with image_form=image_form %}
+        {% endfor %}
+
+      </div>
+
+      <template data-empty-variant-image-form>
+        {% include "shop/includes/variant_image_form.html" with image_form=variant_form.image_formset.empty_form %}
+      </template>
+
+    </div>
+
+  {% elif not variant_form.instance.pk %}
+
+    <div class="shop-variant-images shop-variant-images--pending">
+      <strong>Obrázky varianty</strong>
+
+      <p class="small muted">
+        Obrázky bude možné přidat po prvním uložení varianty.
+      </p>
+    </div>
+
+  {% endif %}
+
   <div class="shop-variant-grid shop-variant-grid--main">
+
     <div class="form-group">
       {{ variant_form.name.label_tag }}
       {{ variant_form.name }}
@@ -35,6 +98,12 @@
       {{ variant_form.sku.label_tag }}
       {{ variant_form.sku }}
       {{ variant_form.sku.errors }}
+
+      {% if variant_form.sku.help_text %}
+        <p class="small muted">
+          {{ variant_form.sku.help_text }}
+        </p>
+      {% endif %}
     </div>
 
     <div class="form-group">
@@ -48,9 +117,11 @@
       {{ variant_form.price }}
       {{ variant_form.price.errors }}
     </div>
+
   </div>
 
   <div class="shop-variant-grid shop-variant-grid--settings">
+
     <div class="shop-checkbox-field">
       {{ variant_form.track_stock }}
       {{ variant_form.track_stock.label_tag }}
@@ -74,6 +145,7 @@
       {{ variant_form.sort_order }}
       {{ variant_form.sort_order.errors }}
     </div>
+
   </div>
 
   <div class="shop-delete-field">

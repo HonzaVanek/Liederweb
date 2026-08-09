@@ -10,8 +10,25 @@ from django.views.decorators.http import require_POST
 from .decorators import shop_public_or_staff_preview
 from core.decorators import staff_required
 from .cart import CartQuantityError, SessionCart
-from .forms import ProductForm, ProductVariantFormSet, AddToCartForm, CartQuantityForm, CheckoutForm, CancelOrderForm, StaffOrderStateForm, ShippingMethodForm
-from .models import Product, ProductVariant, Order, ShippingMethod
+from .forms import (
+    ProductForm,
+    ProductVariantFormSet,
+    ProductVariantImageFormSet,
+    AddToCartForm,
+    CartQuantityForm,
+    CheckoutForm,
+    CancelOrderForm,
+    StaffOrderStateForm,
+    ShippingMethodForm,
+)
+from .models import (
+    Product,
+    ProductVariant,
+    ProductImage,
+    ProductVariantImage,
+    Order,
+    ShippingMethod,
+)
 from .services.checkout import CheckoutError, create_order_from_cart
 from .services.orders import OrderManagementError, update_order_states, cancel_order
 from .services.payments import get_bank_transfer_payment_data
@@ -58,6 +75,49 @@ def _public_product_queryset():
     )
 
 
+def _public_product_detail_queryset():
+    variant_images = (
+        ProductVariantImage.objects
+        .select_related("image")
+        .order_by("sort_order", "id")
+    )
+
+    product_images = (
+        ProductImage.objects
+        .select_related("image")
+        .order_by("sort_order", "id")
+    )
+
+    active_variants = (
+        ProductVariant.objects
+        .filter(is_active=True)
+        .prefetch_related(
+            Prefetch(
+                "images",
+                queryset=variant_images,
+                to_attr="visible_images",
+            )
+        )
+        .order_by("sort_order", "name")
+    )
+
+    return (
+        Product.objects
+        .select_related("main_image")
+        .prefetch_related(
+            Prefetch(
+                "variants",
+                queryset=active_variants,
+                to_attr="visible_variants",
+            ),
+            Prefetch(
+                "additional_images",
+                queryset=product_images,
+                to_attr="gallery_images",
+            ),
+        )
+    )
+
 @shop_public_or_staff_preview
 def shop_home(request):
     products = _public_product_queryset()
@@ -86,7 +146,7 @@ def shop_home(request):
 
 @shop_public_or_staff_preview
 def product_detail(request, slug):
-    products = _public_product_queryset()
+    products = _public_product_detail_queryset()
 
     if not request.user.is_staff:
         products = products.filter(is_published=True)
@@ -147,6 +207,33 @@ def staff_product_list(request):
         },
     )
 
+def _attach_variant_image_formsets(
+    variant_formset,
+    *,
+    data=None,
+):
+    image_formsets = []
+
+    for variant_form in variant_formset.forms:
+        variant = variant_form.instance
+
+        if not variant.pk:
+            variant_form.image_formset = None
+            continue
+
+        image_formset = ProductVariantImageFormSet(
+            data,
+            instance=variant,
+            prefix=f"variant-{variant.pk}-images",
+        )
+
+        variant_form.image_formset = image_formset
+        image_formsets.append(
+            (variant_form, image_formset)
+        )
+
+    return image_formsets
+
 
 @staff_required
 def staff_product_create(request):
@@ -174,7 +261,10 @@ def staff_product_create(request):
                 request,
                 f'Produkt „{product.name}“ byl vytvořen.',
             )
-            return redirect("shop_staff:product_list")
+            return redirect(
+                "shop_staff:product_edit",
+                product_id=product.id,
+            )
 
     else:
         form = ProductForm(instance=product)
@@ -199,7 +289,9 @@ def staff_product_create(request):
 @staff_required
 def staff_product_edit(request, product_id):
     product = get_object_or_404(
-        Product.objects.prefetch_related("variants"),
+        Product.objects.prefetch_related(
+            "variants__images__image",
+        ),
         id=product_id,
     )
 
@@ -208,28 +300,67 @@ def staff_product_edit(request, product_id):
             request.POST,
             instance=product,
         )
+
         variant_formset = ProductVariantFormSet(
             request.POST,
             instance=product,
             prefix="variants",
         )
 
-        if form.is_valid() and variant_formset.is_valid():
+        image_formsets = _attach_variant_image_formsets(
+            variant_formset,
+            data=request.POST,
+        )
+
+        form_valid = form.is_valid()
+        variants_valid = variant_formset.is_valid()
+
+        images_valid = True
+
+        if variants_valid:
+            for variant_form, image_formset in image_formsets:
+
+                # Pokud se celá varianta maže,
+                # její obrázky už nemusíme validovat.
+                if variant_form.cleaned_data.get("DELETE"):
+                    continue
+
+                if not image_formset.is_valid():
+                    images_valid = False
+
+        if form_valid and variants_valid and images_valid:
             with transaction.atomic():
                 product = form.save()
+
+                variant_formset.instance = product
                 variant_formset.save()
+
+                for variant_form, image_formset in image_formsets:
+                    if variant_form.cleaned_data.get("DELETE"):
+                        continue
+
+                    image_formset.save()
 
             messages.success(
                 request,
                 f'Produkt „{product.name}“ byl upraven.',
             )
-            return redirect("shop_staff:product_list")
+
+            return redirect(
+                "shop_staff:product_edit",
+                product_id=product.id,
+            )
 
     else:
         form = ProductForm(instance=product)
+
         variant_formset = ProductVariantFormSet(
             instance=product,
             prefix="variants",
+        )
+
+        _attach_variant_image_formsets(
+            variant_formset,
         )
 
     return render(

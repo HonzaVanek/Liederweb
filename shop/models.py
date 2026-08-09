@@ -146,7 +146,45 @@ class ProductImage(models.Model):
         return f"{self.product.name} – obrázek"
     
 
+class ProductVariantImage(models.Model):
+    variant = models.ForeignKey(
+        ProductVariant,
+        verbose_name="varianta",
+        on_delete=models.CASCADE,
+        related_name="images",
+    )
 
+    image = models.ForeignKey(
+        "media_assets.MediaAsset",
+        verbose_name="obrázek",
+        on_delete=models.PROTECT,
+        related_name="shop_product_variant_images",
+    )
+
+    alt_text = models.CharField(
+        "alternativní text",
+        max_length=250,
+        blank=True,
+    )
+
+    sort_order = models.PositiveIntegerField(
+        "pořadí",
+        default=0,
+    )
+
+    class Meta:
+        ordering = ("sort_order", "id")
+        verbose_name = "obrázek varianty produktu"
+        verbose_name_plural = "obrázky variant produktu"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("variant", "image"),
+                name="unique_shop_image_per_variant",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.variant} – obrázek"
 
 class Order(models.Model):
     class Status(models.TextChoices):

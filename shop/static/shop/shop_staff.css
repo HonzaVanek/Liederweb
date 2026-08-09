@@ -73,6 +73,90 @@
     gap: 16px;
 }
 
+.shop-variant-images {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid #e1e1e1;
+}
+
+.shop-variant-images__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 14px;
+}
+
+.shop-variant-images__header p {
+    margin: 4px 0 0;
+}
+
+.shop-variant-image-card {
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px solid #d9d9d9;
+    border-radius: 7px;
+    background: #fafafa;
+}
+
+.shop-variant-image-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.shop-variant-image-card__body {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.shop-variant-image-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 130px;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border: 1px solid #d4d4d4;
+    border-radius: 5px;
+    background: #f0f0f0;
+    color: #777;
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.shop-variant-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.shop-variant-image-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 100px;
+    gap: 0 14px;
+}
+
+.shop-variant-image-field--alt {
+    grid-column: 1 / -1;
+}
+
+.shop-variant-image-fields .form-group {
+    margin-bottom: 12px;
+}
+
+.shop-remove-variant-image {
+    padding: 6px 10px !important;
+    border-width: 1px !important;
+    font-size: 0.8rem !important;
+}
+
 .shop-variant-card {
     padding: 18px;
     border: 1px solid #d4d4d4;
@@ -337,4 +421,43 @@ body.dark-mode .shop-variant-card__header {
         flex-direction: column;
         gap: 4px;
     }
+
+    .shop-variant-image-card__body {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-variant-image-preview {
+        width: 110px;
+    }
+
+    .shop-variant-image-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-variant-image-field--alt {
+        grid-column: auto;
+    }
+}
+
+body.dark-mode .shop-variant-image-field {
+    border-bottom-color: #444;
+}
+
+body.dark-mode .shop-variant-images {
+    border-top-color: #444;
+}
+
+body.dark-mode .shop-variant-image-card {
+    background: #202020;
+    border-color: #444;
+}
+
+body.dark-mode .shop-variant-image-card__header {
+    border-bottom-color: #444;
+}
+
+body.dark-mode .shop-variant-image-preview {
+    background: #181818;
+    border-color: #555;
+    color: #aaa;
 }

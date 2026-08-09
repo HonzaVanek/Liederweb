@@ -1,0 +1,85 @@
+<div
+  class="shop-variant-image-card"
+  data-variant-image-form
+>
+  {% for hidden in image_form.hidden_fields %}
+    {{ hidden }}
+  {% endfor %}
+
+  {% if image_form.non_field_errors %}
+    <div class="form-errors">
+      {{ image_form.non_field_errors }}
+    </div>
+  {% endif %}
+
+  <div class="shop-variant-image-card__header">
+    <strong>Obrázek varianty</strong>
+
+    <button
+      type="button"
+      class="shop-remove-variant-image"
+      data-remove-variant-image
+    >
+      Odebrat
+    </button>
+  </div>
+
+  <div class="shop-variant-image-card__body">
+
+    <div
+    class="shop-variant-image-preview"
+    data-variant-image-preview
+    >
+    <img
+        data-variant-image-preview-img
+        {% if image_form.instance.pk and image_form.instance.image %}
+        src="{{ image_form.instance.image.file.url }}"
+        {% else %}
+        src=""
+        hidden
+        {% endif %}
+        alt=""
+    >
+
+    <span
+        data-variant-image-preview-empty
+        {% if image_form.instance.pk and image_form.instance.image %}
+        hidden
+        {% endif %}
+    >
+        Bez náhledu
+    </span>
+    </div>
+
+    <div class="shop-variant-image-fields">
+
+      <div class="form-group shop-variant-image-field--image">
+        {{ image_form.image.label_tag }}
+        {{ image_form.image }}
+        {{ image_form.image.errors }}
+      </div>
+
+      <div class="form-group shop-variant-image-field--order">
+        {{ image_form.sort_order.label_tag }}
+        {{ image_form.sort_order }}
+        {{ image_form.sort_order.errors }}
+      </div>
+
+      <div class="form-group shop-variant-image-field--alt">
+        {{ image_form.alt_text.label_tag }}
+        {{ image_form.alt_text }}
+        {{ image_form.alt_text.errors }}
+
+        <p class="small muted">
+          Nepovinné. Popište, co je na obrázku, pokud to není zřejmé z názvu varianty.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="shop-delete-field">
+    {{ image_form.DELETE }}
+  </div>
+</div>

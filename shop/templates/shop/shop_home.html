@@ -79,11 +79,11 @@
                 </a>
               </h2>
 
-              {% if product.short_description %}
-                <p class="shop-product-card__description">
+              <p class="shop-product-card__description">
+                {% if product.short_description %}
                   {{ product.short_description }}
-                </p>
-              {% endif %}
+                {% endif %}
+              </p>
 
               {% if product.visible_variants %}
                 <div

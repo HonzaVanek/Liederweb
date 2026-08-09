@@ -54,17 +54,65 @@
     <article class="shop-product-detail">
 
       <div class="shop-product-detail__media">
-        {% if product.main_image %}
-          <img
-            class="shop-product-detail__image"
-            src="{{ product.main_image.file.url }}"
-            alt="{{ product.name }}"
+
+        <div
+          class="shop-product-detail__main-media"
+          data-product-main-media
+        >
+          {% if product.main_image %}
+            <img
+              class="shop-product-detail__image"
+              src="{{ product.main_image.file.url }}"
+              alt="{{ product.name }}"
+            >
+          {% else %}
+            <div class="shop-product-detail__placeholder">
+              <span>Lieder Society</span>
+            </div>
+          {% endif %}
+        </div>
+
+        {% if product.main_image or product.gallery_images %}
+          <div
+            class="shop-product-detail__gallery"
+            aria-label="Fotografie produktu"
           >
-        {% else %}
-          <div class="shop-product-detail__placeholder">
-            <span>Lieder Society</span>
+
+            {% if product.main_image %}
+              <button
+                type="button"
+                class="shop-product-gallery-thumb is-active"
+                data-product-image-button
+                data-image-url="{{ product.main_image.file.url }}"
+                data-image-alt="{{ product.name }}"
+                aria-label="Hlavní fotografie produktu"
+              >
+                <img
+                  src="{{ product.main_image.file.url }}"
+                  alt=""
+                >
+              </button>
+            {% endif %}
+
+            {% for product_image in product.gallery_images %}
+              <button
+                type="button"
+                class="shop-product-gallery-thumb"
+                data-product-image-button
+                data-image-url="{{ product_image.image.file.url }}"
+                data-image-alt="{{ product_image.alt_text|default:product.name }}"
+                aria-label="Zobrazit další fotografii produktu"
+              >
+                <img
+                  src="{{ product_image.image.file.url }}"
+                  alt=""
+                >
+              </button>
+            {% endfor %}
+
           </div>
         {% endif %}
+
       </div>
 
       <div class="shop-product-detail__content">
@@ -76,7 +124,7 @@
         {% endif %}
 
         <p class="shop-eyebrow">
-          Produkt Lieder Society
+          Vyberte si Lieder Society
         </p>
 
         <h1>{{ product.name }}</h1>
@@ -115,6 +163,30 @@
                       {{ variant.price|floatformat:"-2" }} Kč
                     </strong>
                   </div>
+
+                  {% if variant.visible_images %}
+                    <div
+                      class="shop-variant-option__images"
+                      aria-label="Fotografie varianty {{ variant.name }}"
+                    >
+                      {% for variant_image in variant.visible_images %}
+                        <button
+                          type="button"
+                          class="shop-variant-option__image"
+                          data-product-image-button
+                          data-image-url="{{ variant_image.image.file.url }}"
+                          data-image-alt="{{ variant_image.alt_text|default:variant.name }}"
+                          aria-label="Zobrazit fotografii varianty {{ variant.name }}"
+                        >
+                          <img
+                            src="{{ variant_image.image.file.url }}"
+                            alt=""
+                            loading="lazy"
+                          >
+                        </button>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
 
                   <div class="shop-variant-option__availability">
 
@@ -231,4 +303,12 @@
     </article>
 
   </main>
+
+  {% block extra_js %}
+{{ block.super }}
+<script
+  src="{% static 'shop/product_detail.js' %}"
+  defer
+></script>
+{% endblock extra_js %}
 {% endblock content %}

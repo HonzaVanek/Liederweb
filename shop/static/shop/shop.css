@@ -74,8 +74,9 @@
 
 .shop-product-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr));
-    gap: 28px;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 300px));
+    justify-content: center;
+    gap: 26px;
     align-items: stretch;
 }
 
@@ -142,7 +143,7 @@
     display: flex;
     flex: 1;
     flex-direction: column;
-    padding: 24px;
+    padding: 20px;
 }
 
 .shop-product-state {
@@ -161,11 +162,13 @@
 }
 
 .shop-product-card h2 {
-    margin: 0 0 12px;
+    margin: 0 0 10px;
     font-family: "Barlow", "Segoe UI", sans-serif;
-    font-size: clamp(1.35rem, 2vw, 1.75rem);
+    font-size: 1.3rem;
     font-weight: 600;
     line-height: 1.2;
+
+    min-height: 2.4em; /* prostor pro maximálně 2 běžné řádky */
 }
 
 .shop-product-card h2 a {
@@ -179,16 +182,17 @@
 }
 
 .shop-product-card__description {
-    margin: 0 0 18px;
+    margin: 0 0 15px;
     color: #444;
-    line-height: 1.6;
+    font-size: 0.94rem;
+    line-height: 1.5;
+
+    min-height: 4.5em; /* prostor pro 3 řádky */
 }
 
 .shop-product-card__variants {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-bottom: 22px;
+    gap: 6px;
+    margin-bottom: 18px;
 }
 
 .shop-product-card__variants span {
@@ -203,19 +207,12 @@
 }
 
 .shop-product-card__footer {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 18px;
-    margin-top: auto;
-    padding-top: 18px;
-    border-top: 1px solid #e2e2dc;
+    gap: 12px;
+    padding-top: 15px;
 }
 
 .shop-product-card__price {
-    color: #111;
-    font-size: 1.08rem;
-    font-weight: 700;
+    font-size: 1rem;
 }
 
 .shop-product-card__detail {
@@ -289,7 +286,8 @@
 }
 
 .shop-product-detail__image {
-    object-fit: cover;
+    object-fit: contain;
+    background-color: #efefeb;
 }
 
 .shop-product-detail__content {
@@ -370,6 +368,85 @@
     gap: 10px;
     margin-top: 13px;
 }
+
+
+
+
+/* =========================================================
+   PŘIDÁNÍ DO KOŠÍKU
+   ========================================================= */
+
+.shop-add-to-cart-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.shop-add-to-cart-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    color: #555;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.shop-add-to-cart-form input[type="number"] {
+    width: 82px;
+    min-height: 44px;
+    padding: 8px 10px;
+    border: 1.5px solid #111;
+    border-radius: 0;
+    background-color: #fff;
+    color: #111;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: 1rem;
+}
+
+.shop-add-to-cart-form input[type="number"]:focus {
+    outline: 2px solid #111;
+    outline-offset: 2px;
+}
+
+.shop-add-to-cart-form button {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 1.5px solid #111;
+    border-radius: 999px;
+    background-color: #111;
+    color: #fff;
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.shop-add-to-cart-form button:hover:not(:disabled) {
+    background-color: #fff;
+    color: #111;
+    transform: translateY(-1px);
+}
+
+.shop-add-to-cart-form button:disabled {
+    border-color: #c9c9c3;
+    background-color: #deded9;
+    color: #777;
+    cursor: not-allowed;
+}
+
 
 .shop-availability {
     font-size: 0.8rem;
@@ -568,6 +645,70 @@
     transform: translateY(-1px);
 }
 
+
+.shop-product-detail__main-media {
+    overflow: hidden;
+    background-color: #efefeb;
+}
+
+.shop-product-detail__gallery {
+    display: flex;
+    gap: 9px;
+    margin-top: 10px;
+    overflow-x: auto;
+    padding-bottom: 3px;
+}
+
+.shop-product-gallery-thumb,
+.shop-variant-option__image {
+    display: block;
+    flex: 0 0 auto;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #d3d3cd;
+    background: #fff;
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+.shop-product-gallery-thumb {
+    width: 74px;
+    height: 74px;
+}
+
+.shop-product-gallery-thumb img,
+.shop-variant-option__image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.shop-product-gallery-thumb:hover,
+.shop-variant-option__image:hover {
+    border-color: #111;
+    transform: translateY(-1px);
+}
+
+.shop-product-gallery-thumb.is-active,
+.shop-variant-option__image.is-active {
+    border: 2px solid #111;
+}
+
+.shop-variant-option__images {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+.shop-variant-option__image {
+    width: 62px;
+    height: 62px;
+}
 
 /* =========================================================
    RESPONSIVE
@@ -794,4 +935,56 @@ body.dark-mode .shop-continue-shopping {
 body.dark-mode .shop-continue-shopping:hover {
     background-color: #eee;
     color: #111;
+}
+
+body.dark-mode .shop-add-to-cart-form label {
+    color: #aaa;
+}
+
+body.dark-mode .shop-add-to-cart-form input[type="number"] {
+    background-color: #191919;
+    color: #f0f0f0;
+    border-color: #666;
+}
+
+body.dark-mode .shop-add-to-cart-form input[type="number"]:focus {
+    outline-color: #f0f0f0;
+}
+
+body.dark-mode .shop-add-to-cart-form button {
+    background-color: #f0f0f0;
+    color: #111;
+    border-color: #f0f0f0;
+}
+
+body.dark-mode .shop-add-to-cart-form button:hover:not(:disabled) {
+    background-color: #111;
+    color: #f0f0f0;
+}
+
+body.dark-mode .shop-add-to-cart-form button:disabled {
+    background-color: #252525;
+    border-color: #444;
+    color: #888;
+}
+
+body.dark-mode .shop-product-detail__main-media {
+    background-color: #242424;
+}
+
+body.dark-mode .shop-product-gallery-thumb,
+body.dark-mode .shop-variant-option__image {
+    background-color: #222;
+    border-color: #555;
+}
+
+body.dark-mode .shop-product-gallery-thumb:hover,
+body.dark-mode .shop-variant-option__image:hover,
+body.dark-mode .shop-product-gallery-thumb.is-active,
+body.dark-mode .shop-variant-option__image.is-active {
+    border-color: #eee;
+}
+
+body.dark-mode .shop-product-detail__image {
+    background-color: #242424;
 }

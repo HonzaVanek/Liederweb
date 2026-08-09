@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from .models import Product, ProductVariant, Order, ShippingMethod
+from .models import Product, ProductVariant, Order, ShippingMethod, ProductVariantImage
 from .cart import SessionCart
 
 class ProductForm(forms.ModelForm):
@@ -133,6 +133,89 @@ ProductVariantFormSet = inlineformset_factory(
     validate_min=True,
     can_delete=True,
 )
+
+class MediaAssetPreviewSelect(forms.Select):
+    def create_option(
+        self,
+        name,
+        value,
+        label,
+        selected,
+        index,
+        subindex=None,
+        attrs=None,
+    ):
+        option = super().create_option(
+            name,
+            value,
+            label,
+            selected,
+            index,
+            subindex=subindex,
+            attrs=attrs,
+        )
+
+        instance = getattr(value, "instance", None)
+
+        if instance and getattr(instance, "file", None):
+            try:
+                option["attrs"]["data-preview-url"] = instance.file.url
+            except ValueError:
+                pass
+
+        return option
+
+
+class ProductVariantImageForm(forms.ModelForm):
+    class Meta:
+        model = ProductVariantImage
+        fields = [
+            "image",
+            "alt_text",
+            "sort_order",
+        ]
+        widgets = {
+            "image": MediaAssetPreviewSelect(
+                attrs={
+                    "data-variant-image-select": "",
+                }
+            ),
+            "alt_text": forms.TextInput(
+                attrs={
+                    "placeholder": "Např. Růžová placka zepředu",
+                }
+            ),
+            "sort_order": forms.NumberInput(
+                attrs={
+                    "min": 0,
+                }
+            ),
+        }
+        help_texts = {
+            "image": "Obrázek z Media Assets.",
+            "alt_text": (
+                "Volitelný popis obrázku pro přístupnost. "
+                "Pokud zůstane prázdný, můžeme na webu použít název varianty."
+            ),
+            "sort_order": (
+                "Určuje pořadí obrázků. Nejnižší číslo bude první."
+            ),
+        }
+
+
+ProductVariantImageFormSet = inlineformset_factory(
+    parent_model=ProductVariant,
+    model=ProductVariantImage,
+    form=ProductVariantImageForm,
+    fields=[
+        "image",
+        "alt_text",
+        "sort_order",
+    ],
+    extra=0,
+    can_delete=True,
+)
+
 
 
 class AddToCartForm(forms.Form):
