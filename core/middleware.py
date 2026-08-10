@@ -227,6 +227,10 @@ SCANNER_EXACT_PATHS = (
     "/app",
     "/profile",
     "/my",
+    "/readme.html",
+    "/feed/",
+    "/feed/atom/",
+    "/webpack-stats.json",
 )
 
 OWN_REFERER_DOMAINS = (
@@ -644,7 +648,7 @@ class SiteVisitStatsMiddleware:
         if path_lower in BOT_EXACT_PATHS:
             return True
 
-        if path_lower == "/wp-json" or path_lower.startswith("/wp-json/"):
+        if path_lower == "/wp-json" or path_lower.startswith("/wp-json/") or path_lower.startswith("/wp-sitemap"):
             return True
 
         if path_lower in SCANNER_EXACT_PATHS:
@@ -923,8 +927,19 @@ class SiteVisitStatsMiddleware:
         if is_bot_like:
             if should_mark_sticky_bot_like:
                 self.mark_sticky_bot_like_client(client_label, bot_like_reason)
+
+            removed = 0
+
             if self.should_cleanup_client_human_stats(bot_like_reason):
-                self.cleanup_client_human_stats(today, client_hash)
+                removed = self.cleanup_client_human_stats(today, client_hash)
+
+            if removed:
+                logger.info(
+                    "CLEANUP client=%s reason=%s removed_pageviews=%s",
+                    client_label,
+                    bot_like_reason,
+                    removed,
+                )
 
             logger.info(
                 "BOT_LIKE client=%s visitor=%s method=%s status=%s path=%s referer=%s reason=%s score=%s ua=%s",
@@ -942,7 +957,16 @@ class SiteVisitStatsMiddleware:
 
         if is_known_bot:
             if is_scanner_request:
-                self.cleanup_client_human_stats(today, client_hash)
+                removed = self.cleanup_client_human_stats(today, client_hash)
+
+                if removed:
+                    logger.info(
+                        "CLEANUP client=%s reason=known_scanner path=%s removed_pageviews=%s",
+                        client_label,
+                        path[:300],
+                        removed,
+                    )
+
             return
 
         # Odteď dál řešíme už jen úspěšnou lidskou návštěvnost existujících HTML stránek.
@@ -1115,6 +1139,16 @@ class SiteVisitStatsMiddleware:
 
         if path_lower == "/.well-known/ucp":
             return "/__scan__/.well-known"
+
+        if path_lower.startswith("/wp-sitemap") or path_lower in (
+            "/readme.html",
+            "/feed/",
+            "/feed/atom/",
+        ):
+            return "/__scan__/wp-meta"
+
+        if path_lower == "/webpack-stats.json":
+            return "/__scan__/dev-config"
         
         if "/wp-includes/" in path_lower or path_lower.endswith("wlwmanifest.xml"):
             return "/__scan__/wp-includes/wlwmanifest.xml"
