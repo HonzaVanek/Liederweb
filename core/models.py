@@ -182,6 +182,7 @@ class Partner(models.Model):
 class DailySiteVisitor(models.Model):
     day = models.DateField(db_index=True)
     visitor_hash = models.CharField(max_length=64, db_index=True)
+    client_hash = models.CharField(max_length=64, db_index=True, blank=True)
 
     pageviews = models.PositiveIntegerField(default=0)
 
@@ -205,6 +206,7 @@ class DailyPageVisitor(models.Model):
     day = models.DateField(db_index=True)
     path = models.CharField(max_length=500, db_index=True)
     visitor_hash = models.CharField(max_length=64, db_index=True)
+    client_hash = models.CharField(max_length=64, db_index=True, blank=True)
     pageviews = models.PositiveIntegerField(default=0)
     first_seen_at = models.DateTimeField(auto_now_add=True)
     last_seen_at = models.DateTimeField(auto_now=True)

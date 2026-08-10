@@ -4,7 +4,7 @@ from django.core.cache import cache
 
 from django.conf import settings
 from django.db import IntegrityError
-from django.db.models import F
+from django.db.models import F, Sum
 from django.utils import timezone
 from django.urls import resolve
 
@@ -222,6 +222,13 @@ SEARCH_REFERER_PARTS = (
     "ecosia.",
     "startpage.",
     "search.brave.",
+)
+
+CLIENT_LEVEL_CLEANUP_REASONS = (
+    "rapid_identity_switch",
+    "homepage_identity_switch",
+    "ua_rotation",
+    "rapid_navigation",
 )
 
 
@@ -682,6 +689,66 @@ class SiteVisitStatsMiddleware:
         )
 
 
+    def should_cleanup_client_human_stats(self, reason):
+        reason = reason or ""
+
+        if reason in CLIENT_LEVEL_CLEANUP_REASONS:
+            return True
+
+        if reason.startswith("sticky:"):
+            base_reason = reason.removeprefix("sticky:")
+            return base_reason in CLIENT_LEVEL_CLEANUP_REASONS
+
+        return False
+
+
+    def cleanup_client_human_stats(self, day, client_hash):
+        page_rows = list(
+            DailyPageVisitor.objects
+            .filter(day=day, client_hash=client_hash)
+            .values("path")
+            .annotate(pageviews=Sum("pageviews"))
+        )
+
+        total_pageviews = sum(row["pageviews"] or 0 for row in page_rows)
+
+        if not total_pageviews:
+            return 0
+
+        DailyPageVisitor.objects.filter(
+            day=day,
+            client_hash=client_hash,
+        ).delete()
+
+        DailySiteVisitor.objects.filter(
+            day=day,
+            client_hash=client_hash,
+        ).delete()
+
+        # Překlasifikování technické zátěže: human -> bot.
+        site_traffic = DailySiteTraffic.objects.filter(day=day).first()
+
+        if site_traffic:
+            site_traffic.human_hits = max(site_traffic.human_hits - total_pageviews, 0)
+            site_traffic.bot_hits += total_pageviews
+            site_traffic.save(update_fields=["human_hits", "bot_hits"])
+
+        for row in page_rows:
+            path = row["path"]
+            count = row["pageviews"] or 0
+
+            page_traffic = DailyPageTraffic.objects.filter(
+                day=day,
+                path=path,
+            ).first()
+
+            if page_traffic:
+                page_traffic.human_hits = max(page_traffic.human_hits - count, 0)
+                page_traffic.bot_hits += count
+                page_traffic.save(update_fields=["human_hits", "bot_hits"])
+
+        return total_pageviews
+
     def track_visit(self, request, response):
         path = request.path or ""
 
@@ -816,6 +883,8 @@ class SiteVisitStatsMiddleware:
         if is_bot_like:
             if should_mark_sticky_bot_like:
                 self.mark_sticky_bot_like_client(client_label, bot_like_reason)
+            if self.should_cleanup_client_human_stats(bot_like_reason):
+                self.cleanup_client_human_stats(today, client_hash)
 
             logger.info(
                 "BOT_LIKE client=%s visitor=%s method=%s status=%s path=%s referer=%s reason=%s score=%s ua=%s",
@@ -875,6 +944,7 @@ class SiteVisitStatsMiddleware:
 
         defaults = {
             "pageviews": 0,
+            "client_hash": client_hash,
             "first_path": path[:500],
             "last_path": path[:500],
         }
@@ -893,6 +963,7 @@ class SiteVisitStatsMiddleware:
 
         DailySiteVisitor.objects.filter(pk=visit.pk).update(
             pageviews=F("pageviews") + 1,
+            client_hash=client_hash,
             last_seen_at=timezone.now(),
             last_path=path[:500],
         )
@@ -901,6 +972,7 @@ class SiteVisitStatsMiddleware:
 
         page_defaults = {
             "pageviews": 0,
+            "client_hash": client_hash,
         }
 
         try:
@@ -919,6 +991,7 @@ class SiteVisitStatsMiddleware:
 
         DailyPageVisitor.objects.filter(pk=page_visit.pk).update(
             pageviews=F("pageviews") + 1,
+            client_hash=client_hash,
             last_seen_at=timezone.now(),
         )
 
