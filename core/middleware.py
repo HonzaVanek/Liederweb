@@ -143,10 +143,13 @@ BOT_USER_AGENT_PARTS = (
     "cve-",
     "marketsizer",
     "domainhealth",
+    "audit-helper",
+    "lead-audit",
 )
 
 BOT_REFERER_PARTS = (
     "aisearchindex.space",
+    "dataindex.pro",
 )
 
 BOT_EXACT_PATHS = (
@@ -196,6 +199,34 @@ OBVIOUS_SCANNER_OWN_REFERER_PATH_PARTS = (
     "/geoserver/",
     "/users/sign_in",
     "/login/index.php",
+)
+
+SCANNER_EXACT_PATHS = (
+    "/manifest.json",
+    "/dist/manifest.json",
+    "/assets/manifest.json",
+    "/asset-manifest.json",
+    "/graphql",
+    "/api/graphql",
+    "/v1/graphql",
+    "/workspace",
+    "/user/login",
+    "/settings",
+    "/auth/login",
+    "/signin",
+    "/login",
+    "/account",
+    "/portal",
+    "/admin",
+    "/admin/",
+    "/admin/login",
+    "/admin/login/",
+    "/manage",
+    "/console",
+    "/dashboard",
+    "/app",
+    "/profile",
+    "/my",
 )
 
 OWN_REFERER_DOMAINS = (
@@ -398,7 +429,10 @@ class SiteVisitStatsMiddleware:
 
         ua_client_count = self.remember_user_agent_client(user_agent, client_label)
 
-        if ua_client_count >= 8 and (not host or self.is_own_referer_host(host)):
+        if ua_client_count >= 5 and not host:
+            return True, f"same_ua_empty_ref_clients:{ua_client_count}"
+
+        if ua_client_count >= 8 and self.is_own_referer_host(host):
             return True, f"same_ua_many_clients:{ua_client_count}"
 
         return False, ""
@@ -613,6 +647,9 @@ class SiteVisitStatsMiddleware:
         if path_lower == "/wp-json" or path_lower.startswith("/wp-json/"):
             return True
 
+        if path_lower in SCANNER_EXACT_PATHS:
+            return True
+
         if (
             path_lower == "/.env"
             or path_lower.endswith("/.env")
@@ -777,14 +814,17 @@ class SiteVisitStatsMiddleware:
         referer = self.clean_referer(referer_raw)[:300]
         today = timezone.localdate()
         status_code = response.status_code
+        is_scanner_request = (
+            self.is_scanner_path(path)
+            or self.is_obvious_scanner(path, referer_raw, user_agent)
+        )
 
         is_known_bot = (
-            self.is_scanner_path(path)
+            is_scanner_request
             or request.method == "HEAD"
             or not has_user_agent
             or self.is_probably_bot(user_agent)
             or self.is_probably_bot_referer(referer)
-            or self.is_obvious_scanner(path, referer_raw, user_agent)
         )
         
         raw_client_id = f"{today}|{ip}|{settings.SECRET_KEY}"
@@ -901,6 +941,8 @@ class SiteVisitStatsMiddleware:
             return
 
         if is_known_bot:
+            if is_scanner_request:
+                self.cleanup_client_human_stats(today, client_hash)
             return
 
         # Odteď dál řešíme už jen úspěšnou lidskou návštěvnost existujících HTML stránek.
@@ -1116,6 +1158,20 @@ class SiteVisitStatsMiddleware:
         )
 
         if path_lower in scanner_exact:
+            return f"/__scan__{path_lower}"
+
+        if path_lower in (
+            "/manifest.json",
+            "/dist/manifest.json",
+            "/assets/manifest.json",
+            "/asset-manifest.json",
+        ):
+            return "/__scan__/manifest"
+
+        if path_lower in ("/graphql", "/api/graphql", "/v1/graphql"):
+            return "/__scan__/graphql"
+
+        if path_lower in SCANNER_EXACT_PATHS:
             return f"/__scan__{path_lower}"
 
         for prefix in scanner_prefixes:
