@@ -742,6 +742,17 @@ class SiteVisitStatsMiddleware:
 
         return False
 
+    def should_cleanup_visitor_human_stats(self, reason):
+        reason = reason or ""
+
+        if reason.startswith("shared_ua:"):
+            return True
+
+        if reason.startswith("sticky:shared_ua:"):
+            return True
+
+        return False
+
 
     def cleanup_client_human_stats(self, day, client_hash):
         page_rows = list(
@@ -767,6 +778,52 @@ class SiteVisitStatsMiddleware:
         ).delete()
 
         # Překlasifikování technické zátěže: human -> bot.
+        site_traffic = DailySiteTraffic.objects.filter(day=day).first()
+
+        if site_traffic:
+            site_traffic.human_hits = max(site_traffic.human_hits - total_pageviews, 0)
+            site_traffic.bot_hits += total_pageviews
+            site_traffic.save(update_fields=["human_hits", "bot_hits"])
+
+        for row in page_rows:
+            path = row["path"]
+            count = row["pageviews"] or 0
+
+            page_traffic = DailyPageTraffic.objects.filter(
+                day=day,
+                path=path,
+            ).first()
+
+            if page_traffic:
+                page_traffic.human_hits = max(page_traffic.human_hits - count, 0)
+                page_traffic.bot_hits += count
+                page_traffic.save(update_fields=["human_hits", "bot_hits"])
+
+        return total_pageviews
+
+    def cleanup_visitor_human_stats(self, day, visitor_hash):
+        page_rows = list(
+            DailyPageVisitor.objects
+            .filter(day=day, visitor_hash=visitor_hash)
+            .values("path")
+            .annotate(pageviews=Sum("pageviews"))
+        )
+
+        total_pageviews = sum(row["pageviews"] or 0 for row in page_rows)
+
+        if not total_pageviews:
+            return 0
+
+        DailyPageVisitor.objects.filter(
+            day=day,
+            visitor_hash=visitor_hash,
+        ).delete()
+
+        DailySiteVisitor.objects.filter(
+            day=day,
+            visitor_hash=visitor_hash,
+        ).delete()
+
         site_traffic = DailySiteTraffic.objects.filter(day=day).first()
 
         if site_traffic:
@@ -933,10 +990,14 @@ class SiteVisitStatsMiddleware:
             if self.should_cleanup_client_human_stats(bot_like_reason):
                 removed = self.cleanup_client_human_stats(today, client_hash)
 
+            elif self.should_cleanup_visitor_human_stats(bot_like_reason):
+                removed = self.cleanup_visitor_human_stats(today, visitor_hash)
+
             if removed:
                 logger.info(
-                    "CLEANUP client=%s reason=%s removed_pageviews=%s",
+                    "CLEANUP client=%s visitor=%s reason=%s removed_pageviews=%s",
                     client_label,
+                    visitor_label,
                     bot_like_reason,
                     removed,
                 )
@@ -961,8 +1022,9 @@ class SiteVisitStatsMiddleware:
 
                 if removed:
                     logger.info(
-                        "CLEANUP client=%s reason=known_scanner path=%s removed_pageviews=%s",
+                        "CLEANUP client=%s visitor=%s reason=known_scanner path=%s removed_pageviews=%s",
                         client_label,
+                        visitor_label,
                         path[:300],
                         removed,
                     )
