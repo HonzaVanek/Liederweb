@@ -264,6 +264,7 @@ CLIENT_LEVEL_CLEANUP_REASONS = (
     "homepage_identity_switch",
     "ua_rotation",
     "rapid_navigation",
+    "known_scanner",
 )
 
 
@@ -422,6 +423,9 @@ class SiteVisitStatsMiddleware:
     def is_suspicious_shared_user_agent(self, path, referer_raw, user_agent, client_label):
         ua = (user_agent or "").strip().lower()
 
+        empty_ref_shared_ua_client_threshold = 3
+        general_shared_ua_client_threshold = 8
+
         if not ua:
             return False, ""
 
@@ -433,16 +437,19 @@ class SiteVisitStatsMiddleware:
 
         ua_client_count = self.remember_user_agent_client(user_agent, client_label)
 
-        if ua_client_count >= 5 and not host:
+        # Pro malý web je stejný přesný UA bez refereru ze 3 různých clientů
+        # už velmi podezřelý vzorec.
+        if not host and ua_client_count >= empty_ref_shared_ua_client_threshold:
             return True, f"same_ua_empty_ref_clients:{ua_client_count}"
 
-        if ua_client_count >= 8 and self.is_own_referer_host(host):
+        # U vlastního refereru jsme opatrnější, protože část může být reálná navigace.
+        if self.is_own_referer_host(host) and ua_client_count >= general_shared_ua_client_threshold:
             return True, f"same_ua_many_clients:{ua_client_count}"
 
         return False, ""
 
 
-    def is_suspicious_rapid_identity_switch(self, client_label, path, referer_raw, user_agent):
+    def is_suspicious_rapid_identity_switch(self, client_label, visitor_label, path, referer_raw, user_agent):
         now_ts = int(timezone.now().timestamp())
         ua = (user_agent or "").strip().lower()
         host = self.get_referer_host(referer_raw)
@@ -460,6 +467,7 @@ class SiteVisitStatsMiddleware:
             "ua": ua,
             "path": path or "",
             "host": host,
+            "visitor": visitor_label,
         })
 
         cache.set(cache_key, hits, timeout=30)
@@ -467,7 +475,30 @@ class SiteVisitStatsMiddleware:
         unique_paths = {hit["path"] for hit in hits}
         unique_uas = {hit["ua"] for hit in hits if hit["ua"]}
         unique_hosts = {hit["host"] for hit in hits if hit["host"]}
+        unique_visitors = {
+            hit["visitor"]
+            for hit in hits
+            if hit.get("visitor")
+        }
 
+        has_search_referer = any(
+            self.is_search_referer_host(hit["host"])
+            for hit in hits
+            if hit.get("host")
+        )
+
+        # Velmi podezřelé: stejný client během pár sekund otevře homepage
+        # jako dva různí návštěvníci / prohlížeče bez vyhledávače.
+        if (
+            len(hits) >= 2
+            and unique_paths == {"/"}
+            and len(unique_uas) >= 2
+            and len(unique_visitors) >= 2
+            and not has_search_referer
+        ):
+            return True
+
+        # Původní širší pravidlo pro tři rychlé homepage identity.
         if len(hits) >= 3 and unique_paths == {"/"}:
             if len(unique_uas) >= 2:
                 return True
@@ -598,7 +629,8 @@ class SiteVisitStatsMiddleware:
             score += 4
             reasons.append("old_iphone_self_ref_homepage")
 
-        #nová píčovina - leze z login/ a registrace/ a password-reset/ a není to z vyhledávače
+        # Další podezřelý vzorec:
+        # starý iPhone UA leze na auth stránky bez refereru z vyhledávače.
         if is_public_auth_path and not is_search_referer:
             score += 5
             reasons.append("old_iphone_auth_path")
@@ -733,14 +765,13 @@ class SiteVisitStatsMiddleware:
     def should_cleanup_client_human_stats(self, reason):
         reason = reason or ""
 
-        if reason in CLIENT_LEVEL_CLEANUP_REASONS:
+        if reason.startswith("sticky:"):
+            reason = reason.removeprefix("sticky:")
+
+        if reason.startswith("shared_ua:"):
             return True
 
-        if reason.startswith("sticky:"):
-            base_reason = reason.removeprefix("sticky:")
-            return base_reason in CLIENT_LEVEL_CLEANUP_REASONS
-
-        return False
+        return reason in CLIENT_LEVEL_CLEANUP_REASONS
 
     def should_cleanup_visitor_human_stats(self, reason):
         reason = reason or ""
@@ -912,6 +943,7 @@ class SiteVisitStatsMiddleware:
         if not is_known_bot and not is_bot_like:
             if self.is_suspicious_rapid_identity_switch(
                 client_label,
+                visitor_label,
                 path,
                 referer_raw,
                 user_agent,
@@ -1019,6 +1051,8 @@ class SiteVisitStatsMiddleware:
         if is_known_bot:
             if is_scanner_request:
                 removed = self.cleanup_client_human_stats(today, client_hash)
+
+                self.mark_sticky_bot_like_client(client_label, "known_scanner")
 
                 if removed:
                     logger.info(
