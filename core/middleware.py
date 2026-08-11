@@ -145,6 +145,8 @@ BOT_USER_AGENT_PARTS = (
     "domainhealth",
     "audit-helper",
     "lead-audit",
+    "developers.cloudflare.com/security-center",
+    "cloudflare-security",
 )
 
 BOT_REFERER_PARTS = (
