@@ -201,6 +201,15 @@ OBVIOUS_SCANNER_OWN_REFERER_PATH_PARTS = (
     "/geoserver/",
     "/users/sign_in",
     "/login/index.php",
+    "/wp-includes/",
+    "/wp-content/",
+    "/media/system/",
+    "/media/system/js/",
+    "/administrator/",
+    "/plugins/",
+    "/components/",
+    "/modules/",
+    "/templates/",
 )
 
 SCANNER_EXACT_PATHS = (
@@ -522,7 +531,7 @@ class SiteVisitStatsMiddleware:
             referer = "http://" + referer
 
         try:
-            return urlsplit(referer).netloc.lower().split(":")[0]
+            return urlsplit(referer).netloc.lower().split(":")[0].rstrip(".")
         except Exception:
             return ""
 
