@@ -261,6 +261,34 @@ class DailyPageTraffic(models.Model):
     def __str__(self):
         return f"{self.day} | {self.path} | total={self.total_hits} human={self.human_hits} bot={self.bot_hits}"
 
+
+class DailyEngagedVisitor(models.Model):
+    day = models.DateField(db_index=True)
+    visitor_hash = models.CharField(max_length=64, db_index=True)
+    client_hash = models.CharField(max_length=64, db_index=True)
+
+    first_seen_at = models.DateTimeField(default=timezone.now)
+    last_seen_at = models.DateTimeField(default=timezone.now)
+
+    first_path = models.CharField(max_length=500, blank=True)
+    last_path = models.CharField(max_length=500, blank=True)
+
+    beacons = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["day", "visitor_hash"],
+                name="unique_daily_engaged_visitor",
+            )
+        ]
+        ordering = ["-day", "visitor_hash"]
+        verbose_name = "Denní potvrzený návštěvník"
+        verbose_name_plural = "Denní potvrzení návštěvníci"
+
+    def __str__(self):
+        return f"{self.day} – {self.visitor_hash[:8]} ({self.beacons})"
+
 #### KONEC STATISTIK NÁVŠTĚVNOSTI WEBU
 
 

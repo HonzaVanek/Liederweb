@@ -9,7 +9,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import render
 from django.db.models import Count, Sum
 
-from core.models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic
+from core.models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor
 
 
 LOG_FILES = {
@@ -628,6 +628,15 @@ def system_logs_view(request):
         .order_by("-day")[:30]
     )
 
+    engaged_counts = {
+        row["day"]: row["count"]
+        for row in (
+            DailyEngagedVisitor.objects
+            .values("day")
+            .annotate(count=Count("id"))
+        )
+    }
+
     for row in daily_stats:
         human_row = human_daily_stats.get(row["day"], {})
 
@@ -635,6 +644,7 @@ def system_logs_view(request):
         human_requests = row.get("human_hits", 0) or 0
 
         row["unique_visitors"] = human_row.get("unique_visitors", 0)
+        row["engaged_visitors"] = engaged_counts.get(row["day"], 0)
         row["pageviews"] = pageviews
         row["human_requests"] = human_requests
         row["human_non_pageview_hits"] = max(0, human_requests - pageviews)

@@ -447,6 +447,7 @@
         <tr>
             <th>Den</th>
             <th>Unikátní návštěvníci</th>
+            <th>Potvrzení návštěvníci (js)</th>
             <th>Lidská pageviews</th>
             <th>Jiné lidské requesty</th>
             <th>Lidské requesty celkem</th>
@@ -459,6 +460,7 @@
             <tr>
                 <td>{{ row.day|date:"j. F Y" }}</td>
                 <td>{{ row.unique_visitors }}</td>
+                <td>{{ row.engaged_visitors }}</td>
                 <td>{{ row.pageviews }}</td>
                 <td>{{ row.human_non_pageview_hits }}</td>
                 <td>{{ row.human_requests }}</td>

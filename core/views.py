@@ -1,8 +1,14 @@
+import hashlib
+import logging
+
+from django.db import IntegrityError
+from django.db.models import F
 from urllib.parse import urldefrag
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.views import LoginView
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
@@ -19,7 +25,7 @@ from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
 
 from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm, HomeSupportPromoForm, HomeQuoteSlideForm
-from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide
+from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor
 from events.models import Event
 from media_assets.models import MediaAsset
 from social_feed.models import SocialPost, SocialSource
@@ -897,3 +903,103 @@ def agnes_tyrrell_landing(request):
 
 def mlady_salon(request):
     return render(request, "core/mlady_salon.html")
+
+
+#JS beacon prodetekci lidských návštěv:
+
+def get_client_ip(request):
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        return x_forwarded_for.split(",")[0].strip()
+
+    x_real_ip = request.META.get("HTTP_X_REAL_IP")
+    if x_real_ip:
+        return x_real_ip.strip()
+
+    return request.META.get("REMOTE_ADDR", "")
+
+
+logger = logging.getLogger("liederweb.traffic")
+
+@csrf_exempt
+@require_POST
+def traffic_engaged(request):
+    user = getattr(request, "user", None)
+
+    if user and user.is_authenticated and user.is_staff:
+        logger.debug("ENGAGED_SKIP reason=staff")
+        return HttpResponse(status=204)
+
+    ip = get_client_ip(request)
+    user_agent = request.META.get("HTTP_USER_AGENT", "")[:500]
+    content_type = request.META.get("CONTENT_TYPE", "")
+
+    try:
+        raw_body = request.body[:200]
+    except Exception:
+        raw_body = b""
+
+    if not ip:
+        logger.debug("ENGAGED_SKIP reason=no_ip")
+        return HttpResponse(status=204)
+
+    if not user_agent.strip():
+        logger.debug("ENGAGED_SKIP reason=no_ua ip=%s", ip)
+        return HttpResponse(status=204)
+
+    path = (request.POST.get("path") or "").strip()
+
+    if not path.startswith("/"):
+        logger.debug(
+            "ENGAGED_SKIP reason=bad_path ip=%s content_type=%s post=%s body=%s",
+            ip,
+            content_type,
+            dict(request.POST),
+            raw_body,
+        )
+        return HttpResponse(status=204)
+
+    path = path.split("?", 1)[0][:500]
+    today = timezone.localdate()
+
+    raw_client_id = f"{today}|{ip}|{settings.SECRET_KEY}"
+    client_hash = hashlib.sha256(raw_client_id.encode("utf-8")).hexdigest()
+
+    raw_visitor_id = f"{today}|{ip}|{user_agent}|{settings.SECRET_KEY}"
+    visitor_hash = hashlib.sha256(raw_visitor_id.encode("utf-8")).hexdigest()
+
+    defaults = {
+        "client_hash": client_hash,
+        "first_path": path,
+        "last_path": path,
+        "beacons": 0,
+    }
+
+    try:
+        engaged, _created = DailyEngagedVisitor.objects.get_or_create(
+            day=today,
+            visitor_hash=visitor_hash,
+            defaults=defaults,
+        )
+    except IntegrityError:
+        engaged = DailyEngagedVisitor.objects.get(
+            day=today,
+            visitor_hash=visitor_hash,
+        )
+
+    DailyEngagedVisitor.objects.filter(pk=engaged.pk).update(
+        client_hash=client_hash,
+        last_seen_at=timezone.now(),
+        last_path=path,
+        beacons=F("beacons") + 1,
+    )
+
+    logger.debug(
+        "ENGAGED client=%s visitor=%s path=%s ua=%s",
+        client_hash[:8],
+        visitor_hash[:8],
+        path[:300],
+        user_agent[:300],
+    )
+
+    return HttpResponse(status=204)

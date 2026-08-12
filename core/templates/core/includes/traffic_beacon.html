@@ -1,0 +1,38 @@
+{% if not request.user.is_authenticated or not request.user.is_staff %}
+<script>
+(function () {
+    if (window.__liederTrafficBeaconSent) {
+        return;
+    }
+
+    window.__liederTrafficBeaconSent = true;
+
+    setTimeout(function () {
+        var params = new URLSearchParams();
+        params.append("path", window.location.pathname);
+        params.append("delay", "3");
+
+        var body = params.toString();
+
+        if (navigator.sendBeacon) {
+            var blob = new Blob([body], {
+                type: "application/x-www-form-urlencoded;charset=UTF-8"
+            });
+
+            navigator.sendBeacon("/traffic/engaged/", blob);
+            return;
+        }
+
+        fetch("/traffic/engaged/", {
+            method: "POST",
+            body: body,
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+            },
+            credentials: "same-origin",
+            keepalive: true
+        }).catch(function () {});
+    }, 3000);
+})();
+</script>
+{% endif %}

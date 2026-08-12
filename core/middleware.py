@@ -9,7 +9,7 @@ from django.utils import timezone
 from django.urls import resolve
 
 
-from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic
+from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor
 
 from urllib.parse import urlsplit, urlunsplit
 
@@ -809,6 +809,13 @@ class SiteVisitStatsMiddleware:
 
         total_pageviews = sum(row["pageviews"] or 0 for row in page_rows)
 
+        # Pokud se client později ukáže jako bot, nesmí zůstat
+        # ani mezi potvrzenými / JS beacon návštěvníky.
+        DailyEngagedVisitor.objects.filter(
+            day=day,
+            client_hash=client_hash,
+        ).delete()
+
         if not total_pageviews:
             return 0
 
@@ -855,6 +862,13 @@ class SiteVisitStatsMiddleware:
         )
 
         total_pageviews = sum(row["pageviews"] or 0 for row in page_rows)
+
+        # Pokud se konkrétní visitor později ukáže jako bot,
+        # smažeme ho i z potvrzených / JS beacon návštěv.
+        DailyEngagedVisitor.objects.filter(
+            day=day,
+            visitor_hash=visitor_hash,
+        ).delete()
 
         if not total_pageviews:
             return 0
@@ -1184,6 +1198,7 @@ class SiteVisitStatsMiddleware:
         """
         if path in (
             "/admin",
+            "/traffic/engaged/",
             "/favicon.ico",
             "/favicon.png",
             "/apple-touch-icon.png",
