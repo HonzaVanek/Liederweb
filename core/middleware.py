@@ -147,11 +147,14 @@ BOT_USER_AGENT_PARTS = (
     "lead-audit",
     "developers.cloudflare.com/security-center",
     "cloudflare-security",
+    "wp-safe-scanner",
+    "safe-scanner",
 )
 
 BOT_REFERER_PARTS = (
     "aisearchindex.space",
     "dataindex.pro",
+    "readlife.net",
 )
 
 BOT_EXACT_PATHS = (
@@ -1171,6 +1174,7 @@ class SiteVisitStatsMiddleware:
         Static/media/favicon by zbytečně nafukovaly statistiku.
         """
         if path in (
+            "/admin",
             "/favicon.ico",
             "/favicon.png",
             "/apple-touch-icon.png",
@@ -1181,6 +1185,7 @@ class SiteVisitStatsMiddleware:
         return any(
             path.startswith(prefix)
             for prefix in (
+                "/admin/",
                 "/static/",
                 "/media/",
             )
