@@ -88,6 +88,11 @@
                Galerie v objevujte
             </a>
 
+            <a href="{% url 'rozesilac:traffic_stats' %}"
+               class="{% if match.namespace == 'rozesilac' and match.url_name == 'traffic_stats' %}active{% endif %}">
+               Statistiky návštěvnosti
+            </a>
+
          </nav>
          {% endwith %}
     </div>

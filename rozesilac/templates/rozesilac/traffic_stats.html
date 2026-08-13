@@ -1,0 +1,189 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block title %}Rozesílač | Statistiky webu{% endblock title %}
+
+{% block extra_css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'rozesilac/traffic_stats.css' %}">
+{% endblock extra_css %}
+
+{% block rozesilac_content %}
+
+<div class="traffic-stats-page">
+  <header class="traffic-stats-header">
+    <div class="traffic-stats-header-main">
+      <p class="traffic-eyebrow">Přehled návštěvnosti</p>
+      <h2>Statistiky webu</h2>
+      <p>
+        Orientační přehled návštěvnosti veřejného webu po odfiltrování známých robotů a skenů.
+      </p>
+    </div>
+
+    <form method="get" class="traffic-period-form">
+      <label for="period">Období:</label>
+      <select name="period" id="period" onchange="this.form.submit()">
+        <option value="7" {% if period_raw == "7" %}selected{% endif %}>Posledních 7 dní</option>
+        <option value="30" {% if period_raw == "30" %}selected{% endif %}>Posledních 30 dní</option>
+        <option value="90" {% if period_raw == "90" %}selected{% endif %}>Posledních 90 dní</option>
+      </select>
+    </form>
+  </header>
+
+  <div class="traffic-start-notice">
+    Statistiky zobrazujeme až od data {{ stats_started_on|date:"j. F Y" }}.
+    Starší data jsou skrytá, protože měření potvrzených návštěvníků a filtrování robotů se předtím ještě ladilo, návštěvnost před datem {{ stats_started_on|date:"j. F Y" }} by tedy ukazovala kraviny.
+    {% if period_is_clipped %}
+      Vybrané období vpravo nahoře je delší, ale v následujícím přehledu se aktuálně zobrazují jen dny od spuštění měření.
+    {% endif %}
+  </div>
+
+  <section class="traffic-card-grid">
+    <article class="traffic-card traffic-card--primary">
+      <div class="traffic-card-label">Potvrzení návštěvníci dnes</div>
+      <div class="traffic-card-value">{{ today_summary.engaged_visitors }}</div>
+      <div class="traffic-card-help">
+        Návštěvníci, kterým se stránka skutečně načetla v prohlížeči.
+      </div>
+    </article>
+
+    <article class="traffic-card">
+      <div class="traffic-card-label">Možní návštěvníci dnes</div>
+      <div class="traffic-card-value">{{ today_summary.unique_visitors }}</div>
+      <div class="traffic-card-help">
+        Server-side odhad po odfiltrování známých (ro)botů. Někteří roboti se umí velmi dobře skrývat jako běžní návštěvníci, proto je číslo vyšší než počet potvrzených návštěvníků.
+      </div>
+    </article>
+
+    <article class="traffic-card">
+      <div class="traffic-card-label">Zobrazení stránek dnes</div>
+      <div class="traffic-card-value">{{ today_summary.pageviews }}</div>
+      <div class="traffic-card-help">
+        Kolikrát byly veřejné stránky otevřeny nebo znovu načteny potvrzenými nebo možnými návštěvníky. Jeden návštěvník může stejnou stránku zobrazit vícekrát, počítá se vše.
+      </div>
+    </article>
+
+    <article class="traffic-card traffic-card--muted">
+      <div class="traffic-card-label">Technická zátěž dnes</div>
+      <div class="traffic-card-value">{{ today_summary.bot_hits }}</div>
+      <div class="traffic-card-help">
+        (Ro)Bot requesty a skeny, které nejsou započítané do návštěvnosti. Uvádíme je zvlášť, aby bylo vidět, kolik provozu na webu tvoří automatizované požadavky / jak je web celkově zatížen.
+      </div>
+    </article>
+  </section>
+
+  <section class="traffic-section traffic-section--summary">
+    <div class="traffic-section-head">
+        <div>
+            <h3>Souhrn za posledních {{ period_days }} dní </h3>
+                <p class="traffic-section-note">
+                    Nejsou to unikátní návštěvníci za celých {{ period_days }} dní, ale součet unikátních návštěvníků za den - pokud tedy někdo navštěvuje náš web každý den, je tam vícekrát
+                </p>
+        </div>
+        <div class="traffic-section-badge">
+            {{ visible_days }} dní
+        </div>
+    </div>  
+    
+    <div class="traffic-summary-strip">
+      <div>
+        <strong>{{ period_summary.engaged_visitors }}</strong>
+        <span>potvrzených návštěvníků</span>
+      </div>
+      <div>
+        <strong>{{ period_summary.unique_visitors }}</strong>
+        <span>možných návštěvníků</span>
+      </div>
+      <div>
+        <strong>{{ period_summary.pageviews }}</strong>
+        <span>zobrazení stránek</span>
+      </div>
+      <div>
+        <strong>{{ period_summary.bot_hits }}</strong>
+        <span>bot/scanner requestů/celková zátěž</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="traffic-section">
+    <h3>Vývoj po dnech</h3>
+
+    <div class="traffic-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Den</th>
+            <th>Potvrzení návštěvníci</th>
+            <th>Možní návštěvníci</th>
+            <th>Zobrazení stránek</th>
+            <th>(Ro)Boti / skeny</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in daily_rows %}
+            <tr>
+              <td>{{ row.day|date:"j. F Y" }}</td>
+              <td><strong>{{ row.engaged_visitors }}</strong></td>
+              <td>{{ row.unique_visitors }}</td>
+              <td>{{ row.pageviews }}</td>
+              <td class="traffic-muted">{{ row.bot_hits }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5">Zatím nejsou žádná data.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="traffic-section">
+    <h3>Nejnavštěvovanější stránky</h3>
+    <p class="traffic-help">
+      Řazeno podle pravděpodobně lidských zobrazení stránek za vybrané období.
+      Jeden návštěvník může stejnou stránku zobrazit vícekrát.
+    </p>
+
+    <div class="traffic-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Stránka</th>
+            <th>Možní návštěvníci</th>
+            <th>Zobrazení stránek</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in top_pages %}
+            <tr>
+              <td><code>{{ row.path }}</code></td>
+              <td>{{ row.unique_visitors }}</td>
+              <td><strong>{{ row.pageviews }}</strong></td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="3">Zatím nejsou žádná data podle stránek.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="traffic-section traffic-section--note">
+    <h3>Jak čísla číst</h3>
+    <p>
+      <strong>Potvrzení návštěvníci</strong> jsou nejpřísnější a taky nejrelevantnější metrika: stránka se návštěvníkovi načetla v prohlížeči a po krátké chvíli nám poslala měřicí signál. Tohle roboti neumí, proto je to nejspolehlivější číslo. Nejsou tady ale lidé, kteří se na nějakou naší stránku dostali a hned jí zase zavřeli.
+    </p>
+    <p>
+      <strong>Možní návštěvníci</strong> jsou potvrzení návštěvníci + lidé, kteří se na nějakou naší stránku dostali a hned jí zase zavřeli + roboti, kteří se opravdu dobře skrývají jako lidé a dokázali obelstít náš anti-robotí filtr :)
+    </p>
+    <p>
+      <strong>Zobrazení stránek</strong> ukazuje aktivitu na webu Potvrzených + Možných návštěvníků. Refresh nebo opakovaný návrat na stejnou stránku zvedne počet zobrazení, číslo je tedy dost vysoké, také proto, že zahrnuje i roboty, kteří se umí skrývat jako lidé a procházejí/scanují web.
+    </p>
+  </section>
+
+</div>
+
+{% endblock rozesilac_content %}
