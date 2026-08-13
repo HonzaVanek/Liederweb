@@ -31,7 +31,7 @@ IP_RE = re.compile(r"\bip=([0-9a-fA-F:.]+)")
 CLIENT_RE = re.compile(r"\bclient=([a-f0-9]{8})")
 VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
 
-TRAFFIC_KIND_RE = re.compile(r"\|\s+liederweb\.traffic\s+\|\s+(VISIT|BOT_LIKE)\s+")
+TRAFFIC_KIND_RE = re.compile(r"\|\s+liederweb\.traffic\s+\|\s+(VISIT|BOT_LIKE|CLEANUP|ENGAGED)\s+")
 TRAFFIC_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
 
 TRAFFIC_FIELD_PATTERNS = {
@@ -112,6 +112,7 @@ def build_colored_log_lines(log_text):
         # Pro identitu řádku preferujeme IP, protože tu teď zobrazuješ v badge.
         # Client/visitor jsou fallback pro starší řádky bez ip=.
         color_key = ip or client or visitor
+        kind_match = TRAFFIC_KIND_RE.search(line)
 
         if color_key:
             if color_key in assigned_colors:
@@ -136,6 +137,9 @@ def build_colored_log_lines(log_text):
 
                 assigned_colors[color_key] = color_index
 
+        kind = kind_match.group(1) if kind_match else ""
+        kind_class = kind.lower().replace("_", "-") if kind else ""
+
         colored_log_lines.append({
             "text": line,
             "ip": ip,
@@ -143,6 +147,9 @@ def build_colored_log_lines(log_text):
             "visitor": visitor,
             "color_index": color_index,
             "ip_label": ip_label,
+            "kind": kind,
+            "kind_class": kind_class,
+            "is_engaged": kind == "ENGAGED",
         })
 
         if color_key:

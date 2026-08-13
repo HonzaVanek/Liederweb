@@ -994,11 +994,15 @@ def traffic_engaged(request):
         beacons=F("beacons") + 1,
     )
 
-    logger.debug(
-        "ENGAGED client=%s visitor=%s path=%s ua=%s",
+    referer = (request.META.get("HTTP_REFERER", "") or "").split("?", 1)[0][:300]
+    
+    logger.info(
+        "ENGAGED ip=%s client=%s visitor=%s method=POST status=204 path=%s referer=%s ua=%s",
+        ip,
         client_hash[:8],
         visitor_hash[:8],
         path[:300],
+        referer,
         user_agent[:300],
     )
 

@@ -430,9 +430,44 @@
         white-space: normal;
         word-break: break-word;
     }
+
+    .system-log-output .system-log-line.system-log-line--engaged {
+        background: rgba(220, 38, 38, 0.42) !important;
+        border-left-color: #ff4d4d !important;
+        box-shadow:
+            inset 0 0 0 1px rgba(255, 120, 120, 0.45),
+            0 0 0 1px rgba(255, 77, 77, 0.25);
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .system-log-output .system-log-line.system-log-line--engaged .visitor-badge {
+        background: #ff4d4d;
+        color: #111;
+    }
+
+    .system-log-output .system-log-line.system-log-line--engaged::before {
+        content: "JS BEACON";
+        display: inline-block;
+        margin-right: 8px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: #ff4d4d;
+        color: #111;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+    }
+
+    .system-log-output .system-log-line.traffic-kind-cleanup {
+        background: rgba(255, 193, 7, 0.22) !important;
+        border-left-color: #ffc107 !important;
+    }
 </style>
 
-<pre class="system-log-output">{% for line in colored_log_lines %}<span class="system-log-line{% if line.ip or line.client or line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.ip %}<span class="visitor-badge">{{ line.ip }}{% if line.ip_label %} · {{ line.ip_label }}{% endif %}</span>{% elif line.client %}<span class="visitor-badge">{{ line.client }} / {{ line.visitor }}</span>{% elif line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>{% empty %}{{ log_text }}{% endfor %}</pre>
+<pre class="system-log-output">{% for line in colored_log_lines %}
+<span class="system-log-line{% if line.kind_class %} traffic-kind-{{ line.kind_class }}{% endif %}{% if line.is_engaged %} system-log-line--engaged{% endif %}{% if line.ip or line.client or line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.ip %}<span class="visitor-badge">{{ line.ip }}{% if line.ip_label %} · {{ line.ip_label }}{% endif %}</span>{% elif line.client %}<span class="visitor-badge">{{ line.client }} / {{ line.visitor }}</span>{% elif line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>
+{% empty %}{{ log_text }}{% endfor %}</pre>
 
 <h2>Návštěvnost webu</h2>
 
