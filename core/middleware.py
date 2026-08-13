@@ -21,12 +21,16 @@ IGNORED_EXACT_PATHS = (
     "/apple-touch-icon.png",
     "/apple-touch-icon-precomposed.png",
     "/robots.txt",
+    "/login/",
+    "/password-reset/",
+    "/registrace/",
 )
 
 IGNORED_PATH_PREFIXES = (
     "/admin/",
     "/static/",
     "/media/",
+    "/rozesilac/",
 
     # běžný skenovací bordel
     "/wp-admin/",
@@ -99,6 +103,14 @@ BOT_USER_AGENT_PARTS = (
     "telegrambot",
     "whatsapp",
 
+    #nejspíš když se zadá reklama na fb, tak tam naběhnou crawler, který si stáhne stránku a udělá screenshot:
+    "meta-externalads",
+    "meta-externalagent",
+    "meta-webindexer",
+    "facebookexternalhit",
+    "facebot",
+    "developers.facebook.com/docs/sharing/webmasters/crawler",
+
     # často jen mezikrok před otevřením v browseru
     "qr scanner",
 
@@ -149,6 +161,7 @@ BOT_USER_AGENT_PARTS = (
     "cloudflare-security",
     "wp-safe-scanner",
     "safe-scanner",
+    "kaupr",
 )
 
 BOT_REFERER_PARTS = (
@@ -245,6 +258,11 @@ SCANNER_EXACT_PATHS = (
     "/feed/",
     "/feed/atom/",
     "/webpack-stats.json",
+    "/ip",
+    "/llms.txt",
+    "/ads.txt",
+    "/.well-known/ai-plugin.json",
+    "/.well-known/gpc.json",
 )
 
 OWN_REFERER_DOMAINS = (
@@ -279,6 +297,8 @@ CLIENT_LEVEL_CLEANUP_REASONS = (
     "ua_rotation",
     "rapid_navigation",
     "known_scanner",
+    "meta_infrastructure_ip",
+    "scanner_request",
 )
 
 
@@ -437,26 +457,37 @@ class SiteVisitStatsMiddleware:
     def is_suspicious_shared_user_agent(self, path, referer_raw, user_agent, client_label):
         ua = (user_agent or "").strip().lower()
 
-        empty_ref_shared_ua_client_threshold = 3
-        general_shared_ua_client_threshold = 8
-
         if not ua:
             return False, ""
 
         host = self.get_referer_host(referer_raw)
 
-        # Vyhledávač je dobrý signál, nechceme vyhodit reálného člověka ze Seznamu/Googlu.
         if self.is_search_referer_host(host):
             return False, ""
 
         ua_client_count = self.remember_user_agent_client(user_agent, client_label)
 
-        # Pro malý web je stejný přesný UA bez refereru ze 3 různých clientů
-        # už velmi podezřelý vzorec.
+        is_social_iab = self.is_social_or_in_app_ua(user_agent)
+        is_mobile_browser = self.is_common_mobile_browser_ua(user_agent)
+
+        # Facebook/Instagram in-app browser po reklamě:
+        # neřešit přes shared_ua, ale přes Meta IP, scanner pathy, rapid behavior a beacon matching.
+        if is_social_iab:
+            return False, ""
+
+        # Desktop / generic bez refereru: pořád přísné.
+        empty_ref_shared_ua_client_threshold = 3
+        general_shared_ua_client_threshold = 8
+
+        # Mobilní browsery mají častěji stejné UA, tak mírně povolit,
+        # ale ne úplně absurdně vysoko.
+        if is_mobile_browser:
+            empty_ref_shared_ua_client_threshold = 8
+            general_shared_ua_client_threshold = 15
+
         if not host and ua_client_count >= empty_ref_shared_ua_client_threshold:
             return True, f"same_ua_empty_ref_clients:{ua_client_count}"
 
-        # U vlastního refereru jsme opatrnější, protože část může být reálná navigace.
         if self.is_own_referer_host(host) and ua_client_count >= general_shared_ua_client_threshold:
             return True, f"same_ua_many_clients:{ua_client_count}"
 
@@ -521,6 +552,34 @@ class SiteVisitStatsMiddleware:
                 return True
 
         return False
+
+    def is_meta_infrastructure_ip(self, ip):
+        ip = (ip or "").lower()
+        return ip.startswith("2a03:2880:")
+
+    def is_social_or_in_app_ua(self, user_agent):
+        ua = (user_agent or "").lower()
+        return any(part in ua for part in (
+            "fb_iab/",
+            "fban/",
+            "fbav/",
+            "instagram ",
+            "instagram/",
+            "iabmv/1",
+        ))
+
+
+    def is_common_mobile_browser_ua(self, user_agent):
+        ua = (user_agent or "").lower()
+
+        if "mobile safari" not in ua:
+            return False
+
+        return (
+            "android" in ua
+            or "iphone" in ua
+            or "samsungbrowser" in ua
+        )    
 
     def get_referer_host(self, referer):
         referer = (referer or "").strip()
@@ -939,13 +998,31 @@ class SiteVisitStatsMiddleware:
             or self.is_obvious_scanner(path, referer_raw, user_agent)
         )
 
-        is_known_bot = (
-            is_scanner_request
-            or request.method == "HEAD"
-            or not has_user_agent
-            or self.is_probably_bot(user_agent)
-            or self.is_probably_bot_referer(referer)
-        )
+
+
+        known_bot_reason = ""
+
+        is_known_bot = False
+
+        if is_scanner_request:
+            is_known_bot = True
+            known_bot_reason = "scanner_request"
+        elif request.method == "HEAD":
+            is_known_bot = True
+            known_bot_reason = "head_request"
+        elif not has_user_agent:
+            is_known_bot = True
+            known_bot_reason = "no_user_agent"
+        elif self.is_probably_bot(user_agent):
+            is_known_bot = True
+            known_bot_reason = "bot_user_agent"
+        elif self.is_probably_bot_referer(referer):
+            is_known_bot = True
+            known_bot_reason = "bot_referer"
+
+        if self.is_meta_infrastructure_ip(ip):
+            is_known_bot = True
+            known_bot_reason = "meta_infrastructure_ip"
         
         raw_client_id = f"{today}|{ip}|{settings.SECRET_KEY}"
         client_hash = hashlib.sha256(raw_client_id.encode("utf-8")).hexdigest()
@@ -1077,19 +1154,34 @@ class SiteVisitStatsMiddleware:
             return
 
         if is_known_bot:
-            if is_scanner_request:
+            if is_scanner_request or known_bot_reason == "meta_infrastructure_ip":
                 removed = self.cleanup_client_human_stats(today, client_hash)
 
-                self.mark_sticky_bot_like_client(client_label, "known_scanner")
+                self.mark_sticky_bot_like_client(client_label, known_bot_reason or "known_bot")
 
                 if removed:
                     logger.info(
-                        "CLEANUP client=%s visitor=%s reason=known_scanner path=%s removed_pageviews=%s",
+                        "CLEANUP client=%s visitor=%s reason=%s path=%s removed_pageviews=%s",
                         client_label,
                         visitor_label,
+                        known_bot_reason or "known_bot",
                         path[:300],
                         removed,
                     )
+
+            if known_bot_reason == "meta_infrastructure_ip":
+                logger.info(
+                    "BOT_LIKE client=%s visitor=%s method=%s status=%s path=%s referer=%s reason=%s score=%s ua=%s",
+                    client_label,
+                    visitor_label,
+                    request.method,
+                    status_code,
+                    path[:300],
+                    referer,
+                    known_bot_reason,
+                    0,
+                    user_agent[:300],
+                )
 
             return
 
@@ -1193,12 +1285,15 @@ class SiteVisitStatsMiddleware:
     
     def is_hard_ignored_path(self, path):
         """
-        Tohle ignorujeme úplně i pro technickou zátěž.
-        Static/media/favicon by zbytečně nafukovaly statistiku.
+        Tohle ignorujeme úplně i pro technickou zátěž veřejného webu.
+        Admin/staff/login/static/media/beacon by zbytečně nafukovaly statistiku.
         """
         if path in (
             "/admin",
             "/traffic/engaged/",
+            "/login/",
+            "/password-reset/",
+            "/registrace/",
             "/favicon.ico",
             "/favicon.png",
             "/apple-touch-icon.png",
@@ -1210,6 +1305,7 @@ class SiteVisitStatsMiddleware:
             path.startswith(prefix)
             for prefix in (
                 "/admin/",
+                "/rozesilac/",
                 "/static/",
                 "/media/",
             )

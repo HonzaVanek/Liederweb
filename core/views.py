@@ -22,16 +22,18 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage, send_mail
 from django.core.paginator import Paginator
+from django.core.cache import cache
 from django.utils.decorators import method_decorator
 
 from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm, HomeSupportPromoForm, HomeQuoteSlideForm
-from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor
+from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor, DailySiteVisitor
 from events.models import Event
 from media_assets.models import MediaAsset
 from social_feed.models import SocialPost, SocialSource
 from .decorators import staff_required
 from rozesilac.models import Contact
 from rozesilac.services import get_web_contacts_group
+from datetime import timedelta
 
 from .utils.payments import build_spd_payload, make_qr_svg
 
@@ -918,6 +920,21 @@ def get_client_ip(request):
 
     return request.META.get("REMOTE_ADDR", "")
 
+def is_meta_infrastructure_ip(ip):
+    ip = (ip or "").lower()
+    return ip.startswith("2a03:2880:")
+
+
+def is_meta_crawler_ua(user_agent):
+    ua = (user_agent or "").lower()
+    return any(part in ua for part in (
+        "meta-externalads",
+        "meta-externalagent",
+        "meta-webindexer",
+        "facebookexternalhit",
+        "facebot",
+        "developers.facebook.com/docs/sharing/webmasters/crawler",
+    ))
 
 logger = logging.getLogger("liederweb.traffic")
 
@@ -933,6 +950,7 @@ def traffic_engaged(request):
     ip = get_client_ip(request)
     user_agent = request.META.get("HTTP_USER_AGENT", "")[:500]
     content_type = request.META.get("CONTENT_TYPE", "")
+    referer = (request.META.get("HTTP_REFERER", "") or "").split("?", 1)[0][:300]
 
     try:
         raw_body = request.body[:200]
@@ -960,13 +978,69 @@ def traffic_engaged(request):
         return HttpResponse(status=204)
 
     path = path.split("?", 1)[0][:500]
+
+    if path in ("/login/", "/password-reset/", "/registrace/") or path.startswith("/rozesilac/"):
+        logger.debug("ENGAGED_SKIP reason=ignored_path path=%s", path)
+        return HttpResponse(status=204)
+
+    if is_meta_infrastructure_ip(ip) or is_meta_crawler_ua(user_agent):
+        logger.info(
+            "ENGAGED_SKIP reason=meta_crawler ip=%s path=%s referer=%s ua=%s",
+            ip,
+            path[:300],
+            referer,
+            user_agent[:300],
+        )
+        return HttpResponse(status=204)
+
     today = timezone.localdate()
 
     raw_client_id = f"{today}|{ip}|{settings.SECRET_KEY}"
     client_hash = hashlib.sha256(raw_client_id.encode("utf-8")).hexdigest()
+    client_label = client_hash[:8]
 
     raw_visitor_id = f"{today}|{ip}|{user_agent}|{settings.SECRET_KEY}"
     visitor_hash = hashlib.sha256(raw_visitor_id.encode("utf-8")).hexdigest()
+    visitor_label = visitor_hash[:8]
+
+    sticky_reason = cache.get(f"traffic_bot_like_client:{client_label}")
+
+    if sticky_reason:
+        DailyEngagedVisitor.objects.filter(
+            day=today,
+            client_hash=client_hash,
+        ).delete()
+
+        logger.info(
+            "ENGAGED_SKIP reason=sticky_bot_like:%s ip=%s client=%s visitor=%s path=%s referer=%s ua=%s",
+            sticky_reason,
+            ip,
+            client_label,
+            visitor_label,
+            path[:300],
+            referer,
+            user_agent[:300],
+        )
+        return HttpResponse(status=204)
+
+    matching_visit_exists = DailySiteVisitor.objects.filter(
+        day=today,
+        client_hash=client_hash,
+        last_path=path,
+        last_seen_at__gte=timezone.now() - timedelta(minutes=15),
+    ).exists()
+
+    if not matching_visit_exists:
+        logger.info(
+            "ENGAGED_SKIP reason=no_matching_visit ip=%s client=%s visitor=%s path=%s referer=%s ua=%s",
+            ip,
+            client_label,
+            visitor_label,
+            path[:300],
+            referer,
+            user_agent[:300],
+        )
+        return HttpResponse(status=204)
 
     defaults = {
         "client_hash": client_hash,
@@ -994,8 +1068,6 @@ def traffic_engaged(request):
         beacons=F("beacons") + 1,
     )
 
-    referer = (request.META.get("HTTP_REFERER", "") or "").split("?", 1)[0][:300]
-    
     logger.info(
         "ENGAGED ip=%s client=%s visitor=%s method=POST status=204 path=%s referer=%s ua=%s",
         ip,
