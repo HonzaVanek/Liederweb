@@ -465,9 +465,7 @@
     }
 </style>
 
-<pre class="system-log-output">{% for line in colored_log_lines %}
-<span class="system-log-line{% if line.kind_class %} traffic-kind-{{ line.kind_class }}{% endif %}{% if line.is_engaged %} system-log-line--engaged{% endif %}{% if line.ip or line.client or line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.ip %}<span class="visitor-badge">{{ line.ip }}{% if line.ip_label %} · {{ line.ip_label }}{% endif %}</span>{% elif line.client %}<span class="visitor-badge">{{ line.client }} / {{ line.visitor }}</span>{% elif line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>
-{% empty %}{{ log_text }}{% endfor %}</pre>
+<pre class="system-log-output">{% for line in colored_log_lines %}<span class="system-log-line{% if line.kind_class %} traffic-kind-{{ line.kind_class }}{% endif %}{% if line.is_engaged %} system-log-line--engaged{% endif %}{% if line.ip or line.client or line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.ip %}<span class="visitor-badge">{{ line.ip }}{% if line.ip_label %} · {{ line.ip_label }}{% endif %}</span>{% elif line.client %}<span class="visitor-badge">{{ line.client }} / {{ line.visitor }}</span>{% elif line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>{% empty %}{{ log_text }}{% endfor %}</pre>
 
 <h2>Návštěvnost webu</h2>
 
