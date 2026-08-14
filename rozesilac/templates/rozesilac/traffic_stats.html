@@ -51,7 +51,7 @@
       <div class="traffic-card-label">Možní návštěvníci dnes</div>
       <div class="traffic-card-value">{{ today_summary.unique_visitors }}</div>
       <div class="traffic-card-help">
-        Server-side odhad po odfiltrování známých (ro)botů. Někteří roboti se umí velmi dobře skrývat jako běžní návštěvníci, proto je číslo vyšší než počet potvrzených návštěvníků.
+        Potvrzení návštěvníci + server-side odhad po odfiltrování známých (ro)botů. Někteří roboti se umí velmi dobře skrývat jako běžní návštěvníci, proto je číslo o dost vyšší než počet potvrzených návštěvníků.
       </div>
     </article>
 
@@ -59,7 +59,7 @@
       <div class="traffic-card-label">Zobrazení stránek dnes</div>
       <div class="traffic-card-value">{{ today_summary.pageviews }}</div>
       <div class="traffic-card-help">
-        Kolikrát byly veřejné stránky otevřeny nebo znovu načteny potvrzenými nebo možnými návštěvníky. Jeden návštěvník může stejnou stránku zobrazit vícekrát, počítá se vše.
+        Kolikrát byly veřejné stránky otevřeny nebo znovu načteny potvrzenými nebo možnými návštěvníky. Jeden návštěvník může stejnou stránku zobrazit vícekrát, počítá se vše, číslo tedy může být stejné nebo vyšší než počet možných návštěvníků, ale nemělo by být nižší.
       </div>
     </article>
 
@@ -174,7 +174,7 @@
   <section class="traffic-section traffic-section--note">
     <h3>Jak čísla číst</h3>
     <p>
-      <strong>Potvrzení návštěvníci</strong> jsou nejpřísnější a taky nejrelevantnější metrika: stránka se návštěvníkovi načetla v prohlížeči a po krátké chvíli nám poslala měřicí signál. Tohle roboti neumí, proto je to nejspolehlivější číslo. Nejsou tady ale lidé, kteří se na nějakou naší stránku dostali a hned jí zase zavřeli.
+      <strong>Potvrzení návštěvníci</strong> jsou nejpřísnější a taky nejrelevantnější metrika: stránka se návštěvníkovi načetla v prohlížeči a po krátké chvíli nám poslala měřicí signál. Tohle roboti až na úplné výjimky neumí, proto je to nejspolehlivější číslo. Nejsou tady ale lidé, kteří se na nějakou naší stránku dostali a hned jí zase zavřeli.
     </p>
     <p>
       <strong>Možní návštěvníci</strong> jsou potvrzení návštěvníci + lidé, kteří se na nějakou naší stránku dostali a hned jí zase zavřeli + roboti, kteří se opravdu dobře skrývají jako lidé a dokázali obelstít náš anti-robotí filtr :)
