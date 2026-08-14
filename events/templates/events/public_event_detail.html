@@ -3,7 +3,7 @@
 
 {% block extra_css %}
   {{ block.super }}
-  <link rel="stylesheet" href="{% static 'events/public_event_detail.css' %}?v=20260718-2" />
+  <link rel="stylesheet" href="{% static 'events/public_event_detail.css' %}?v=20260814-1" />
 {% endblock %}
 
 {% block title %}
@@ -21,6 +21,68 @@
       {% endif %}
 
       <div class="public-event-hero-overlay"></div>
+
+      <div class="public-event-nav">
+        <a
+          href="/"
+          class="public-event-nav__brand"
+          aria-label="Lieder Society – domovská stránka"
+        >
+          <img
+            src="{% static 'LIEDER_society_logo_black_transparent_orez.png' %}"
+            alt="Lieder Society"
+            class="public-event-nav__logo"
+          >
+        </a>
+
+        <button
+          type="button"
+          class="public-event-nav__toggle"
+          id="event-menu-toggle"
+          aria-controls="event-menu"
+          aria-expanded="false"
+          aria-label="Otevřít hlavní menu"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+
+      <div class="public-event-menu-backdrop" id="event-menu-backdrop" hidden></div>
+
+      <aside
+        class="public-event-menu"
+        id="event-menu"
+        aria-hidden="true"
+        aria-label="Hlavní navigace"
+      >
+        <div class="public-event-menu__header">
+          <span>Menu</span>
+
+          <button
+            type="button"
+            class="public-event-menu__close"
+            id="event-menu-close"
+            aria-label="Zavřít hlavní menu"
+          >
+            ×
+          </button>
+        </div>
+
+        <nav class="public-event-menu__links">
+          <a href="{% url 'core:person_list' %}">Kdo jsme</a>
+          <a href="{% url 'public_event_list' %}">Koncerty</a>
+          <a href="https://eshop.lieder-society.cz/">Vyberte si</a>
+          <a href="{% url 'content:post_list' %}">Objevujte</a>
+          <a href="{% url 'core:mlady_salon' %}">Mladý salón</a>
+          <a href="{% url 'core:contact' %}">Napište nám</a>
+        </nav>
+
+        <a href="/" class="public-event-menu__home">
+          lieder-society.cz →
+        </a>
+      </aside>
 
       <div class="public-event-hero-inner">
         <div class="public-event-hero-copy">
@@ -657,6 +719,48 @@
       window.addEventListener('scroll', requestTick, { passive: true })
       window.addEventListener('resize', requestTick)
       requestTick()
+    })
+  </script>
+
+  <script>
+    const eventMenuToggle = document.getElementById('event-menu-toggle')
+    const eventMenu = document.getElementById('event-menu')
+    const eventMenuClose = document.getElementById('event-menu-close')
+    const eventMenuBackdrop = document.getElementById('event-menu-backdrop')
+
+    function setEventMenuOpen(open) {
+        if (!eventMenu || !eventMenuToggle || !eventMenuBackdrop) return
+
+        eventMenu.classList.toggle('is-open', open)
+        eventMenu.setAttribute('aria-hidden', open ? 'false' : 'true')
+        eventMenuToggle.setAttribute('aria-expanded', open ? 'true' : 'false')
+
+        eventMenuBackdrop.hidden = !open
+        document.body.classList.toggle('event-menu-open', open)
+    }
+
+    eventMenuToggle?.addEventListener('click', function () {
+        setEventMenuOpen(true)
+    })
+
+    eventMenuClose?.addEventListener('click', function () {
+        setEventMenuOpen(false)
+    })
+
+    eventMenuBackdrop?.addEventListener('click', function () {
+        setEventMenuOpen(false)
+    })
+
+    eventMenu?.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            setEventMenuOpen(false)
+        })
+    })
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            setEventMenuOpen(false)
+        }
     })
   </script>
 {% endblock %}
