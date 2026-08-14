@@ -263,6 +263,8 @@ SCANNER_EXACT_PATHS = (
     "/ads.txt",
     "/.well-known/ai-plugin.json",
     "/.well-known/gpc.json",
+    "/news_sitemap.xml",
+    "/news-sitemap.xml",
 )
 
 OWN_REFERER_DOMAINS = (
@@ -1220,6 +1222,15 @@ class SiteVisitStatsMiddleware:
             user_agent[:300],
         )
 
+        cache.set(
+            f"traffic_visit_source:{today}:{client_hash}:{path[:500]}",
+            {
+                "referer": referer,
+                "visitor": visitor_label,
+            },
+            timeout=30 * 60,
+        )
+
         # Detailní návštěvnost lidí počítáme jen pro GET.
         if request.method != "GET":
             return
@@ -1430,6 +1441,13 @@ class SiteVisitStatsMiddleware:
 
         if path_lower in SCANNER_EXACT_PATHS:
             return f"/__scan__{path_lower}"
+
+        if path_lower in (
+            "/meta.json",
+            "/news_sitemap.xml",
+            "/news-sitemap.xml",
+        ):
+            return "/__scan__/meta"
 
         for prefix in scanner_prefixes:
             if path_lower.startswith(prefix):

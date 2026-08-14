@@ -31,7 +31,7 @@ IP_RE = re.compile(r"\bip=([0-9a-fA-F:.]+)")
 CLIENT_RE = re.compile(r"\bclient=([a-f0-9]{8})")
 VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
 
-TRAFFIC_KIND_RE = re.compile(r"\|\s+liederweb\.traffic\s+\|\s+(VISIT|BOT_LIKE|CLEANUP|ENGAGED)\s+")
+TRAFFIC_KIND_RE = re.compile(r"\|\s+liederweb\.traffic\s+\|\s+(VISIT|BOT_LIKE|CLEANUP|ENGAGED|ENGAGED_SKIP)\s+")
 TRAFFIC_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
 
 TRAFFIC_FIELD_PATTERNS = {

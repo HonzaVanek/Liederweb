@@ -1023,24 +1023,39 @@ def traffic_engaged(request):
         )
         return HttpResponse(status=204)
 
-    matching_visit_exists = DailySiteVisitor.objects.filter(
-        day=today,
-        client_hash=client_hash,
-        last_path=path,
-        last_seen_at__gte=timezone.now() - timedelta(minutes=15),
-    ).exists()
+    matching_visit = (
+        DailySiteVisitor.objects
+        .filter(
+            day=today,
+            client_hash=client_hash,
+            last_path=path,
+            last_seen_at__gte=timezone.now() - timedelta(minutes=15),
+        )
+        .order_by("-last_seen_at")
+        .first()
+    )
 
-    if not matching_visit_exists:
+    source_info = cache.get(f"traffic_visit_source:{today}:{client_hash}:{path}") or {}
+    source_referer = ""
+
+    if isinstance(source_info, dict):
+        source_referer = source_info.get("referer", "") or ""
+
+    if not matching_visit:
         logger.info(
-            "ENGAGED_SKIP reason=no_matching_visit ip=%s client=%s visitor=%s path=%s referer=%s ua=%s",
+            "ENGAGED_SKIP reason=no_matching_visit ip=%s client=%s visitor=%s path=%s referer=%s source_referer=%s ua=%s",
             ip,
             client_label,
             visitor_label,
             path[:300],
             referer,
+            source_referer[:300],
             user_agent[:300],
         )
         return HttpResponse(status=204)
+
+    engaged_visitor_hash = matching_visit.visitor_hash
+    engaged_visitor_label = engaged_visitor_hash[:8]
 
     defaults = {
         "client_hash": client_hash,
@@ -1052,13 +1067,13 @@ def traffic_engaged(request):
     try:
         engaged, _created = DailyEngagedVisitor.objects.get_or_create(
             day=today,
-            visitor_hash=visitor_hash,
+            visitor_hash=engaged_visitor_hash,
             defaults=defaults,
         )
     except IntegrityError:
         engaged = DailyEngagedVisitor.objects.get(
             day=today,
-            visitor_hash=visitor_hash,
+            visitor_hash=engaged_visitor_hash,
         )
 
     DailyEngagedVisitor.objects.filter(pk=engaged.pk).update(
@@ -1069,12 +1084,14 @@ def traffic_engaged(request):
     )
 
     logger.info(
-        "ENGAGED ip=%s client=%s visitor=%s method=POST status=204 path=%s referer=%s ua=%s",
+        "ENGAGED ip=%s client=%s visitor=%s beacon_visitor=%s method=POST status=204 path=%s referer=%s source_referer=%s ua=%s",
         ip,
-        client_hash[:8],
-        visitor_hash[:8],
+        client_label,
+        engaged_visitor_label,
+        visitor_label,
         path[:300],
         referer,
+        source_referer[:300],
         user_agent[:300],
     )
 
