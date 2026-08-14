@@ -1003,6 +1003,13 @@ def traffic_engaged(request):
     visitor_hash = hashlib.sha256(raw_visitor_id.encode("utf-8")).hexdigest()
     visitor_label = visitor_hash[:8]
 
+    source_info = cache.get(f"traffic_visit_source:{today}:{client_hash}:{path}") or {}
+    source_referer = ""
+
+    if isinstance(source_info, dict):
+        source_referer = source_info.get("referer", "") or ""
+
+
     sticky_reason = cache.get(f"traffic_bot_like_client:{client_label}")
 
     if sticky_reason:
@@ -1012,13 +1019,14 @@ def traffic_engaged(request):
         ).delete()
 
         logger.info(
-            "ENGAGED_SKIP reason=sticky_bot_like:%s ip=%s client=%s visitor=%s path=%s referer=%s ua=%s",
+            "ENGAGED_SKIP reason=sticky_bot_like:%s ip=%s client=%s visitor=%s path=%s referer=%s source_referer=%s ua=%s",
             sticky_reason,
             ip,
             client_label,
             visitor_label,
             path[:300],
             referer,
+            source_referer[:300],
             user_agent[:300],
         )
         return HttpResponse(status=204)
@@ -1034,12 +1042,6 @@ def traffic_engaged(request):
         .order_by("-last_seen_at")
         .first()
     )
-
-    source_info = cache.get(f"traffic_visit_source:{today}:{client_hash}:{path}") or {}
-    source_referer = ""
-
-    if isinstance(source_info, dict):
-        source_referer = source_info.get("referer", "") or ""
 
     if not matching_visit:
         logger.info(
