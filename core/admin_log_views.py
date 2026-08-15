@@ -42,6 +42,7 @@ TRAFFIC_FIELD_PATTERNS = {
     "status": re.compile(r"\bstatus=(\d{3})"),
     "path": re.compile(r"\bpath=([^\s]*)"),
     "referer": re.compile(r"\breferer=([^\s]*)"),
+    "source_referer": re.compile(r"\bsource_referer=([^\s]*)"),
     "reason": re.compile(r"\breason=([^\s]*)"),
     "score": re.compile(r"\bscore=([^\s]*)"),
 }
@@ -268,6 +269,7 @@ def parse_traffic_log_line(line):
         "status": None,
         "path": "",
         "referer": "",
+        "source_referer": "",
         "reason": "",
         "score": "",
         "ua": "",
@@ -319,6 +321,45 @@ def get_reason_family(reason):
     return reason.split(":", 1)[0]
 
 
+SOCIAL_IMAGE_404_RE = re.compile(
+    r"^/\d{8,}_.+_n/?$",
+    re.IGNORECASE,
+)
+
+SOCIAL_IMAGE_PREFIX_404_RE = re.compile(
+    r"^/(?:mng|z6p|dsc)[_-].*",
+    re.IGNORECASE,
+)
+
+
+def normalize_audit_404_path(path):
+    path = (path or "").strip()
+    path_lower = path.lower()
+
+    if path_lower in (
+        "/meta.json",
+        "/news_sitemap.xml",
+        "/news-sitemap.xml",
+    ):
+        return "/__scan__/meta"
+
+    if (
+        SOCIAL_IMAGE_404_RE.match(path_lower)
+        or SOCIAL_IMAGE_PREFIX_404_RE.match(path_lower)
+    ):
+        return "/__scan__/social-image"
+
+    if (
+        "sitemap" in path_lower
+        and (
+            path_lower.endswith(".xml")
+            or path_lower.endswith(".txt")
+        )
+    ):
+        return "/__scan__/sitemap"
+
+    return path
+
 def build_traffic_audit(log_text, since=None):
     items = []
 
@@ -339,6 +380,12 @@ def build_traffic_audit(log_text, since=None):
         if item["kind"] == "BOT_LIKE"
     )
 
+    engaged_skip_reasons = Counter(
+        item["reason"] or "bez důvodu"
+        for item in items
+        if item["kind"] == "ENGAGED_SKIP"
+    )
+
     visit_paths = Counter(
         item["path"]
         for item in items
@@ -352,7 +399,7 @@ def build_traffic_audit(log_text, since=None):
     )
 
     not_found_paths = Counter(
-        item["path"]
+        normalize_audit_404_path(item["path"])
         for item in items
         if item["status"] == 404 and item["path"]
     )
@@ -437,6 +484,27 @@ def build_traffic_audit(log_text, since=None):
     ]
     mixed_clients.sort(key=lambda row: row["ua_count"], reverse=True)
 
+    engaged_skip_rows = []
+
+    for item in reversed(items):
+        if item["kind"] != "ENGAGED_SKIP":
+            continue
+
+        engaged_skip_rows.append({
+            "time": item["timestamp"],
+            "ip": item["ip"],
+            "client": item["client"],
+            "visitor": item["visitor"],
+            "path": item["path"],
+            "reason": item["reason"] or "bez důvodu",
+            "referer": item["referer"],
+            "source_referer": item["source_referer"],
+            "ua": shorten_text(item["ua"], 160),
+        })
+
+        if len(engaged_skip_rows) >= 20:
+            break
+
     return {
         "total_items": len(items),
         "kind_counts": kind_counts.most_common(),
@@ -448,6 +516,8 @@ def build_traffic_audit(log_text, since=None):
         "clients_many_uas": clients_many_uas[:15],
         "mixed_clients": mixed_clients[:15],
         "suspicious_visits": suspicious_visits[:30],
+        "engaged_skip_reasons": engaged_skip_reasons.most_common(10),
+        "engaged_skip_rows": engaged_skip_rows,
     }
 
 

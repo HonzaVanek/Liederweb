@@ -163,11 +163,22 @@
       <table>
         {% for label, count in traffic_audit.kind_counts %}
           <tr>
-            <td>{{ label }}</td>
+            <td>
+              {% if label == "ENGAGED" %}
+                ENGAGED beacony
+              {% else %}
+                {{ label }}
+              {% endif %}
+            </td>
             <td>{{ count }}</td>
           </tr>
         {% endfor %}
       </table>
+      <p class="help">
+        ENGAGED beacony jsou jednotlivé JS beacon události, nikoliv počet
+        unikátních potvrzených návštěvníků. Jeden návštěvník může během
+        procházení webu odeslat více beaconů.
+      </p>
     </div>
 
     <div class="traffic-audit-card">
@@ -180,6 +191,23 @@
           </tr>
         {% empty %}
           <tr><td colspan="2">Nic.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="traffic-audit-card">
+      <h3>ENGAGED_SKIP důvody</h3>
+
+      <table>
+        {% for label, count in traffic_audit.engaged_skip_reasons %}
+          <tr>
+            <td><code>{{ label }}</code></td>
+            <td>{{ count }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2">Nic.</td>
+          </tr>
         {% endfor %}
       </table>
     </div>
@@ -210,6 +238,65 @@
       </table>
     </div>
   </div>
+
+  <h3>Poslední ENGAGED_SKIP</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Čas</th>
+          <th>IP / client</th>
+          <th>Path</th>
+          <th>Důvod</th>
+          <th>Source referer</th>
+          <th>User-Agent</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in traffic_audit.engaged_skip_rows %}
+          <tr>
+            <td>{{ row.time }}</td>
+
+            <td>
+              {% if row.ip %}
+                <code>{{ row.ip }}</code>
+              {% endif %}
+
+              {% if row.client %}
+                <br>
+                <code>{{ row.client }}</code>
+              {% endif %}
+            </td>
+
+            <td>
+              <code>{{ row.path }}</code>
+            </td>
+
+            <td>
+              <code>{{ row.reason }}</code>
+            </td>
+
+            <td>
+              {% if row.source_referer %}
+                <code>{{ row.source_referer }}</code>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <td>
+              <code>{{ row.ua }}</code>
+            </td>
+          </tr>
+
+        {% empty %}
+          <tr>
+            <td colspan="6">Žádné ENGAGED_SKIP záznamy.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
   <h3>Stejný User-Agent z mnoha clientů</h3>
   <table>

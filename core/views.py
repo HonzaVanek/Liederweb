@@ -936,6 +936,21 @@ def is_meta_crawler_ua(user_agent):
         "developers.facebook.com/docs/sharing/webmasters/crawler",
     ))
 
+def is_obvious_beacon_bot_ua(user_agent):
+    ua = (user_agent or "").lower()
+
+    return any(part in ua for part in (
+        "bot",
+        "crawler",
+        "spider",
+        "slurp",
+        "headless",
+        "python-requests",
+        "python-urllib",
+        "curl/",
+        "wget/",
+    ))
+
 logger = logging.getLogger("liederweb.traffic")
 
 @csrf_exempt
@@ -1008,6 +1023,19 @@ def traffic_engaged(request):
 
     if isinstance(source_info, dict):
         source_referer = source_info.get("referer", "") or ""
+
+    if is_obvious_beacon_bot_ua(user_agent):
+        logger.info(
+            "ENGAGED_SKIP reason=bot_user_agent ip=%s client=%s visitor=%s path=%s referer=%s source_referer=%s ua=%s",
+            ip,
+            client_label,
+            visitor_label,
+            path[:300],
+            referer,
+            source_referer[:300],
+            user_agent[:300],
+        )
+        return HttpResponse(status=204)
 
 
     sticky_reason = cache.get(f"traffic_bot_like_client:{client_label}")
