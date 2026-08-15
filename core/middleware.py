@@ -186,6 +186,8 @@ OBVIOUS_SCANNER_UA_PARTS = (
     "bulid/",
     "moblie",
     "ct-wp-probe",
+    "palo alto networks",
+    "cortex-xpanse",
 )
 
 OBVIOUS_SCANNER_PATH_PARTS = (
@@ -266,6 +268,16 @@ SCANNER_EXACT_PATHS = (
     "/.well-known/gpc.json",
     "/news_sitemap.xml",
     "/news-sitemap.xml",
+    "/ds_store",
+    "/.ds_store",
+    "/api/v1/secrets",
+    "/_ignition/execute-solution",
+    "/secrets.json",
+    "/config.yaml",
+    "/.cursor/mcp.json",
+    "/.continue/config.json",
+    "/.env.production",
+    "/.env.production.local",
 )
 
 OWN_REFERER_DOMAINS = (
