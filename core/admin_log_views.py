@@ -429,7 +429,7 @@ def build_traffic_audit(log_text, since=None):
 
             reasons = []
 
-            if "wordpress cms scanner" in ua_lower or "cms scanner" in ua_lower:
+            if any(part in ua_lower for part in ("wordpress cms scanner", "cms scanner", "ct-wp-probe")):
                 reasons.append("scanner_ua")
 
             if path_lower == "/wp-json" or path_lower.startswith("/wp-json/"):

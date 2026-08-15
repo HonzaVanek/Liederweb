@@ -185,6 +185,7 @@ OBVIOUS_SCANNER_UA_PARTS = (
     "mozlila/",
     "bulid/",
     "moblie",
+    "ct-wp-probe",
 )
 
 OBVIOUS_SCANNER_PATH_PARTS = (

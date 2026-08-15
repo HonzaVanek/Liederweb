@@ -949,6 +949,7 @@ def is_obvious_beacon_bot_ua(user_agent):
         "python-urllib",
         "curl/",
         "wget/",
+        "ct-wp-probe",
     ))
 
 logger = logging.getLogger("liederweb.traffic")
