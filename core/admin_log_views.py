@@ -31,7 +31,10 @@ IP_RE = re.compile(r"\bip=([0-9a-fA-F:.]+)")
 CLIENT_RE = re.compile(r"\bclient=([a-f0-9]{8})")
 VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
 
-TRAFFIC_KIND_RE = re.compile(r"\|\s+liederweb\.traffic\s+\|\s+(VISIT|BOT_LIKE|CLEANUP|ENGAGED|ENGAGED_SKIP)\s+")
+TRAFFIC_KIND_RE = re.compile(
+    r"\|\s+liederweb\.traffic\s+\|\s+"
+    r"(VISIT_DUPLICATE|VISIT|BOT_LIKE|CLEANUP|ENGAGED|ENGAGED_SKIP)\s+"
+)
 TRAFFIC_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
 
 TRAFFIC_FIELD_PATTERNS = {
@@ -392,6 +395,18 @@ def build_traffic_audit(log_text, since=None):
         if item["kind"] == "VISIT" and item["path"]
     )
 
+    duplicate_paths = Counter(
+        item["path"]
+        for item in items
+        if item["kind"] == "VISIT_DUPLICATE" and item["path"]
+    )
+
+    duplicate_reasons = Counter(
+        item["reason"] or "bez důvodu"
+        for item in items
+        if item["kind"] == "VISIT_DUPLICATE"
+    )
+
     bot_like_paths = Counter(
         item["path"]
         for item in items
@@ -484,6 +499,26 @@ def build_traffic_audit(log_text, since=None):
     ]
     mixed_clients.sort(key=lambda row: row["ua_count"], reverse=True)
 
+    duplicate_rows = []
+
+    for item in reversed(items):
+        if item["kind"] != "VISIT_DUPLICATE":
+            continue
+
+        duplicate_rows.append({
+            "time": item["timestamp"],
+            "ip": item["ip"],
+            "client": item["client"],
+            "visitor": item["visitor"],
+            "path": item["path"],
+            "reason": item["reason"] or "bez důvodu",
+            "referer": item["referer"],
+            "ua": shorten_text(item["ua"], 180),
+        })
+
+        if len(duplicate_rows) >= 20:
+            break
+
     engaged_skip_rows = []
 
     for item in reversed(items):
@@ -510,6 +545,9 @@ def build_traffic_audit(log_text, since=None):
         "kind_counts": kind_counts.most_common(),
         "bot_like_reasons": bot_like_reasons.most_common(10),
         "visit_paths": visit_paths.most_common(15),
+        "duplicate_paths": duplicate_paths.most_common(15),
+        "duplicate_reasons": duplicate_reasons.most_common(10),
+        "duplicate_rows": duplicate_rows,
         "bot_like_paths": bot_like_paths.most_common(15),
         "not_found_paths": not_found_paths.most_common(15),
         "ua_many_clients": ua_many_clients[:15],
@@ -689,6 +727,7 @@ def system_logs_view(request):
             .values("day")
             .annotate(
                 unique_visitors=Count("id"),
+                unique_clients=Count("client_hash", distinct=True),
                 pageviews=Sum("pageviews"),
             )
         )
@@ -721,6 +760,7 @@ def system_logs_view(request):
         human_requests = row.get("human_hits", 0) or 0
 
         row["unique_visitors"] = human_row.get("unique_visitors", 0)
+        row["unique_clients"] = human_row.get("unique_clients", 0)
         row["engaged_visitors"] = engaged_counts.get(row["day"], 0)
         row["pageviews"] = pageviews
         row["human_requests"] = human_requests

@@ -166,6 +166,8 @@
             <td>
               {% if label == "ENGAGED" %}
                 ENGAGED beacony
+              {% elif label == "VISIT_DUPLICATE" %}
+                VISIT_DUPLICATE (deduplikace)
               {% else %}
                 {{ label }}
               {% endif %}
@@ -174,11 +176,13 @@
           </tr>
         {% endfor %}
       </table>
-      <p class="help">
-        ENGAGED beacony jsou jednotlivé JS beacon události, nikoliv počet
-        unikátních potvrzených návštěvníků. Jeden návštěvník může během
-        procházení webu odeslat více beaconů.
-      </p>
+        <p class="help">
+          ENGAGED beacony jsou jednotlivé JS beacon události, nikoliv počet
+          unikátních potvrzených návštěvníků. Jeden návštěvník může během
+          procházení webu odeslat více beaconů.
+          VISIT_DUPLICATE označuje technický dvojrequest FB/IG in-app browseru,
+          který byl započítán do technické zátěže, ale ne jako další analytická pageview.
+        </p>
     </div>
 
     <div class="traffic-audit-card">
@@ -225,6 +229,34 @@
     </div>
 
     <div class="traffic-audit-card">
+      <h3>VISIT_DUPLICATE důvody</h3>
+      <table>
+        {% for label, count in traffic_audit.duplicate_reasons %}
+          <tr>
+            <td><code>{{ label }}</code></td>
+            <td>{{ count }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="2">Nic.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="traffic-audit-card">
+      <h3>Deduplikované stránky</h3>
+      <table>
+        {% for path, count in traffic_audit.duplicate_paths %}
+          <tr>
+            <td><code>{{ path }}</code></td>
+            <td>{{ count }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="2">Nic.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="traffic-audit-card">
       <h3>404 pathy</h3>
       <table>
         {% for path, count in traffic_audit.not_found_paths %}
@@ -238,6 +270,65 @@
       </table>
     </div>
   </div>
+
+  <h3>Poslední VISIT_DUPLICATE</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Čas</th>
+        <th>IP / client</th>
+        <th>Path</th>
+        <th>Důvod</th>
+        <th>Referer</th>
+        <th>User-Agent</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for row in traffic_audit.duplicate_rows %}
+        <tr>
+          <td>{{ row.time }}</td>
+
+          <td>
+            {% if row.ip %}
+              <code>{{ row.ip }}</code>
+            {% endif %}
+
+            {% if row.client %}
+              <br>
+              <code>{{ row.client }}</code>
+            {% endif %}
+          </td>
+
+          <td>
+            <code>{{ row.path }}</code>
+          </td>
+
+          <td>
+            <code>{{ row.reason }}</code>
+          </td>
+
+          <td>
+            {% if row.referer %}
+              <code>{{ row.referer }}</code>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+
+          <td>
+            <code>{{ row.ua }}</code>
+          </td>
+        </tr>
+
+      {% empty %}
+        <tr>
+          <td colspan="6">Žádné VISIT_DUPLICATE záznamy.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
   <h3>Poslední ENGAGED_SKIP</h3>
 
@@ -451,11 +542,11 @@
     }
 
     .stats-table-scroll {
-    max-height: 520px;
-    overflow: auto;
-    border: 1px solid var(--hairline-color, #ddd);
-    border-radius: 6px;
-    margin-bottom: 24px;
+        max-height: 520px;
+        overflow: auto;
+        border: 1px solid var(--hairline-color, #ddd);
+        border-radius: 6px;
+        margin-bottom: 24px;
     }
 
     .stats-table-scroll table {
@@ -550,6 +641,24 @@
         background: rgba(255, 193, 7, 0.22) !important;
         border-left-color: #ffc107 !important;
     }
+
+    .system-log-output .system-log-line.traffic-kind-visit-duplicate {
+        background: rgba(59, 130, 246, 0.22) !important;
+        border-left-color: #60a5fa !important;
+    }
+
+    .system-log-output .system-log-line.traffic-kind-visit-duplicate::before {
+        content: "DEDUP";
+        display: inline-block;
+        margin-right: 8px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: #60a5fa;
+        color: #111;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+    }
 </style>
 
 <pre class="system-log-output">{% for line in colored_log_lines %}<span class="system-log-line{% if line.kind_class %} traffic-kind-{{ line.kind_class }}{% endif %}{% if line.is_engaged %} system-log-line--engaged{% endif %}{% if line.ip or line.client or line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.ip %}<span class="visitor-badge">{{ line.ip }}{% if line.ip_label %} · {{ line.ip_label }}{% endif %}</span>{% elif line.client %}<span class="visitor-badge">{{ line.client }} / {{ line.visitor }}</span>{% elif line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>{% empty %}{{ log_text }}{% endfor %}</pre>
@@ -557,7 +666,14 @@
 <h2>Návštěvnost webu</h2>
 
 <p class="help">
-  Orientační denní statistika. Unikátní návštěvníci jsou server-side kandidáti po odfiltrování známých botů. Potvrzení návštěvníci (JS) jsou návštěvníci, kterým se v prohlížeči po několika sekundách spustil měřicí beacon. Sloupce Boti a Celkem ukazují technickou zátěž webu včetně známých botů a skenů.
+  Orientační denní statistika.
+  Unikátní návštěvníci jsou server-side visitor identity po odfiltrování známých botů;
+  u Facebook/Instagram in-app browserů se ignorují některé volatilní části User-Agentu.
+  Unikátní klienti jsou diagnostický počet rozdílných denních client identit
+  založených převážně na IP adrese a nelze jej chápat jako přesný počet lidí.
+  Potvrzení návštěvníci (JS) jsou návštěvníci, kterým se v prohlížeči
+  po několika sekundách spustil měřicí beacon.
+  Sloupce Boti a Celkem ukazují technickou zátěž webu včetně známých botů a skenů.
 </p>
 
 <table>
@@ -565,6 +681,7 @@
         <tr>
             <th>Den</th>
             <th>Unikátní návštěvníci</th>
+            <th>Unikátní klienti</th>
             <th>Potvrzení návštěvníci (js)</th>
             <th>Lidská pageviews</th>
             <th>Jiné lidské requesty</th>
@@ -578,6 +695,7 @@
             <tr>
                 <td>{{ row.day|date:"j. F Y" }}</td>
                 <td>{{ row.unique_visitors }}</td>
+                <td>{{ row.unique_clients }}</td>
                 <td>{{ row.engaged_visitors }}</td>
                 <td>{{ row.pageviews }}</td>
                 <td>{{ row.human_non_pageview_hits }}</td>
@@ -587,7 +705,7 @@
             </tr>
         {% empty %}
             <tr>
-                <td colspan="7">Zatím nejsou žádná data.</td>
+                <td colspan="9">Zatím nejsou žádná data.</td>
             </tr>
         {% endfor %}
     </tbody>

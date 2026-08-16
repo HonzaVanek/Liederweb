@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import re
 from django.core.cache import cache
 
 from django.conf import settings
@@ -980,6 +981,93 @@ class SiteVisitStatsMiddleware:
 
         return total_pageviews
 
+    def normalize_visitor_user_agent(self, user_agent):
+        ua = (user_agent or "").strip()
+
+        if not self.is_social_or_in_app_ua(ua):
+            return ua
+
+        # Facebook umí mezi requesty přidat/změnit FBNV.
+        ua = re.sub(r"(?:\s+|;)FBNV/[^\s;\]]+", "", ua, flags=re.IGNORECASE)
+
+        # Instagram/iOS mění např. NW/3 <-> NW/1.
+        ua = re.sub(r"\s+NW/\d+\b", "", ua, flags=re.IGNORECASE)
+
+        # Po odstranění tokenů sjednotit mezery.
+        ua = re.sub(r"\s+", " ", ua).strip()
+
+        return ua        
+
+    def is_recent_social_page_duplicate(self, client_label, path, user_agent, referer_raw,):
+        """
+        Detekuje technický dvojrequest Facebook/Instagram in-app browseru.
+
+        Za duplicitu považujeme pouze případ:
+        - social / in-app UA,
+        - stejný client,
+        - stejná path,
+        - do 10 sekund,
+        - raw User-Agent se změnil,
+        - po odstranění volatilních FB/IG tokenů je UA stejný,
+        - referer host zůstává stejný.
+
+        Normální reload se stejným UA tímto neodfiltrujeme.
+        """
+        if not self.is_social_or_in_app_ua(user_agent):
+            return False
+
+        raw_ua = (user_agent or "").strip()
+        normalized_ua = self.normalize_visitor_user_agent(raw_ua)
+        referer_host = self.get_referer_host(referer_raw)
+
+        now_ts = timezone.now().timestamp()
+
+        path_key = hashlib.sha256((path or "").encode("utf-8")).hexdigest()[:16]
+
+        cache_key = (
+            f"traffic_social_page:"
+            f"{client_label}:"
+            f"{path_key}"
+        )
+
+        previous = cache.get(cache_key)
+
+        if previous:
+            previous_ts = previous.get("ts", 0)
+            age = now_ts - previous_ts
+
+            is_recent = 0 <= age <= 10
+
+            raw_ua_changed = (previous.get("raw_ua", "") != raw_ua)
+
+            normalized_ua_same = (previous.get("normalized_ua", "") == normalized_ua)
+
+            referer_host_same = (previous.get("referer_host", "") == referer_host)
+
+            if (
+                is_recent
+                and raw_ua_changed
+                and normalized_ua_same
+                and referer_host_same
+            ):
+                # Duplicitu schválně NEukládáme jako nový základ,
+                # aby se nám nevytvořil řetězec A -> B -> A.
+                return True
+
+        cache.set(
+            cache_key,
+            {
+                "ts": now_ts,
+                "raw_ua": raw_ua,
+                "normalized_ua": normalized_ua,
+                "referer_host": referer_host,
+            },
+            timeout=15,
+        )
+
+        return False
+
+
     def track_visit(self, request, response):
         path = request.path or ""
 
@@ -1043,7 +1131,9 @@ class SiteVisitStatsMiddleware:
         client_hash = hashlib.sha256(raw_client_id.encode("utf-8")).hexdigest()
         client_label = client_hash[:8]
 
-        raw_visitor_id = f"{today}|{ip}|{user_agent}|{settings.SECRET_KEY}"
+        visitor_user_agent = self.normalize_visitor_user_agent(user_agent)
+
+        raw_visitor_id = (f"{today}|{ip}|{visitor_user_agent}|{settings.SECRET_KEY}")
         visitor_hash = hashlib.sha256(raw_visitor_id.encode("utf-8")).hexdigest()
         visitor_label = visitor_hash[:8]
 
@@ -1222,6 +1312,28 @@ class SiteVisitStatsMiddleware:
         fetch_dest = request.headers.get("Sec-Fetch-Dest", "").lower()
         if fetch_dest and fetch_dest not in ("document", "iframe", "nested-document"):
             return
+
+        if request.method == "GET":
+            is_social_duplicate = self.is_recent_social_page_duplicate(
+                client_label=client_label,
+                path=path,
+                user_agent=user_agent,
+                referer_raw=referer_raw,
+            )
+
+            if is_social_duplicate:
+                logger.info(
+                    "VISIT_DUPLICATE ip=%s client=%s visitor=%s method=%s status=%s path=%s referer=%s reason=social_ua_variant ua=%s",
+                    ip,
+                    client_label,
+                    visitor_label,
+                    request.method,
+                    status_code,
+                    path[:300],
+                    referer,
+                    user_agent[:300],
+                )
+                return
 
         logger.info(
             "VISIT ip=%s client=%s visitor=%s method=%s status=%s path=%s referer=%s ua=%s",
