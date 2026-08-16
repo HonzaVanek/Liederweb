@@ -1,8 +1,9 @@
 import hashlib
 import logging
 import re
-from django.core.cache import cache
+import ipaddress
 
+from django.core.cache import cache
 from django.conf import settings
 from django.db import IntegrityError
 from django.db.models import F, Sum
@@ -315,6 +316,7 @@ CLIENT_LEVEL_CLEANUP_REASONS = (
     "known_scanner",
     "meta_infrastructure_ip",
     "scanner_request",
+    "subnet_swarm",
 )
 
 
@@ -1067,6 +1069,168 @@ class SiteVisitStatsMiddleware:
 
         return False
 
+    def is_recent_exact_page_duplicate(
+        self,
+        client_label,
+        path,
+        user_agent,
+        referer_raw,
+    ):
+        """
+        Velmi rychlé opakování úplně stejného document requestu.
+
+        Neoznačujeme jako bota. Jen druhý request nepočítáme
+        jako další analytickou pageview.
+
+        Podmínky:
+        - stejný client,
+        - stejná path,
+        - stejný raw User-Agent,
+        - stejný referer,
+        - nejvýše 1 sekunda od předchozího requestu.
+        """
+        raw_ua = (user_agent or "").strip()
+        referer = self.clean_referer(referer_raw)
+        now_ts = timezone.now().timestamp()
+
+        path_key = hashlib.sha256(
+            (path or "").encode("utf-8")
+        ).hexdigest()[:16]
+
+        cache_key = (
+            f"traffic_exact_page:"
+            f"{client_label}:"
+            f"{path_key}"
+        )
+
+        previous = cache.get(cache_key)
+
+        cache.set(
+            cache_key,
+            {
+                "ts": now_ts,
+                "raw_ua": raw_ua,
+                "referer": referer,
+            },
+            timeout=3,
+        )
+
+        if not previous:
+            return False
+
+        age = now_ts - previous.get("ts", 0)
+
+        return (
+            0 <= age <= 1.0
+            and previous.get("raw_ua", "") == raw_ua
+            and previous.get("referer", "") == referer
+        )
+
+    def detect_subnet_swarm(
+        self,
+        today,
+        ip,
+        client_hash,
+        client_label,
+        path,
+        referer_raw,
+        user_agent,
+    ):
+        """
+        Hledá velmi rychlý distribuovaný burst z jedné IPv4 /24 sítě.
+
+        Typický vzorec:
+        - stejná konkrétní stránka,
+        - prázdný referer,
+        - několik různých IP/clientů ze stejné /24,
+        - několik různých User-Agentů,
+        - během několika sekund.
+
+        Social/in-app browsery sem záměrně nepouštíme.
+        """
+        if (referer_raw or "").strip():
+            return []
+
+        if self.is_social_or_in_app_ua(user_agent):
+            return []
+
+        try:
+            address = ipaddress.ip_address(ip)
+        except ValueError:
+            return []
+
+        # Zatím pouze IPv4. IPv6 bych řešil zvlášť až podle reálných dat.
+        if address.version != 4:
+            return []
+
+        network = ipaddress.ip_network(
+            f"{address}/24",
+            strict=False,
+        )
+
+        subnet = str(network.network_address)
+        now_ts = timezone.now().timestamp()
+
+        path_key = hashlib.sha256(
+            (path or "").encode("utf-8")
+        ).hexdigest()[:16]
+
+        cache_key = (
+            f"traffic_subnet_swarm:"
+            f"{today}:"
+            f"{subnet}:"
+            f"{path_key}"
+        )
+
+        hits = cache.get(cache_key, [])
+
+        hits = [
+            hit
+            for hit in hits
+            if 0 <= now_ts - hit.get("ts", 0) <= 5
+        ]
+
+        # Od jednoho clientu chceme v okně maximálně jeden záznam.
+        hits = [
+            hit
+            for hit in hits
+            if hit.get("client_label") != client_label
+        ]
+
+        hits.append({
+            "ts": now_ts,
+            "client_hash": client_hash,
+            "client_label": client_label,
+            "ua": (user_agent or "").strip().lower(),
+        })
+
+        cache.set(
+            cache_key,
+            hits,
+            timeout=15,
+        )
+
+        unique_clients = {
+            hit["client_label"]
+            for hit in hits
+        }
+
+        unique_uas = {
+            hit["ua"]
+            for hit in hits
+            if hit.get("ua")
+        }
+
+        # U homepage jsme o něco opatrnější.
+        required_count = 4 if path == "/" else 3
+
+        if (
+            len(unique_clients) >= required_count
+            and len(unique_uas) >= required_count
+        ):
+            return hits
+
+        return []
 
     def track_visit(self, request, response):
         path = request.path or ""
@@ -1206,6 +1370,61 @@ class SiteVisitStatsMiddleware:
                 should_mark_sticky_bot_like = True
                 bot_like_reason = "shared_ua:" + shared_ua_reason
 
+        content_type = response.headers.get("Content-Type", "").lower()
+
+        if (
+            not is_known_bot
+            and not is_bot_like
+            and request.method == "GET"
+            and status_code == 200
+            and not self.is_ignored_path(path)
+            and "text/html" in content_type
+        ):
+            subnet_swarm_hits = self.detect_subnet_swarm(
+                today=today,
+                ip=ip,
+                client_hash=client_hash,
+                client_label=client_label,
+                path=path,
+                referer_raw=referer_raw,
+                user_agent=user_agent,
+            )
+
+            if subnet_swarm_hits:
+                # Předchozí členové burstu už mohli být započítaní jako lidé.
+                # Teď je zpětně odstraníme a označíme sticky.
+                for hit in subnet_swarm_hits:
+                    previous_client_hash = hit.get("client_hash")
+                    previous_client_label = hit.get("client_label")
+
+                    if not previous_client_hash or not previous_client_label:
+                        continue
+
+                    if previous_client_hash == client_hash:
+                        continue
+
+                    self.mark_sticky_bot_like_client(
+                        previous_client_label,
+                        "subnet_swarm",
+                    )
+
+                    removed = self.cleanup_client_human_stats(
+                        today,
+                        previous_client_hash,
+                    )
+
+                    if removed:
+                        logger.info(
+                            "CLEANUP client=%s reason=subnet_swarm removed_pageviews=%s",
+                            previous_client_label,
+                            removed,
+                        )
+
+                is_bot_like = True
+                should_mark_sticky_bot_like = True
+                bot_like_reason = "subnet_swarm"
+
+
         if not is_known_bot and not is_bot_like:
             if self.is_suspicious_rapid_visitor(client_label, path):
                 is_bot_like = True
@@ -1313,27 +1532,39 @@ class SiteVisitStatsMiddleware:
         if fetch_dest and fetch_dest not in ("document", "iframe", "nested-document"):
             return
 
+        duplicate_reason = ""
+
         if request.method == "GET":
-            is_social_duplicate = self.is_recent_social_page_duplicate(
+            if self.is_recent_exact_page_duplicate(
                 client_label=client_label,
                 path=path,
                 user_agent=user_agent,
                 referer_raw=referer_raw,
-            )
+            ):
+                duplicate_reason = "rapid_exact_repeat"
 
-            if is_social_duplicate:
-                logger.info(
-                    "VISIT_DUPLICATE ip=%s client=%s visitor=%s method=%s status=%s path=%s referer=%s reason=social_ua_variant ua=%s",
-                    ip,
-                    client_label,
-                    visitor_label,
-                    request.method,
-                    status_code,
-                    path[:300],
-                    referer,
-                    user_agent[:300],
-                )
-                return
+            elif self.is_recent_social_page_duplicate(
+                client_label=client_label,
+                path=path,
+                user_agent=user_agent,
+                referer_raw=referer_raw,
+            ):
+                duplicate_reason = "social_ua_variant"
+
+        if duplicate_reason:
+            logger.info(
+                "VISIT_DUPLICATE ip=%s client=%s visitor=%s method=%s status=%s path=%s referer=%s reason=%s ua=%s",
+                ip,
+                client_label,
+                visitor_label,
+                request.method,
+                status_code,
+                path[:300],
+                referer,
+                duplicate_reason,
+                user_agent[:300],
+            )
+            return
 
         logger.info(
             "VISIT ip=%s client=%s visitor=%s method=%s status=%s path=%s referer=%s ua=%s",
