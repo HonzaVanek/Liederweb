@@ -164,6 +164,7 @@ BOT_USER_AGENT_PARTS = (
     "wp-safe-scanner",
     "safe-scanner",
     "kaupr",
+    "netcraftsurveyagent",
 )
 
 BOT_REFERER_PARTS = (
