@@ -10,11 +10,10 @@ from django.db.models import F, Sum
 from django.utils import timezone
 from django.urls import resolve
 
-
-from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor
+from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, TrafficVisitCandidate
 
 from urllib.parse import urlsplit, urlunsplit
-
+from .traffic_cleanup import (cleanup_visitor_human_stats as cleanup_visitor_stats)
 
 IGNORED_EXACT_PATHS = (
     "/admin",
@@ -627,6 +626,20 @@ class SiteVisitStatsMiddleware:
             for domain in OWN_REFERER_DOMAINS
         )
 
+    def get_referer_kind(self, referer_raw):
+        host = self.get_referer_host(referer_raw)
+
+        if not host:
+            return TrafficVisitCandidate.RefererKind.EMPTY, ""
+
+        if self.is_search_referer_host(host):
+            return TrafficVisitCandidate.RefererKind.SEARCH, host
+
+        if self.is_own_referer_host(host):
+            return TrafficVisitCandidate.RefererKind.OWN, host
+
+        return TrafficVisitCandidate.RefererKind.EXTERNAL, host
+
     def get_own_referer_subdomain_label(self, host):
         host = (host or "").lower()
 
@@ -966,6 +979,12 @@ class SiteVisitStatsMiddleware:
         if reason.startswith("sticky:shared_ua:"):
             return True
 
+        if reason == "distributed_same_ua_own_ref":
+            return True
+
+        if reason == "sticky:distributed_same_ua_own_ref":
+            return True
+
         return False
 
 
@@ -1024,57 +1043,7 @@ class SiteVisitStatsMiddleware:
         return total_pageviews
 
     def cleanup_visitor_human_stats(self, day, visitor_hash):
-        page_rows = list(
-            DailyPageVisitor.objects
-            .filter(day=day, visitor_hash=visitor_hash)
-            .values("path")
-            .annotate(pageviews=Sum("pageviews"))
-        )
-
-        total_pageviews = sum(row["pageviews"] or 0 for row in page_rows)
-
-        # Pokud se konkrétní visitor později ukáže jako bot,
-        # smažeme ho i z potvrzených / JS beacon návštěv.
-        DailyEngagedVisitor.objects.filter(
-            day=day,
-            visitor_hash=visitor_hash,
-        ).delete()
-
-        if not total_pageviews:
-            return 0
-
-        DailyPageVisitor.objects.filter(
-            day=day,
-            visitor_hash=visitor_hash,
-        ).delete()
-
-        DailySiteVisitor.objects.filter(
-            day=day,
-            visitor_hash=visitor_hash,
-        ).delete()
-
-        site_traffic = DailySiteTraffic.objects.filter(day=day).first()
-
-        if site_traffic:
-            site_traffic.human_hits = max(site_traffic.human_hits - total_pageviews, 0)
-            site_traffic.bot_hits += total_pageviews
-            site_traffic.save(update_fields=["human_hits", "bot_hits"])
-
-        for row in page_rows:
-            path = row["path"]
-            count = row["pageviews"] or 0
-
-            page_traffic = DailyPageTraffic.objects.filter(
-                day=day,
-                path=path,
-            ).first()
-
-            if page_traffic:
-                page_traffic.human_hits = max(page_traffic.human_hits - count, 0)
-                page_traffic.bot_hits += count
-                page_traffic.save(update_fields=["human_hits", "bot_hits"])
-
-        return total_pageviews
+        return cleanup_visitor_stats(day, visitor_hash)
 
     def reclassify_duplicate_human_hits_as_bot(self, day, path, count):
         """
@@ -1268,6 +1237,145 @@ class SiteVisitStatsMiddleware:
             and previous.get("referer", "") == referer
         )
 
+    def detect_distributed_same_ua_own_ref(
+        self,
+        today,
+        client_hash,
+        client_label,
+        visitor_hash,
+        path,
+        referer_raw,
+        user_agent,
+    ):
+        """
+        Hledá distribuovaný automatizovaný burst:
+
+        - stejná path
+        - úplně stejný User-Agent
+        - referer z některé naší domény
+        - různí clienti/IP
+        - alespoň 3 clienti během 10 sekund
+        - žádný už potvrzený JS beaconem
+
+        Facebook/Instagram IAB sem záměrně nepouštíme.
+        """
+
+        referer_host = self.get_referer_host(referer_raw)
+
+        if not self.is_own_referer_host(referer_host):
+            return []
+
+        if self.is_social_or_in_app_ua(user_agent):
+            return []
+
+        ua = (user_agent or "").strip().lower()
+
+        if not ua:
+            return []
+
+        # Pokud je současný visitor už dnes potvrzen beaconem,
+        # rozhodně ho kvůli tomuto patternu nepřeklápíme.
+        if DailyEngagedVisitor.objects.filter(
+            day=today,
+            visitor_hash=visitor_hash,
+        ).exists():
+            return []
+
+        now_ts = timezone.now().timestamp()
+
+        ua_key = hashlib.sha256(
+            ua.encode("utf-8")
+        ).hexdigest()[:16]
+
+        path_key = hashlib.sha256(
+            (path or "").encode("utf-8")
+        ).hexdigest()[:16]
+
+        cache_key = (
+            f"traffic_same_ua_own_ref:"
+            f"{today}:"
+            f"{ua_key}:"
+            f"{path_key}"
+        )
+
+        hits = cache.get(cache_key, [])
+
+        hits = [
+            hit
+            for hit in hits
+            if 0 <= now_ts - hit.get("ts", 0) <= 10
+        ]
+
+        # Jeden client má v okně nejvýše jeden záznam.
+        hits = [
+            hit
+            for hit in hits
+            if hit.get("client_label") != client_label
+        ]
+
+        hits.append({
+            "ts": now_ts,
+            "client_hash": client_hash,
+            "client_label": client_label,
+            "visitor_hash": visitor_hash,
+        })
+
+        cache.set(
+            cache_key,
+            hits,
+            timeout=20,
+        )
+
+        if len({
+            hit["client_label"]
+            for hit in hits
+        }) < 3:
+            return []
+
+        # Pro realtime rozhodnutí počítáme jen requesty,
+        # které už skutečně měly čas poslat JS beacon.
+        mature_hits = [
+            hit
+            for hit in hits
+            if 4.5 <= now_ts - hit.get("ts", now_ts) <= 10
+        ]
+
+        if len({
+            hit["client_label"]
+            for hit in mature_hits
+        }) < 3:
+            return []
+
+        visitor_hashes = [
+            hit["visitor_hash"]
+            for hit in mature_hits
+            if hit.get("visitor_hash")
+        ]
+
+        engaged_hashes = set(
+            DailyEngagedVisitor.objects.filter(
+                day=today,
+                visitor_hash__in=visitor_hashes,
+            ).values_list(
+                "visitor_hash",
+                flat=True,
+            )
+        )
+
+        mature_unengaged_hits = [
+            hit
+            for hit in mature_hits
+            if hit.get("visitor_hash") not in engaged_hashes
+        ]
+
+        if len({
+            hit["client_label"]
+            for hit in mature_unengaged_hits
+        }) >= 3:
+            return mature_unengaged_hits
+
+        return []
+
     def detect_subnet_swarm(
         self,
         today,
@@ -1366,13 +1474,52 @@ class SiteVisitStatsMiddleware:
         # U homepage jsme o něco opatrnější.
         required_count = 4 if path == "/" else 3
 
-        if (
-            len(unique_clients) >= required_count
-            and len(unique_uas) >= required_count
-        ):
+        if (len(unique_clients) >= required_count and len(unique_uas) >= required_count):
             return hits
 
         return []
+
+    def record_visit_candidate(
+        self,
+        today,
+        visitor_hash,
+        client_hash,
+        path,
+        user_agent,
+        referer_raw,
+    ):
+        referer_kind, referer_host = self.get_referer_kind(
+            referer_raw
+        )
+
+        ua = (user_agent or "").strip()
+
+        user_agent_hash = hashlib.sha256(
+            ua.lower().encode("utf-8")
+        ).hexdigest()
+
+        try:
+            TrafficVisitCandidate.objects.create(
+                day=today,
+                visitor_hash=visitor_hash,
+                client_hash=client_hash,
+                path=path[:500],
+                user_agent_hash=user_agent_hash,
+                user_agent=ua[:500],
+                referer_kind=referer_kind,
+                referer_host=referer_host[:255],
+                is_social_iab=self.is_social_or_in_app_ua(
+                    user_agent
+                ),
+            )
+        except Exception:
+            logger.exception(
+                "TRAFFIC_CANDIDATE_ERROR "
+                "client=%s visitor=%s path=%s",
+                client_hash[:8],
+                visitor_hash[:8],
+                path[:300],
+            )
 
     def track_visit(self, request, response):
         path = request.path or ""
@@ -1556,6 +1703,65 @@ class SiteVisitStatsMiddleware:
                 is_bot_like = True
                 should_mark_sticky_bot_like = True
                 bot_like_reason = "repeated_exact_no_ref_no_engagement"
+
+        if (
+            not is_known_bot
+            and not is_bot_like
+            and request.method == "GET"
+            and status_code == 200
+            and not self.is_ignored_path(path)
+            and "text/html" in content_type
+            and not is_prefetch_or_prerender
+            and is_document_request
+        ):
+            own_ref_burst_hits = (
+                self.detect_distributed_same_ua_own_ref(
+                    today=today,
+                    client_hash=client_hash,
+                    client_label=client_label,
+                    visitor_hash=visitor_hash,
+                    path=path,
+                    referer_raw=referer_raw,
+                    user_agent=user_agent,
+                )
+            )
+
+            if own_ref_burst_hits:
+                for hit in own_ref_burst_hits:
+                    previous_visitor_hash = hit.get("visitor_hash")
+                    previous_client_label = hit.get("client_label")
+
+                    if not previous_visitor_hash:
+                        continue
+
+                    # Současný request ještě není ve visitor tabulkách.
+                    if previous_visitor_hash == visitor_hash:
+                        continue
+
+                    removed = self.cleanup_visitor_human_stats(
+                        today,
+                        previous_visitor_hash,
+                    )
+
+                    if previous_client_label:
+                        self.mark_sticky_bot_like_client(
+                            previous_client_label,
+                            "distributed_same_ua_own_ref",
+                        )
+
+                    if removed:
+                        logger.info(
+                            "CLEANUP client=%s visitor=%s "
+                            "reason=distributed_same_ua_own_ref "
+                            "removed_pageviews=%s",
+                            previous_client_label or "",
+                            previous_visitor_hash[:8],
+                            removed,
+                        )
+
+                is_bot_like = True
+                should_mark_sticky_bot_like = True
+                bot_like_reason = ("distributed_same_ua_own_ref")
 
         if (not is_known_bot and not is_bot_like and request.method == "GET" and status_code == 200 and not self.is_ignored_path(path) and "text/html" in content_type and not is_prefetch_or_prerender and is_document_request):
             subnet_swarm_hits = self.detect_subnet_swarm(
@@ -1828,6 +2034,15 @@ class SiteVisitStatsMiddleware:
             pageviews=F("pageviews") + 1,
             client_hash=client_hash,
             last_seen_at=timezone.now(),
+        )
+
+        self.record_visit_candidate(
+            today=today,
+            visitor_hash=visitor_hash,
+            client_hash=client_hash,
+            path=path,
+            user_agent=user_agent,
+            referer_raw=referer_raw,
         )
 
     def is_ignored_path(self, path):

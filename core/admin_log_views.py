@@ -33,7 +33,7 @@ VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
 
 TRAFFIC_KIND_RE = re.compile(
     r"\|\s+liederweb\.traffic\s+\|\s+"
-    r"(VISIT_DUPLICATE|VISIT|BOT_LIKE|CLEANUP|ENGAGED|ENGAGED_SKIP)\s+"
+    r"(POSTHOC_CLEANUP|VISIT_DUPLICATE|VISIT|BOT_LIKE|CLEANUP|ENGAGED|ENGAGED_SKIP)\s+"
 )
 TRAFFIC_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
 
@@ -48,6 +48,8 @@ TRAFFIC_FIELD_PATTERNS = {
     "source_referer": re.compile(r"\bsource_referer=([^\s]*)"),
     "reason": re.compile(r"\breason=([^\s]*)"),
     "score": re.compile(r"\bscore=([^\s]*)"),
+    "removed_pageviews": re.compile(r"\bremoved_pageviews=(\d+)"),
+    "candidates": re.compile(r"\bcandidates=(\d+)"),
 }
 
 UA_RE = re.compile(r"\bua=(.*)$")
@@ -276,6 +278,8 @@ def parse_traffic_log_line(line):
         "reason": "",
         "score": "",
         "ua": "",
+        "removed_pageviews": "",
+        "candidates": "",
     }
 
     timestamp_match = TRAFFIC_TS_RE.search(line)
@@ -419,6 +423,32 @@ def build_traffic_audit(log_text, since=None):
         if item["status"] == 404 and item["path"]
     )
 
+    posthoc_cleanup_reasons = Counter(
+        get_reason_family(item["reason"])
+        for item in items
+        if item["kind"] == "POSTHOC_CLEANUP"
+    )
+
+    posthoc_cleanup_rows = []
+
+    for item in reversed(items):
+        if item["kind"] != "POSTHOC_CLEANUP":
+            continue
+
+        posthoc_cleanup_rows.append({
+            "time": item["timestamp"],
+            "client": item["client"],
+            "visitor": item["visitor"],
+            "path": item["path"],
+            "reason": item["reason"] or "bez důvodu",
+            "removed_pageviews": item["removed_pageviews"],
+            "candidates": item["candidates"],
+            "line": item["line"],
+        })
+
+        if len(posthoc_cleanup_rows) >= 20:
+            break
+
     ua_clients = defaultdict(set)
     client_uas = defaultdict(set)
     client_kinds = defaultdict(set)
@@ -556,6 +586,8 @@ def build_traffic_audit(log_text, since=None):
         "suspicious_visits": suspicious_visits[:30],
         "engaged_skip_reasons": engaged_skip_reasons.most_common(10),
         "engaged_skip_rows": engaged_skip_rows,
+        "posthoc_cleanup_reasons": posthoc_cleanup_reasons.most_common(10),
+        "posthoc_cleanup_rows": posthoc_cleanup_rows,
     }
 
 

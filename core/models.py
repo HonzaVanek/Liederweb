@@ -289,6 +289,120 @@ class DailyEngagedVisitor(models.Model):
     def __str__(self):
         return f"{self.day} – {self.visitor_hash[:8]} ({self.beacons})"
 
+
+
+class TrafficVisitCandidate(models.Model):
+    class RefererKind(models.TextChoices):
+        EMPTY = "empty", "Bez refereru"
+        OWN = "own", "Vlastní web"
+        SEARCH = "search", "Vyhledávač"
+        EXTERNAL = "external", "Externí web"
+
+    class Decision(models.TextChoices):
+        PENDING = "pending", "Čeká na vyhodnocení"
+        KEPT = "kept", "Ponecháno jako návštěva"
+        CLEANED = "cleaned", "Odstraněno post-hoc"
+        ALREADY_REMOVED = "already_removed", "Odstraněno už realtime"
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True,
+    )
+
+    day = models.DateField(
+        db_index=True,
+    )
+
+    visitor_hash = models.CharField(
+        max_length=64,
+        db_index=True,
+    )
+
+    client_hash = models.CharField(
+        max_length=64,
+        db_index=True,
+    )
+
+    path = models.CharField(
+        max_length=500,
+        db_index=True,
+    )
+
+    user_agent_hash = models.CharField(
+        max_length=64,
+        db_index=True,
+    )
+
+    # Hodí se při ručním auditu.
+    # IP sem schválně neukládáme.
+    user_agent = models.CharField(
+        max_length=500,
+        blank=True,
+    )
+
+    referer_kind = models.CharField(
+        max_length=20,
+        choices=RefererKind.choices,
+        db_index=True,
+    )
+
+    referer_host = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+    is_social_iab = models.BooleanField(
+        default=False,
+        db_index=True,
+    )
+
+    decision = models.CharField(
+        max_length=30,
+        choices=Decision.choices,
+        default=Decision.PENDING,
+        db_index=True,
+    )
+
+    decision_reason = models.CharField(
+        max_length=160,
+        blank=True,
+    )
+
+    processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["decision", "created_at"],
+                name="traffic_candidate_pending_idx",
+            ),
+            models.Index(
+                fields=["day", "visitor_hash"],
+                name="traffic_candidate_visitor_idx",
+            ),
+            models.Index(
+                fields=[
+                    "day",
+                    "user_agent_hash",
+                    "path",
+                    "referer_kind",
+                ],
+                name="traffic_candidate_pattern_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.created_at:%Y-%m-%d %H:%M:%S} "
+            f"{self.visitor_hash[:8]} {self.path} "
+            f"{self.decision}"
+        )
+
 #### KONEC STATISTIK NÁVŠTĚVNOSTI WEBU
 
 
