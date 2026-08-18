@@ -165,6 +165,7 @@ BOT_USER_AGENT_PARTS = (
     "safe-scanner",
     "kaupr",
     "netcraftsurveyagent",
+    "recscan"
 )
 
 BOT_REFERER_PARTS = (
@@ -318,6 +319,7 @@ CLIENT_LEVEL_CLEANUP_REASONS = (
     "meta_infrastructure_ip",
     "scanner_request",
     "subnet_swarm",
+    "repeated_exact_no_ref_no_engagement",
 )
 
 
@@ -765,6 +767,96 @@ class SiteVisitStatsMiddleware:
 
         return max(score, 0), reasons
 
+    def classify_repeated_exact_no_ref(self, today, client_label, visitor_hash, path, user_agent, referer_raw):
+        """
+        Hledá opakované otevření úplně stejné stránky bez refereru.
+
+        Výsledek:
+        - ("", 0)
+            nic zvláštního
+
+        - ("duplicate", 0)
+            druhý stejný request v krátkém čase;
+            nezapočítat jako další analytickou pageview
+
+        - ("bot", N)
+            třetí (nebo další) stejný request v krátkém okně,
+            stále bez JS engagementu;
+            N = počet předchozích requestů, které jsme už označili
+                jako VISIT_DUPLICATE a byly tedy v technických
+                statistikách zatím vedené jako human hit
+        """
+
+        # Tohle pravidlo je výhradně pro prázdný referer.
+        if self.clean_referer(referer_raw):
+            return "", 0
+
+        # FB/IG in-app browser má vlastní deduplikační logiku
+        # a skuteční návštěvníci z něj někdy přijdou bez refereru.
+        if self.is_social_or_in_app_ua(user_agent):
+            return "", 0
+
+        now_ts = timezone.now().timestamp()
+
+        path_key = hashlib.sha256(
+            (path or "").encode("utf-8")
+        ).hexdigest()[:16]
+
+        cache_key = (
+            f"traffic_exact_no_ref:"
+            f"{today}:"
+            f"{client_label}:"
+            f"{visitor_hash[:16]}:"
+            f"{path_key}"
+        )
+
+        hits = cache.get(cache_key, [])
+
+        # Zajímá nás jen posledních 40 sekund.
+        hits = [hit for hit in hits if 0 <= now_ts - hit.get("ts", 0) <= 40]
+        # Pokud už tento visitor JS beacon poslal,
+        # nepřeklápíme ho kvůli reloadům do bota.
+        #
+        # DB dotaz děláme až tehdy, když už nějaký předchozí
+        # stejný request skutečně existuje.
+        if hits:
+            is_engaged = DailyEngagedVisitor.objects.filter(day=today, visitor_hash=visitor_hash).exists()
+            if is_engaged:
+                cache.delete(cache_key)
+                return "", 0
+
+        # Pokud už máme dva předchozí stejné requesty,
+        # aktuální je nejméně třetí.
+        if len(hits) >= 2:
+            first_ts = hits[0].get("ts", now_ts)
+            span = now_ts - first_ts
+
+            # Dáme beaconu několik sekund šanci dorazit.
+            if 8 <= span <= 40:
+                previous_duplicate_hits = sum(1 for hit in hits if hit.get("duplicate"))
+                cache.delete(cache_key)
+                return "bot", previous_duplicate_hits
+
+        previous_ts = hits[-1].get("ts", 0) if hits else None
+
+        is_duplicate = (previous_ts is not None and 0 <= now_ts - previous_ts <= 15)
+
+        hits.append({
+            "ts": now_ts,
+            "duplicate": is_duplicate,
+        })
+
+        cache.set(
+            cache_key,
+            hits,
+            timeout=45,
+        )
+
+        if is_duplicate:
+            return "duplicate", 0
+
+        return "", 0
+
     def is_scanner_path(self, path):
         path = path or ""
 
@@ -850,7 +942,7 @@ class SiteVisitStatsMiddleware:
         cache.set(
             f"traffic_bot_like_client:{client_label}",
             reason or "bot_like",
-            timeout=60 * 30,
+            timeout=21600,
         )
 
 
@@ -983,6 +1075,55 @@ class SiteVisitStatsMiddleware:
                 page_traffic.save(update_fields=["human_hits", "bot_hits"])
 
         return total_pageviews
+
+    def reclassify_duplicate_human_hits_as_bot(self, day, path, count):
+        """
+        Přesune již započítané technické human hits do bot hits.
+
+        Používáme pouze pro requesty, které už byly označeny
+        VISIT_DUPLICATE a proto nejsou v DailyPageVisitor.
+        """
+        count = int(count or 0)
+
+        if count <= 0:
+            return 0
+
+        page_path = self.normalize_traffic_path(path, 200)
+
+        page_traffic = DailyPageTraffic.objects.filter(
+            day=day,
+            path=page_path,
+        ).first()
+
+        site_traffic = DailySiteTraffic.objects.filter(
+            day=day,
+        ).first()
+
+        if not page_traffic or not site_traffic:
+            return 0
+
+        moved = min(
+            count,
+            page_traffic.human_hits or 0,
+            site_traffic.human_hits or 0,
+        )
+
+        if moved <= 0:
+            return 0
+
+        page_traffic.human_hits -= moved
+        page_traffic.bot_hits += moved
+        page_traffic.save(
+            update_fields=["human_hits", "bot_hits"]
+        )
+
+        site_traffic.human_hits -= moved
+        site_traffic.bot_hits += moved
+        site_traffic.save(
+            update_fields=["human_hits", "bot_hits"]
+        )
+
+        return moved
 
     def normalize_visitor_user_agent(self, user_agent):
         ua = (user_agent or "").strip()
@@ -1307,6 +1448,8 @@ class SiteVisitStatsMiddleware:
         should_mark_sticky_bot_like = False
         disguised_score = 0
         disguised_reasons = []
+        pre_duplicate_reason = ""
+        repeated_duplicate_human_hits = 0
 
         if not is_known_bot:
             sticky_reason = self.get_sticky_bot_like_reason(client_label)
@@ -1373,14 +1516,48 @@ class SiteVisitStatsMiddleware:
 
         content_type = response.headers.get("Content-Type", "").lower()
 
-        if (
-            not is_known_bot
-            and not is_bot_like
-            and request.method == "GET"
-            and status_code == 200
-            and not self.is_ignored_path(path)
-            and "text/html" in content_type
-        ):
+        purpose = (
+            request.headers.get("Purpose", "")
+            or request.headers.get("Sec-Purpose", "")
+        ).lower()
+
+        is_prefetch_or_prerender = (
+            "prefetch" in purpose
+            or "prerender" in purpose
+        )
+
+        fetch_dest = request.headers.get("Sec-Fetch-Dest", "").lower()
+
+        is_document_request = (
+            not fetch_dest
+            or fetch_dest in (
+                "document",
+                "iframe",
+                "nested-document",
+            )
+        )
+
+        if (not is_known_bot and not is_bot_like and request.method == "GET" and status_code == 200 and not self.is_ignored_path(path) and "text/html" in content_type and not is_prefetch_or_prerender and is_document_request):
+            repeat_action, repeated_duplicate_human_hits = (
+                self.classify_repeated_exact_no_ref(
+                    today=today,
+                    client_label=client_label,
+                    visitor_hash=visitor_hash,
+                    path=path,
+                    user_agent=user_agent,
+                    referer_raw=referer_raw,
+                )
+            )
+
+            if repeat_action == "duplicate":
+                pre_duplicate_reason = "repeated_exact_no_ref"
+
+            elif repeat_action == "bot":
+                is_bot_like = True
+                should_mark_sticky_bot_like = True
+                bot_like_reason = "repeated_exact_no_ref_no_engagement"
+
+        if (not is_known_bot and not is_bot_like and request.method == "GET" and status_code == 200 and not self.is_ignored_path(path) and "text/html" in content_type and not is_prefetch_or_prerender and is_document_request):
             subnet_swarm_hits = self.detect_subnet_swarm(
                 today=today,
                 ip=ip,
@@ -1455,13 +1632,26 @@ class SiteVisitStatsMiddleware:
             elif self.should_cleanup_visitor_human_stats(bot_like_reason):
                 removed = self.cleanup_visitor_human_stats(today, visitor_hash)
 
-            if removed:
+            reclassified_duplicate_hits = 0
+
+            if (bot_like_reason == "repeated_exact_no_ref_no_engagement" and repeated_duplicate_human_hits):
+                reclassified_duplicate_hits = (
+                    self.reclassify_duplicate_human_hits_as_bot(
+                        day=today,
+                        path=path,
+                        count=repeated_duplicate_human_hits,
+                    )
+                )
+
+            if removed or reclassified_duplicate_hits:
                 logger.info(
-                    "CLEANUP client=%s visitor=%s reason=%s removed_pageviews=%s",
+                    "CLEANUP client=%s visitor=%s reason=%s "
+                    "removed_pageviews=%s reclassified_duplicate_hits=%s",
                     client_label,
                     visitor_label,
                     bot_like_reason,
                     removed,
+                    reclassified_duplicate_hits,
                 )
 
             logger.info(
@@ -1522,20 +1712,15 @@ class SiteVisitStatsMiddleware:
         if content_type and "text/html" not in content_type:
             return
 
-        purpose = (
-            request.headers.get("Purpose", "")
-            or request.headers.get("Sec-Purpose", "")
-        ).lower()
-        if "prefetch" in purpose or "prerender" in purpose:
+        if is_prefetch_or_prerender:
             return
 
-        fetch_dest = request.headers.get("Sec-Fetch-Dest", "").lower()
-        if fetch_dest and fetch_dest not in ("document", "iframe", "nested-document"):
+        if not is_document_request:
             return
 
-        duplicate_reason = ""
+        duplicate_reason = pre_duplicate_reason
 
-        if request.method == "GET":
+        if request.method == "GET" and not duplicate_reason:
             if self.is_recent_exact_page_duplicate(
                 client_label=client_label,
                 path=path,
