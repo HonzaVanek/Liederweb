@@ -1810,7 +1810,15 @@ class SiteVisitStatsMiddleware:
 
 
         if not is_known_bot and not is_bot_like:
-            if self.is_suspicious_rapid_visitor(client_label, path):
+            visitor_is_engaged = DailyEngagedVisitor.objects.filter(
+                day=today,
+                visitor_hash=visitor_hash,
+            ).exists()
+
+            if (
+                not visitor_is_engaged
+                and self.is_suspicious_rapid_visitor(client_label, path)
+            ):
                 is_bot_like = True
                 should_mark_sticky_bot_like = True
                 bot_like_reason = "rapid_navigation"
