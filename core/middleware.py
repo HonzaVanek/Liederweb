@@ -191,6 +191,7 @@ OBVIOUS_SCANNER_UA_PARTS = (
     "ct-wp-probe",
     "palo alto networks",
     "cortex-xpanse",
+    "scrape_central",
 )
 
 OBVIOUS_SCANNER_PATH_PARTS = (
@@ -1104,6 +1105,8 @@ class SiteVisitStatsMiddleware:
         ua = re.sub(r"(?:\s+|;)FBNV/[^\s;\]]+", "", ua, flags=re.IGNORECASE)
 
         # Instagram/iOS mění např. NW/3 <-> NW/1.
+        # Instagram může mezi requesty přidat/změnit NV.
+        ua = re.sub(r"\s+NV/\d+\b", "", ua, flags=re.IGNORECASE)
         ua = re.sub(r"\s+NW/\d+\b", "", ua, flags=re.IGNORECASE)
 
         # Po odstranění tokenů sjednotit mezery.

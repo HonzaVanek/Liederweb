@@ -266,8 +266,24 @@
         display: block;
     }
 
+
+    .traffic-card-grid,
+    .traffic-summary-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .traffic-stats-header {
+        display: block;
+    }
+
+    .traffic-section-head {
+        flex-direction: column;
+    }
+
     .traffic-period-form {
-        margin-top: 12px;
+        margin-top: 0;
     }
 
     .traffic-card-grid,

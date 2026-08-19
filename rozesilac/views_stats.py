@@ -186,6 +186,7 @@ def traffic_stats(request):
 
     period_raw = request.GET.get("period", "30")
     allowed_periods = {
+        "1": 1,
         "7": 7,
         "30": 30,
         "90": 90,

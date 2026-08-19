@@ -20,14 +20,6 @@
       </p>
     </div>
 
-    <form method="get" class="traffic-period-form">
-      <label for="period">Období:</label>
-      <select name="period" id="period" onchange="this.form.submit()">
-        <option value="7" {% if period_raw == "7" %}selected{% endif %}>Posledních 7 dní</option>
-        <option value="30" {% if period_raw == "30" %}selected{% endif %}>Posledních 30 dní</option>
-        <option value="90" {% if period_raw == "90" %}selected{% endif %}>Posledních 90 dní</option>
-      </select>
-    </form>
   </header>
 
   <div class="traffic-start-notice">
@@ -73,17 +65,37 @@
   </section>
 
   <section class="traffic-section traffic-section--summary">
-    <div class="traffic-section-head">
-        <div>
-            <h3>Souhrn za posledních {{ period_days }} dní </h3>
-                <p class="traffic-section-note">
-                    Nejsou to unikátní návštěvníci za celých {{ period_days }} dní, ale součet unikátních návštěvníků za den - pokud tedy někdo navštěvuje náš web každý den, je tam vícekrát
-                </p>
-        </div>
-        <div class="traffic-section-badge">
-            {{ visible_days }} dní
-        </div>
-    </div>  
+  <div class="traffic-section-head">
+    <div>
+      <h3>
+        {% if period_days == 1 %}
+          Souhrn za dnešek
+        {% else %}
+          Souhrn za posledních {{ period_days }} dní
+        {% endif %}
+      </h3>
+
+      <p class="traffic-section-note">
+        {% if period_days == 1 %}
+          Dnešní návštěvnost veřejného webu.
+        {% else %}
+          Nejsou to unikátní návštěvníci za celých {{ period_days }} dní,
+          ale součet unikátních návštěvníků za den – pokud tedy někdo
+          navštěvuje náš web každý den, je tam vícekrát.
+        {% endif %}
+      </p>
+    </div>
+
+    <form method="get" class="traffic-period-form">
+      <label for="period">Období:</label>
+      <select name="period" id="period" onchange="this.form.submit()">
+        <option value="1" {% if period_raw == "1" %}selected{% endif %}>Dnes</option>
+        <option value="7" {% if period_raw == "7" %}selected{% endif %}>Posledních 7 dní</option>
+        <option value="30" {% if period_raw == "30" %}selected{% endif %}>Posledních 30 dní</option>
+        <option value="90" {% if period_raw == "90" %}selected{% endif %}>Posledních 90 dní</option>
+      </select>
+    </form>
+  </div> 
     
     <div class="traffic-summary-strip">
       <div>
