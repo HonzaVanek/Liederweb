@@ -53,9 +53,14 @@ def get_period_summary(start_day, end_day):
     )
 
     unique_visitors = zero_none(human["unique_visitors"])
-    engaged_visitors = DailyEngagedVisitor.objects.filter(
-        day__range=(start_day, end_day)
-    ).count()
+
+    engaged_qs = DailyEngagedVisitor.objects.filter(day__range=(start_day, end_day))
+
+    engaged_visitors = engaged_qs.count()
+
+    engaged_instagram = engaged_qs.filter(source=DailyEngagedVisitor.Source.INSTAGRAM).count()
+
+    engaged_facebook = engaged_qs.filter(source=DailyEngagedVisitor.Source.FACEBOOK).count()
 
     pageviews = zero_none(human["pageviews"])
     human_hits = zero_none(traffic["human_hits"])
@@ -74,6 +79,9 @@ def get_period_summary(start_day, end_day):
         "human_non_pageview_hits": max(0, human_hits - pageviews),
         "engaged_rate": percent(engaged_visitors, unique_visitors),
         "bot_share": percent(bot_hits, total_hits),
+        "engaged_visitors": engaged_visitors,
+        "engaged_instagram": engaged_instagram,
+        "engaged_facebook": engaged_facebook,
     }
 
 

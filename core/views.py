@@ -3,7 +3,7 @@ import logging
 
 from django.db import IntegrityError
 from django.db.models import F
-from urllib.parse import urldefrag
+from urllib.parse import urldefrag, urlsplit
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.views import LoginView
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
@@ -936,6 +936,36 @@ def is_meta_crawler_ua(user_agent):
         "developers.facebook.com/docs/sharing/webmasters/crawler",
     ))
 
+
+def classify_engaged_source(source_referer, user_agent):
+    referer = (source_referer or "").strip()
+    ua = (user_agent or "").lower()
+
+    host = ""
+
+    if referer:
+        try:
+            host = (urlsplit(referer).hostname or "").lower()
+        except Exception:
+            host = ""
+
+    # Primárně skutečný původní referer.
+    if host == "instagram.com" or host.endswith(".instagram.com"):
+        return DailyEngagedVisitor.Source.INSTAGRAM
+
+    if (host == "facebook.com" or host.endswith(".facebook.com") or host == "fb.com" or host.endswith(".fb.com")):
+        return DailyEngagedVisitor.Source.FACEBOOK
+
+    # Fallback pro in-app browser, který referer neposlal.
+    if "instagram/" in ua or "instagram " in ua:
+        return DailyEngagedVisitor.Source.INSTAGRAM
+
+    if ("fb_iab/" in ua or "fban/" in ua or "fbav/" in ua):
+        return DailyEngagedVisitor.Source.FACEBOOK
+
+    return DailyEngagedVisitor.Source.OTHER
+
+
 def is_obvious_beacon_bot_ua(user_agent):
     ua = (user_agent or "").lower()
 
@@ -1021,9 +1051,12 @@ def traffic_engaged(request):
 
     source_info = cache.get(f"traffic_visit_source:{today}:{client_hash}:{path}") or {}
     source_referer = ""
+    source_visitor_label = ""
 
     if isinstance(source_info, dict):
         source_referer = source_info.get("referer", "") or ""
+        source_visitor_label = source_info.get("visitor", "") or ""
+
 
     if is_obvious_beacon_bot_ua(user_agent):
         logger.info(
@@ -1088,11 +1121,23 @@ def traffic_engaged(request):
     engaged_visitor_hash = matching_visit.visitor_hash
     engaged_visitor_label = engaged_visitor_hash[:8]
 
+    attribution_referer = source_referer
+
+    if (source_visitor_label and source_visitor_label != engaged_visitor_label):
+        attribution_referer = ""
+
+    source = classify_engaged_source(
+        attribution_referer,
+        user_agent,
+    )
+
     defaults = {
         "client_hash": client_hash,
         "first_path": path,
         "last_path": path,
         "beacons": 0,
+        "source": source,
+        "source_referer": attribution_referer[:300],
     }
 
     try:

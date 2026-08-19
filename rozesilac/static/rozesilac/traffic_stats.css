@@ -71,6 +71,7 @@
 .traffic-card-help {
     font-size: 13px;
     line-height: 1.4;
+    margin-bottom: 15px;
 }
 
 .traffic-section {
@@ -261,6 +262,25 @@
     border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+.traffic-card-sources {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: -2px 0 12px;
+}
+
+.traffic-card-sources span {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(36, 94, 79, 0.08);
+    font-size: 12px;
+    color: #555;
+}
+
+.traffic-card-sources strong {
+    color: #111;
+}
+
 @media (max-width: 900px) {
     .traffic-stats-header {
         display: block;
@@ -351,5 +371,14 @@ body.dark-mode .traffic-table-scroll td {
 }
 
 body.dark-mode .traffic-table-scroll code {
+    color: #fff;
+}
+
+body.dark-mode .traffic-card-sources span {
+    background: rgba(255, 255, 255, 0.08);
+    color: #bbb;
+}
+
+body.dark-mode .traffic-card-sources strong {
     color: #fff;
 }

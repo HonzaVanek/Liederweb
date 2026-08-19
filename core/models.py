@@ -263,6 +263,11 @@ class DailyPageTraffic(models.Model):
 
 
 class DailyEngagedVisitor(models.Model):
+    class Source(models.TextChoices):
+        OTHER = "other", "Ostatní / neznámé"
+        INSTAGRAM = "instagram", "Instagram"
+        FACEBOOK = "facebook", "Facebook"
+    
     day = models.DateField(db_index=True)
     visitor_hash = models.CharField(max_length=64, db_index=True)
     client_hash = models.CharField(max_length=64, db_index=True)
@@ -274,6 +279,8 @@ class DailyEngagedVisitor(models.Model):
     last_path = models.CharField(max_length=500, blank=True)
 
     beacons = models.PositiveIntegerField(default=0)
+    source = models.CharField(max_length=20, choices=Source.choices, default=Source.OTHER, db_index=True)
+    source_referer = models.CharField(max_length=300, blank=True)
 
     class Meta:
         constraints = [
