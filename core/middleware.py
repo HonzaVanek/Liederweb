@@ -989,6 +989,49 @@ class SiteVisitStatsMiddleware:
         return False
 
 
+    def mark_realtime_removed_candidates(
+        self,
+        day,
+        *,
+        client_hash=None,
+        visitor_hash=None,
+    ):
+        filters = {
+            "day": day,
+        }
+
+        if client_hash:
+            filters["client_hash"] = client_hash
+        elif visitor_hash:
+            filters["visitor_hash"] = visitor_hash
+        else:
+            return 0
+
+        try:
+            return (
+                TrafficVisitCandidate.objects
+                .filter(**filters)
+                .exclude(
+                    decision__in=[
+                        TrafficVisitCandidate.Decision.CLEANED,
+                        TrafficVisitCandidate.Decision.ALREADY_REMOVED,
+                    ]
+                )
+                .update(
+                    decision=TrafficVisitCandidate.Decision.ALREADY_REMOVED,
+                    decision_reason="realtime_cleanup",
+                    processed_at=timezone.now(),
+                )
+            )
+        except Exception:
+            logger.exception(
+                "TRAFFIC_CANDIDATE_UPDATE_ERROR "
+                "client=%s visitor=%s",
+                (client_hash or "")[:8],
+                (visitor_hash or "")[:8],
+            )
+            return 0
+
     def cleanup_client_human_stats(self, day, client_hash):
         page_rows = list(
             DailyPageVisitor.objects
@@ -1041,10 +1084,17 @@ class SiteVisitStatsMiddleware:
                 page_traffic.bot_hits += count
                 page_traffic.save(update_fields=["human_hits", "bot_hits"])
 
+        self.mark_realtime_removed_candidates(day, client_hash=client_hash)
+
         return total_pageviews
 
     def cleanup_visitor_human_stats(self, day, visitor_hash):
-        return cleanup_visitor_stats(day, visitor_hash)
+        removed = cleanup_visitor_stats(day, visitor_hash)
+
+        if removed:
+            self.mark_realtime_removed_candidates(day, visitor_hash=visitor_hash)
+
+        return removed
 
     def reclassify_duplicate_human_hits_as_bot(self, day, path, count):
         """
