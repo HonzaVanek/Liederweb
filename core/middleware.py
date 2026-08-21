@@ -164,13 +164,15 @@ BOT_USER_AGENT_PARTS = (
     "safe-scanner",
     "kaupr",
     "netcraftsurveyagent",
-    "recscan"
+    "recscan",
+    "uk-nhs-data"
 )
 
 BOT_REFERER_PARTS = (
     "aisearchindex.space",
     "dataindex.pro",
     "readlife.net",
+    "smartstimer.com"
 )
 
 BOT_EXACT_PATHS = (
