@@ -10,7 +10,7 @@ from django.db.models import F, Sum
 from django.utils import timezone
 from django.urls import resolve
 
-from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, TrafficVisitCandidate
+from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, TrafficVisitCandidate, DailyBrowserVisitor
 
 from urllib.parse import urlsplit, urlunsplit
 from .traffic_cleanup import (cleanup_visitor_human_stats as cleanup_visitor_stats)
@@ -165,14 +165,16 @@ BOT_USER_AGENT_PARTS = (
     "kaupr",
     "netcraftsurveyagent",
     "recscan",
-    "uk-nhs-data"
+    "uk-nhs-data",
+    "watchtowr",
 )
 
 BOT_REFERER_PARTS = (
     "aisearchindex.space",
     "dataindex.pro",
     "readlife.net",
-    "smartstimer.com"
+    "smartstimer.com",
+    "missburrg.com",
 )
 
 BOT_EXACT_PATHS = (
@@ -783,6 +785,24 @@ class SiteVisitStatsMiddleware:
 
         return max(score, 0), reasons
 
+    def has_js_browser_confirmation(
+        self,
+        day,
+        visitor_hash,
+    ):
+        if DailyBrowserVisitor.objects.filter(
+            day=day,
+            visitor_hash=visitor_hash,
+        ).exists():
+            return True
+
+        return DailyEngagedVisitor.objects.filter(
+            day=day,
+            visitor_hash=visitor_hash,
+        ).exists()
+
+
+
     def classify_repeated_exact_no_ref(self, today, client_label, visitor_hash, path, user_agent, referer_raw):
         """
         Hledá opakované otevření úplně stejné stránky bez refereru.
@@ -836,8 +856,14 @@ class SiteVisitStatsMiddleware:
         # DB dotaz děláme až tehdy, když už nějaký předchozí
         # stejný request skutečně existuje.
         if hits:
-            is_engaged = DailyEngagedVisitor.objects.filter(day=today, visitor_hash=visitor_hash).exists()
-            if is_engaged:
+            is_confirmed = (
+                self.has_js_browser_confirmation(
+                    today,
+                    visitor_hash,
+                )
+            )
+
+            if is_confirmed:
                 cache.delete(cache_key)
                 return "", 0
 
@@ -1047,6 +1073,11 @@ class SiteVisitStatsMiddleware:
         # Pokud se client později ukáže jako bot, nesmí zůstat
         # ani mezi potvrzenými / JS beacon návštěvníky.
         DailyEngagedVisitor.objects.filter(
+            day=day,
+            client_hash=client_hash,
+        ).delete()
+
+        DailyBrowserVisitor.objects.filter(
             day=day,
             client_hash=client_hash,
         ).delete()
@@ -1729,6 +1760,9 @@ class SiteVisitStatsMiddleware:
         )
 
         fetch_dest = request.headers.get("Sec-Fetch-Dest", "").lower()
+        fetch_user = request.headers.get("Sec-Fetch-User", "")
+        fetch_mode = request.headers.get("Sec-Fetch-Mode", "").lower()
+        fetch_site = request.headers.get("Sec-Fetch-Site", "").lower()
 
         is_document_request = (
             not fetch_dest
@@ -1865,14 +1899,19 @@ class SiteVisitStatsMiddleware:
 
 
         if not is_known_bot and not is_bot_like:
-            visitor_is_engaged = DailyEngagedVisitor.objects.filter(
-                day=today,
-                visitor_hash=visitor_hash,
-            ).exists()
+            visitor_is_confirmed = (
+                self.has_js_browser_confirmation(
+                    today,
+                    visitor_hash,
+                )
+            )
 
             if (
-                not visitor_is_engaged
-                and self.is_suspicious_rapid_visitor(client_label, path)
+                not visitor_is_confirmed
+                and self.is_suspicious_rapid_visitor(
+                    client_label,
+                    path,
+                )
             ):
                 is_bot_like = True
                 should_mark_sticky_bot_like = True
@@ -2022,7 +2061,10 @@ class SiteVisitStatsMiddleware:
             return
 
         logger.info(
-            "VISIT ip=%s client=%s visitor=%s method=%s status=%s path=%s referer=%s ua=%s",
+            "VISIT ip=%s client=%s visitor=%s method=%s status=%s "
+            "path=%s referer=%s "
+            "fetch_user=%s fetch_mode=%s fetch_dest=%s fetch_site=%s purpose=%s "
+            "ua=%s",
             ip,
             client_label,
             visitor_label,
@@ -2030,6 +2072,11 @@ class SiteVisitStatsMiddleware:
             status_code,
             path[:300],
             referer,
+            fetch_user,
+            fetch_mode,
+            fetch_dest,
+            fetch_site,
+            purpose,
             user_agent[:300],
         )
 

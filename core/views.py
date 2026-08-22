@@ -26,7 +26,7 @@ from django.core.cache import cache
 from django.utils.decorators import method_decorator
 
 from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm, HomeSupportPromoForm, HomeQuoteSlideForm
-from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor, DailySiteVisitor
+from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor, DailySiteVisitor, DailyPageVisitor, DailyBrowserVisitor
 from events.models import Event
 from media_assets.models import MediaAsset
 from social_feed.models import SocialPost, SocialSource
@@ -980,6 +980,8 @@ def is_obvious_beacon_bot_ua(user_agent):
         "curl/",
         "wget/",
         "ct-wp-probe",
+        "uk-nhs-data",
+        "watchtowr",
     ))
 
 logger = logging.getLogger("liederweb.traffic")
@@ -990,32 +992,58 @@ def traffic_engaged(request):
     user = getattr(request, "user", None)
 
     if user and user.is_authenticated and user.is_staff:
-        logger.debug("ENGAGED_SKIP reason=staff")
         return HttpResponse(status=204)
 
     ip = get_client_ip(request)
     user_agent = request.META.get("HTTP_USER_AGENT", "")[:500]
     content_type = request.META.get("CONTENT_TYPE", "")
-    referer = (request.META.get("HTTP_REFERER", "") or "").split("?", 1)[0][:300]
+    referer = (
+        request.META.get("HTTP_REFERER", "") or ""
+    ).split("?", 1)[0][:300]
 
     try:
         raw_body = request.body[:200]
     except Exception:
         raw_body = b""
 
+    stage = (
+        request.POST.get("stage")
+        or "engaged"
+    ).strip().lower()
+
+    if stage not in ("browser", "engaged"):
+        logger.info(
+            "TRAFFIC_BEACON_SKIP reason=bad_stage stage=%s ip=%s",
+            stage[:30],
+            ip,
+        )
+        return HttpResponse(status=204)
+
+    skip_kind = (
+        "BROWSER_SKIP"
+        if stage == "browser"
+        else "ENGAGED_SKIP"
+    )
+
     if not ip:
-        logger.debug("ENGAGED_SKIP reason=no_ip")
+        logger.debug("%s reason=no_ip", skip_kind)
         return HttpResponse(status=204)
 
     if not user_agent.strip():
-        logger.debug("ENGAGED_SKIP reason=no_ua ip=%s", ip)
+        logger.debug(
+            "%s reason=no_ua ip=%s",
+            skip_kind,
+            ip,
+        )
         return HttpResponse(status=204)
 
     path = (request.POST.get("path") or "").strip()
 
     if not path.startswith("/"):
         logger.debug(
-            "ENGAGED_SKIP reason=bad_path ip=%s content_type=%s post=%s body=%s",
+            "%s reason=bad_path ip=%s "
+            "content_type=%s post=%s body=%s",
+            skip_kind,
             ip,
             content_type,
             dict(request.POST),
@@ -1025,13 +1053,29 @@ def traffic_engaged(request):
 
     path = path.split("?", 1)[0][:500]
 
-    if path in ("/login/", "/password-reset/", "/registrace/") or path.startswith("/rozesilac/"):
-        logger.debug("ENGAGED_SKIP reason=ignored_path path=%s", path)
+    if (
+        path in (
+            "/login/",
+            "/password-reset/",
+            "/registrace/",
+        )
+        or path.startswith("/rozesilac/")
+    ):
+        logger.debug(
+            "%s reason=ignored_path path=%s",
+            skip_kind,
+            path,
+        )
         return HttpResponse(status=204)
 
-    if is_meta_infrastructure_ip(ip) or is_meta_crawler_ua(user_agent):
+    if (
+        is_meta_infrastructure_ip(ip)
+        or is_meta_crawler_ua(user_agent)
+    ):
         logger.info(
-            "ENGAGED_SKIP reason=meta_crawler ip=%s path=%s referer=%s ua=%s",
+            "%s reason=meta_crawler "
+            "ip=%s path=%s referer=%s ua=%s",
+            skip_kind,
             ip,
             path[:300],
             referer,
@@ -1041,26 +1085,46 @@ def traffic_engaged(request):
 
     today = timezone.localdate()
 
-    raw_client_id = f"{today}|{ip}|{settings.SECRET_KEY}"
-    client_hash = hashlib.sha256(raw_client_id.encode("utf-8")).hexdigest()
+    raw_client_id = (
+        f"{today}|{ip}|{settings.SECRET_KEY}"
+    )
+    client_hash = hashlib.sha256(
+        raw_client_id.encode("utf-8")
+    ).hexdigest()
     client_label = client_hash[:8]
 
-    raw_visitor_id = f"{today}|{ip}|{user_agent}|{settings.SECRET_KEY}"
-    visitor_hash = hashlib.sha256(raw_visitor_id.encode("utf-8")).hexdigest()
+    raw_visitor_id = (
+        f"{today}|{ip}|{user_agent}|"
+        f"{settings.SECRET_KEY}"
+    )
+    visitor_hash = hashlib.sha256(
+        raw_visitor_id.encode("utf-8")
+    ).hexdigest()
     visitor_label = visitor_hash[:8]
 
-    source_info = cache.get(f"traffic_visit_source:{today}:{client_hash}:{path}") or {}
+    source_info = cache.get(
+        f"traffic_visit_source:"
+        f"{today}:{client_hash}:{path}"
+    ) or {}
+
     source_referer = ""
     source_visitor_label = ""
 
     if isinstance(source_info, dict):
-        source_referer = source_info.get("referer", "") or ""
-        source_visitor_label = source_info.get("visitor", "") or ""
-
+        source_referer = (
+            source_info.get("referer", "") or ""
+        )
+        source_visitor_label = (
+            source_info.get("visitor", "") or ""
+        )
 
     if is_obvious_beacon_bot_ua(user_agent):
         logger.info(
-            "ENGAGED_SKIP reason=bot_user_agent ip=%s client=%s visitor=%s path=%s referer=%s source_referer=%s ua=%s",
+            "%s reason=bot_user_agent "
+            "ip=%s client=%s visitor=%s "
+            "path=%s referer=%s "
+            "source_referer=%s ua=%s",
+            skip_kind,
             ip,
             client_label,
             visitor_label,
@@ -1071,17 +1135,29 @@ def traffic_engaged(request):
         )
         return HttpResponse(status=204)
 
-
-    sticky_reason = cache.get(f"traffic_bot_like_client:{client_label}")
+    sticky_reason = cache.get(
+        f"traffic_bot_like_client:{client_label}"
+    )
 
     if sticky_reason:
+        # Když už jsme klienta překlasifikovali jako bota,
+        # nesmí zůstat ani ve slabém ani silném JS signálu.
+        DailyBrowserVisitor.objects.filter(
+            day=today,
+            client_hash=client_hash,
+        ).delete()
+
         DailyEngagedVisitor.objects.filter(
             day=today,
             client_hash=client_hash,
         ).delete()
 
         logger.info(
-            "ENGAGED_SKIP reason=sticky_bot_like:%s ip=%s client=%s visitor=%s path=%s referer=%s source_referer=%s ua=%s",
+            "%s reason=sticky_bot_like:%s "
+            "ip=%s client=%s visitor=%s "
+            "path=%s referer=%s "
+            "source_referer=%s ua=%s",
+            skip_kind,
             sticky_reason,
             ip,
             client_label,
@@ -1093,21 +1169,89 @@ def traffic_engaged(request):
         )
         return HttpResponse(status=204)
 
+    recent_cutoff = (
+        timezone.now()
+        - timedelta(minutes=15)
+    )
+
+    # Nejdřív zkusíme přesně stejného návštěvníka.
+    # visitor_hash zahrnuje IP + User-Agent.
     matching_visit = (
-        DailySiteVisitor.objects
+        DailyPageVisitor.objects
         .filter(
             day=today,
-            client_hash=client_hash,
-            last_path=path,
-            last_seen_at__gte=timezone.now() - timedelta(minutes=15),
+            visitor_hash=visitor_hash,
+            path=path,
+            last_seen_at__gte=recent_cutoff,
         )
         .order_by("-last_seen_at")
         .first()
     )
 
+    # Fallback přes client_hash.
+    # Je důležitý hlavně pro FB/IG in-app browser,
+    # kde se User-Agent může mezi requesty lehce změnit.
+    if not matching_visit:
+        matching_visit = (
+            DailySiteVisitor.objects
+            .filter(
+                day=today,
+                client_hash=client_hash,
+                last_path=path,
+                last_seen_at__gte=recent_cutoff,
+            )
+            .order_by("-last_seen_at")
+            .first()
+        )
+
+    # U velmi rychlého odchodu může pagehide beacon
+    # dorazit těsně poté, co už další GET změnil
+    # DailySiteVisitor.last_path.
+    #
+    # Proto pro browser-stage dovolíme ještě fallback
+    # přes konkrétní pageview stejného klienta.
+    if not matching_visit and stage == "browser":
+        matching_visit = (
+            DailyPageVisitor.objects
+            .filter(
+                day=today,
+                client_hash=client_hash,
+                path=path,
+                last_seen_at__gte=recent_cutoff,
+            )
+            .order_by("-last_seen_at")
+            .first()
+        )
+
+    # U velmi rychlého odchodu může pagehide beacon
+    # dorazit těsně poté, co už další GET změnil
+    # DailySiteVisitor.last_path.
+    #
+    # Proto pro browser-stage dovolíme bezpečný fallback
+    # přes konkrétní pageview.
+    if not matching_visit and stage == "browser":
+        matching_visit = (
+            DailyPageVisitor.objects
+            .filter(
+                day=today,
+                client_hash=client_hash,
+                path=path,
+                last_seen_at__gte=(
+                    timezone.now()
+                    - timedelta(minutes=15)
+                ),
+            )
+            .order_by("-last_seen_at")
+            .first()
+        )
+
     if not matching_visit:
         logger.info(
-            "ENGAGED_SKIP reason=no_matching_visit ip=%s client=%s visitor=%s path=%s referer=%s source_referer=%s ua=%s",
+            "%s reason=no_matching_visit "
+            "ip=%s client=%s visitor=%s "
+            "path=%s referer=%s "
+            "source_referer=%s ua=%s",
+            skip_kind,
             ip,
             client_label,
             visitor_label,
@@ -1118,12 +1262,20 @@ def traffic_engaged(request):
         )
         return HttpResponse(status=204)
 
-    engaged_visitor_hash = matching_visit.visitor_hash
-    engaged_visitor_label = engaged_visitor_hash[:8]
+    confirmed_visitor_hash = (
+        matching_visit.visitor_hash
+    )
+    confirmed_visitor_label = (
+        confirmed_visitor_hash[:8]
+    )
 
     attribution_referer = source_referer
 
-    if (source_visitor_label and source_visitor_label != engaged_visitor_label):
+    if (
+        source_visitor_label
+        and source_visitor_label
+        != confirmed_visitor_label
+    ):
         attribution_referer = ""
 
     source = classify_engaged_source(
@@ -1131,28 +1283,111 @@ def traffic_engaged(request):
         user_agent,
     )
 
+    # --------------------------------------------
+    # STAGE 1: skutečně spuštěný viditelný browser
+    # --------------------------------------------
+    if stage == "browser":
+        trigger = (
+            request.POST.get("trigger")
+            or "unknown"
+        ).strip().lower()[:30]
+
+        defaults = {
+            "client_hash": client_hash,
+            "first_path": path,
+            "last_path": path,
+            "confirmations": 0,
+            "source": source,
+            "source_referer": (
+                attribution_referer[:300]
+            ),
+        }
+
+        try:
+            browser, _created = (
+                DailyBrowserVisitor.objects
+                .get_or_create(
+                    day=today,
+                    visitor_hash=(
+                        confirmed_visitor_hash
+                    ),
+                    defaults=defaults,
+                )
+            )
+        except IntegrityError:
+            browser = (
+                DailyBrowserVisitor.objects.get(
+                    day=today,
+                    visitor_hash=(
+                        confirmed_visitor_hash
+                    ),
+                )
+            )
+
+        DailyBrowserVisitor.objects.filter(
+            pk=browser.pk
+        ).update(
+            client_hash=client_hash,
+            last_seen_at=timezone.now(),
+            last_path=path,
+            confirmations=F("confirmations") + 1,
+        )
+
+        logger.info(
+            "BROWSER_CONFIRMED "
+            "ip=%s client=%s visitor=%s "
+            "beacon_visitor=%s "
+            "method=POST status=204 "
+            "path=%s trigger=%s "
+            "referer=%s source_referer=%s "
+            "ua=%s",
+            ip,
+            client_label,
+            confirmed_visitor_label,
+            visitor_label,
+            path[:300],
+            trigger,
+            referer,
+            attribution_referer[:300],
+            user_agent[:300],
+        )
+
+        return HttpResponse(status=204)
+
+    # --------------------------------------------
+    # STAGE 2: původní 3s engagement
+    # --------------------------------------------
     defaults = {
         "client_hash": client_hash,
         "first_path": path,
         "last_path": path,
         "beacons": 0,
         "source": source,
-        "source_referer": attribution_referer[:300],
+        "source_referer": (
+            attribution_referer[:300]
+        ),
     }
 
     try:
-        engaged, _created = DailyEngagedVisitor.objects.get_or_create(
-            day=today,
-            visitor_hash=engaged_visitor_hash,
-            defaults=defaults,
+        engaged, _created = (
+            DailyEngagedVisitor.objects
+            .get_or_create(
+                day=today,
+                visitor_hash=confirmed_visitor_hash,
+                defaults=defaults,
+            )
         )
     except IntegrityError:
-        engaged = DailyEngagedVisitor.objects.get(
-            day=today,
-            visitor_hash=engaged_visitor_hash,
+        engaged = (
+            DailyEngagedVisitor.objects.get(
+                day=today,
+                visitor_hash=confirmed_visitor_hash,
+            )
         )
 
-    DailyEngagedVisitor.objects.filter(pk=engaged.pk).update(
+    DailyEngagedVisitor.objects.filter(
+        pk=engaged.pk
+    ).update(
         client_hash=client_hash,
         last_seen_at=timezone.now(),
         last_path=path,
@@ -1160,14 +1395,19 @@ def traffic_engaged(request):
     )
 
     logger.info(
-        "ENGAGED ip=%s client=%s visitor=%s beacon_visitor=%s method=POST status=204 path=%s referer=%s source_referer=%s ua=%s",
+        "ENGAGED "
+        "ip=%s client=%s visitor=%s "
+        "beacon_visitor=%s "
+        "method=POST status=204 "
+        "path=%s referer=%s "
+        "source_referer=%s ua=%s",
         ip,
         client_label,
-        engaged_visitor_label,
+        confirmed_visitor_label,
         visitor_label,
         path[:300],
         referer,
-        source_referer[:300],
+        attribution_referer[:300],
         user_agent[:300],
     )
 

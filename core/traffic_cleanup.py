@@ -6,6 +6,7 @@ from .models import (
     DailySiteTraffic,
     DailyPageTraffic,
     DailyEngagedVisitor,
+    DailyBrowserVisitor
 )
 
 
@@ -32,6 +33,11 @@ def cleanup_visitor_human_stats(
 
     if delete_engaged:
         DailyEngagedVisitor.objects.filter(
+            day=day,
+            visitor_hash=visitor_hash,
+        ).delete()
+
+        DailyBrowserVisitor.objects.filter(
             day=day,
             visitor_hash=visitor_hash,
         ).delete()

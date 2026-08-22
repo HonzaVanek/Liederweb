@@ -7,19 +7,59 @@
 
     window.__liederTrafficBeaconSent = true;
 
-    setTimeout(function () {
+    var browserSent = false;
+    var engagedSent = false;
+
+    var browserTimer = null;
+    var engagedTimer = null;
+
+    var hasBeenVisible = false;
+
+    function isPrerendering() {
+        return (
+            "prerendering" in document &&
+            document.prerendering
+        );
+    }
+
+    function isActuallyVisible() {
+        return (
+            document.visibilityState === "visible" &&
+            !isPrerendering()
+        );
+    }
+
+    function postBeacon(stage, trigger) {
         var params = new URLSearchParams();
-        params.append("path", window.location.pathname);
-        params.append("delay", "3");
+
+        params.append(
+            "path",
+            window.location.pathname
+        );
+
+        params.append("stage", stage);
+
+        if (trigger) {
+            params.append("trigger", trigger);
+        }
 
         var body = params.toString();
 
         if (navigator.sendBeacon) {
-            var blob = new Blob([body], {
-                type: "application/x-www-form-urlencoded;charset=UTF-8"
-            });
+            var blob = new Blob(
+                [body],
+                {
+                    type:
+                        "application/x-www-form-urlencoded;" +
+                        "charset=UTF-8"
+                }
+            );
 
-            navigator.sendBeacon("/traffic/engaged/", blob);
+            navigator.sendBeacon(
+                "/traffic/engaged/",
+                blob
+            );
+
             return;
         }
 
@@ -27,12 +67,141 @@
             method: "POST",
             body: body,
             headers: {
-                "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+                "Content-Type":
+                    "application/x-www-form-urlencoded;" +
+                    "charset=UTF-8"
             },
             credentials: "same-origin",
             keepalive: true
         }).catch(function () {});
-    }, 3000);
+    }
+
+    function sendBrowserConfirmation(
+        trigger,
+        allowHidden
+    ) {
+        if (browserSent) {
+            return;
+        }
+
+        if (allowHidden) {
+            if (!hasBeenVisible) {
+                return;
+            }
+        } else if (!isActuallyVisible()) {
+            return;
+        }
+
+        browserSent = true;
+
+        postBeacon(
+            "browser",
+            trigger || "timer"
+        );
+    }
+
+    function sendEngagedConfirmation() {
+        if (
+            engagedSent ||
+            !isActuallyVisible()
+        ) {
+            return;
+        }
+
+        engagedSent = true;
+
+        postBeacon(
+            "engaged",
+            "timer"
+        );
+    }
+
+    function clearTimers() {
+        if (browserTimer !== null) {
+            clearTimeout(browserTimer);
+            browserTimer = null;
+        }
+
+        if (engagedTimer !== null) {
+            clearTimeout(engagedTimer);
+            engagedTimer = null;
+        }
+    }
+
+    function scheduleVisibleTimers() {
+        if (!isActuallyVisible()) {
+            return;
+        }
+
+        hasBeenVisible = true;
+
+        if (
+            !browserSent &&
+            browserTimer === null
+        ) {
+            browserTimer = setTimeout(
+                function () {
+                    browserTimer = null;
+
+                    sendBrowserConfirmation(
+                        "timer",
+                        false
+                    );
+                },
+                750
+            );
+        }
+
+        if (
+            !engagedSent &&
+            engagedTimer === null
+        ) {
+            engagedTimer = setTimeout(
+                function () {
+                    engagedTimer = null;
+
+                    sendEngagedConfirmation();
+                },
+                3000
+            );
+        }
+    }
+
+    document.addEventListener(
+        "visibilitychange",
+        function () {
+            if (isActuallyVisible()) {
+                scheduleVisibleTimers();
+            } else {
+                clearTimers();
+            }
+        }
+    );
+
+    if ("prerendering" in document) {
+        document.addEventListener(
+            "prerenderingchange",
+            function () {
+                scheduleVisibleTimers();
+            }
+        );
+    }
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            clearTimers();
+
+            // I návštěva kratší než 750 ms je skutečný
+            // browser, pokud byla stránka opravdu vidět.
+            sendBrowserConfirmation(
+                "pagehide",
+                true
+            );
+        }
+    );
+
+    scheduleVisibleTimers();
 })();
 </script>
 {% endif %}

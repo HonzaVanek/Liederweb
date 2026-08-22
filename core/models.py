@@ -262,6 +262,53 @@ class DailyPageTraffic(models.Model):
         return f"{self.day} | {self.path} | total={self.total_hits} human={self.human_hits} bot={self.bot_hits}"
 
 
+class DailyBrowserVisitor(models.Model):
+    class Source(models.TextChoices):
+        OTHER = "other", "Ostatní"
+        FACEBOOK = "facebook", "Facebook"
+        INSTAGRAM = "instagram", "Instagram"
+
+    day = models.DateField(db_index=True)
+    visitor_hash = models.CharField(max_length=64, db_index=True)
+    client_hash = models.CharField(max_length=64, db_index=True)
+
+    first_seen_at = models.DateTimeField(default=timezone.now)
+    last_seen_at = models.DateTimeField(default=timezone.now)
+
+    first_path = models.CharField(max_length=500, blank=True)
+    last_path = models.CharField(max_length=500, blank=True)
+
+    confirmations = models.PositiveIntegerField(default=0)
+
+    source = models.CharField(
+        max_length=20,
+        choices=Source.choices,
+        default=Source.OTHER,
+        db_index=True,
+    )
+
+    source_referer = models.CharField(
+        max_length=300,
+        blank=True,
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["day", "visitor_hash"],
+                name="unique_daily_browser_visitor",
+            )
+        ]
+        ordering = ["-day", "visitor_hash"]
+        verbose_name = "Denní JS potvrzený návštěvník"
+        verbose_name_plural = "Denní JS potvrzení návštěvníci"
+
+    def __str__(self):
+        return (
+            f"{self.day} – {self.visitor_hash[:8]} "
+            f"({self.confirmations})"
+        )
+
 class DailyEngagedVisitor(models.Model):
     class Source(models.TextChoices):
         OTHER = "other", "Ostatní / neznámé"
@@ -295,6 +342,8 @@ class DailyEngagedVisitor(models.Model):
 
     def __str__(self):
         return f"{self.day} – {self.visitor_hash[:8]} ({self.beacons})"
+
+
 
 
 
