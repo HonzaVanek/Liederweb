@@ -1,6 +1,7 @@
 from pathlib import Path
 import subprocess
 import re
+from urllib.parse import urlparse
 from datetime import datetime
 from collections import Counter, defaultdict
 
@@ -52,6 +53,11 @@ TRAFFIC_FIELD_PATTERNS = {
     "trigger": re.compile(r"\btrigger=([^\s]*)"),
     "removed_pageviews": re.compile(r"\bremoved_pageviews=(\d+)"),
     "candidates": re.compile(r"\bcandidates=(\d+)"),
+    "fetch_user": re.compile(r"\bfetch_user=([^\s]*)"),
+    "fetch_mode": re.compile(r"\bfetch_mode=([^\s]*)"),
+    "fetch_dest": re.compile(r"\bfetch_dest=([^\s]*)"),
+    "fetch_site": re.compile(r"\bfetch_site=([^\s]*)"),
+    "purpose": re.compile(r"\bpurpose=([^\s]*)"),
 }
 
 UA_RE = re.compile(r"\bua=(.*)$")
@@ -281,6 +287,11 @@ def parse_traffic_log_line(line):
         "reason": "",
         "score": "",
         "trigger": "",
+        "fetch_user": "",
+        "fetch_mode": "",
+        "fetch_dest": "",
+        "fetch_site": "",
+        "purpose": "",
         "ua": "",
         "removed_pageviews": "",
         "candidates": "",
