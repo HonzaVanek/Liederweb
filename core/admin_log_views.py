@@ -382,6 +382,120 @@ def normalize_audit_404_path(path):
 
     return path
 
+
+
+AUDIT_OWN_REFERER_DOMAINS = (
+    "lieder-society.cz",
+    "liedersociety.cz",
+    "liedersociety.website",
+)
+
+AUDIT_SEARCH_REFERER_PARTS = (
+    "google.",
+    "seznam.",
+    "bing.",
+    "duckduckgo.",
+    "yahoo.",
+    "ecosia.",
+    "startpage.",
+    "search.brave.",
+)
+
+AUDIT_SOCIAL_REFERER_DOMAINS = (
+    "facebook.com",
+    "instagram.com",
+    "threads.net",
+    "twitter.com",
+    "x.com",
+    "t.co",
+    "linkedin.com",
+)
+
+# Tyto realtime cleanupy mažou celý client, ne pouze konkrétní visitor identity.
+# Musíme je proto při auditu odečítat podle clientu.
+AUDIT_CLIENT_LEVEL_CLEANUP_REASONS = {
+    "rapid_identity_switch",
+    "homepage_identity_switch",
+    "ua_rotation",
+    "rapid_navigation",
+    "known_scanner",
+    "meta_infrastructure_ip",
+    "scanner_request",
+    "subnet_swarm",
+    "repeated_exact_no_ref_no_engagement",
+}
+
+
+def get_audit_day(item):
+    timestamp = item.get("timestamp")
+
+    if timestamp is None:
+        return None
+
+    return timestamp.date()
+
+
+def classify_audit_referer(referer):
+    referer = (referer or "").strip()
+
+    if not referer:
+        return "EMPTY"
+
+    value = referer
+
+    if "://" not in value:
+        value = "https://" + value
+
+    try:
+        host = (
+            urlparse(value).hostname
+            or ""
+        ).lower().rstrip(".")
+    except Exception:
+        host = ""
+
+    if any(
+        host == domain
+        or host.endswith("." + domain)
+        for domain in AUDIT_OWN_REFERER_DOMAINS
+    ):
+        return "OWN"
+
+    if any(
+        part in host
+        for part in AUDIT_SEARCH_REFERER_PARTS
+    ):
+        return "SEARCH"
+
+    if any(
+        host == domain
+        or host.endswith("." + domain)
+        for domain in AUDIT_SOCIAL_REFERER_DOMAINS
+    ):
+        return "SOCIAL"
+
+    return "EXTERNAL"
+
+
+def is_audit_client_level_cleanup_reason(reason):
+    reason = (reason or "").strip()
+
+    # Sticky varianta jen obaluje původní důvod.
+    while reason.startswith("sticky:"):
+        reason = reason.removeprefix("sticky:")
+
+    # shared_ua cleanupuje v middleware celý client.
+    if (
+        reason == "shared_ua"
+        or reason.startswith("shared_ua:")
+    ):
+        return True
+
+    return reason in AUDIT_CLIENT_LEVEL_CLEANUP_REASONS
+
+
+
+
 def build_traffic_audit(log_text, since=None):
     items = []
 
@@ -475,6 +589,321 @@ def build_traffic_audit(log_text, since=None):
 
         if len(posthoc_cleanup_rows) >= 20:
             break
+
+
+    # =========================================================
+    # VISIT BEZ JS POTVRZENÍ
+    #
+    # Nezajímá nás počet jednotlivých VISIT log řádků,
+    # ale unikátní visitor identity.
+    #
+    # Do DailySiteVisitor middleware zapisuje pouze GET,
+    # proto i zde počítáme pouze GET VISIT.
+    # =========================================================
+
+    visit_items = [
+        item
+        for item in items
+        if (
+            item["kind"] == "VISIT"
+            and item["method"] == "GET"
+            and item["visitor"]
+        )
+    ]
+
+    visit_keys = {
+        (
+            get_audit_day(item),
+            item["visitor"],
+        )
+        for item in visit_items
+    }
+
+    browser_confirmed_keys = {
+        (
+            get_audit_day(item),
+            item["visitor"],
+        )
+        for item in items
+        if (
+            item["kind"] == "BROWSER_CONFIRMED"
+            and item["visitor"]
+        )
+    }
+
+    engaged_keys = {
+        (
+            get_audit_day(item),
+            item["visitor"],
+        )
+        for item in items
+        if (
+            item["kind"] == "ENGAGED"
+            and item["visitor"]
+        )
+    }
+
+    # ENGAGED je také jednoznačné JS potvrzení skutečného browseru.
+    # Kdyby z nějakého důvodu chyběl samostatný BROWSER_CONFIRMED,
+    # nechceme takového návštěvníka považovat za nepotvrzeného.
+    js_confirmed_keys = (
+        browser_confirmed_keys
+        | engaged_keys
+    )
+
+    cleaned_visitor_keys = set()
+    cleaned_client_keys = set()
+
+    for item in items:
+        day = get_audit_day(item)
+
+        if item["kind"] == "POSTHOC_CLEANUP":
+            if item["visitor"]:
+                cleaned_visitor_keys.add(
+                    (
+                        day,
+                        item["visitor"],
+                    )
+                )
+
+            continue
+
+        if item["kind"] != "CLEANUP":
+            continue
+
+        if is_audit_client_level_cleanup_reason(
+            item["reason"]
+        ):
+            if item["client"]:
+                cleaned_client_keys.add(
+                    (
+                        day,
+                        item["client"],
+                    )
+                )
+
+        elif item["visitor"]:
+            cleaned_visitor_keys.add(
+                (
+                    day,
+                    item["visitor"],
+                )
+            )
+
+    # Pro každého VISIT visitora zjistíme jeho client identity.
+    # Je to potřeba proto, že některý CLEANUP odstraní celý client.
+    visitor_clients = defaultdict(set)
+
+    for item in visit_items:
+        visitor_key = (
+            get_audit_day(item),
+            item["visitor"],
+        )
+
+        if item["client"]:
+            visitor_clients[visitor_key].add(
+                (
+                    get_audit_day(item),
+                    item["client"],
+                )
+            )
+
+    cleaned_visit_keys = set()
+
+    for visitor_key in visit_keys:
+        if visitor_key in cleaned_visitor_keys:
+            cleaned_visit_keys.add(visitor_key)
+            continue
+
+        client_keys = visitor_clients.get(
+            visitor_key,
+            set(),
+        )
+
+        if client_keys & cleaned_client_keys:
+            cleaned_visit_keys.add(visitor_key)
+
+    browser_confirmed_visit_keys = (
+        visit_keys
+        & browser_confirmed_keys
+    )
+
+    engaged_visit_keys = (
+        visit_keys
+        & engaged_keys
+    )
+
+    js_confirmed_visit_keys = (
+        visit_keys
+        & js_confirmed_keys
+    )
+
+    # Tohle je množina, kterou chceme skutečně zkoumat:
+    #
+    # VISIT
+    # - browser/engaged confirmation
+    # - realtime/posthoc cleanup
+    unconfirmed_visit_keys = (
+        visit_keys
+        - js_confirmed_keys
+        - cleaned_visit_keys
+    )
+
+    visits_by_visitor = defaultdict(list)
+
+    for item in visit_items:
+        visitor_key = (
+            get_audit_day(item),
+            item["visitor"],
+        )
+
+        if visitor_key in unconfirmed_visit_keys:
+            visits_by_visitor[
+                visitor_key
+            ].append(item)
+
+    unconfirmed_rows = []
+
+    for (
+        day,
+        visitor,
+    ), visitor_items in visits_by_visitor.items():
+
+        visitor_items.sort(
+            key=lambda row: (
+                row["timestamp"]
+                or datetime.min
+            )
+        )
+
+        first = visitor_items[0]
+        last = visitor_items[-1]
+
+        unique_paths = list(
+            dict.fromkeys(
+                row["path"]
+                for row in visitor_items
+                if row["path"]
+            )
+        )
+
+        referer = (
+            first["referer"]
+            or ""
+        )
+
+        ua = (
+            first["ua"]
+            or ""
+        )
+
+        unconfirmed_rows.append({
+            "day": day,
+            "first_seen": first["timestamp"],
+            "last_seen": last["timestamp"],
+            "ip": first["ip"],
+            "client": first["client"],
+            "visitor": visitor,
+            "visit_count": len(visitor_items),
+            "path_count": len(unique_paths),
+            "first_path": (
+                unique_paths[0]
+                if unique_paths
+                else ""
+            ),
+            "referer": referer,
+            "referer_kind": classify_audit_referer(
+                referer
+            ),
+            "fetch_user": first["fetch_user"],
+            "fetch_mode": first["fetch_mode"],
+            "fetch_dest": first["fetch_dest"],
+            "fetch_site": first["fetch_site"],
+            "purpose": first["purpose"],
+            "ua": shorten_text(
+                ua,
+                220,
+            ),
+            "_ua_full": ua,
+        })
+
+    unconfirmed_rows.sort(
+        key=lambda row: (
+            row["last_seen"]
+            or datetime.min
+        ),
+        reverse=True,
+    )
+
+    unconfirmed_referer_counter = Counter(
+        row["referer_kind"]
+        for row in unconfirmed_rows
+    )
+
+    unconfirmed_referer_breakdown = [
+        (
+            label,
+            unconfirmed_referer_counter.get(
+                label,
+                0,
+            ),
+        )
+        for label in (
+            "EMPTY",
+            "OWN",
+            "SEARCH",
+            "SOCIAL",
+            "EXTERNAL",
+        )
+    ]
+
+    unconfirmed_visit_distribution = [
+        (
+            "1 VISIT",
+            sum(
+                1
+                for row in unconfirmed_rows
+                if row["visit_count"] == 1
+            ),
+        ),
+        (
+            "2 VISIT",
+            sum(
+                1
+                for row in unconfirmed_rows
+                if row["visit_count"] == 2
+            ),
+        ),
+        (
+            "3+ VISIT",
+            sum(
+                1
+                for row in unconfirmed_rows
+                if row["visit_count"] >= 3
+            ),
+        ),
+    ]
+
+    unconfirmed_ua_counter = Counter(
+        (
+            row["_ua_full"]
+            or "bez User-Agentu"
+        )
+        for row in unconfirmed_rows
+    )
+
+    unconfirmed_top_uas = [
+        {
+            "ua": shorten_text(
+                ua,
+                180,
+            ),
+            "visitor_count": count,
+        }
+        for ua, count
+        in unconfirmed_ua_counter.most_common(10)
+    ]
+
 
     ua_clients = defaultdict(set)
     client_uas = defaultdict(set)
@@ -663,6 +1092,30 @@ def build_traffic_audit(log_text, since=None):
         "engaged_skip_rows": engaged_skip_rows,
         "posthoc_cleanup_reasons": posthoc_cleanup_reasons.most_common(10),
         "posthoc_cleanup_rows": posthoc_cleanup_rows,
+        "visit_visitor_count": len(visit_keys),
+        "browser_confirmed_visit_visitor_count": len(
+            browser_confirmed_visit_keys
+        ),
+        "engaged_visit_visitor_count": len(
+            engaged_visit_keys
+        ),
+        "js_confirmed_visit_visitor_count": len(
+            js_confirmed_visit_keys
+        ),
+        "cleaned_visit_visitor_count": len(
+            cleaned_visit_keys
+        ),
+        "unconfirmed_visit_visitor_count": len(
+            unconfirmed_visit_keys
+        ),
+        "unconfirmed_referer_breakdown": (
+            unconfirmed_referer_breakdown
+        ),
+        "unconfirmed_visit_distribution": (
+            unconfirmed_visit_distribution
+        ),
+        "unconfirmed_top_uas": unconfirmed_top_uas,
+        "unconfirmed_rows": unconfirmed_rows[:50],
     }
 
 

@@ -55,12 +55,14 @@
                 }
             );
 
-            navigator.sendBeacon(
+            var queued = navigator.sendBeacon(
                 "/traffic/engaged/",
                 blob
             );
 
-            return;
+            if (queued) {
+                return;
+            }
         }
 
         fetch("/traffic/engaged/", {

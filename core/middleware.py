@@ -1361,10 +1361,10 @@ class SiteVisitStatsMiddleware:
 
         # Pokud je současný visitor už dnes potvrzen beaconem,
         # rozhodně ho kvůli tomuto patternu nepřeklápíme.
-        if DailyEngagedVisitor.objects.filter(
-            day=today,
-            visitor_hash=visitor_hash,
-        ).exists():
+        if self.has_js_browser_confirmation(
+            today,
+            visitor_hash,
+        ):
             return []
 
         now_ts = timezone.now().timestamp()
@@ -1438,6 +1438,16 @@ class SiteVisitStatsMiddleware:
             if hit.get("visitor_hash")
         ]
 
+        browser_hashes = set(
+            DailyBrowserVisitor.objects.filter(
+                day=today,
+                visitor_hash__in=visitor_hashes,
+            ).values_list(
+                "visitor_hash",
+                flat=True,
+            )
+        )
+
         engaged_hashes = set(
             DailyEngagedVisitor.objects.filter(
                 day=today,
@@ -1448,11 +1458,19 @@ class SiteVisitStatsMiddleware:
             )
         )
 
-        mature_unengaged_hits = [
+        confirmed_hashes = browser_hashes | engaged_hashes
+
+        mature_unconfirmed_hits = [
             hit
             for hit in mature_hits
-            if hit.get("visitor_hash") not in engaged_hashes
+            if hit.get("visitor_hash") not in confirmed_hashes
         ]
+
+        if len({
+            hit["client_label"]
+            for hit in mature_unconfirmed_hits
+        }) >= 3:
+            return mature_unconfirmed_hits
 
         if len({
             hit["client_label"]
@@ -1468,6 +1486,7 @@ class SiteVisitStatsMiddleware:
         ip,
         client_hash,
         client_label,
+        visitor_hash,
         path,
         referer_raw,
         user_agent,
@@ -1537,6 +1556,7 @@ class SiteVisitStatsMiddleware:
             "ts": now_ts,
             "client_hash": client_hash,
             "client_label": client_label,
+            "visitor_hash": visitor_hash,
             "ua": (user_agent or "").strip().lower(),
         })
 

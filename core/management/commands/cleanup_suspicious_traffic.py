@@ -10,6 +10,7 @@ from core.models import (
     DailyEngagedVisitor,
     DailySiteVisitor,
     TrafficVisitCandidate,
+    DailyBrowserVisitor,
 )
 from core.traffic_cleanup import (
     cleanup_visitor_human_stats,
@@ -216,6 +217,7 @@ class Command(BaseCommand):
         )
 
 
+        browser_keys = set()
         engaged_keys = set()
         existing_visitor_keys = set()
 
@@ -225,6 +227,21 @@ class Command(BaseCommand):
                 for candidate in context_candidates
                 if candidate.day == day
             }
+
+            browser_keys.update(
+                (day, visitor_hash)
+                for visitor_hash in (
+                    DailyBrowserVisitor.objects
+                    .filter(
+                        day=day,
+                        visitor_hash__in=hashes,
+                    )
+                    .values_list(
+                        "visitor_hash",
+                        flat=True,
+                    )
+                )
+            )
 
             engaged_keys.update(
                 (day, visitor_hash)
@@ -240,6 +257,9 @@ class Command(BaseCommand):
                     )
                 )
             )
+
+
+            confirmed_keys = browser_keys | engaged_keys
 
             existing_visitor_keys.update(
                 (day, visitor_hash)
@@ -287,6 +307,19 @@ class Command(BaseCommand):
             ) in engaged_keys
         ]
 
+        browser_only_ids = [
+            candidate.pk
+            for candidate in candidates
+            if (
+                candidate.day,
+                candidate.visitor_hash,
+            ) in browser_keys
+            and (
+                candidate.day,
+                candidate.visitor_hash,
+            ) not in engaged_keys
+        ]
+
         if engaged_ids:
             TrafficVisitCandidate.objects.filter(
                 pk__in=engaged_ids
@@ -296,12 +329,25 @@ class Command(BaseCommand):
                 processed_at=now,
             )
 
+        if browser_only_ids:
+            TrafficVisitCandidate.objects.filter(
+                pk__in=browser_only_ids
+            ).update(
+                decision=TrafficVisitCandidate.Decision.KEPT,
+                decision_reason="browser_confirmed",
+                processed_at=now,
+            )
+
         working = [
             candidate
             for candidate in candidates
             if candidate.pk not in already_removed_ids
-            and candidate.pk not in engaged_ids
+            and (
+                candidate.day,
+                candidate.visitor_hash,
+            ) not in confirmed_keys
         ]
+
         context_working = [
             candidate
             for candidate in context_candidates
@@ -312,7 +358,7 @@ class Command(BaseCommand):
             and (
                 candidate.day,
                 candidate.visitor_hash,
-            ) not in engaged_keys
+            ) not in confirmed_keys
         ]
         reasons_by_candidate = {}
 
@@ -461,20 +507,26 @@ class Command(BaseCommand):
         ), rows in suspicious_visitors.items():
 
             # Poslední pojistka těsně před cleanupem.
-            if DailyEngagedVisitor.objects.filter(
-                day=day,
-                visitor_hash=visitor_hash,
-            ).exists():
+            is_confirmed = (
+                DailyBrowserVisitor.objects.filter(
+                    day=day,
+                    visitor_hash=visitor_hash,
+                ).exists()
+                or
+                DailyEngagedVisitor.objects.filter(
+                    day=day,
+                    visitor_hash=visitor_hash,
+                ).exists()
+            )
+
+            if is_confirmed:
                 TrafficVisitCandidate.objects.filter(
                     day=day,
                     visitor_hash=visitor_hash,
-                    decision=(
-                        TrafficVisitCandidate
-                        .Decision.PENDING
-                    ),
+                    decision=TrafficVisitCandidate.Decision.PENDING,
                 ).update(
                     decision=TrafficVisitCandidate.Decision.KEPT,
-                    decision_reason="engaged_before_cleanup",
+                    decision_reason="js_confirmed_before_cleanup",
                     processed_at=now,
                 )
                 continue

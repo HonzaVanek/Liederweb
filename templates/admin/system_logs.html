@@ -322,6 +322,271 @@
     </div>
   </div>
 
+
+  <h3>VISIT bez JS potvrzení</h3>
+
+  <p class="help">
+    Diagnostika unikátních server-side VISIT identit.
+
+    Za JS potvrzeného se považuje visitor s
+    <code>BROWSER_CONFIRMED</code> nebo <code>ENGAGED</code>.
+
+    Z výsledku jsou odečteny také identity odstraněné realtime
+    nebo post-hoc cleanupem.
+
+    Počítají se pouze GET VISIT, protože ty odpovídají
+    visitorům ukládaným do denní návštěvnosti.
+  </p>
+
+  <div class="traffic-audit-grid">
+
+    <div class="traffic-audit-card">
+      <h3>Souhrn visitorů</h3>
+
+      <table>
+        <tr>
+          <td>VISIT visitorů</td>
+          <td>
+            <strong>
+              {{ traffic_audit.visit_visitor_count }}
+            </strong>
+          </td>
+        </tr>
+
+        <tr>
+          <td>BROWSER_CONFIRMED</td>
+          <td>
+            {{ traffic_audit.browser_confirmed_visit_visitor_count }}
+          </td>
+        </tr>
+
+        <tr>
+          <td>ENGAGED</td>
+          <td>
+            {{ traffic_audit.engaged_visit_visitor_count }}
+          </td>
+        </tr>
+
+        <tr>
+          <td>JS potvrzeno celkem</td>
+          <td>
+            <strong>
+              {{ traffic_audit.js_confirmed_visit_visitor_count }}
+            </strong>
+          </td>
+        </tr>
+
+        <tr>
+          <td>Odstraněno cleanupem</td>
+          <td>
+            {{ traffic_audit.cleaned_visit_visitor_count }}
+          </td>
+        </tr>
+
+        <tr>
+          <td>Nepotvrzeno</td>
+          <td>
+            <strong>
+              {{ traffic_audit.unconfirmed_visit_visitor_count }}
+            </strong>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+
+    <div class="traffic-audit-card">
+      <h3>Nepotvrzení podle refereru</h3>
+
+      <table>
+        {% for label, count in traffic_audit.unconfirmed_referer_breakdown %}
+          <tr>
+            <td><code>{{ label }}</code></td>
+            <td>{{ count }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+
+    <div class="traffic-audit-card">
+      <h3>Počet VISIT na visitora</h3>
+
+      <table>
+        {% for label, count in traffic_audit.unconfirmed_visit_distribution %}
+          <tr>
+            <td>{{ label }}</td>
+            <td>{{ count }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+
+    <div class="traffic-audit-card">
+      <h3>Top UA nepotvrzených</h3>
+
+      <table>
+        {% for row in traffic_audit.unconfirmed_top_uas %}
+          <tr>
+            <td>{{ row.visitor_count }}×</td>
+            <td>
+              <code>{{ row.ua }}</code>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2">
+              Žádní nepotvrzení visiteři.
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+  </div>
+
+
+  <h3>
+    Poslední nepotvrzení VISIT visiteři
+  </h3>
+
+  <p class="help">
+    Maximálně 50 visitorů, seřazeno podle posledního VISIT
+    od nejnovějšího.
+  </p>
+
+  <div class="stats-table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Čas</th>
+          <th>IP / identity</th>
+          <th>VISIT</th>
+          <th>Path</th>
+          <th>Referer</th>
+          <th>Fetch Metadata</th>
+          <th>User-Agent</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in traffic_audit.unconfirmed_rows %}
+          <tr>
+
+            <td>
+              {{ row.first_seen }}
+
+              {% if row.last_seen != row.first_seen %}
+                <br>
+                → {{ row.last_seen }}
+              {% endif %}
+            </td>
+
+            <td>
+              {% if row.ip %}
+                <code>{{ row.ip }}</code>
+                <br>
+              {% endif %}
+
+              client:
+              <code>{{ row.client }}</code>
+              <br>
+
+              visitor:
+              <code>{{ row.visitor }}</code>
+            </td>
+
+            <td>
+              <strong>{{ row.visit_count }}</strong>
+
+              <br>
+
+              {{ row.path_count }}
+              {% if row.path_count == 1 %}
+                path
+              {% else %}
+                paths
+              {% endif %}
+            </td>
+
+            <td>
+              {% if row.first_path %}
+                <code>{{ row.first_path }}</code>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <td>
+              <strong>
+                {{ row.referer_kind }}
+              </strong>
+
+              <br>
+
+              {% if row.referer %}
+                <code>{{ row.referer }}</code>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <td>
+              user:
+              <code>
+                {{ row.fetch_user|default:"—" }}
+              </code>
+              <br>
+
+              mode:
+              <code>
+                {{ row.fetch_mode|default:"—" }}
+              </code>
+              <br>
+
+              dest:
+              <code>
+                {{ row.fetch_dest|default:"—" }}
+              </code>
+              <br>
+
+              site:
+              <code>
+                {{ row.fetch_site|default:"—" }}
+              </code>
+
+              {% if row.purpose %}
+                <br>
+                purpose:
+                <code>{{ row.purpose }}</code>
+              {% endif %}
+            </td>
+
+            <td>
+              {% if row.ua %}
+                <code>{{ row.ua }}</code>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+          </tr>
+
+        {% empty %}
+
+          <tr>
+            <td colspan="7">
+              Žádní nepotvrzení VISIT visiteři.
+            </td>
+          </tr>
+
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+
   <h3>Poslední VISIT_DUPLICATE</h3>
 
   <table>
