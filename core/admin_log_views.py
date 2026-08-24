@@ -9,7 +9,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import render
 from django.db.models import Count, Sum
 
-from core.models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor
+from core.models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, DailyBrowserVisitor
 
 
 LOG_FILES = {
@@ -33,7 +33,8 @@ VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
 
 TRAFFIC_KIND_RE = re.compile(
     r"\|\s+liederweb\.traffic\s+\|\s+"
-    r"(POSTHOC_CLEANUP|VISIT_DUPLICATE|VISIT|BOT_LIKE|CLEANUP|ENGAGED|ENGAGED_SKIP)\s+"
+    r"(POSTHOC_CLEANUP|VISIT_DUPLICATE|BROWSER_CONFIRMED|BROWSER_SKIP|"
+    r"ENGAGED_SKIP|ENGAGED|VISIT|BOT_LIKE|CLEANUP)\s+"
 )
 TRAFFIC_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
 
@@ -48,6 +49,7 @@ TRAFFIC_FIELD_PATTERNS = {
     "source_referer": re.compile(r"\bsource_referer=([^\s]*)"),
     "reason": re.compile(r"\breason=([^\s]*)"),
     "score": re.compile(r"\bscore=([^\s]*)"),
+    "trigger": re.compile(r"\btrigger=([^\s]*)"),
     "removed_pageviews": re.compile(r"\bremoved_pageviews=(\d+)"),
     "candidates": re.compile(r"\bcandidates=(\d+)"),
 }
@@ -156,6 +158,7 @@ def build_colored_log_lines(log_text):
             "kind": kind,
             "kind_class": kind_class,
             "is_engaged": kind == "ENGAGED",
+            "is_browser_confirmed": kind == "BROWSER_CONFIRMED",
         })
 
         if color_key:
@@ -277,6 +280,7 @@ def parse_traffic_log_line(line):
         "source_referer": "",
         "reason": "",
         "score": "",
+        "trigger": "",
         "ua": "",
         "removed_pageviews": "",
         "candidates": "",
@@ -391,6 +395,18 @@ def build_traffic_audit(log_text, since=None):
         item["reason"] or "bez důvodu"
         for item in items
         if item["kind"] == "ENGAGED_SKIP"
+    )
+
+    browser_skip_reasons = Counter(
+        item["reason"] or "bez důvodu"
+        for item in items
+        if item["kind"] == "BROWSER_SKIP"
+    )
+
+    browser_confirmed_triggers = Counter(
+        item["trigger"] or "bez triggeru"
+        for item in items
+        if item["kind"] == "BROWSER_CONFIRMED"
     )
 
     visit_paths = Counter(
@@ -549,6 +565,50 @@ def build_traffic_audit(log_text, since=None):
         if len(duplicate_rows) >= 20:
             break
 
+
+    browser_confirmed_rows = []
+
+    for item in reversed(items):
+        if item["kind"] != "BROWSER_CONFIRMED":
+            continue
+
+        browser_confirmed_rows.append({
+            "time": item["timestamp"],
+            "ip": item["ip"],
+            "client": item["client"],
+            "visitor": item["visitor"],
+            "path": item["path"],
+            "trigger": item["trigger"] or "—",
+            "referer": item["referer"],
+            "source_referer": item["source_referer"],
+            "ua": shorten_text(item["ua"], 160),
+        })
+
+        if len(browser_confirmed_rows) >= 20:
+            break
+
+
+    browser_skip_rows = []
+
+    for item in reversed(items):
+        if item["kind"] != "BROWSER_SKIP":
+            continue
+
+        browser_skip_rows.append({
+            "time": item["timestamp"],
+            "ip": item["ip"],
+            "client": item["client"],
+            "visitor": item["visitor"],
+            "path": item["path"],
+            "reason": item["reason"] or "bez důvodu",
+            "referer": item["referer"],
+            "source_referer": item["source_referer"],
+            "ua": shorten_text(item["ua"], 160),
+        })
+
+        if len(browser_skip_rows) >= 20:
+            break
+
     engaged_skip_rows = []
 
     for item in reversed(items):
@@ -584,6 +644,10 @@ def build_traffic_audit(log_text, since=None):
         "clients_many_uas": clients_many_uas[:15],
         "mixed_clients": mixed_clients[:15],
         "suspicious_visits": suspicious_visits[:30],
+        "browser_skip_reasons": browser_skip_reasons.most_common(10),
+        "browser_confirmed_triggers": browser_confirmed_triggers.most_common(10),
+        "browser_confirmed_rows": browser_confirmed_rows,
+        "browser_skip_rows": browser_skip_rows,
         "engaged_skip_reasons": engaged_skip_reasons.most_common(10),
         "engaged_skip_rows": engaged_skip_rows,
         "posthoc_cleanup_reasons": posthoc_cleanup_reasons.most_common(10),
@@ -776,6 +840,15 @@ def system_logs_view(request):
         .order_by("-day")[:30]
     )
 
+    browser_counts = {
+        row["day"]: row["count"]
+        for row in (
+            DailyBrowserVisitor.objects
+            .values("day")
+            .annotate(count=Count("id"))
+        )
+    }
+
     engaged_counts = {
         row["day"]: row["count"]
         for row in (
@@ -785,18 +858,153 @@ def system_logs_view(request):
         )
     }
 
+
+    browser_source_counts = defaultdict(
+        lambda: {
+            "facebook": 0,
+            "instagram": 0,
+            "other": 0,
+        }
+    )
+
+    for source_row in (
+        DailyBrowserVisitor.objects
+        .values("day", "source")
+        .annotate(count=Count("id"))
+    ):
+        source = source_row["source"]
+
+        if source not in (
+            "facebook",
+            "instagram",
+        ):
+            source = "other"
+
+        browser_source_counts[
+            source_row["day"]
+        ][source] += source_row["count"]
+
+
+    engaged_source_counts = defaultdict(
+        lambda: {
+            "facebook": 0,
+            "instagram": 0,
+            "other": 0,
+        }
+    )
+
+    for source_row in (
+        DailyEngagedVisitor.objects
+        .values("day", "source")
+        .annotate(count=Count("id"))
+    ):
+        source = source_row["source"]
+
+        if source not in (
+            "facebook",
+            "instagram",
+        ):
+            source = "other"
+
+        engaged_source_counts[
+            source_row["day"]
+        ][source] += source_row["count"]
+
     for row in daily_stats:
-        human_row = human_daily_stats.get(row["day"], {})
+        human_row = human_daily_stats.get(
+            row["day"],
+            {},
+        )
 
-        pageviews = human_row.get("pageviews", 0) or 0
-        human_requests = row.get("human_hits", 0) or 0
+        pageviews = (
+            human_row.get("pageviews", 0)
+            or 0
+        )
 
-        row["unique_visitors"] = human_row.get("unique_visitors", 0)
-        row["unique_clients"] = human_row.get("unique_clients", 0)
-        row["engaged_visitors"] = engaged_counts.get(row["day"], 0)
+        human_requests = (
+            row.get("human_hits", 0)
+            or 0
+        )
+
+        unique_visitors = (
+            human_row.get("unique_visitors", 0)
+            or 0
+        )
+
+        browser_visitors = (
+            browser_counts.get(row["day"], 0)
+            or 0
+        )
+
+        engaged_visitors = (
+            engaged_counts.get(row["day"], 0)
+            or 0
+        )
+
+        browser_sources = browser_source_counts[
+            row["day"]
+        ]
+
+        engaged_sources = engaged_source_counts[
+            row["day"]
+        ]
+
+        row["unique_visitors"] = unique_visitors
+        row["unique_clients"] = (
+            human_row.get("unique_clients", 0)
+            or 0
+        )
+
+        row["browser_visitors"] = browser_visitors
+        row["engaged_visitors"] = engaged_visitors
+
+        row["browser_facebook"] = (
+            browser_sources["facebook"]
+        )
+        row["browser_instagram"] = (
+            browser_sources["instagram"]
+        )
+        row["browser_other"] = (
+            browser_sources["other"]
+        )
+
+        row["engaged_facebook"] = (
+            engaged_sources["facebook"]
+        )
+        row["engaged_instagram"] = (
+            engaged_sources["instagram"]
+        )
+        row["engaged_other"] = (
+            engaged_sources["other"]
+        )
+
+        if unique_visitors:
+            row["browser_pct_of_visitors"] = round(
+                browser_visitors
+                / unique_visitors
+                * 100,
+                1,
+            )
+        else:
+            row["browser_pct_of_visitors"] = 0
+
+        if browser_visitors:
+            row["engaged_pct_of_browser"] = round(
+                engaged_visitors
+                / browser_visitors
+                * 100,
+                1,
+            )
+        else:
+            row["engaged_pct_of_browser"] = 0
+
         row["pageviews"] = pageviews
         row["human_requests"] = human_requests
-        row["human_non_pageview_hits"] = max(0, human_requests - pageviews)
+
+        row["human_non_pageview_hits"] = max(
+            0,
+            human_requests - pageviews,
+        )
 
     human_page_stats = {
         (row["day"], row["path"]): row

@@ -164,24 +164,34 @@
         {% for label, count in traffic_audit.kind_counts %}
           <tr>
             <td>
-              {% if label == "ENGAGED" %}
-                ENGAGED beacony
+              {% if label == "BROWSER_CONFIRMED" %}
+                  BROWSER_CONFIRMED (viditelný browser)
+              {% elif label == "BROWSER_SKIP" %}
+                  BROWSER_SKIP
+              {% elif label == "ENGAGED" %}
+                  ENGAGED (≥ 3 s)
               {% elif label == "VISIT_DUPLICATE" %}
-                VISIT_DUPLICATE (deduplikace)
+                  VISIT_DUPLICATE (deduplikace)
               {% else %}
-                {{ label }}
+                  {{ label }}
               {% endif %}
+
             </td>
             <td>{{ count }}</td>
           </tr>
         {% endfor %}
       </table>
         <p class="help">
-          ENGAGED beacony jsou jednotlivé JS beacon události, nikoliv počet
-          unikátních potvrzených návštěvníků. Jeden návštěvník může během
-          procházení webu odeslat více beaconů.
-          VISIT_DUPLICATE označuje technický dvojrequest FB/IG in-app browseru,
-          který byl započítán do technické zátěže, ale ne jako další analytická pageview.
+          BROWSER_CONFIRMED je JS potvrzení, že stránka byla skutečně
+          spuštěná a viditelná v prohlížeči. ENGAGED znamená viditelnou
+          stránku alespoň přibližně 3 sekundy.
+
+          Oba typy jsou jednotlivé beacon události, nikoliv počet
+          unikátních lidí; jeden návštěvník může při procházení webu
+          odeslat více beaconů.
+
+          VISIT_DUPLICATE označuje technický dvojrequest, který nebyl
+          započítán jako další analytická pageview.
         </p>
     </div>
 
@@ -198,6 +208,47 @@
         {% endfor %}
       </table>
     </div>
+
+    <div class="traffic-audit-card">
+      <h3>BROWSER_CONFIRMED trigger</h3>
+
+      <table>
+        {% for label, count in traffic_audit.browser_confirmed_triggers %}
+          <tr>
+            <td><code>{{ label }}</code></td>
+            <td>{{ count }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2">Nic.</td>
+          </tr>
+        {% endfor %}
+      </table>
+
+      <p class="help">
+        <code>timer</code> znamená potvrzení po 750 ms viditelné stránky.
+        <code>pagehide</code> je krátká návštěva potvrzená až při odchodu.
+      </p>
+    </div>
+
+
+    <div class="traffic-audit-card">
+      <h3>BROWSER_SKIP důvody</h3>
+
+      <table>
+        {% for label, count in traffic_audit.browser_skip_reasons %}
+          <tr>
+            <td><code>{{ label }}</code></td>
+            <td>{{ count }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2">Nic.</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+
 
     <div class="traffic-audit-card">
       <h3>ENGAGED_SKIP důvody</h3>
@@ -325,6 +376,129 @@
       {% empty %}
         <tr>
           <td colspan="6">Žádné VISIT_DUPLICATE záznamy.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+
+  <h3>Poslední BROWSER_CONFIRMED</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Čas</th>
+        <th>IP / client</th>
+        <th>Path</th>
+        <th>Trigger</th>
+        <th>Source referer</th>
+        <th>User-Agent</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for row in traffic_audit.browser_confirmed_rows %}
+        <tr>
+          <td>{{ row.time }}</td>
+
+          <td>
+            {% if row.ip %}
+              <code>{{ row.ip }}</code>
+            {% endif %}
+
+            {% if row.client %}
+              <br>
+              <code>{{ row.client }}</code>
+            {% endif %}
+          </td>
+
+          <td>
+            <code>{{ row.path }}</code>
+          </td>
+
+          <td>
+            <code>{{ row.trigger }}</code>
+          </td>
+
+          <td>
+            {% if row.source_referer %}
+              <code>{{ row.source_referer }}</code>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+
+          <td>
+            <code>{{ row.ua }}</code>
+          </td>
+        </tr>
+
+      {% empty %}
+        <tr>
+          <td colspan="6">
+            Žádné BROWSER_CONFIRMED záznamy.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Poslední BROWSER_SKIP</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Čas</th>
+        <th>IP / client</th>
+        <th>Path</th>
+        <th>Důvod</th>
+        <th>Source referer</th>
+        <th>User-Agent</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for row in traffic_audit.browser_skip_rows %}
+        <tr>
+          <td>{{ row.time }}</td>
+
+          <td>
+            {% if row.ip %}
+              <code>{{ row.ip }}</code>
+            {% endif %}
+
+            {% if row.client %}
+              <br>
+              <code>{{ row.client }}</code>
+            {% endif %}
+          </td>
+
+          <td>
+            <code>{{ row.path }}</code>
+          </td>
+
+          <td>
+            <code>{{ row.reason }}</code>
+          </td>
+
+          <td>
+            {% if row.source_referer %}
+              <code>{{ row.source_referer }}</code>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+
+          <td>
+            <code>{{ row.ua }}</code>
+          </td>
+        </tr>
+
+      {% empty %}
+        <tr>
+          <td colspan="6">
+            Žádné BROWSER_SKIP záznamy.
+          </td>
         </tr>
       {% endfor %}
     </tbody>
@@ -659,56 +833,121 @@
         font-weight: 800;
         letter-spacing: 0.03em;
     }
+
+    .system-log-output .system-log-line.system-log-line--browser {
+        background: rgba(34, 197, 94, 0.24) !important;
+        border-left-color: #4ade80 !important;
+        font-weight: 700;
+    }
+
+    .system-log-output .system-log-line.system-log-line--browser::before {
+        content: "BROWSER";
+        display: inline-block;
+        margin-right: 8px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: #4ade80;
+        color: #111;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+    }
 </style>
 
-<pre class="system-log-output">{% for line in colored_log_lines %}<span class="system-log-line{% if line.kind_class %} traffic-kind-{{ line.kind_class }}{% endif %}{% if line.is_engaged %} system-log-line--engaged{% endif %}{% if line.ip or line.client or line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.ip %}<span class="visitor-badge">{{ line.ip }}{% if line.ip_label %} · {{ line.ip_label }}{% endif %}</span>{% elif line.client %}<span class="visitor-badge">{{ line.client }} / {{ line.visitor }}</span>{% elif line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>{% empty %}{{ log_text }}{% endfor %}</pre>
+<pre class="system-log-output">{% for line in colored_log_lines %}<span class="system-log-line{% if line.kind_class %} traffic-kind-{{ line.kind_class }}{% endif %}{% if line.is_engaged %} system-log-line--engaged{% endif %}{% if line.is_browser_confirmed %} system-log-line--browser{% endif %}{% if line.ip or line.client or line.visitor %} system-log-line--visitor visitor-color-{{ line.color_index }}{% endif %}">{% if line.ip %}<span class="visitor-badge">{{ line.ip }}{% if line.ip_label %} · {{ line.ip_label }}{% endif %}</span>{% elif line.client %}<span class="visitor-badge">{{ line.client }} / {{ line.visitor }}</span>{% elif line.visitor %}<span class="visitor-badge">{{ line.visitor }}</span>{% endif %}{{ line.text }}</span>{% empty %}{{ log_text }}{% endfor %}</pre>
 
 <h2>Návštěvnost webu</h2>
 
 <p class="help">
   Orientační denní statistika.
-  Unikátní návštěvníci jsou server-side visitor identity po odfiltrování známých botů;
-  u Facebook/Instagram in-app browserů se ignorují některé volatilní části User-Agentu.
-  Unikátní klienti jsou diagnostický počet rozdílných denních client identit
-  založených převážně na IP adrese a nelze jej chápat jako přesný počet lidí.
-  Potvrzení návštěvníci (JS) jsou návštěvníci, kterým se v prohlížeči
-  po několika sekundách spustil měřicí beacon.
-  Sloupce Boti a Celkem ukazují technickou zátěž webu včetně známých botů a skenů.
+
+  Unikátní návštěvníci jsou server-side visitor identity po
+  odfiltrování známých botů.
+
+  Browser potvrzení znamená návštěvníky, u kterých JavaScript
+  potvrdil skutečně spuštěnou a viditelnou stránku.
+
+  Engaged ≥ 3 s jsou návštěvníci, u kterých stránka zůstala
+  viditelná přibližně alespoň tři sekundy.
+
+  FB / IG / jiné ukazuje původ první uložené JS potvrzené návštěvy.
+
+  Sloupce Boti a Celkem představují technickou zátěž webu
+  včetně známých botů a skenů.
 </p>
 
 <table>
     <thead>
         <tr>
-            <th>Den</th>
-            <th>Unikátní návštěvníci</th>
-            <th>Unikátní klienti</th>
-            <th>Potvrzení návštěvníci (js)</th>
-            <th>Lidská pageviews</th>
-            <th>Jiné lidské requesty</th>
-            <th>Lidské requesty celkem</th>
-            <th>Boti</th>
-            <th>Celkem</th>
+          <th>Den</th>
+          <th>Unikátní návštěvníci</th>
+          <th>Unikátní klienti</th>
+
+          <th>Browser potvrzení</th>
+          <th>Engaged ≥ 3 s</th>
+
+          <th>Browser / návštěvníci</th>
+          <th>Engaged / browser</th>
+
+          <th>Lidská pageviews</th>
+          <th>Jiné lidské requesty</th>
+          <th>Lidské requesty celkem</th>
+          <th>Boti</th>
+          <th>Celkem</th>
         </tr>
     </thead>
-    <tbody>
+      <tbody>
         {% for row in daily_stats %}
-            <tr>
-                <td>{{ row.day|date:"j. F Y" }}</td>
-                <td>{{ row.unique_visitors }}</td>
-                <td>{{ row.unique_clients }}</td>
-                <td>{{ row.engaged_visitors }}</td>
-                <td>{{ row.pageviews }}</td>
-                <td>{{ row.human_non_pageview_hits }}</td>
-                <td>{{ row.human_requests }}</td>
-                <td>{{ row.bot_hits }}</td>
-                <td>{{ row.total_hits }}</td>
-            </tr>
+          <tr>
+            <td>{{ row.day|date:"j. F Y" }}</td>
+
+            <td>
+              <strong>{{ row.unique_visitors }}</strong>
+            </td>
+
+            <td>{{ row.unique_clients }}</td>
+
+            <td>
+              <strong>{{ row.browser_visitors }}</strong>
+              <div class="help">
+                FB {{ row.browser_facebook }}
+                · IG {{ row.browser_instagram }}
+                · jiné {{ row.browser_other }}
+              </div>
+            </td>
+
+            <td>
+              <strong>{{ row.engaged_visitors }}</strong>
+              <div class="help">
+                FB {{ row.engaged_facebook }}
+                · IG {{ row.engaged_instagram }}
+                · jiné {{ row.engaged_other }}
+              </div>
+            </td>
+
+            <td>
+              {{ row.browser_pct_of_visitors }} %
+            </td>
+
+            <td>
+              {{ row.engaged_pct_of_browser }} %
+            </td>
+
+            <td>{{ row.pageviews }}</td>
+            <td>{{ row.human_non_pageview_hits }}</td>
+            <td>{{ row.human_requests }}</td>
+            <td>{{ row.bot_hits }}</td>
+            <td>{{ row.total_hits }}</td>
+          </tr>
+
         {% empty %}
-            <tr>
-                <td colspan="9">Zatím nejsou žádná data.</td>
-            </tr>
+          <tr>
+            <td colspan="12">
+              Zatím nejsou žádná data.
+            </td>
+          </tr>
         {% endfor %}
-    </tbody>
+      </tbody>
 </table>
 
 <h2>Agnes Tyrrell</h2>
