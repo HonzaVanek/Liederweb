@@ -499,17 +499,20 @@ def vip_reserve(request, token):
         ]
 
         if event.starts_at:
-            lines.append(f"Datum koncertu: {event.starts_at:%d.%m.%Y %H:%M}")
+            event_start_local = timezone.localtime(event.starts_at)
+            lines.append(f"Datum koncertu: {event_start_local:%d.%m.%Y %H:%M}")
 
         if event.venue:
             lines.append(f"Místo: {event.venue}")
+
+        reservation_created_local = timezone.localtime(reservation.created_at)
 
         lines.extend([
             f"Jméno: {contact.name or '-'}",
             f"Oslovení: {contact.salutation or '-'}",
             f"E-mail: {contact.email}",
             f"Počet vstupenek: {reservation.ticket_count}",
-            f"Čas rezervace: {reservation.created_at:%d.%m.%Y %H:%M}",
+            f"Čas rezervace: {reservation_created_local:%d.%m.%Y %H:%M}",
         ])
 
         if campaign:
@@ -626,14 +629,21 @@ def event_export_vip_xlsx(request, pk):
 
     # data
     for r in reservations:
+        created_at_local = timezone.localtime(r.created_at)
+        cancelled_at_local = (
+            timezone.localtime(r.cancelled_at)
+            if r.cancelled_at
+            else None
+        )
+
         ws.append([
             r.contact.name or "",
             r.contact.email,
             r.contact.salutation or "",
             r.ticket_count,
             r.get_status_display(),
-            r.cancelled_at.strftime("%d.%m.%Y %H:%M") if r.cancelled_at else "",
-            r.created_at.strftime("%d.%m.%Y %H:%M"),
+            cancelled_at_local.strftime("%d.%m.%Y %H:%M") if cancelled_at_local else "",
+            created_at_local.strftime("%d.%m.%Y %H:%M"),
             r.campaign.subject if r.campaign else "",
         ])
 
