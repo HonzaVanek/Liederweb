@@ -1883,6 +1883,7 @@ class SiteVisitStatsMiddleware:
                 ip=ip,
                 client_hash=client_hash,
                 client_label=client_label,
+                visitor_hash=visitor_hash,
                 path=path,
                 referer_raw=referer_raw,
                 user_agent=user_agent,
