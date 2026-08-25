@@ -26,7 +26,7 @@ from django.core.cache import cache
 from django.utils.decorators import method_decorator
 
 from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm, HomeSupportPromoForm, HomeQuoteSlideForm
-from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor, DailySiteVisitor, DailyPageVisitor, DailyBrowserVisitor
+from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor, DailySiteVisitor, DailyPageVisitor, DailyBrowserVisitor, DailySiteTraffic, DailyPageTraffic
 from events.models import Event
 from media_assets.models import MediaAsset
 from social_feed.models import SocialPost, SocialSource
@@ -1138,6 +1138,128 @@ def traffic_engaged(request):
     sticky_reason = cache.get(
         f"traffic_bot_like_client:{client_label}"
     )
+
+    # Shared-UA je slabší heuristika.
+    # Pokud máme z middleware uložený rehab záznam
+    # a přijde skutečný browser beacon ze stejného
+    # clienta, visitora a stránky, visitor se může očistit.
+    if (
+        sticky_reason
+        and sticky_reason.startswith("shared_ua:")
+        and stage == "browser"
+    ):
+        rehab_key = (
+            f"traffic_shared_ua_rehab:"
+            f"{today}:{client_hash}:{path}"
+        )
+
+        rehab = cache.get(rehab_key)
+
+        if (
+            isinstance(rehab, dict)
+            and rehab.get("visitor_hash") == visitor_hash
+        ):
+            now = timezone.now()
+
+            # 1) Zrušit sticky shared_ua.
+            cache.delete(
+                f"traffic_bot_like_client:{client_label}"
+            )
+            sticky_reason = None
+
+            # 2) Původní GET byl technicky započítán jako bot.
+            # Překlopíme právě jeden hit zpět na human.
+            DailySiteTraffic.objects.filter(
+                day=today,
+                bot_hits__gt=0,
+            ).update(
+                bot_hits=F("bot_hits") - 1,
+                human_hits=F("human_hits") + 1,
+            )
+
+            DailyPageTraffic.objects.filter(
+                day=today,
+                path=path,
+                bot_hits__gt=0,
+            ).update(
+                bot_hits=F("bot_hits") - 1,
+                human_hits=F("human_hits") + 1,
+            )
+
+            # 3) Obnovit chybějící server-side VISIT.
+            visit, _created = DailySiteVisitor.objects.get_or_create(
+                day=today,
+                visitor_hash=visitor_hash,
+                defaults={
+                    "pageviews": 0,
+                    "client_hash": client_hash,
+                    "first_path": path,
+                    "last_path": path,
+                },
+            )
+
+            DailySiteVisitor.objects.filter(
+                pk=visit.pk
+            ).update(
+                pageviews=F("pageviews") + 1,
+                client_hash=client_hash,
+                last_seen_at=now,
+                last_path=path,
+            )
+
+            page_visit, _created = DailyPageVisitor.objects.get_or_create(
+                day=today,
+                path=path,
+                visitor_hash=visitor_hash,
+                defaults={
+                    "pageviews": 0,
+                    "client_hash": client_hash,
+                },
+            )
+
+            DailyPageVisitor.objects.filter(
+                pk=page_visit.pk
+            ).update(
+                pageviews=F("pageviews") + 1,
+                client_hash=client_hash,
+                last_seen_at=now,
+            )
+
+            # 4) Obnovit source info, aby další beacon matching
+            # fungoval stejně jako u normálního VISIT.
+            source_referer = rehab.get("referer", "") or ""
+            source_visitor_label = visitor_label
+
+            cache.set(
+                f"traffic_visit_source:"
+                f"{today}:{client_hash}:{path}",
+                {
+                    "referer": source_referer,
+                    "visitor": visitor_label,
+                },
+                timeout=30 * 60,
+            )
+
+            cache.delete(rehab_key)
+
+            logger.info(
+                "VISIT ip=%s client=%s visitor=%s "
+                "method=GET status=200 path=%s referer=%s "
+                "fetch_user=%s fetch_mode=%s fetch_dest=%s "
+                "fetch_site=%s purpose=%s ua=%s "
+                "restored=shared_ua",
+                ip,
+                client_label,
+                visitor_label,
+                path[:300],
+                source_referer[:300],
+                rehab.get("fetch_user", ""),
+                rehab.get("fetch_mode", ""),
+                rehab.get("fetch_dest", ""),
+                rehab.get("fetch_site", ""),
+                rehab.get("purpose", ""),
+                rehab.get("user_agent", "")[:300],
+            )
 
     if sticky_reason:
         # Když už jsme klienta překlasifikovali jako bota,
