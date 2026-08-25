@@ -342,8 +342,13 @@ class SiteVisitStatsMiddleware:
         try:
             self.track_visit(request, response)
         except Exception:
-            # Statistiky nikdy nesmí rozbít web.
-            pass
+            logger.exception(
+                "TRAFFIC_MIDDLEWARE_ERROR "
+                "method=%s path=%s ua=%s",
+                request.method,
+                (request.path or "")[:300],
+                request.META.get("HTTP_USER_AGENT", "")[:300],
+            )
 
         return response
 
