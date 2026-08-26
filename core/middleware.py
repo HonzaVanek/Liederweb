@@ -1754,25 +1754,19 @@ class SiteVisitStatsMiddleware:
                 bot_like_reason = "disguised_iphone:" + ",".join(disguised_reasons)
 
         if not is_known_bot and not is_bot_like:
-            visitor_is_confirmed = self.has_js_browser_confirmation(
-                today,
-                visitor_hash,
+            is_shared_ua, shared_ua_reason = (
+                self.is_suspicious_shared_user_agent(
+                    path,
+                    referer_raw,
+                    user_agent,
+                    client_label,
+                )
             )
 
-            if not visitor_is_confirmed:
-                is_shared_ua, shared_ua_reason = (
-                    self.is_suspicious_shared_user_agent(
-                        path,
-                        referer_raw,
-                        user_agent,
-                        client_label,
-                    )
-                )
-
-                if is_shared_ua:
-                    is_bot_like = True
-                    should_mark_sticky_bot_like = True
-                    bot_like_reason = "shared_ua:" + shared_ua_reason
+            if is_shared_ua:
+                is_bot_like = True
+                should_mark_sticky_bot_like = True
+                bot_like_reason = "shared_ua:" + shared_ua_reason
 
         content_type = response.headers.get("Content-Type", "").lower()
 
@@ -1946,34 +1940,7 @@ class SiteVisitStatsMiddleware:
                 bot_like_reason = "rapid_navigation"
 
 
-        # Shared-UA je slabší heuristika.
-        # Pokud později přijde validní JS beacon ze stejného clienta
-        # a stejné stránky, umožníme visitorovi tento verdikt zvrátit.
-        if (
-            is_bot_like
-            and bot_like_reason.startswith("shared_ua:")
-            and request.method == "GET"
-            and status_code == 200
-            and not self.is_ignored_path(path)
-            and "text/html" in content_type
-            and not is_prefetch_or_prerender
-            and is_document_request
-        ):
-            cache.set(
-                f"traffic_shared_ua_rehab:{today}:{client_hash}:{path[:500]}",
-                {
-                    "visitor_hash": visitor_hash,
-                    "visitor_label": visitor_label,
-                    "referer": referer,
-                    "user_agent": user_agent[:500],
-                    "fetch_user": fetch_user,
-                    "fetch_mode": fetch_mode,
-                    "fetch_dest": fetch_dest,
-                    "fetch_site": fetch_site,
-                    "purpose": purpose,
-                },
-                timeout=30 * 60,
-            )
+
         is_bot_for_traffic = is_known_bot or is_bot_like
 
         # Technická zátěž:
