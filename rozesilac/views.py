@@ -892,6 +892,81 @@ def mark_recent_burst_as_suspicious(delivery, now, window_seconds=8, min_distinc
 
     return changed
 
+
+def mark_distributed_same_ua_as_suspicious(user_agent, now, window_hours=6, min_events=6, min_distinct_ips=6, min_distinct_deliveries=2, min_distinct_urls=4,):
+    """
+    Detekuje distribuovaný link scanner, který:
+
+    - používá stále stejný přesný User-Agent,
+    - střídá IP adresy,
+    - prochází více odkazů,
+    - a může skenovat více různých doručení.
+
+    Typický příklad:
+    stejný Edge/122 UA z mnoha datacentrových IP
+    během několika hodin.
+    """
+    ua = (user_agent or "").strip()
+
+    if not ua:
+        return False
+
+    threshold = now - timedelta(hours=window_hours)
+
+    recent_events = list(EmailClickEvent.objects.filter(
+            user_agent=ua,
+            created_at__gte=threshold,
+        )
+        .values(
+            "id",
+            "delivery_id",
+            "original_url",
+            "ip_address",
+            "is_suspected_bot",
+        )
+    )
+
+    if len(recent_events) < min_events:
+        return False
+
+    distinct_ips = {
+        (event["ip_address"] or "").strip()
+        for event in recent_events
+        if (event["ip_address"] or "").strip()
+    }
+
+    distinct_deliveries = {
+        event["delivery_id"]
+        for event in recent_events
+    }
+
+    distinct_urls = {
+        event["original_url"]
+        for event in recent_events
+        if event["original_url"]
+    }
+
+    if len(distinct_ips) < min_distinct_ips:
+        return False
+
+    if len(distinct_deliveries) < min_distinct_deliveries:
+        return False
+
+    if len(distinct_urls) < min_distinct_urls:
+        return False
+
+    event_ids_to_mark = [
+        event["id"]
+        for event in recent_events
+        if not event["is_suspected_bot"]
+    ]
+
+    if not event_ids_to_mark:
+        return False
+
+    EmailClickEvent.objects.filter(id__in=event_ids_to_mark).update(is_suspected_bot=True)
+    return True
+
 def click_tracking(request, token):
     delivery = get_object_or_404(EmailDelivery, tracking_token=token)
 
@@ -948,6 +1023,11 @@ def click_tracking(request, token):
         now=now,
         window_seconds=8,
         min_distinct_urls=3,
+    )
+
+    mark_distributed_same_ua_as_suspicious(
+        user_agent=user_agent,
+        now=now,
     )
 
     return redirect(target_url)
