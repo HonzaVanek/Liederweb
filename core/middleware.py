@@ -524,7 +524,58 @@ class SiteVisitStatsMiddleware:
         return False, ""
 
 
-    def is_suspicious_rapid_identity_switch(self, client_label, visitor_label, path, referer_raw, user_agent):
+    def get_desktop_ua_signature(self, user_agent):
+        """
+        Vrátí hrubou identitu desktopového browseru:
+        (platforma, browser).
+
+        Používáme jen pro velmi silný rapid identity switch.
+        Mobilní UA záměrně neklasifikujeme.
+        """
+        ua = (user_agent or "").strip().lower()
+
+        # platforma
+        if "windows nt" in ua:
+            platform = "windows"
+        elif "macintosh" in ua or "mac os x" in ua:
+            platform = "mac"
+        elif "x11" in ua or (
+            "linux" in ua
+            and "android" not in ua
+        ):
+            platform = "linux"
+        else:
+            platform = ""
+
+        # browser — pořadí je důležité,
+        # protože Edge UA obsahuje i "chrome" a "safari".
+        if "edg/" in ua:
+            browser = "edge"
+        elif "firefox/" in ua:
+            browser = "firefox"
+        elif "chrome/" in ua:
+            browser = "chrome"
+        elif (
+            "safari/" in ua
+            and "version/" in ua
+            and "chrome/" not in ua
+            and "chromium/" not in ua
+        ):
+            browser = "safari"
+        else:
+            browser = ""
+
+        return platform, browser
+
+
+    def is_suspicious_rapid_identity_switch(
+        self,
+        client_label,
+        visitor_label,
+        path,
+        referer_raw,
+        user_agent,
+    ):
         now_ts = int(timezone.now().timestamp())
         ua = (user_agent or "").strip().lower()
         host = self.get_referer_host(referer_raw)
@@ -547,9 +598,23 @@ class SiteVisitStatsMiddleware:
 
         cache.set(cache_key, hits, timeout=30)
 
-        unique_paths = {hit["path"] for hit in hits}
-        unique_uas = {hit["ua"] for hit in hits if hit["ua"]}
-        unique_hosts = {hit["host"] for hit in hits if hit["host"]}
+        unique_paths = {
+            hit["path"]
+            for hit in hits
+        }
+
+        unique_uas = {
+            hit["ua"]
+            for hit in hits
+            if hit["ua"]
+        }
+
+        unique_hosts = {
+            hit["host"]
+            for hit in hits
+            if hit["host"]
+        }
+
         unique_visitors = {
             hit["visitor"]
             for hit in hits
@@ -562,14 +627,52 @@ class SiteVisitStatsMiddleware:
             if hit.get("host")
         )
 
-        # Velmi podezřelé: stejný client během pár sekund otevře homepage
-        # jako dva různí návštěvníci / prohlížeče bez vyhledávače.
+        # Silný konflikt identity:
+        # během pár sekund se stejný client tváří např.
+        # jednou jako Mac/Safari a podruhé jako Windows/Chrome.
+        desktop_signatures = {
+            self.get_desktop_ua_signature(hit["ua"])
+            for hit in hits
+            if hit.get("ua")
+        }
+
+        desktop_signatures = {
+            signature
+            for signature in desktop_signatures
+            if signature[0] and signature[1]
+        }
+
+        desktop_platforms = {
+            platform
+            for platform, _browser in desktop_signatures
+        }
+
+        desktop_browsers = {
+            browser
+            for _platform, browser in desktop_signatures
+        }
+
+        has_strong_desktop_identity_conflict = (
+            len(desktop_platforms) >= 2
+            and len(desktop_browsers) >= 2
+        )
+
+        # Velmi podezřelé:
+        # stejný client během pár sekund otevře homepage
+        # jako dva různí visiteři / browsery.
+        #
+        # Search referer normálně chráníme.
+        # Výjimkou je silný konflikt desktopové identity,
+        # např. Mac/Safari -> Windows/Chrome.
         if (
             len(hits) >= 2
             and unique_paths == {"/"}
             and len(unique_uas) >= 2
             and len(unique_visitors) >= 2
-            and not has_search_referer
+            and (
+                not has_search_referer
+                or has_strong_desktop_identity_conflict
+            )
         ):
             return True
 
