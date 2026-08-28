@@ -14,6 +14,18 @@
     <link rel="stylesheet" href="{% static 'style.css' %}?v=3">
     {% block extra_css %}{% endblock %}
 
+    {% block structured_data %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://lieder-society.cz/#organization",
+        "name": "Lieder Society",
+        "url": "https://lieder-society.cz/"
+    }
+    </script>
+    {% endblock %}
+
     <link rel="icon" href="{% static 'Lieder-favicon.png' %}" type="image/png">
 </head>
 

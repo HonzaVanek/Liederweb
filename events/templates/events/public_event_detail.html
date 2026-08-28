@@ -10,6 +10,26 @@
   {{ event.title }}
 {% endblock %}
 
+{% block seo_meta %}
+  {% if vip_mode %}
+    <meta name="robots" content="noindex">
+  {% else %}
+    {{ block.super }}
+  {% endif %}
+{% endblock %}
+
+{% block structured_data %}
+  {% if not vip_mode %}
+    {{ block.super }}
+
+    {% if event_schema_json %}
+      <script type="application/ld+json">
+        {{ event_schema_json }}
+      </script>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+
 {% block content %}
   <div class="public-event-page" style="--event-color: {{ event.theme_color|default:'#7B2738' }};">
     <section class="public-event-hero {% if event.hero_media %}has-hero-image{% endif %} {% if event.hero_parallax_enabled %}hero-parallax-enabled{% endif %}">

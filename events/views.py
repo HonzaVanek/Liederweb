@@ -47,6 +47,12 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 from datetime import datetime
 
+import json
+
+from django.core.serializers.json import DjangoJSONEncoder
+from django.utils.html import strip_tags
+from django.utils.safestring import mark_safe
+
 import logging
 
 security_logger = logging.getLogger("liederweb.security")
@@ -89,6 +95,24 @@ def _build_event_formsets(data=None, instance=None):
             prefix="gallery",
         ),
     }
+
+def _json_ld(data):
+    value = json.dumps(
+        data,
+        cls=DjangoJSONEncoder,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+
+    # Aby obsah z databáze nemohl ukončit <script> element.
+    value = (
+        value
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("&", "\\u0026")
+    )
+
+    return mark_safe(value)
 
 
 def _get_recent_event_images():
@@ -278,13 +302,10 @@ def event_detail(request, pk):
 
 
 def public_event_detail(request, slug):
-    Prefetch(
-        "gallery_images",
-        queryset=EventGalleryImage.objects.select_related("image_asset").order_by("sort_order", "id"),
-    ),
     event = get_object_or_404(
         Event.objects.select_related(
             "poster_image",
+            "poster_asset",
             "hero_image",
             "secondary_image",
         ).prefetch_related(
@@ -293,10 +314,83 @@ def public_event_detail(request, slug):
             "resources",
             "practical_infos",
             "sponsors__logo_image",
+            Prefetch(
+                "gallery_images",
+                queryset=EventGalleryImage.objects
+                .select_related("image_asset")
+                .order_by("sort_order", "id"),
+            ),
         ),
         slug=slug,
         is_published=True,
     )
+
+    canonical_url = f"https://lieder-society.cz{request.path}"
+
+    event_schema = {
+        "@context": "https://schema.org",
+        "@type": "MusicEvent",
+        "@id": f"{canonical_url}#event",
+        "name": event.title,
+        "url": canonical_url,
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        "organizer": {
+            "@type": "Organization",
+            "@id": "https://lieder-society.cz/#organization",
+            "name": "Lieder Society",
+            "url": "https://lieder-society.cz/",
+        },
+    }
+
+    if event.starts_at:
+        event_schema["startDate"] = timezone.localtime(
+            event.starts_at
+        ).isoformat()
+
+    if event.venue:
+        location = {
+            "@type": "Place",
+            "name": event.venue,
+        }
+
+        if event.venue_address:
+            location["address"] = event.venue_address
+
+        event_schema["location"] = location
+
+    if event.public_text:
+        event_schema["description"] = strip_tags(
+            event.public_text
+        ).strip()
+
+    if event.poster_asset:
+        event_schema["image"] = request.build_absolute_uri(
+            event.poster_asset.file.url
+        )
+    elif event.poster_image:
+        event_schema["image"] = request.build_absolute_uri(
+            event.poster_image.image.url
+        )
+
+    performers = [
+        {
+            "@type": "Person",
+            "name": artist.name,
+        }
+        for artist in event.artists.all()
+    ]
+
+    if performers:
+        event_schema["performer"] = performers
+
+    if event.tickets_url:
+        event_schema["offers"] = {
+            "@type": "Offer",
+            "url": event.tickets_url,
+        }
+
+    event_schema_json = _json_ld(event_schema)
 
     related_content_posts = (
         event.content_posts
@@ -338,6 +432,7 @@ def public_event_detail(request, slug):
             "gallery_extra_count": gallery_extra_count,
             "related_content_posts": related_content_posts,
             "related_content_galleries": related_content_galleries,
+            "event_schema_json": event_schema_json,
         },
     )
 
