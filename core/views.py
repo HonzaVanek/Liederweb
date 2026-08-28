@@ -40,7 +40,7 @@ from .utils.payments import build_spd_payload, make_qr_svg
 
 def robots_txt(request):
     content = """# Lieder Society
-# https://www.liedersociety.website/robots.txt
+# https://lieder-society.cz/robots.txt
 
 User-agent: GPTBot
 Disallow: /
@@ -87,7 +87,7 @@ Disallow: /events/*/edit/
 Disallow: /events/*/tickets/
 Disallow: /events/*/export-vip/
 
-# Sitemap: https://www.liedersociety.website/sitemap.xml
+# Sitemap: https://lieder-society.cz/sitemap.xml
 """
     return HttpResponse(content, content_type="text/plain")
 

@@ -3,6 +3,10 @@
 
 {% block title %}Administrace{% endblock title %}
 
+{% block seo_meta %}
+   <meta name="robots" content="noindex">
+{% endblock %}
+
 {% block extra_css %}
   {{ block.super }}
   <link rel="stylesheet" href="{% static 'rozesilac/base_rozesilac.css' %}">

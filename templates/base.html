@@ -7,6 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Lieder Society{% endblock %}</title>
 
+    {% block seo_meta %}
+    <link rel="canonical" href="https://lieder-society.cz{{ request.path }}">
+    {% endblock %}
+    
     <link rel="stylesheet" href="{% static 'style.css' %}?v=3">
     {% block extra_css %}{% endblock %}
 

@@ -3,6 +3,10 @@
 
 {% block title %}Přihlášení{% endblock %}
 
+{% block seo_meta %}
+<meta name="robots" content="noindex">
+{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'core/login.css' %}">
 {% endblock extra_css %}
