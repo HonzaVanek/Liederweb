@@ -576,7 +576,8 @@ class SiteVisitStatsMiddleware:
         referer_raw,
         user_agent,
     ):
-        now_ts = int(timezone.now().timestamp())
+        now_precise = timezone.now().timestamp()
+        now_ts = int(now_precise)
         ua = (user_agent or "").strip().lower()
         host = self.get_referer_host(referer_raw)
 
@@ -590,6 +591,7 @@ class SiteVisitStatsMiddleware:
 
         hits.append({
             "ts": now_ts,
+            "ts_precise": now_precise,
             "ua": ua,
             "path": path or "",
             "host": host,
@@ -656,6 +658,75 @@ class SiteVisitStatsMiddleware:
             len(desktop_platforms) >= 2
             and len(desktop_browsers) >= 2
         )
+
+
+        # Diagnostika:
+        # stejný client během <= 1 sekundy vystupuje jako
+        # více různých visitorů / UA a zároveň otevírá různé stránky.
+        #
+        # Zatím pouze logujeme. Nic nemažeme ani nepřeklápíme na bota.
+        candidate_hits = [
+            hit
+            for hit in hits
+            if hit.get("visitor") and hit.get("ua")
+        ]
+
+        if len(candidate_hits) >= 2:
+            candidate_paths = {
+                hit.get("path", "")
+                for hit in candidate_hits
+            }
+
+            candidate_uas = {
+                hit.get("ua", "")
+                for hit in candidate_hits
+            }
+
+            candidate_visitors = {
+                hit.get("visitor", "")
+                for hit in candidate_hits
+            }
+
+            candidate_times = [
+                float(hit.get("ts_precise", hit.get("ts", 0)))
+                for hit in candidate_hits
+            ]
+
+            candidate_span = (
+                max(candidate_times) - min(candidate_times)
+                if candidate_times
+                else 999
+            )
+
+            if (
+                candidate_span <= 1.0
+                and len(candidate_paths) >= 2
+                and len(candidate_uas) >= 2
+                and len(candidate_visitors) >= 2
+            ):
+                details = " || ".join(
+                    (
+                        f"visitor={hit.get('visitor', '')} "
+                        f"path={hit.get('path', '')[:200]} "
+                        f"host={hit.get('host', '')[:100]} "
+                        f"ua={hit.get('ua', '')[:250]}"
+                    )
+                    for hit in candidate_hits
+                )
+
+                logger.info(
+                    "RAPID_IDENTITY_CANDIDATE "
+                    "client=%s span=%.3f hits=%s "
+                    "paths=%s visitors=%s uas=%s "
+                    "details=%s",
+                    client_label,
+                    candidate_span,
+                    len(candidate_hits),
+                    len(candidate_paths),
+                    len(candidate_visitors),
+                    len(candidate_uas),
+                    details,
+                )
 
         # Velmi podezřelé:
         # stejný client během pár sekund otevře homepage

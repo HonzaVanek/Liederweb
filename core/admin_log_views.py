@@ -34,8 +34,9 @@ VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
 
 TRAFFIC_KIND_RE = re.compile(
     r"\|\s+liederweb\.traffic\s+\|\s+"
-    r"(POSTHOC_CLEANUP|VISIT_DUPLICATE|BROWSER_CONFIRMED|BROWSER_SKIP|"
-    r"ENGAGED_SKIP|ENGAGED|VISIT|BOT_LIKE|CLEANUP)\s+"
+    r"(RAPID_IDENTITY_CANDIDATE|POSTHOC_CLEANUP|VISIT_DUPLICATE|"
+    r"BROWSER_CONFIRMED|BROWSER_SKIP|ENGAGED_SKIP|ENGAGED|"
+    r"VISIT|BOT_LIKE|CLEANUP)\s+"
 )
 TRAFFIC_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
 
@@ -58,6 +59,12 @@ TRAFFIC_FIELD_PATTERNS = {
     "fetch_dest": re.compile(r"\bfetch_dest=([^\s]*)"),
     "fetch_site": re.compile(r"\bfetch_site=([^\s]*)"),
     "purpose": re.compile(r"\bpurpose=([^\s]*)"),
+    "span": re.compile(r"\bspan=([0-9.]+)"),
+    "hits": re.compile(r"\bhits=(\d+)"),
+    "paths": re.compile(r"\bpaths=(\d+)"),
+    "visitors": re.compile(r"\bvisitors=(\d+)"),
+    "uas": re.compile(r"\buas=(\d+)"),
+    "details": re.compile(r"\bdetails=(.*)$"),
 }
 
 UA_RE = re.compile(r"\bua=(.*)$")
@@ -295,6 +302,12 @@ def parse_traffic_log_line(line):
         "ua": "",
         "removed_pageviews": "",
         "candidates": "",
+        "span": "",
+        "hits": "",
+        "paths": "",
+        "visitors": "",
+        "uas": "",
+        "details": "",
     }
 
     timestamp_match = TRAFFIC_TS_RE.search(line)
@@ -1070,6 +1083,29 @@ def build_traffic_audit(log_text, since=None):
         if len(engaged_skip_rows) >= 20:
             break
 
+    rapid_identity_candidates = []
+
+    for item in reversed(items):
+        if item["kind"] != "RAPID_IDENTITY_CANDIDATE":
+            continue
+
+        rapid_identity_candidates.append({
+            "time": item["timestamp"],
+            "client": item["client"],
+            "span": item["span"],
+            "hits": item["hits"],
+            "paths": item["paths"],
+            "visitors": item["visitors"],
+            "uas": item["uas"],
+            "details": shorten_text(
+                item["details"],
+                800,
+            ),
+        })
+
+        if len(rapid_identity_candidates) >= 30:
+            break
+
     return {
         "total_items": len(items),
         "kind_counts": kind_counts.most_common(),
@@ -1084,6 +1120,7 @@ def build_traffic_audit(log_text, since=None):
         "clients_many_uas": clients_many_uas[:15],
         "mixed_clients": mixed_clients[:15],
         "suspicious_visits": suspicious_visits[:30],
+        "rapid_identity_candidates": rapid_identity_candidates,
         "browser_skip_reasons": browser_skip_reasons.most_common(10),
         "browser_confirmed_triggers": browser_confirmed_triggers.most_common(10),
         "browser_confirmed_rows": browser_confirmed_rows,

@@ -921,6 +921,51 @@
       {% endfor %}
     </tbody>
   </table>
+
+  <h3>Rapid identity kandidáti</h3>
+
+    <p class="help">
+      Pouze diagnostika. Tyto requesty nejsou automaticky
+      označeny jako bot ani odstraněny ze statistik.
+    </p>
+
+    <div class="stats-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Čas</th>
+            <th>Client</th>
+            <th>Rozpětí</th>
+            <th>Hitů</th>
+            <th>Paths</th>
+            <th>Visitors</th>
+            <th>UA</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for row in traffic_audit.rapid_identity_candidates %}
+            <tr>
+              <td>{{ row.time }}</td>
+              <td><code>{{ row.client }}</code></td>
+              <td>{{ row.span }} s</td>
+              <td>{{ row.hits }}</td>
+              <td>{{ row.paths }}</td>
+              <td>{{ row.visitors }}</td>
+              <td>{{ row.uas }}</td>
+              <td><code>{{ row.details }}</code></td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="8">Žádní kandidáti.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+
 </details>
 {% elif traffic_audit_error %}
   <p class="error">Audit návštěvnosti se nepodařilo načíst: {{ traffic_audit_error }}</p>
