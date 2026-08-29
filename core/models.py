@@ -346,7 +346,62 @@ class DailyEngagedVisitor(models.Model):
         return f"{self.day} – {self.visitor_hash[:8]} ({self.beacons})"
 
 
+class DailyEngagedPageVisitor(models.Model):
+    class Source(models.TextChoices):
+        OTHER = "other", "Ostatní / přímé"
+        FACEBOOK = "facebook", "Facebook"
+        INSTAGRAM = "instagram", "Instagram"
+        GOOGLE = "google", "Google"
+        OWN = "own", "Lieder Society"
 
+    day = models.DateField(db_index=True)
+    path = models.CharField(max_length=500, db_index=True)
+    visitor_hash = models.CharField(max_length=64, db_index=True)
+    client_hash = models.CharField(
+        max_length=64,
+        db_index=True,
+        blank=True,
+    )
+
+    beacons = models.PositiveIntegerField(default=0)
+
+    source = models.CharField(
+        max_length=20,
+        choices=Source.choices,
+        default=Source.OTHER,
+        db_index=True,
+    )
+
+    source_referer = models.CharField(
+        max_length=300,
+        blank=True,
+    )
+
+    first_seen_at = models.DateTimeField(
+        default=timezone.now,
+    )
+    last_seen_at = models.DateTimeField(
+        default=timezone.now,
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "day",
+                    "path",
+                    "visitor_hash",
+                ],
+                name="unique_daily_engaged_page_visitor",
+            )
+        ]
+        ordering = ["-day", "path"]
+
+    def __str__(self):
+        return (
+            f"{self.day} | {self.path} | "
+            f"{self.visitor_hash[:8]}"
+        )
 
 
 class TrafficVisitCandidate(models.Model):

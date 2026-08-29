@@ -8,6 +8,7 @@ from django.db import models
 
 from core.models import (
     DailyEngagedVisitor,
+    DailyEngagedPageVisitor,
     DailySiteVisitor,
     TrafficVisitCandidate,
     DailyBrowserVisitor,
@@ -646,6 +647,11 @@ class Command(BaseCommand):
                 ).exists()
                 or
                 DailyEngagedVisitor.objects.filter(
+                    day=day,
+                    visitor_hash=visitor_hash,
+                ).exists()
+                or
+                DailyEngagedPageVisitor.objects.filter(
                     day=day,
                     visitor_hash=visitor_hash,
                 ).exists()

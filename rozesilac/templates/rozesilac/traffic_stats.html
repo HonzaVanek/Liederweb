@@ -35,7 +35,7 @@
       <div class="traffic-card-label">Potvrzení návštěvníci dnes</div>
       <div class="traffic-card-value">{{ today_summary.engaged_visitors }}</div>
       <div class="traffic-card-help">
-        Návštěvníci, kterým se stránka skutečně načetla v prohlížeči.
+        Návštěvníci, kterým se stránka skutečně načetla v prohlížeči a zůstali na ní aspoň 3s.
       </div>
         <div class="traffic-card-sources">
           <h4>Z toho</h4>
@@ -175,30 +175,64 @@
 
   <section class="traffic-section">
     <h3>Nejnavštěvovanější stránky</h3>
+
     <p class="traffic-help">
-      Řazeno podle pravděpodobně lidských zobrazení stránek za vybrané období.
-      Jeden návštěvník může stejnou stránku zobrazit vícekrát.
+      Potvrzení návštěvníci jsou návštěvníci, kteří na konkrétní stránce
+      zůstali alespoň 3s.
+      Možní návštěvníci zahrnují i všechny ostatní návštěvy.
+      Jeden návštěvník může stejnou stránku zobrazit vícekrát, pak je tam víckrát.
+      Pozor, měřit dokážeme jen předchozí stránku, takže často tam asi bude že člověk přišel z LS webu, ale to je jen předcohí stránka, původně samozřejmě mohl přijít třeba z FB na stránku koncertu a pak na stránku blogpostu, ale ve statistikách na té stránce blogpostu bude že přišel z LS (našeho) webu. Takže moc relevantní statistika to není, na druhou stranu když třeba bude kampaň na sockách přímo zaměřená ne na koncert, ale na konkrétní blogpost, tak to asi nějak vypovídající je :)
     </p>
+
+    {% if engaged_page_stats_started_on %}
+      <p class="traffic-help">
+        Přesné potvrzení návštěvníků podle jednotlivých stránek
+        měříme od {{ engaged_page_stats_started_on|date:"j. F Y" }}.
+        Starší návštěvy proto ve sloupci „Potvrzení návštěvníci“
+        nejsou zpětně dopočítané.
+      </p>
+    {% endif %}
 
     <div class="traffic-table-scroll">
       <table>
         <thead>
           <tr>
             <th>Stránka</th>
+            <th>Potvrzení návštěvníci</th>
             <th>Možní návštěvníci</th>
             <th>Zobrazení stránek</th>
           </tr>
         </thead>
+
         <tbody>
           {% for row in top_pages %}
             <tr>
-              <td><code>{{ row.path }}</code></td>
+              <td>
+                <code>{{ row.path }}</code>
+              </td>
+
+              <td>
+                <strong>{{ row.engaged_visitors }}</strong>
+
+                <div class="traffic-source-breakdown">
+                  <span>FB {{ row.engaged_facebook }}</span>
+                  <span>IG {{ row.engaged_instagram }}</span>
+                  <span>Google {{ row.engaged_google }}</span>
+                  <span>Z LS webu {{ row.engaged_own }}</span>
+                </div>
+              </td>
+
               <td>{{ row.unique_visitors }}</td>
-              <td><strong>{{ row.pageviews }}</strong></td>
+
+              <td>
+                <strong>{{ row.pageviews }}</strong>
+              </td>
             </tr>
           {% empty %}
             <tr>
-              <td colspan="3">Zatím nejsou žádná data podle stránek.</td>
+              <td colspan="4">
+                Zatím nejsou žádná data podle stránek.
+              </td>
             </tr>
           {% endfor %}
         </tbody>
@@ -209,7 +243,7 @@
   <section class="traffic-section traffic-section--note">
     <h3>Jak čísla číst</h3>
     <p>
-      <strong>Potvrzení návštěvníci</strong> jsou nejpřísnější a taky nejrelevantnější metrika: stránka se návštěvníkovi načetla v prohlížeči a po krátké chvíli nám poslala měřicí signál. Tohle roboti až na úplné výjimky neumí, proto je to nejspolehlivější číslo. Nejsou tady ale lidé, kteří se na nějakou naší stránku dostali a hned jí zase zavřeli.
+      <strong>Potvrzení návštěvníci</strong> jsou nejpřísnější a taky nejrelevantnější metrika: stránka se návštěvníkovi načetla v prohlížeči a po 3 sekundách nám poslala měřicí signál. Tohle roboti až na úplné výjimky neumí, proto je to nejspolehlivější číslo. Nejsou tady ale lidé, kteří se na nějakou naší stránku dostali a hned (před uplynutím 3s) jí zase zavřeli nebo přešli na jinou stránku.
     </p>
     <p>
       <strong>Možní návštěvníci</strong> jsou potvrzení návštěvníci + lidé, kteří se na nějakou naší stránku dostali a hned jí zase zavřeli + roboti, kteří se opravdu dobře skrývají jako lidé a dokázali obelstít náš anti-robotí filtr :)

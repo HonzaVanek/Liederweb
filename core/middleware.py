@@ -10,7 +10,7 @@ from django.db.models import F, Sum
 from django.utils import timezone
 from django.urls import resolve
 
-from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, TrafficVisitCandidate, DailyBrowserVisitor
+from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, DailyEngagedPageVisitor, TrafficVisitCandidate, DailyBrowserVisitor
 
 from urllib.parse import urlsplit, urlunsplit
 from .traffic_cleanup import (cleanup_visitor_human_stats as cleanup_visitor_stats)
@@ -1252,6 +1252,11 @@ class SiteVisitStatsMiddleware:
         # Pokud se client později ukáže jako bot, nesmí zůstat
         # ani mezi potvrzenými / JS beacon návštěvníky.
         DailyEngagedVisitor.objects.filter(
+            day=day,
+            client_hash=client_hash,
+        ).delete()
+
+        DailyEngagedPageVisitor.objects.filter(
             day=day,
             client_hash=client_hash,
         ).delete()

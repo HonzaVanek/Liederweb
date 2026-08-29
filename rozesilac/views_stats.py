@@ -6,14 +6,10 @@ from django.shortcuts import render
 from django.utils import timezone
 
 
-from core.models import (
-    DailySiteVisitor,
-    DailyPageVisitor,
-    DailySiteTraffic,
-    DailyEngagedVisitor,
-)
+from core.models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyEngagedVisitor, DailyEngagedPageVisitor
 
 TRAFFIC_STATS_PUBLIC_START_DATE = date(2026, 8, 13)
+ENGAGED_PAGE_STATS_START_DATE = date(2026, 8, 29)
 
 def staff_required(view_func):
     return user_passes_test(
@@ -188,6 +184,56 @@ def get_top_pages(start_day, end_day):
         "/__scan__",
     )
 
+    # --------------------------------------------------
+    # Potvrzení návštěvníci konkrétních stránek
+    # = návštěvníci, kteří poslali 3s ENGAGED beacon.
+    #
+    # Zároveň si je rozdělíme podle zdroje.
+    # --------------------------------------------------
+
+    engaged_by_path = {}
+
+    for row in (
+        DailyEngagedPageVisitor.objects
+        .filter(day__range=(start_day, end_day))
+        .values("path", "source")
+        .annotate(
+            visitors=Count("id"),
+        )
+    ):
+        path = row["path"] or ""
+
+        path_data = engaged_by_path.setdefault(
+            path,
+            {
+                "total": 0,
+                "facebook": 0,
+                "instagram": 0,
+                "google": 0,
+                "own": 0,
+                "other": 0,
+            },
+        )
+
+        source = row["source"]
+
+        if source not in (
+            DailyEngagedPageVisitor.Source.FACEBOOK,
+            DailyEngagedPageVisitor.Source.INSTAGRAM,
+            DailyEngagedPageVisitor.Source.GOOGLE,
+            DailyEngagedPageVisitor.Source.OWN,
+        ):
+            source = "other"
+
+        count = zero_none(row["visitors"])
+
+        path_data[source] += count
+        path_data["total"] += count
+
+    # --------------------------------------------------
+    # Server-side možné návštěvy + pageviews
+    # --------------------------------------------------
+
     qs = (
         DailyPageVisitor.objects
         .filter(day__range=(start_day, end_day))
@@ -204,13 +250,42 @@ def get_top_pages(start_day, end_day):
     for row in qs:
         path = row["path"] or ""
 
-        if any(path.startswith(prefix) for prefix in ignored_prefixes):
+        if any(
+            path.startswith(prefix)
+            for prefix in ignored_prefixes
+        ):
             continue
+
+        engaged = engaged_by_path.get(
+            path,
+            {
+                "total": 0,
+                "facebook": 0,
+                "instagram": 0,
+                "google": 0,
+                "own": 0,
+                "other": 0,
+            },
+        )
 
         rows.append({
             "path": path,
-            "unique_visitors": zero_none(row["unique_visitors"]),
-            "pageviews": zero_none(row["pageviews"]),
+
+            # Přísná 3s metrika.
+            "engaged_visitors": engaged["total"],
+            "engaged_facebook": engaged["facebook"],
+            "engaged_instagram": engaged["instagram"],
+            "engaged_google": engaged["google"],
+            "engaged_own": engaged["own"],
+            "engaged_other": engaged["other"],
+
+            # Dosavadní server-side metriky.
+            "unique_visitors": zero_none(
+                row["unique_visitors"]
+            ),
+            "pageviews": zero_none(
+                row["pageviews"]
+            ),
         })
 
         if len(rows) >= 20:
@@ -254,6 +329,7 @@ def traffic_stats(request):
             "requested_start_day": requested_start_day,
             "start_day": start_day,
             "stats_started_on": TRAFFIC_STATS_PUBLIC_START_DATE,
+            "engaged_page_stats_started_on": ENGAGED_PAGE_STATS_START_DATE,
             "visible_days": visible_days,
             "period_is_clipped": period_is_clipped,
             "today_summary": today_summary,

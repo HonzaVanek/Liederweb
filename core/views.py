@@ -26,7 +26,7 @@ from django.core.cache import cache
 from django.utils.decorators import method_decorator
 
 from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm, HomeSupportPromoForm, HomeQuoteSlideForm
-from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor, DailySiteVisitor, DailyPageVisitor, DailyBrowserVisitor, DailySiteTraffic, DailyPageTraffic
+from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor, DailyEngagedPageVisitor, DailySiteVisitor, DailyPageVisitor, DailyBrowserVisitor, DailySiteTraffic, DailyPageTraffic
 from events.models import Event
 from media_assets.models import MediaAsset
 from social_feed.models import SocialPost, SocialSource
@@ -979,6 +979,45 @@ def classify_engaged_source(source_referer, user_agent):
     return DailyEngagedVisitor.Source.OTHER
 
 
+def classify_engaged_page_source(source_referer, user_agent):
+    referer = (source_referer or "").strip()
+
+    host = ""
+
+    if referer:
+        try:
+            host = (urlsplit(referer).hostname or "").lower()
+        except Exception:
+            host = ""
+
+    # Přechod z jiné stránky našeho webu.
+    if host in (
+        "lieder-society.cz",
+        "www.lieder-society.cz",
+        "liedersociety.website",
+        "www.liedersociety.website",
+    ):
+        return DailyEngagedPageVisitor.Source.OWN
+
+    # Externí zdroje klasifikujeme stejně jako
+    # u celkového engaged návštěvníka.
+    source = classify_engaged_source(
+        source_referer,
+        user_agent,
+    )
+
+    if source == DailyEngagedVisitor.Source.INSTAGRAM:
+        return DailyEngagedPageVisitor.Source.INSTAGRAM
+
+    if source == DailyEngagedVisitor.Source.FACEBOOK:
+        return DailyEngagedPageVisitor.Source.FACEBOOK
+
+    if source == DailyEngagedVisitor.Source.GOOGLE:
+        return DailyEngagedPageVisitor.Source.GOOGLE
+
+    return DailyEngagedPageVisitor.Source.OTHER
+
+
 def is_obvious_beacon_bot_ua(user_agent):
     ua = (user_agent or "").lower()
 
@@ -1161,6 +1200,11 @@ def traffic_engaged(request):
         ).delete()
 
         DailyEngagedVisitor.objects.filter(
+            day=today,
+            client_hash=client_hash,
+        ).delete()
+
+        DailyEngagedPageVisitor.objects.filter(
             day=today,
             client_hash=client_hash,
         ).delete()
@@ -1404,6 +1448,50 @@ def traffic_engaged(request):
         client_hash=client_hash,
         last_seen_at=timezone.now(),
         last_path=path,
+        beacons=F("beacons") + 1,
+    )
+
+
+    # --------------------------------------------
+    # 3s engagement pro konkrétní stránku
+    # --------------------------------------------
+    page_source = classify_engaged_page_source(
+        attribution_referer,
+        user_agent,
+    )
+
+    try:
+        engaged_page, _created = (
+            DailyEngagedPageVisitor.objects
+            .get_or_create(
+                day=today,
+                path=path,
+                visitor_hash=confirmed_visitor_hash,
+                defaults={
+                    "client_hash": client_hash,
+                    "beacons": 0,
+                    "source": page_source,
+                    "source_referer": (
+                        attribution_referer[:300]
+                    ),
+                },
+            )
+        )
+    except IntegrityError:
+        engaged_page = (
+            DailyEngagedPageVisitor.objects
+            .get(
+                day=today,
+                path=path,
+                visitor_hash=confirmed_visitor_hash,
+            )
+        )
+
+    DailyEngagedPageVisitor.objects.filter(
+        pk=engaged_page.pk
+    ).update(
+        client_hash=client_hash,
+        last_seen_at=timezone.now(),
         beacons=F("beacons") + 1,
     )
 
