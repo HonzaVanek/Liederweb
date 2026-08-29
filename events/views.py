@@ -16,6 +16,7 @@ from .models import (
     EventTicketVariant,
     VipReservation,
     EventGalleryImage,
+    VipFollowupSettings
 )
 
 from rozesilac.models import EmailImage, EmailDelivery, EmailCampaign
@@ -27,6 +28,7 @@ from .forms import (
     EventPracticalInfoFormSet,
     EventSponsorFormSet,
     VipReservationForm,
+    VipFollowupSettingsForm,
     EventTicketSettingsForm,
     EventTicketVariantFormSet,
     InitialEventTicketVariantFormSet,
@@ -666,11 +668,14 @@ def vip_reservation_done(request, token):
         contact=delivery.contact,
     ).first()
 
+    vip_followup = VipFollowupSettings.load()
+
     return render(request, "events/vip_reservation_done.html", {
         "event": event,
         "delivery": delivery,
         "contact": delivery.contact,
         "reservation": reservation,
+        "vip_followup": vip_followup,
         "hide_header": True,
     })
 
@@ -699,6 +704,42 @@ def vip_cancel_reservation(request, token):
     reservation.save(update_fields=["status", "cancelled_at"])
 
     return redirect("events:vip_event_detail", token=token)
+
+
+@staff_required
+def vip_followup_settings(request):
+    settings_instance = VipFollowupSettings.load()
+
+    if request.method == "POST":
+        form = VipFollowupSettingsForm(
+            request.POST,
+            instance=settings_instance,
+        )
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                "Nastavení následné VIP výzvy bylo uloženo.",
+            )
+            return redirect("events:vip_followup_settings")
+
+        messages.error(
+            request,
+            "Nastavení se nepodařilo uložit. Zkontroluj chyby níže.",
+        )
+
+    else:
+        form = VipFollowupSettingsForm(instance=settings_instance)
+
+    return render(
+        request,
+        "events/vip_followup_settings.html",
+        {
+            "form": form,
+            "settings_instance": settings_instance,
+        },
+    )
 
 @staff_required
 def event_export_vip_xlsx(request, pk):

@@ -1,0 +1,80 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block title %}Následná VIP výzva{% endblock %}
+
+{% block rozesilac_content %}
+<div class="staff-page">
+    <div class="staff-page-header">
+        <div>
+            <h1>Následná VIP výzva</h1>
+            <p>
+                Toto nastavení se zobrazuje VIP příjemci newsletteru poté, co si úspěšně zarezervuje čestné vstupenky. Objeví se mu tzv. funnel - tedy poděkování + naše prosba o to, aby přispěl na nějaký aktuální projekt - teď je tam ta Tyrrell, a právě to tady jde změnit. Tohle nastavení platí pro všechny koncerty, nejde nastavit jiné pro jiný koncert, ale to předpokládám nevadí. Jde to ale vypnout a nebude tam nic. 
+            </p>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="form-group">
+            <label>
+                {{ form.is_enabled }}
+                {{ form.is_enabled.label }}
+            </label>
+            {{ form.is_enabled.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.heading.id_for_label }}">
+                {{ form.heading.label }}
+            </label>
+            {{ form.heading }}
+            {{ form.heading.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.text.id_for_label }}">
+                {{ form.text.label }}
+            </label>
+            {{ form.text }}
+            {{ form.text.errors }}
+
+            <small>
+                Prostý text. Odstavce můžeš oddělit prázdným řádkem.
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.button_text.id_for_label }}">
+                {{ form.button_text.label }}
+            </label>
+            {{ form.button_text }}
+            {{ form.button_text.errors }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.button_url.id_for_label }}">
+                {{ form.button_url.label }}
+            </label>
+            {{ form.button_url }}
+            {{ form.button_url.errors }}
+
+            <small>
+                Může být celá URL nebo interní cesta,
+                např. /agnes-tyrrell/#podpora.
+            </small>
+        </div>
+
+        <button type="submit" class="primary-action-button">
+            Uložit nastavení
+        </button>
+    </form>
+</div>
+{% endblock rozesilac_content %}

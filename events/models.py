@@ -320,8 +320,60 @@ class VipReservation(models.Model):
 
     def __str__(self):
         return f"{self.contact.email} – {self.event.title}"
-    
 
+
+class VipFollowupSettings(models.Model):
+    is_enabled = models.BooleanField(
+        default=True,
+        verbose_name="Zobrazovat následnou výzvu",
+    )
+
+    heading = models.CharField(
+        max_length=200,
+        default="Pomozte nám natočit CD písní Agnes Tyrrell",
+        verbose_name="Nadpis",
+    )
+
+    text = models.TextField(
+        default=(
+            "Pokud byste chtěli Lieder Society podpořit i jinak, "
+            "budeme vděční za příspěvek do veřejné sbírky na natočení "
+            "CD písní skladatelky Agnes Tyrrell."
+        ),
+        verbose_name="Text",
+    )
+
+    button_text = models.CharField(
+        max_length=100,
+        default="Podpořit natočení CD",
+        verbose_name="Text tlačítka",
+    )
+
+    button_url = models.CharField(
+        max_length=500,
+        default="/agnes-tyrrell/#podpora",
+        verbose_name="Odkaz tlačítka",
+    )
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        # Toto nastavení je globální, vždy existuje jen jako záznam pk=1.
+        self.pk = 1
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        # Na veřejné stránce zbytečně nezapisujeme do DB.
+        # Když záznam ještě neexistuje, dostaneme instanci s defaulty.
+        return cls.objects.filter(pk=1).first() or cls()
+
+    def __str__(self):
+        return "Nastavení následné VIP výzvy"
+
+    class Meta:
+        verbose_name = "nastavení následné VIP výzvy"
+        verbose_name_plural = "nastavení následné VIP výzvy"
 
 class EventTicketSettings(models.Model):
     TICKETS_PER_PAGE_CHOICES = [(4, "4 vstupenky na A4"), (5, "5 vstupenek na A4"),]

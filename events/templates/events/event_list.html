@@ -7,9 +7,16 @@
 
 {% block rozesilac_content %}
 <h2>Koncerty</h2>
-<p class="top-action">
-  <a href="{% url 'events:event_create' %}">+ Nový koncert</a>
-</p>
+
+<div class="event-list-actions">
+  <p class="top-action">
+    <a href="{% url 'events:event_create' %}">+ Nový koncert</a>
+  </p>
+
+  <p class="top-action">
+    <a href="{% url 'events:vip_followup_settings' %}">Nastavení VIP výzvy</a>
+  </p>
+</div>
 
 <table class="table">
   <thead>

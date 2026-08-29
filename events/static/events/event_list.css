@@ -22,3 +22,27 @@
     background-color: #000;
     color: #fff;
 }
+
+.event-list-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.event-list-actions .top-action {
+    margin: 0;
+}
+
+@media (max-width: 640px) {
+    .event-list-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .event-list-actions .top-action a {
+        display: block;
+        text-align: center;
+    }
+}

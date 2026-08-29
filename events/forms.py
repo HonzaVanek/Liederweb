@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory, BaseInlineFormSet
 from django.utils import timezone
-from .models import (Event, EventArtist, EventProgramItem, EventPracticalInfo, EventResource, EventSponsor, EventTicketSettings, EventTicketVariant, EventGalleryImage)
+from .models import (Event, EventArtist, EventProgramItem, EventPracticalInfo, EventResource, EventSponsor, EventTicketSettings, EventTicketVariant, EventGalleryImage, VipFollowupSettings)
 from rozesilac.models import EmailImage
 from media_assets.models import MediaAsset
 
@@ -376,3 +376,29 @@ InitialEventTicketVariantFormSet = inlineformset_factory(
     extra=3,
     can_delete=True,
 )
+
+class VipFollowupSettingsForm(forms.ModelForm):
+    class Meta:
+        model = VipFollowupSettings
+        fields = [
+            "is_enabled",
+            "heading",
+            "text",
+            "button_text",
+            "button_url",
+        ]
+        widgets = {
+            "heading": forms.TextInput(attrs={
+                "placeholder": "Např. Pomozte nám natočit CD písní Agnes Tyrrell",
+            }),
+            "text": forms.Textarea(attrs={
+                "rows": 6,
+                "placeholder": "Text následné výzvy...",
+            }),
+            "button_text": forms.TextInput(attrs={
+                "placeholder": "Např. Podpořit natočení CD",
+            }),
+            "button_url": forms.TextInput(attrs={
+                "placeholder": "Např. /agnes-tyrrell/#podpora",
+            }),
+        }
