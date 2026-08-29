@@ -157,6 +157,56 @@ def find_repeated_two_step_sequences(
 
     return flagged
 
+
+def find_distributed_multi_path_sweeps(
+    rows,
+    *,
+    seconds,
+    min_clients,
+    min_paths,
+):
+    rows = sorted(
+        rows,
+        key=lambda row: row.created_at,
+    )
+
+    flagged = set()
+    left = 0
+
+    for right, current in enumerate(rows):
+        while (
+            left < right
+            and (
+                current.created_at
+                - rows[left].created_at
+            ).total_seconds() > seconds
+        ):
+            left += 1
+
+        window = rows[left:right + 1]
+
+        unique_clients = {
+            row.client_hash
+            for row in window
+        }
+
+        unique_paths = {
+            row.path
+            for row in window
+            if row.path
+        }
+
+        if (
+            len(unique_clients) >= min_clients
+            and len(unique_paths) >= min_paths
+        ):
+            flagged.update(
+                row.pk
+                for row in window
+            )
+
+    return flagged
+
 class Command(BaseCommand):
     help = (
         "Zpětně vyhodnotí nepotvrzené traffic VISIT "
@@ -402,6 +452,45 @@ class Command(BaseCommand):
                 )
 
         # -------------------------------------------------
+        # RULE 1B:
+        # stejný UA + path + EMPTY referer
+        # z >= 3 různých clientů během 15 sekund
+        # -------------------------------------------------
+
+        empty_groups = defaultdict(list)
+
+        for candidate in working:
+            if candidate.is_social_iab:
+                continue
+
+            if (
+                candidate.referer_kind
+                != TrafficVisitCandidate.RefererKind.EMPTY
+            ):
+                continue
+
+            empty_groups[
+                (
+                    candidate.day,
+                    candidate.path,
+                    candidate.user_agent_hash,
+                )
+            ].append(candidate)
+
+        for rows in empty_groups.values():
+            ids = find_distinct_client_bursts(
+                rows,
+                seconds=15,
+                min_clients=3,
+            )
+
+            for candidate_id in ids:
+                reasons_by_candidate.setdefault(
+                    candidate_id,
+                    "distributed_same_ua_empty_ref_no_engagement",
+                )
+
+        # -------------------------------------------------
         # RULE 2:
         # jeden visitor opakovaně otevírá stejnou stránku,
         # bez beaconu, bez search/external refereru
@@ -481,6 +570,49 @@ class Command(BaseCommand):
                     candidate_id,
                     "repeated_two_step_sequence_no_engagement",
                 )
+
+        # -------------------------------------------------
+        # RULE 4:
+        # stejný přesný UA se bez refereru rozlézá
+        # z mnoha různých clientů přes mnoho různých stránek
+        #
+        # Dlouhé okno je záměrné — typický distribuovaný
+        # scanner může pracovat celé hodiny.
+        # -------------------------------------------------
+
+        distributed_ua_groups = defaultdict(list)
+
+        for candidate in context_working:
+            if candidate.is_social_iab:
+                continue
+
+            if (
+                candidate.referer_kind
+                != TrafficVisitCandidate.RefererKind.EMPTY
+            ):
+                continue
+
+            distributed_ua_groups[
+                (
+                    candidate.day,
+                    candidate.user_agent_hash,
+                )
+            ].append(candidate)
+
+        for rows in distributed_ua_groups.values():
+            ids = find_distributed_multi_path_sweeps(
+                rows,
+                seconds=6 * 60 * 60,
+                min_clients=8,
+                min_paths=5,
+            )
+
+            for candidate_id in ids:
+                reasons_by_candidate.setdefault(
+                    candidate_id,
+                    "distributed_same_ua_multi_path_no_engagement",
+                )
+
 
         suspicious_candidates = [
             candidate
