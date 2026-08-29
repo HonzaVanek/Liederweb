@@ -37,15 +37,21 @@
       <div class="traffic-card-help">
         Návštěvníci, kterým se stránka skutečně načetla v prohlížeči.
       </div>
-      <div class="traffic-card-sources">
-        <h4>Z toho</h4>
-        <span>
-          Z Instagramu <strong>{{ today_summary.engaged_instagram }}</strong>
-        </span>
-        <span>
-          Z Facebooku <strong>{{ today_summary.engaged_facebook }}</strong>
-        </span>
-      </div>
+        <div class="traffic-card-sources">
+          <h4>Z toho</h4>
+
+          <span>
+            Z Instagramu <strong>{{ today_summary.engaged_instagram }}</strong>
+          </span>
+
+          <span>
+            Z Facebooku <strong>{{ today_summary.engaged_facebook }}</strong>
+          </span>
+
+          <span>
+            Z Googlu <strong>{{ today_summary.engaged_google }}</strong>
+          </span>
+        </div>
     </article>
 
     <article class="traffic-card">
@@ -144,7 +150,15 @@
           {% for row in daily_rows %}
             <tr>
               <td>{{ row.day|date:"j. F Y" }}</td>
-              <td><strong>{{ row.engaged_visitors }}</strong></td>
+              <td>
+                <strong>{{ row.engaged_visitors }}</strong>
+
+                <div class="traffic-source-breakdown">
+                  <span>FB {{ row.engaged_facebook }}</span>
+                  <span>IG {{ row.engaged_instagram }}</span>
+                  <span>Google {{ row.engaged_google }}</span>
+                </div>
+              </td>
               <td>{{ row.unique_visitors }}</td>
               <td>{{ row.pageviews }}</td>
               <td class="traffic-muted">{{ row.bot_hits }}</td>

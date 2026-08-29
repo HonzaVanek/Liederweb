@@ -62,6 +62,8 @@ def get_period_summary(start_day, end_day):
 
     engaged_facebook = engaged_qs.filter(source=DailyEngagedVisitor.Source.FACEBOOK).count()
 
+    engaged_google = engaged_qs.filter(source=DailyEngagedVisitor.Source.GOOGLE).count()
+
     pageviews = zero_none(human["pageviews"])
     human_hits = zero_none(traffic["human_hits"])
     bot_hits = zero_none(traffic["bot_hits"])
@@ -71,7 +73,6 @@ def get_period_summary(start_day, end_day):
         "start_day": start_day,
         "end_day": end_day,
         "unique_visitors": unique_visitors,
-        "engaged_visitors": engaged_visitors,
         "pageviews": pageviews,
         "human_hits": human_hits,
         "bot_hits": bot_hits,
@@ -82,6 +83,7 @@ def get_period_summary(start_day, end_day):
         "engaged_visitors": engaged_visitors,
         "engaged_instagram": engaged_instagram,
         "engaged_facebook": engaged_facebook,
+        "engaged_google": engaged_google,
     }
 
 
@@ -118,13 +120,39 @@ def get_daily_rows(start_day, end_day):
         )
     }
 
+    engaged_sources_by_day = {}
+
+    for row in (
+        DailyEngagedVisitor.objects
+        .filter(day__range=(start_day, end_day))
+        .values("day", "source")
+        .annotate(count=Count("id"))
+    ):
+        day_sources = engaged_sources_by_day.setdefault(
+            row["day"],
+            {
+                "facebook": 0,
+                "instagram": 0,
+                "google": 0,
+            },
+        )
+
+        source = row["source"]
+
+        if source in (
+            DailyEngagedVisitor.Source.FACEBOOK,
+            DailyEngagedVisitor.Source.INSTAGRAM,
+            DailyEngagedVisitor.Source.GOOGLE,
+        ):
+            day_sources[source] = row["count"]
+
     rows = []
     current = end_day
 
     while current >= start_day:
         human = human_by_day.get(current, {})
         traffic = traffic_by_day.get(current, {})
-
+        engaged_sources = engaged_sources_by_day.get(current, {"facebook": 0, "instagram": 0, "google": 0})
         unique_visitors = zero_none(human.get("unique_visitors"))
         engaged_visitors = zero_none(engaged_by_day.get(current))
         pageviews = zero_none(human.get("pageviews"))
@@ -141,6 +169,9 @@ def get_daily_rows(start_day, end_day):
             "bot_hits": bot_hits,
             "total_hits": total_hits,
             "engaged_rate": percent(engaged_visitors, unique_visitors),
+            "engaged_facebook": engaged_sources["facebook"],
+            "engaged_instagram": engaged_sources["instagram"],
+            "engaged_google": engaged_sources["google"],
         })
 
         current -= timedelta(days=1)

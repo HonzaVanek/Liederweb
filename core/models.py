@@ -267,6 +267,7 @@ class DailyBrowserVisitor(models.Model):
         OTHER = "other", "Ostatní"
         FACEBOOK = "facebook", "Facebook"
         INSTAGRAM = "instagram", "Instagram"
+        GOOGLE = "google", "Google"
 
     day = models.DateField(db_index=True)
     visitor_hash = models.CharField(max_length=64, db_index=True)
@@ -314,6 +315,7 @@ class DailyEngagedVisitor(models.Model):
         OTHER = "other", "Ostatní / neznámé"
         INSTAGRAM = "instagram", "Instagram"
         FACEBOOK = "facebook", "Facebook"
+        GOOGLE = "google", "Google"
     
     day = models.DateField(db_index=True)
     visitor_hash = models.CharField(max_length=64, db_index=True)

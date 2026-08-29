@@ -281,6 +281,19 @@
     color: #111;
 }
 
+.traffic-source-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-top: 5px;
+    font-size: 0.8rem;
+    color: #6b6b6b;
+}
+
+.traffic-source-breakdown span {
+    white-space: nowrap;
+}
+
 @media (max-width: 900px) {
     .traffic-stats-header {
         display: block;

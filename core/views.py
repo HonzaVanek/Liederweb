@@ -956,6 +956,19 @@ def classify_engaged_source(source_referer, user_agent):
     if (host == "facebook.com" or host.endswith(".facebook.com") or host == "fb.com" or host.endswith(".fb.com")):
         return DailyEngagedVisitor.Source.FACEBOOK
 
+    google_domains = (
+        "google.com",
+        "google.cz",
+        "google.sk",
+        "google.de",
+        "google.at",
+        "google.pl",
+        "google.co.uk",
+    )
+
+    if any(host == domain or host.endswith(f".{domain}") for domain in google_domains):
+        return DailyEngagedVisitor.Source.GOOGLE
+
     # Fallback pro in-app browser, který referer neposlal.
     if "instagram/" in ua or "instagram " in ua:
         return DailyEngagedVisitor.Source.INSTAGRAM
