@@ -324,6 +324,18 @@ class AlbumTrack(models.Model):
             f"{self.track_number:02d}. {self.title}"
         )
 
+    @property
+    def duration_display(self):
+        if self.duration_seconds is None:
+            return ""
+
+        minutes, seconds = divmod(
+            self.duration_seconds,
+            60,
+        )
+
+        return f"{minutes}:{seconds:02d}"
+
     def clean(self):
         super().clean()
 

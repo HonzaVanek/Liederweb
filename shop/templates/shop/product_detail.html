@@ -318,6 +318,137 @@
           {% endif %}
         </section>
 
+        {% if product.visible_tracks %}
+          <section class="shop-tracklist-section">
+
+            <div class="shop-tracklist-heading">
+              <div>
+                <p class="shop-eyebrow">
+                  Poslechněte si
+                </p>
+
+                <h2>Jednotlivé skladby</h2>
+
+                <p>
+                  Poslechněte si 30sekundové ukázky.
+                  Vybrané skladby můžete zakoupit jednotlivě
+                  jako MP3.
+                </p>
+              </div>
+            </div>
+
+            {% regroup product.visible_tracks by disc_number as disc_list %}
+
+            <div class="shop-public-disc-list">
+
+              {% for disc in disc_list %}
+                <section class="shop-public-disc">
+
+                  {% if disc_list|length > 1 %}
+                    <h3>CD {{ disc.grouper }}</h3>
+                  {% endif %}
+
+                  <div class="shop-public-track-list">
+
+                    {% for track in disc.list %}
+                      <article class="shop-public-track">
+
+                        <div class="shop-public-track__number">
+                          {{ track.track_number|stringformat:"02d" }}
+                        </div>
+
+                        <div class="shop-public-track__info">
+
+                          <div class="shop-public-track__title-row">
+                            <div>
+                              <h4>{{ track.title }}</h4>
+
+                              {% if track.audio_metadata.artist %}
+                                <p class="shop-public-track__artist">
+                                  {{ track.audio_metadata.artist }}
+                                </p>
+                              {% endif %}
+                            </div>
+
+                            {% if track.duration_display %}
+                              <span class="shop-public-track__duration">
+                                {{ track.duration_display }}
+                              </span>
+                            {% endif %}
+                          </div>
+
+                          {% if track.preview_audio %}
+                            <audio
+                              class="shop-public-track__audio"
+                              controls
+                              preload="none"
+                            >
+                              <source
+                                src="{{ track.preview_audio.url }}"
+                                type="audio/mpeg"
+                              >
+                              Váš prohlížeč nepodporuje přehrávání audia.
+                            </audio>
+                          {% endif %}
+
+                        </div>
+
+                        <div class="shop-public-track__purchase">
+
+                          {% if track.purchase_variant and track.purchase_variant.is_active %}
+
+                            <strong class="shop-public-track__price">
+                              {{ track.purchase_variant.price|floatformat:"-2" }}
+                              Kč
+                            </strong>
+
+                            <form
+                              method="post"
+                              action="{% url 'shop:cart_add' product.slug %}"
+                            >
+                              {% csrf_token %}
+
+                              <input
+                                type="hidden"
+                                name="variant"
+                                value="{{ track.purchase_variant.id }}"
+                              >
+
+                              <input
+                                type="hidden"
+                                name="quantity"
+                                value="1"
+                              >
+
+                              <button type="submit">
+                                Koupit MP3
+                              </button>
+                            </form>
+
+                          {% else %}
+                            <span class="shop-public-track__not-for-sale">
+                              Pouze v albu
+                            </span>
+                          {% endif %}
+
+                        </div>
+
+                      </article>
+                    {% endfor %}
+
+                  </div>
+
+                </section>
+              {% endfor %}
+
+            </div>
+
+          </section>
+        {% endif %}
+
+        
+
+
         {% if request.user.is_staff %}
           <div class="shop-staff-actions">
             <a href="{% url 'shop_staff:product_edit' product.id %}">

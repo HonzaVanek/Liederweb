@@ -2286,3 +2286,119 @@ body.dark-mode .shop-order-success > .shop-primary-button:hover {
     color: #eee;
     border-color: #eee;
 }
+
+.shop-tracklist-section {
+    margin-top: 48px;
+}
+
+.shop-tracklist-heading {
+    margin-bottom: 28px;
+}
+
+.shop-tracklist-heading h2 {
+    margin-bottom: 8px;
+}
+
+.shop-public-disc-list {
+    display: grid;
+    gap: 38px;
+}
+
+.shop-public-disc > h3 {
+    margin: 0 0 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #d8d8d8;
+}
+
+.shop-public-track-list {
+    border-top: 1px solid #ddd;
+}
+
+.shop-public-track {
+    display: grid;
+    grid-template-columns:
+        44px
+        minmax(0, 1fr)
+        auto;
+    gap: 18px;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.shop-public-track__number {
+    align-self: start;
+    padding-top: 4px;
+    color: #777;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.shop-public-track__title-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.shop-public-track__title-row h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.shop-public-track__artist {
+    margin: 4px 0 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.shop-public-track__duration {
+    color: #777;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.shop-public-track__audio {
+    display: block;
+    width: min(100%, 480px);
+    height: 34px;
+    margin-top: 10px;
+}
+
+.shop-public-track__purchase {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    white-space: nowrap;
+}
+
+.shop-public-track__purchase form {
+    margin: 0;
+}
+
+.shop-public-track__price {
+    font-variant-numeric: tabular-nums;
+}
+
+.shop-public-track__not-for-sale {
+    color: #777;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 760px) {
+    .shop-public-track {
+        grid-template-columns:
+            32px
+            minmax(0, 1fr);
+    }
+
+    .shop-public-track__purchase {
+        grid-column: 2;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .shop-public-track__audio {
+        width: 100%;
+    }
+}
