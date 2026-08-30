@@ -102,6 +102,20 @@ class ProductVariantForm(forms.ModelForm):
         fulfilment_type = cleaned_data.get("fulfilment_type")
         track_stock = cleaned_data.get("track_stock")
         stock_quantity = cleaned_data.get("stock_quantity")
+        is_full_album_download = cleaned_data.get("is_full_album_download")
+
+        if (
+            is_full_album_download
+            and fulfilment_type
+            != ProductVariant.FulfilmentType.DIGITAL
+        ):
+            self.add_error(
+                "is_full_album_download",
+                (
+                    "Celé album ke stažení lze nastavit "
+                    "pouze u digitální varianty."
+                ),
+            )
 
         if (
             fulfilment_type == ProductVariant.FulfilmentType.DIGITAL

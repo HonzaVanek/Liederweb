@@ -8,6 +8,15 @@ def sync_track_purchase_variant(
 ):
     variant = track.purchase_variant
 
+    if (
+        variant is not None
+        and variant.is_full_album_download
+    ):
+        raise ValueError(
+            "Variantu celého digitálního alba nelze "
+            "použít jako variantu jednotlivé stopy."
+        )
+
     if price is None:
         if variant and variant.is_active:
             variant.is_active = False

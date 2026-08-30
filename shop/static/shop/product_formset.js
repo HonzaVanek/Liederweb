@@ -1,4 +1,56 @@
 document.addEventListener("DOMContentLoaded", () => {
+
+  function updateFullAlbumOption(variantForm) {
+    const fulfilmentSelect = variantForm.querySelector(
+        'select[name$="-fulfilment_type"]'
+    );
+
+    const fullAlbumOption = variantForm.querySelector(
+        "[data-full-album-option]"
+    );
+
+    const fullAlbumCheckbox = variantForm.querySelector(
+        'input[name$="-is_full_album_download"]'
+    );
+
+    if (!fulfilmentSelect || !fullAlbumOption) {
+        return;
+    }
+
+    const isDigital = fulfilmentSelect.value === "digital";
+
+    fullAlbumOption.hidden = !isDigital;
+
+    if (!isDigital && fullAlbumCheckbox) {
+        fullAlbumCheckbox.checked = false;
+    }
+}
+
+
+document
+    .querySelectorAll("[data-variant-form]")
+    .forEach((variantForm) => {
+        updateFullAlbumOption(variantForm);
+    });
+
+
+document.addEventListener("change", (event) => {
+    if (
+        !event.target.matches(
+            'select[name$="-fulfilment_type"]'
+        )
+    ) {
+        return;
+    }
+
+    const variantForm = event.target.closest(
+        "[data-variant-form]"
+    );
+
+    if (variantForm) {
+        updateFullAlbumOption(variantForm);
+    }
+});
   /*
    * =========================================================
    * VARIANTY PRODUKTU
@@ -36,6 +88,15 @@ document.addEventListener("DOMContentLoaded", () => {
         );
 
         totalFormsInput.value = String(formIndex + 1);
+
+        const newVariantForm = formset.lastElementChild;
+
+        if (
+          newVariantForm &&
+          newVariantForm.matches("[data-variant-form]")
+        ) {
+          updateFullAlbumOption(newVariantForm);
+        }
       };
 
       addButton.addEventListener("click", addVariant);
@@ -232,3 +293,4 @@ document.addEventListener("DOMContentLoaded", () => {
     imageForm.hidden = true;
   });
 });
+

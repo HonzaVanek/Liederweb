@@ -683,3 +683,7 @@ body.dark-mode .shop-full-album-option {
     background: #202020;
     border-color: #444;
 }
+
+.shop-full-album-option[hidden] {
+    display: none;
+}
