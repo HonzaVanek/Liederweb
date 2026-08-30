@@ -3,6 +3,7 @@ import uuid
 
 from django.conf import settings
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 
 class Product(models.Model):
@@ -185,6 +186,117 @@ class ProductVariantImage(models.Model):
 
     def __str__(self):
         return f"{self.variant} – obrázek"
+
+
+class AlbumTrack(models.Model):
+    product = models.ForeignKey(
+        Product,
+        verbose_name="album / produkt",
+        on_delete=models.CASCADE,
+        related_name="tracks",
+    )
+
+    track_number = models.PositiveSmallIntegerField(
+        "číslo stopy",
+    )
+
+    title = models.CharField(
+        "název stopy",
+        max_length=200,
+    )
+
+    full_audio = models.FileField(
+        "plná MP3",
+        upload_to="shop_private/audio/",
+    )
+
+    preview_audio = models.FileField(
+        "30s ukázka",
+        upload_to="shop/audio/previews/",
+        blank=True,
+        editable=False,
+    )
+
+    preview_start_seconds = models.PositiveIntegerField(
+        "začátek ukázky v sekundách",
+        default=0,
+        help_text=(
+            "Od které sekundy začne 30sekundová ukázka."
+        ),
+    )
+
+    duration_seconds = models.PositiveIntegerField(
+        "délka stopy v sekundách",
+        null=True,
+        blank=True,
+        editable=False,
+    )
+
+    purchase_variant = models.OneToOneField(
+        ProductVariant,
+        verbose_name="varianta pro samostatný nákup",
+        on_delete=models.SET_NULL,
+        related_name="album_track",
+        null=True,
+        blank=True,
+        help_text=(
+            "Digitální varianta produktu, kterou zákazník "
+            "kupuje při nákupu této jedné stopy."
+        ),
+    )
+
+    is_active = models.BooleanField(
+        "zobrazovat",
+        default=True,
+    )
+
+    class Meta:
+        ordering = ("track_number", "id")
+        verbose_name = "stopa alba"
+        verbose_name_plural = "stopy alba"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("product", "track_number"),
+                name="unique_shop_track_number_per_product",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.product.name} – "
+            f"{self.track_number:02d}. {self.title}"
+        )
+
+    def clean(self):
+        super().clean()
+
+        if not self.purchase_variant:
+            return
+
+        if (
+            self.product_id
+            and self.purchase_variant.product_id
+            != self.product_id
+        ):
+            raise ValidationError(
+                {
+                    "purchase_variant": (
+                        "Varianta musí patřit ke stejnému "
+                        "produktu jako stopa."
+                    )
+                }
+            )
+
+        if not self.purchase_variant.is_digital:
+            raise ValidationError(
+                {
+                    "purchase_variant": (
+                        "Pro samostatný nákup stopy musí být "
+                        "vybrána digitální varianta."
+                    )
+                }
+            )
+
 
 class Order(models.Model):
     class Status(models.TextChoices):

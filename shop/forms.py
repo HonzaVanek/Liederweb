@@ -1,7 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
 
-from .models import Product, ProductVariant, Order, ShippingMethod, ProductVariantImage
+from .models import Product, ProductVariant, Order, ShippingMethod, ProductVariantImage, AlbumTrack
 from .cart import SessionCart
 
 class ProductForm(forms.ModelForm):
@@ -215,6 +215,132 @@ ProductVariantImageFormSet = inlineformset_factory(
     extra=0,
     can_delete=True,
 )
+
+
+
+class AlbumTrackForm(forms.ModelForm):
+    class Meta:
+        model = AlbumTrack
+        fields = [
+            "track_number",
+            "title",
+            "full_audio",
+            "preview_start_seconds",
+            "purchase_variant",
+            "is_active",
+        ]
+
+        widgets = {
+            "track_number": forms.NumberInput(
+                attrs={
+                    "min": 1,
+                }
+            ),
+            "title": forms.TextInput(
+                attrs={
+                    "placeholder": "Např. Die Nacht",
+                }
+            ),
+            "full_audio": forms.ClearableFileInput(
+                attrs={
+                    "accept": ".mp3,audio/mpeg",
+                }
+            ),
+            "preview_start_seconds": forms.NumberInput(
+                attrs={
+                    "min": 0,
+                    "step": 1,
+                }
+            ),
+        }
+
+        help_texts = {
+            "track_number": (
+                "Pořadové číslo skladby na albu."
+            ),
+            "full_audio": (
+                "Nahrajte celou skladbu ve formátu MP3. "
+                "30sekundová ukázka se později vytvoří automaticky."
+            ),
+            "preview_start_seconds": (
+                "Sekunda, od které má začínat veřejná "
+                "30sekundová ukázka. Například 45 znamená, "
+                "že ukázka bude přibližně 0:45–1:15."
+            ),
+            "purchase_variant": (
+                "Digitální varianta používaná při samostatném "
+                "nákupu této stopy. Pokud stopu samostatně "
+                "prodávat nechcete, nechte prázdné."
+            ),
+            "is_active": (
+                "Určuje, zda se stopa zobrazí ve veřejném tracklistu."
+            ),
+        }
+
+    def __init__(
+        self,
+        *args,
+        product,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+
+        self.product = product
+
+        self.fields["purchase_variant"].queryset = (
+            ProductVariant.objects
+            .filter(
+                product=product,
+                fulfilment_type=ProductVariant.FulfilmentType.DIGITAL,
+            )
+            .order_by("sort_order", "name")
+        )
+
+        self.fields["purchase_variant"].required = False
+
+        self.fields["purchase_variant"].label_from_instance = (
+            lambda variant: (
+                f"{variant.name} – "
+                f"{variant.price:.2f} Kč"
+            )
+        )
+
+    def clean_full_audio(self):
+        audio = self.cleaned_data.get("full_audio")
+
+        if not audio:
+            return audio
+
+        filename = audio.name.lower()
+
+        if not filename.endswith(".mp3"):
+            raise forms.ValidationError(
+                "Nahrajte soubor ve formátu MP3."
+            )
+
+        return audio
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        purchase_variant = cleaned_data.get(
+            "purchase_variant"
+        )
+
+        if purchase_variant:
+            if purchase_variant.product_id != self.product.id:
+                self.add_error(
+                    "purchase_variant",
+                    "Vybraná varianta patří k jinému produktu.",
+                )
+
+            if not purchase_variant.is_digital:
+                self.add_error(
+                    "purchase_variant",
+                    "Pro stopu lze použít pouze digitální variantu.",
+                )
+
+        return cleaned_data
 
 
 

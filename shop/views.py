@@ -20,12 +20,14 @@ from .forms import (
     CancelOrderForm,
     StaffOrderStateForm,
     ShippingMethodForm,
+    AlbumTrackForm
 )
 from .models import (
     Product,
     ProductVariant,
     ProductImage,
     ProductVariantImage,
+    AlbumTrack,
     Order,
     ShippingMethod,
 )
@@ -90,7 +92,10 @@ def _public_product_detail_queryset():
 
     active_variants = (
         ProductVariant.objects
-        .filter(is_active=True)
+        .filter(
+            is_active=True,
+            album_track__isnull=True,
+        )
         .prefetch_related(
             Prefetch(
                 "images",
@@ -99,6 +104,13 @@ def _public_product_detail_queryset():
             )
         )
         .order_by("sort_order", "name")
+    )
+
+    active_tracks = (
+        AlbumTrack.objects
+        .filter(is_active=True)
+        .select_related("purchase_variant")
+        .order_by("track_number", "id")
     )
 
     return (
@@ -114,6 +126,11 @@ def _public_product_detail_queryset():
                 "additional_images",
                 queryset=product_images,
                 to_attr="gallery_images",
+            ),
+            Prefetch(
+                "tracks",
+                queryset=active_tracks,
+                to_attr="visible_tracks",
             ),
         )
     )
@@ -374,6 +391,129 @@ def staff_product_edit(request, product_id):
             "submit_label": "Uložit změny",
         },
     )
+
+
+@staff_required
+def staff_product_track_list(request, product_id):
+    product = get_object_or_404(
+        Product.objects.prefetch_related(
+            "tracks__purchase_variant",
+        ),
+        id=product_id,
+    )
+
+    return render(
+        request,
+        "shop/staff_product_track_list.html",
+        {
+            "product": product,
+            "tracks": product.tracks.all(),
+        },
+    )
+
+
+@staff_required
+def staff_product_track_create(request, product_id):
+    product = get_object_or_404(
+        Product,
+        id=product_id,
+    )
+
+    if request.method == "POST":
+        form = AlbumTrackForm(
+            request.POST,
+            request.FILES,
+            product=product,
+        )
+
+        if form.is_valid():
+            track = form.save(commit=False)
+            track.product = product
+            track.save()
+
+            messages.success(
+                request,
+                f'Stopa „{track.title}“ byla vytvořena.',
+            )
+
+            return redirect(
+                "shop_staff:product_track_list",
+                product_id=product.id,
+            )
+
+    else:
+        form = AlbumTrackForm(
+            product=product,
+        )
+
+    return render(
+        request,
+        "shop/staff_product_track_form.html",
+        {
+            "form": form,
+            "product": product,
+            "page_title": "Přidat stopu",
+        },
+    )
+
+
+
+@staff_required
+def staff_product_track_edit(
+    request,
+    product_id,
+    track_id,
+):
+    product = get_object_or_404(
+        Product,
+        id=product_id,
+    )
+
+    track = get_object_or_404(
+        AlbumTrack,
+        id=track_id,
+        product=product,
+    )
+
+    if request.method == "POST":
+        form = AlbumTrackForm(
+            request.POST,
+            request.FILES,
+            instance=track,
+            product=product,
+        )
+
+        if form.is_valid():
+            track = form.save()
+
+            messages.success(
+                request,
+                f'Stopa „{track.title}“ byla upravena.',
+            )
+
+            return redirect(
+                "shop_staff:product_track_list",
+                product_id=product.id,
+            )
+
+    else:
+        form = AlbumTrackForm(
+            instance=track,
+            product=product,
+        )
+
+    return render(
+        request,
+        "shop/staff_product_track_form.html",
+        {
+            "form": form,
+            "product": product,
+            "track": track,
+            "page_title": "Upravit stopu",
+        },
+    )
+
+
 
 
 @shop_public_or_staff_preview
