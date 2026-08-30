@@ -436,6 +436,24 @@ class TrafficVisitCandidate(models.Model):
         db_index=True,
     )
 
+    # Stabilní pseudonym přesné IP.
+    # Raw IP do DB neukládáme.
+    ip_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        db_index=True,
+    )
+
+    # Stabilní pseudonym síťového rozsahu:
+    # IPv4 /16, IPv6 /48.
+    network_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        default="",
+        db_index=True,
+    )
+
     path = models.CharField(
         max_length=500,
         db_index=True,
@@ -506,6 +524,14 @@ class TrafficVisitCandidate(models.Model):
                     "referer_kind",
                 ],
                 name="traffic_candidate_pattern_idx",
+            ),
+            models.Index(
+                fields=[
+                    "day",
+                    "network_hash",
+                    "referer_kind",
+                ],
+                name="traffic_candidate_network_idx",
             ),
         ]
 

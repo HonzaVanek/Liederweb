@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import re
+import hmac
 import ipaddress
 
 from django.core.cache import cache
@@ -1764,11 +1765,78 @@ class SiteVisitStatsMiddleware:
 
         return []
 
+    def traffic_hmac(self, kind, value):
+        if not value:
+            return ""
+
+        message = f"{kind}:{value}".encode("utf-8")
+
+        return hmac.new(
+            settings.SECRET_KEY.encode("utf-8"),
+            message,
+            hashlib.sha256,
+        ).hexdigest()
+
+
+    def normalize_traffic_ip(self, ip):
+        if not ip:
+            return None
+
+        try:
+            address = ipaddress.ip_address(ip.strip())
+        except ValueError:
+            return None
+
+        # Kdyby někdy dorazila IPv4 adresa zapsaná
+        # jako IPv4-mapped IPv6.
+        if (
+            isinstance(address, ipaddress.IPv6Address)
+            and address.ipv4_mapped
+        ):
+            address = address.ipv4_mapped
+
+        return address
+
+
+    def get_traffic_ip_hash(self, ip):
+        address = self.normalize_traffic_ip(ip)
+
+        if address is None:
+            return ""
+
+        return self.traffic_hmac(
+            "ip",
+            str(address),
+        )
+
+
+    def get_traffic_network_hash(self, ip):
+        address = self.normalize_traffic_ip(ip)
+
+        if address is None:
+            return ""
+
+        if address.version == 4:
+            prefix = 16
+        else:
+            prefix = 48
+
+        network = ipaddress.ip_network(
+            f"{address}/{prefix}",
+            strict=False,
+        )
+
+        return self.traffic_hmac(
+            "network",
+            str(network),
+        )
+
     def record_visit_candidate(
         self,
         today,
         visitor_hash,
         client_hash,
+        ip,
         path,
         user_agent,
         referer_raw,
@@ -1783,11 +1851,16 @@ class SiteVisitStatsMiddleware:
             ua.lower().encode("utf-8")
         ).hexdigest()
 
+        candidate_ip_hash = self.get_traffic_ip_hash(ip)
+        candidate_network_hash = self.get_traffic_network_hash(ip)
+
         try:
             TrafficVisitCandidate.objects.create(
                 day=today,
                 visitor_hash=visitor_hash,
                 client_hash=client_hash,
+                ip_hash=candidate_ip_hash,
+                network_hash=candidate_network_hash,
                 path=path[:500],
                 user_agent_hash=user_agent_hash,
                 user_agent=ua[:500],
@@ -1805,6 +1878,8 @@ class SiteVisitStatsMiddleware:
                 visitor_hash[:8],
                 path[:300],
             )
+
+
 
     def track_visit(self, request, response):
         path = request.path or ""
@@ -2354,6 +2429,7 @@ class SiteVisitStatsMiddleware:
             today=today,
             visitor_hash=visitor_hash,
             client_hash=client_hash,
+            ip=ip,
             path=path,
             user_agent=user_agent,
             referer_raw=referer_raw,

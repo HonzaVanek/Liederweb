@@ -172,6 +172,8 @@
                   ENGAGED (≥ 3 s)
               {% elif label == "VISIT_DUPLICATE" %}
                   VISIT_DUPLICATE (deduplikace)
+              {% elif label == "NETWORK_PATTERN_CANDIDATE" %}
+                  NETWORK_PATTERN_CANDIDATE (diagnostika)
               {% else %}
                   {{ label }}
               {% endif %}
@@ -586,6 +588,84 @@
     </table>
   </div>
 
+  <h3>Síťové patterny – pouze diagnostika</h3>
+
+  <p class="help">
+      Podezřelé distribuované návštěvy ze stejného anonymizovaného síťového rozsahu.
+      Jde pouze o diagnostiku – tyto záznamy se podle tohoto pravidla automaticky nemažou.
+      Network je pouze zkrácený hash síťového rozsahu, nikoliv IP adresa.
+  </p>
+
+  <div class="stats-table-scroll">
+      <table>
+          <thead>
+              <tr>
+                  <th>Čas</th>
+                  <th>Network</th>
+                  <th>Hits</th>
+                  <th>Clienti</th>
+                  <th>Visiteři</th>
+                  <th>IP</th>
+                  <th>Stránky</th>
+                  <th>UA</th>
+                  <th>Rozpětí</th>
+                  <th>Ukázka stránek</th>
+              </tr>
+          </thead>
+
+          <tbody>
+              {% for row in traffic_audit.network_pattern_candidates %}
+                  <tr>
+                      <td>{{ row.time }}</td>
+
+                      <td>
+                          <code>{{ row.network }}</code>
+                      </td>
+
+                      <td>{{ row.hits }}</td>
+
+                      <td>
+                          <strong>{{ row.clients }}</strong>
+                      </td>
+
+                      <td>{{ row.visitors }}</td>
+
+                      <td>
+                          <strong>{{ row.ips }}</strong>
+                      </td>
+
+                      <td>
+                          <strong>{{ row.paths }}</strong>
+                      </td>
+
+                      <td>{{ row.uas }}</td>
+
+                      <td>
+                          {% if row.span_seconds %}
+                              {{ row.span_seconds }} s
+                          {% else %}
+                              —
+                          {% endif %}
+                      </td>
+
+                      <td class="network-sample-paths">
+                          {% if row.sample_paths %}
+                              <code>{{ row.sample_paths }}</code>
+                          {% else %}
+                              —
+                          {% endif %}
+                      </td>
+                  </tr>
+              {% empty %}
+                  <tr>
+                      <td colspan="10">
+                          Zatím nebyl nalezen žádný podezřelý síťový pattern.
+                      </td>
+                  </tr>
+              {% endfor %}
+          </tbody>
+      </table>
+  </div>
 
   <h3>Poslední VISIT_DUPLICATE</h3>
 
@@ -1093,6 +1173,29 @@
         word-break: break-word;
     }
 
+    .traffic-source-mini {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px 8px;
+        margin-top: 4px;
+        font-size: 11px;
+        line-height: 1.35;
+        color: var(--body-quiet-color, #666);
+    }
+
+    .traffic-source-mini span {
+        white-space: nowrap;
+    }
+
+    .network-sample-paths {
+        max-width: 420px;
+    }
+
+    .network-sample-paths code {
+        white-space: normal !important;
+        word-break: break-word;
+    }
+
     .system-log-output .system-log-line.system-log-line--engaged {
         background: rgba(220, 38, 38, 0.42) !important;
         border-left-color: #ff4d4d !important;
@@ -1144,6 +1247,24 @@
         letter-spacing: 0.03em;
     }
 
+    .system-log-output .system-log-line.traffic-kind-network-pattern-candidate {
+        background: rgba(168, 85, 247, 0.25) !important;
+        border-left-color: #c084fc !important;
+    }
+
+    .system-log-output .system-log-line.traffic-kind-network-pattern-candidate::before {
+        content: "NETWORK DIAG";
+        display: inline-block;
+        margin-right: 8px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: #c084fc;
+        color: #111;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+    }
+
     .system-log-output .system-log-line.system-log-line--browser {
         background: rgba(34, 197, 94, 0.24) !important;
         border-left-color: #4ade80 !important;
@@ -1180,7 +1301,7 @@
   Engaged ≥ 3 s jsou návštěvníci, u kterých stránka zůstala
   viditelná přibližně alespoň tři sekundy.
 
-  FB / IG / jiné ukazuje původ první uložené JS potvrzené návštěvy.
+  FB / IG / Google / jiné ukazuje původ první uložené JS potvrzené návštěvy.
 
   Sloupce Boti a Celkem představují technickou zátěž webu
   včetně známých botů a skenů.
@@ -1222,6 +1343,7 @@
               <div class="help">
                 FB {{ row.browser_facebook }}
                 · IG {{ row.browser_instagram }}
+                · Google {{ row.browser_google }}
                 · jiné {{ row.browser_other }}
               </div>
             </td>
@@ -1231,6 +1353,7 @@
               <div class="help">
                 FB {{ row.engaged_facebook }}
                 · IG {{ row.engaged_instagram }}
+                · Google {{ row.engaged_google }}
                 · jiné {{ row.engaged_other }}
               </div>
             </td>
@@ -1299,6 +1422,7 @@
                 <th>Den</th>
                 <th>Stránka</th>
                 <th>Unikátní návštěvníci</th>
+                <th>Engaged ≥ 3 s</th>
                 <th>Lidská zobrazení</th>
                 <th>Boti</th>
                 <th>OK</th>
@@ -1309,12 +1433,32 @@
                 <th>Celkem</th>
             </tr>
         </thead>
+
         <tbody>
             {% for row in page_stats %}
                 <tr>
                     <td>{{ row.day }}</td>
-                    <td><code>{{ row.path }}</code></td>
-                    <td>{{ row.unique_visitors }}</td>
+
+                    <td>
+                        <code>{{ row.path }}</code>
+                    </td>
+
+                    <td>
+                        {{ row.unique_visitors }}
+                    </td>
+
+                    <td>
+                        <strong>{{ row.engaged_visitors }}</strong>
+
+                        <div class="traffic-source-mini">
+                            <span>FB {{ row.engaged_facebook }}</span>
+                            <span>IG {{ row.engaged_instagram }}</span>
+                            <span>Google {{ row.engaged_google }}</span>
+                            <span>LS {{ row.engaged_own }}</span>
+                            <span>Ostatní {{ row.engaged_other }}</span>
+                        </div>
+                    </td>
+
                     <td>{{ row.human_pageviews }}</td>
                     <td>{{ row.bot_hits }}</td>
                     <td>{{ row.ok_hits }}</td>
@@ -1322,11 +1466,17 @@
                     <td>{{ row.not_found_hits }}</td>
                     <td>{{ row.error_hits }}</td>
                     <td>{{ row.other_hits }}</td>
-                    <td><strong>{{ row.total_hits }}</strong></td>
+
+                    <td>
+                        <strong>{{ row.total_hits }}</strong>
+                    </td>
                 </tr>
+
             {% empty %}
                 <tr>
-                    <td colspan="11">Zatím žádná data podle stránek.</td>
+                    <td colspan="12">
+                        Zatím žádná data podle stránek.
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>

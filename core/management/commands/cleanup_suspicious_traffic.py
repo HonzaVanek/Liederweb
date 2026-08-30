@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.db import models
+from django.db.models import Count, Exists, Max, Min, OuterRef
 
 from core.models import (
     DailyEngagedVisitor,
@@ -19,6 +20,29 @@ from core.traffic_cleanup import (
 
 
 logger = logging.getLogger("liederweb.traffic")
+
+# -------------------------------------------------
+# Diagnostika distribuovaných crawlerů podle sítě
+# -------------------------------------------------
+
+# Díváme se zpětně přes delší období, protože crawler
+# může jednotlivé requesty rozprostřít přes několik hodin.
+NETWORK_DIAGNOSTIC_WINDOW_HOURS = 12
+
+# Pattern zalogujeme jen tehdy, pokud v něm nedávno
+# přibyl nový request. Cron běží po 15 minutách.
+NETWORK_DIAGNOSTIC_RECENT_MINUTES = 16
+
+# Zatím pouze diagnostické prahy.
+# Nic podle nich nemažeme.
+NETWORK_DIAGNOSTIC_MIN_CLIENTS = 3
+NETWORK_DIAGNOSTIC_MIN_VISITORS = 3
+NETWORK_DIAGNOSTIC_MIN_IPS = 3
+NETWORK_DIAGNOSTIC_MIN_PATHS = 3
+
+# Smyslem tohoto pravidla je právě najít crawler,
+# který User-Agent rotuje.
+NETWORK_DIAGNOSTIC_MIN_UAS = 2
 
 
 def find_distinct_client_bursts(
@@ -214,6 +238,206 @@ class Command(BaseCommand):
         "a odstraní silně bot-like patterny."
     )
 
+    def log_network_pattern_candidates(self, now):
+        """
+        Pouze diagnostika.
+
+        Hledá několik nepotvrzených návštěv:
+
+        - ze stejného anonymizovaného networku,
+        - z několika různých IP,
+        - z několika různých clientů,
+        - přes několik různých stránek,
+        - bez refereru,
+        - bez Browser / Engaged potvrzení,
+        - s více různými User-Agenty.
+
+        Nic nemaže a nemění decision.
+        Pouze zapíše NETWORK_PATTERN_CANDIDATE do traffic.log.
+        """
+
+        window_start = now - timedelta(
+            hours=NETWORK_DIAGNOSTIC_WINDOW_HOURS
+        )
+
+        recent_start = now - timedelta(
+            minutes=NETWORK_DIAGNOSTIC_RECENT_MINUTES
+        )
+
+        # Kandidát musí mít stejně jako normální post-hoc
+        # cleanup alespoň 10 minut na případný JS beacon.
+        mature_cutoff = now - timedelta(minutes=10)
+
+        browser_confirmation = (
+            DailyBrowserVisitor.objects
+            .filter(
+                day=OuterRef("day"),
+                visitor_hash=OuterRef("visitor_hash"),
+            )
+        )
+
+        engaged_confirmation = (
+            DailyEngagedVisitor.objects
+            .filter(
+                day=OuterRef("day"),
+                visitor_hash=OuterRef("visitor_hash"),
+            )
+        )
+
+        candidates = (
+            TrafficVisitCandidate.objects
+            .filter(
+                created_at__gte=window_start,
+                created_at__lte=mature_cutoff,
+                referer_kind=(
+                    TrafficVisitCandidate.RefererKind.EMPTY
+                ),
+                is_social_iab=False,
+            )
+            .filter(
+                models.Q(
+                    decision=(
+                        TrafficVisitCandidate.Decision.PENDING
+                    ),
+                )
+                |
+                models.Q(
+                    decision=(
+                        TrafficVisitCandidate.Decision.KEPT
+                    ),
+                    decision_reason=(
+                        "no_posthoc_rule_matched"
+                    ),
+                )
+            )
+            .exclude(ip_hash="")
+            .exclude(network_hash="")
+            .annotate(
+                has_browser_confirmation=Exists(
+                    browser_confirmation
+                ),
+                has_engaged_confirmation=Exists(
+                    engaged_confirmation
+                ),
+            )
+            .filter(
+                has_browser_confirmation=False,
+                has_engaged_confirmation=False,
+            )
+        )
+
+        patterns = (
+            candidates
+            .values("network_hash")
+            .annotate(
+                hits=Count("id"),
+
+                clients=Count(
+                    "client_hash",
+                    distinct=True,
+                ),
+
+                visitors=Count(
+                    "visitor_hash",
+                    distinct=True,
+                ),
+
+                ips=Count(
+                    "ip_hash",
+                    distinct=True,
+                ),
+
+                paths=Count(
+                    "path",
+                    distinct=True,
+                ),
+
+                uas=Count(
+                    "user_agent_hash",
+                    distinct=True,
+                ),
+
+                first_seen=Min("created_at"),
+                last_seen=Max("created_at"),
+            )
+            .filter(
+                clients__gte=(
+                    NETWORK_DIAGNOSTIC_MIN_CLIENTS
+                ),
+                visitors__gte=(
+                    NETWORK_DIAGNOSTIC_MIN_VISITORS
+                ),
+                ips__gte=(
+                    NETWORK_DIAGNOSTIC_MIN_IPS
+                ),
+                paths__gte=(
+                    NETWORK_DIAGNOSTIC_MIN_PATHS
+                ),
+                uas__gte=(
+                    NETWORK_DIAGNOSTIC_MIN_UAS
+                ),
+
+                # Pattern logujeme jen pokud v něm
+                # nedávno přibyl nový request.
+                last_seen__gte=recent_start,
+            )
+            .order_by(
+                "-clients",
+                "-hits",
+            )
+        )
+
+        pattern_count = 0
+
+        for pattern in patterns:
+            network_hash = pattern["network_hash"]
+
+            sample_paths = list(
+                candidates
+                .filter(
+                    network_hash=network_hash,
+                )
+                .values_list(
+                    "path",
+                    flat=True,
+                )
+                .distinct()[:6]
+            )
+
+            span_seconds = int(
+                (
+                    pattern["last_seen"]
+                    - pattern["first_seen"]
+                ).total_seconds()
+            )
+
+            logger.info(
+                "NETWORK_PATTERN_CANDIDATE "
+                "reason=network_multi_ua_no_engagement "
+                "network=%s "
+                "hits=%s "
+                "clients=%s "
+                "visitors=%s "
+                "ips=%s "
+                "paths=%s "
+                "uas=%s "
+                "span_seconds=%s "
+                "sample_paths=%s",
+                network_hash[:12],
+                pattern["hits"],
+                pattern["clients"],
+                pattern["visitors"],
+                pattern["ips"],
+                pattern["paths"],
+                pattern["uas"],
+                span_seconds,
+                "|".join(sample_paths),
+            )
+
+            pattern_count += 1
+
+        return pattern_count    
+
     def handle(self, *args, **options):
         now = timezone.now()
 
@@ -238,8 +462,12 @@ class Command(BaseCommand):
         )
 
         if not candidates:
+            network_patterns = self.log_network_pattern_candidates(now)
             self.cleanup_old_candidates(now)
-            self.stdout.write("No candidates.")
+            self.stdout.write(
+                "No candidates. "
+                f"network_patterns={network_patterns}"
+            )
             return
 
         days = {
@@ -739,13 +967,23 @@ class Command(BaseCommand):
             processed_at=now,
         )
 
+        # -------------------------------------------------
+        # Diagnostika distribuovaných network patternů.
+        #
+        # Nic nemaže. Jen případný pattern zapíše
+        # jako NETWORK_PATTERN_CANDIDATE do traffic.log.
+        # -------------------------------------------------
+
+        network_patterns = self.log_network_pattern_candidates(now)
+
         self.cleanup_old_candidates(now)
 
         self.stdout.write(
             self.style.SUCCESS(
                 f"Processed={len(candidates)}, "
                 f"cleaned_visitors={cleaned_visitors}, "
-                f"cleaned_pageviews={cleaned_pageviews}"
+                f"cleaned_pageviews={cleaned_pageviews}, "
+                f"network_patterns={network_patterns}"
             )
         )
 

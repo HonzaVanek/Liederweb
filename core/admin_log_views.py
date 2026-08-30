@@ -10,7 +10,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import render
 from django.db.models import Count, Sum
 
-from core.models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, DailyBrowserVisitor
+from core.models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, DailyBrowserVisitor, DailyEngagedPageVisitor
 
 
 LOG_FILES = {
@@ -34,10 +34,12 @@ VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
 
 TRAFFIC_KIND_RE = re.compile(
     r"\|\s+liederweb\.traffic\s+\|\s+"
-    r"(RAPID_IDENTITY_CANDIDATE|POSTHOC_CLEANUP|VISIT_DUPLICATE|"
+    r"(NETWORK_PATTERN_CANDIDATE|RAPID_IDENTITY_CANDIDATE|"
+    r"POSTHOC_CLEANUP|VISIT_DUPLICATE|"
     r"BROWSER_CONFIRMED|BROWSER_SKIP|ENGAGED_SKIP|ENGAGED|"
     r"VISIT|BOT_LIKE|CLEANUP)\s+"
 )
+
 TRAFFIC_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
 
 TRAFFIC_FIELD_PATTERNS = {
@@ -65,6 +67,11 @@ TRAFFIC_FIELD_PATTERNS = {
     "visitors": re.compile(r"\bvisitors=(\d+)"),
     "uas": re.compile(r"\buas=(\d+)"),
     "details": re.compile(r"\bdetails=(.*)$"),
+    "network": re.compile(r"\bnetwork=([^\s]+)"),
+    "clients": re.compile(r"\bclients=(\d+)"),
+    "ips": re.compile(r"\bips=(\d+)"),
+    "span_seconds": re.compile(r"\bspan_seconds=(\d+)"),
+    "sample_paths": re.compile(r"\bsample_paths=(.*)$"),
 }
 
 UA_RE = re.compile(r"\bua=(.*)$")
@@ -307,6 +314,11 @@ def parse_traffic_log_line(line):
         "paths": "",
         "visitors": "",
         "uas": "",
+        "network": "",
+        "clients": "",
+        "ips": "",
+        "span_seconds": "",
+        "sample_paths": "",
         "details": "",
     }
 
@@ -1105,6 +1117,34 @@ def build_traffic_audit(log_text, since=None):
 
         if len(rapid_identity_candidates) >= 30:
             break
+    network_pattern_candidates = []
+
+    for item in reversed(items):
+        if item["kind"] != "NETWORK_PATTERN_CANDIDATE":
+            continue
+
+        network_pattern_candidates.append({
+            "time": item["timestamp"],
+            "network": item["network"],
+            "reason": (
+                item["reason"]
+                or "bez důvodu"
+            ),
+            "hits": item["hits"],
+            "clients": item["clients"],
+            "visitors": item["visitors"],
+            "ips": item["ips"],
+            "paths": item["paths"],
+            "uas": item["uas"],
+            "span_seconds": item["span_seconds"],
+            "sample_paths": (
+                item["sample_paths"]
+                or ""
+            ),
+        })
+
+        if len(network_pattern_candidates) >= 30:
+            break
 
     return {
         "total_items": len(items),
@@ -1121,6 +1161,7 @@ def build_traffic_audit(log_text, since=None):
         "mixed_clients": mixed_clients[:15],
         "suspicious_visits": suspicious_visits[:30],
         "rapid_identity_candidates": rapid_identity_candidates,
+        "network_pattern_candidates": network_pattern_candidates,
         "browser_skip_reasons": browser_skip_reasons.most_common(10),
         "browser_confirmed_triggers": browser_confirmed_triggers.most_common(10),
         "browser_confirmed_rows": browser_confirmed_rows,
@@ -1130,27 +1171,13 @@ def build_traffic_audit(log_text, since=None):
         "posthoc_cleanup_reasons": posthoc_cleanup_reasons.most_common(10),
         "posthoc_cleanup_rows": posthoc_cleanup_rows,
         "visit_visitor_count": len(visit_keys),
-        "browser_confirmed_visit_visitor_count": len(
-            browser_confirmed_visit_keys
-        ),
-        "engaged_visit_visitor_count": len(
-            engaged_visit_keys
-        ),
-        "js_confirmed_visit_visitor_count": len(
-            js_confirmed_visit_keys
-        ),
-        "cleaned_visit_visitor_count": len(
-            cleaned_visit_keys
-        ),
-        "unconfirmed_visit_visitor_count": len(
-            unconfirmed_visit_keys
-        ),
-        "unconfirmed_referer_breakdown": (
-            unconfirmed_referer_breakdown
-        ),
-        "unconfirmed_visit_distribution": (
-            unconfirmed_visit_distribution
-        ),
+        "browser_confirmed_visit_visitor_count": len(browser_confirmed_visit_keys),
+        "engaged_visit_visitor_count": len(engaged_visit_keys),
+        "js_confirmed_visit_visitor_count": len(js_confirmed_visit_keys),
+        "cleaned_visit_visitor_count": len(cleaned_visit_keys),
+        "unconfirmed_visit_visitor_count": len(unconfirmed_visit_keys),
+        "unconfirmed_referer_breakdown": (unconfirmed_referer_breakdown),
+        "unconfirmed_visit_distribution": (unconfirmed_visit_distribution),
         "unconfirmed_top_uas": unconfirmed_top_uas,
         "unconfirmed_rows": unconfirmed_rows[:50],
     }
@@ -1364,6 +1391,7 @@ def system_logs_view(request):
         lambda: {
             "facebook": 0,
             "instagram": 0,
+            "google": 0,
             "other": 0,
         }
     )
@@ -1378,6 +1406,7 @@ def system_logs_view(request):
         if source not in (
             "facebook",
             "instagram",
+            "google",
         ):
             source = "other"
 
@@ -1390,6 +1419,7 @@ def system_logs_view(request):
         lambda: {
             "facebook": 0,
             "instagram": 0,
+            "google": 0,
             "other": 0,
         }
     )
@@ -1404,6 +1434,7 @@ def system_logs_view(request):
         if source not in (
             "facebook",
             "instagram",
+            "google",
         ):
             source = "other"
 
@@ -1459,25 +1490,15 @@ def system_logs_view(request):
         row["browser_visitors"] = browser_visitors
         row["engaged_visitors"] = engaged_visitors
 
-        row["browser_facebook"] = (
-            browser_sources["facebook"]
-        )
-        row["browser_instagram"] = (
-            browser_sources["instagram"]
-        )
-        row["browser_other"] = (
-            browser_sources["other"]
-        )
+        row["browser_facebook"] = browser_sources["facebook"]
+        row["browser_instagram"] = browser_sources["instagram"]
+        row["browser_google"] = browser_sources["google"]
+        row["browser_other"] = browser_sources["other"]
 
-        row["engaged_facebook"] = (
-            engaged_sources["facebook"]
-        )
-        row["engaged_instagram"] = (
-            engaged_sources["instagram"]
-        )
-        row["engaged_other"] = (
-            engaged_sources["other"]
-        )
+        row["engaged_facebook"] = engaged_sources["facebook"]
+        row["engaged_instagram"] = engaged_sources["instagram"]
+        row["engaged_google"] = engaged_sources["google"]
+        row["engaged_other"] = engaged_sources["other"]
 
         if unique_visitors:
             row["browser_pct_of_visitors"] = round(
@@ -1506,6 +1527,48 @@ def system_logs_view(request):
             0,
             human_requests - pageviews,
         )
+
+    engaged_page_stats = defaultdict(
+        lambda: {
+            "total": 0,
+            "facebook": 0,
+            "instagram": 0,
+            "google": 0,
+            "own": 0,
+            "other": 0,
+        }
+    )
+
+    for source_row in (
+        DailyEngagedPageVisitor.objects
+        .values(
+            "day",
+            "path",
+            "source",
+        )
+        .annotate(
+            count=Count("id"),
+        )
+    ):
+        key = (
+            source_row["day"],
+            source_row["path"],
+        )
+
+        source = source_row["source"]
+
+        if source not in (
+            "facebook",
+            "instagram",
+            "google",
+            "own",
+        ):
+            source = "other"
+
+        count = source_row["count"] or 0
+
+        engaged_page_stats[key]["total"] += count
+        engaged_page_stats[key][source] += count
 
     human_page_stats = {
         (row["day"], row["path"]): row
@@ -1540,12 +1603,18 @@ def system_logs_view(request):
 
         human_pageviews = human_row.get("human_pageviews", 0) or 0
         human_requests = row.get("human_hits", 0) or 0
+        engaged_page = engaged_page_stats.get((row["day"], row["path"]), {},)
 
         row["unique_visitors"] = human_row.get("unique_visitors", 0)
         row["human_pageviews"] = human_pageviews
         row["human_requests"] = human_requests
         row["human_non_pageview_hits"] = max(0, human_requests - human_pageviews)
-
+        row["engaged_visitors"] = engaged_page.get("total", 0) or 0
+        row["engaged_facebook"] = engaged_page.get("facebook", 0) or 0
+        row["engaged_instagram"] = engaged_page.get("instagram", 0) or 0
+        row["engaged_google"] = engaged_page.get("google", 0) or 0
+        row["engaged_own"] = engaged_page.get("own", 0) or 0
+        row["engaged_other"] = engaged_page.get("other", 0) or 0
         row["other_hits"] = (
             row["total_hits"]
             - row["ok_hits"]
