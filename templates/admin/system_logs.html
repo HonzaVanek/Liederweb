@@ -174,6 +174,8 @@
                   VISIT_DUPLICATE (deduplikace)
               {% elif label == "NETWORK_PATTERN_CANDIDATE" %}
                   NETWORK_PATTERN_CANDIDATE (diagnostika)
+              {% elif label == "META_EXIT_DIAG" %}
+                  META_EXIT_DIAG (Meta diagnostika)
               {% else %}
                   {{ label }}
               {% endif %}
@@ -228,8 +230,10 @@
       </table>
 
       <p class="help">
-        <code>timer</code> znamená potvrzení po 750 ms viditelné stránky.
-        <code>pagehide</code> je krátká návštěva potvrzená až při odchodu.
+        <code>timer</code> znamená potvrzení po nejméně
+        750 ms souvisle viditelné stránky.
+        Starší záznamy mohou ještě obsahovat
+        <code>pagehide</code> z předchozí verze beaconu.
       </p>
     </div>
 
@@ -666,6 +670,151 @@
           </tbody>
       </table>
   </div>
+
+  <h3>Meta exit diagnostika</h3>
+
+  <p class="help">
+    Diagnostika odchodů návštěv z Facebooku a Instagramu.
+    Nemění statistiky ani nikoho automaticky neoznačuje jako bota.
+
+    <strong>BACKGROUND?</strong> znamená, že dokument existoval
+    alespoň 3 sekundy, ale nikdy nebyl alespoň 750 ms v kuse
+    viditelný, neposlal Browser ani Engaged beacon a nebyla
+    zachycena žádná uživatelská interakce.
+  </p>
+
+  <div class="stats-table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Čas / zdroj</th>
+          <th>IP / identity</th>
+          <th>Path</th>
+          <th>Časy</th>
+          <th>Visibility</th>
+          <th>Browser</th>
+          <th>Engaged</th>
+          <th>Interakce</th>
+          <th>Scroll</th>
+          <th>Prerender</th>
+          <th>Diagnostika</th>
+          <th>User-Agent</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in traffic_audit.meta_exit_diag_rows %}
+          <tr
+            {% if row.background_candidate %}
+              class="meta-diag-background-row"
+            {% endif %}
+          >
+            <td>
+              {{ row.time }}
+              <br>
+              <strong>{{ row.source }}</strong>
+            </td>
+
+            <td>
+              {% if row.ip %}
+                <code>{{ row.ip }}</code>
+                <br>
+              {% endif %}
+
+              client:
+              <code>{{ row.client }}</code>
+              <br>
+
+              visitor:
+              <code>{{ row.visitor }}</code>
+            </td>
+
+            <td>
+              <code>{{ row.path }}</code>
+            </td>
+
+            <td>
+              existence:
+              <strong>{{ row.elapsed_ms }} ms</strong>
+              <br>
+
+              visible Σ:
+              {{ row.total_visible_ms }} ms
+              <br>
+
+              max visible:
+              <strong>
+                {{ row.max_visible_span_ms }} ms
+              </strong>
+            </td>
+
+            <td>
+              changes:
+              {{ row.visibility_changes }}
+              <br>
+
+              intervals:
+              {{ row.visible_intervals }}
+            </td>
+
+            <td>
+              {% if row.browser_sent %}
+                <strong>ANO</strong>
+              {% else %}
+                ne
+              {% endif %}
+            </td>
+
+            <td>
+              {% if row.engaged_sent %}
+                <strong>ANO</strong>
+              {% else %}
+                ne
+              {% endif %}
+            </td>
+
+            <td>
+              {{ row.interaction }}
+            </td>
+
+            <td>
+              {{ row.max_scroll_pct }} %
+            </td>
+
+            <td>
+              {% if row.prerendered %}
+                <strong>ANO</strong>
+              {% else %}
+                ne
+              {% endif %}
+            </td>
+
+            <td>
+              {% if row.background_candidate %}
+                <strong class="meta-diag-background-badge">
+                  BACKGROUND?
+                </strong>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <td>
+              <code>{{ row.ua }}</code>
+            </td>
+          </tr>
+
+        {% empty %}
+          <tr>
+            <td colspan="12">
+              Zatím žádná Meta exit diagnostika.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
 
   <h3>Poslední VISIT_DUPLICATE</h3>
 
@@ -1196,6 +1345,21 @@
         word-break: break-word;
     }
 
+    .meta-diag-background-row {
+        background: rgba(245, 158, 11, 0.12);
+    }
+
+    .meta-diag-background-badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 999px;
+        background: #f59e0b;
+        color: #111;
+        font-size: 11px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
     .system-log-output .system-log-line.system-log-line--engaged {
         background: rgba(220, 38, 38, 0.42) !important;
         border-left-color: #ff4d4d !important;
@@ -1250,6 +1414,24 @@
     .system-log-output .system-log-line.traffic-kind-network-pattern-candidate {
         background: rgba(168, 85, 247, 0.25) !important;
         border-left-color: #c084fc !important;
+    }
+
+    .system-log-output .system-log-line.traffic-kind-meta-exit-diag {
+        background: rgba(245, 158, 11, 0.18) !important;
+        border-left-color: #f59e0b !important;
+    }
+
+    .system-log-output .system-log-line.traffic-kind-meta-exit-diag::before {
+        content: "META DIAG";
+        display: inline-block;
+        margin-right: 8px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: #f59e0b;
+        color: #111;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
     }
 
     .system-log-output .system-log-line.traffic-kind-network-pattern-candidate::before {

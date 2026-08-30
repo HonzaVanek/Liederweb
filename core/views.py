@@ -1063,19 +1063,25 @@ def traffic_engaged(request):
         or "engaged"
     ).strip().lower()
 
-    if stage not in ("browser", "engaged"):
+    if stage not in (
+        "browser",
+        "engaged",
+        "diagnostic",
+    ):
         logger.info(
-            "TRAFFIC_BEACON_SKIP reason=bad_stage stage=%s ip=%s",
+            "TRAFFIC_BEACON_SKIP "
+            "reason=bad_stage stage=%s ip=%s",
             stage[:30],
             ip,
         )
         return HttpResponse(status=204)
 
-    skip_kind = (
-        "BROWSER_SKIP"
-        if stage == "browser"
-        else "ENGAGED_SKIP"
-    )
+    if stage == "browser":
+        skip_kind = "BROWSER_SKIP"
+    elif stage == "engaged":
+        skip_kind = "ENGAGED_SKIP"
+    else:
+        skip_kind = "META_EXIT_DIAG_SKIP"
 
     if not ip:
         logger.debug("%s reason=no_ip", skip_kind)
@@ -1226,6 +1232,165 @@ def traffic_engaged(request):
         )
         return HttpResponse(status=204)
 
+    # -------------------------------------------------
+    # META EXIT DIAGNOSTIKA
+    #
+    # Pouze loguje chování FB/IG návštěvy při odchodu.
+    # Nic nevytváří, nemaže ani nepřeklasifikuje.
+    # -------------------------------------------------
+
+    if stage == "diagnostic":
+
+        diagnostic_source = (
+            classify_engaged_source(
+                source_referer,
+                user_agent,
+            )
+        )
+
+        # Endpoint sice může kdokoliv POSTnout ručně,
+        # ale tuto diagnostiku chceme pouze pro Meta
+        # provoz.
+        if diagnostic_source not in (
+            DailyEngagedVisitor.Source.FACEBOOK,
+            DailyEngagedVisitor.Source.INSTAGRAM,
+        ):
+            return HttpResponse(status=204)
+
+
+        def diagnostic_int(
+            name,
+            *,
+            maximum,
+        ):
+            raw_value = (
+                request.POST.get(name)
+                or "0"
+            ).strip()
+
+            try:
+                value = int(raw_value)
+            except (TypeError, ValueError):
+                value = 0
+
+            return max(
+                0,
+                min(value, maximum),
+            )
+
+
+        elapsed_ms = diagnostic_int(
+            "elapsed_ms",
+            maximum=60 * 60 * 1000,
+        )
+
+        total_visible_ms = diagnostic_int(
+            "total_visible_ms",
+            maximum=60 * 60 * 1000,
+        )
+
+        max_visible_span_ms = diagnostic_int(
+            "max_visible_span_ms",
+            maximum=60 * 60 * 1000,
+        )
+
+        visibility_changes = diagnostic_int(
+            "visibility_changes",
+            maximum=10000,
+        )
+
+        visible_intervals = diagnostic_int(
+            "visible_intervals",
+            maximum=10000,
+        )
+
+        browser_sent = diagnostic_int(
+            "browser_sent",
+            maximum=1,
+        )
+
+        engaged_sent = diagnostic_int(
+            "engaged_sent",
+            maximum=1,
+        )
+
+        had_pointer = diagnostic_int(
+            "had_pointer",
+            maximum=1,
+        )
+
+        had_touch = diagnostic_int(
+            "had_touch",
+            maximum=1,
+        )
+
+        had_scroll = diagnostic_int(
+            "had_scroll",
+            maximum=1,
+        )
+
+        had_key = diagnostic_int(
+            "had_key",
+            maximum=1,
+        )
+
+        max_scroll_pct = diagnostic_int(
+            "max_scroll_pct",
+            maximum=100,
+        )
+
+        prerendered = diagnostic_int(
+            "prerendered",
+            maximum=1,
+        )
+
+
+        logger.info(
+            "META_EXIT_DIAG "
+            "source=%s "
+            "ip=%s "
+            "client=%s "
+            "visitor=%s "
+            "path=%s "
+            "elapsed_ms=%s "
+            "total_visible_ms=%s "
+            "max_visible_span_ms=%s "
+            "visibility_changes=%s "
+            "visible_intervals=%s "
+            "browser_sent=%s "
+            "engaged_sent=%s "
+            "had_pointer=%s "
+            "had_touch=%s "
+            "had_scroll=%s "
+            "had_key=%s "
+            "max_scroll_pct=%s "
+            "prerendered=%s "
+            "source_referer=%s "
+            "ua=%s",
+            diagnostic_source,
+            ip,
+            client_label,
+            visitor_label,
+            path[:300],
+            elapsed_ms,
+            total_visible_ms,
+            max_visible_span_ms,
+            visibility_changes,
+            visible_intervals,
+            browser_sent,
+            engaged_sent,
+            had_pointer,
+            had_touch,
+            had_scroll,
+            had_key,
+            max_scroll_pct,
+            prerendered,
+            source_referer[:300],
+            user_agent[:300],
+        )
+
+        return HttpResponse(status=204)
+
     recent_cutoff = (
         timezone.now()
         - timedelta(minutes=15)
@@ -1261,12 +1426,12 @@ def traffic_engaged(request):
             .first()
         )
 
-    # U velmi rychlého odchodu může pagehide beacon
-    # dorazit těsně poté, co už další GET změnil
-    # DailySiteVisitor.last_path.
+    # U FB/IG in-app browseru se může User-Agent mezi
+    # původním GET a JS beaconem lehce změnit.
     #
-    # Proto pro browser-stage dovolíme ještě fallback
-    # přes konkrétní pageview stejného klienta.
+    # Pokud proto nevyšel přesný visitor_hash ani aktuální
+    # DailySiteVisitor, dovolíme pro browser-stage ještě
+    # fallback přes konkrétní pageview stejného klienta.
     if not matching_visit and stage == "browser":
         matching_visit = (
             DailyPageVisitor.objects
@@ -1275,28 +1440,6 @@ def traffic_engaged(request):
                 client_hash=client_hash,
                 path=path,
                 last_seen_at__gte=recent_cutoff,
-            )
-            .order_by("-last_seen_at")
-            .first()
-        )
-
-    # U velmi rychlého odchodu může pagehide beacon
-    # dorazit těsně poté, co už další GET změnil
-    # DailySiteVisitor.last_path.
-    #
-    # Proto pro browser-stage dovolíme bezpečný fallback
-    # přes konkrétní pageview.
-    if not matching_visit and stage == "browser":
-        matching_visit = (
-            DailyPageVisitor.objects
-            .filter(
-                day=today,
-                client_hash=client_hash,
-                path=path,
-                last_seen_at__gte=(
-                    timezone.now()
-                    - timedelta(minutes=15)
-                ),
             )
             .order_by("-last_seen_at")
             .first()

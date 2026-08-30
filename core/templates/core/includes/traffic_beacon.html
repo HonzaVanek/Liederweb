@@ -9,11 +9,33 @@
 
     var browserSent = false;
     var engagedSent = false;
+    var diagnosticSent = false;
 
     var browserTimer = null;
     var engagedTimer = null;
 
-    var hasBeenVisible = false;
+    // -------------------------------------------------
+    // Diagnostika viditelnosti
+    // -------------------------------------------------
+
+    var pageStartedAt = performance.now();
+
+    var visibleStartedAt = null;
+    var totalVisibleMs = 0;
+    var maxVisibleSpanMs = 0;
+
+    var visibilityChanges = 0;
+    var visibleIntervals = 0;
+
+    var hadPointer = false;
+    var hadTouch = false;
+    var hadScroll = false;
+    var hadKey = false;
+
+    var maxScrollPct = 0;
+
+    var wasPrerendered = false;
+
 
     function isPrerendering() {
         return (
@@ -22,6 +44,7 @@
         );
     }
 
+
     function isActuallyVisible() {
         return (
             document.visibilityState === "visible" &&
@@ -29,7 +52,70 @@
         );
     }
 
-    function postBeacon(stage, trigger) {
+
+    if (isPrerendering()) {
+        wasPrerendered = true;
+    }
+
+
+    function getReferrerHost() {
+        if (!document.referrer) {
+            return "";
+        }
+
+        try {
+            return (
+                new URL(document.referrer)
+                .hostname
+                .toLowerCase()
+            );
+        } catch (error) {
+            return "";
+        }
+    }
+
+
+    function isMetaHost(host) {
+        if (!host) {
+            return false;
+        }
+
+        return (
+            host === "instagram.com" ||
+            host.endsWith(".instagram.com") ||
+            host === "facebook.com" ||
+            host.endsWith(".facebook.com") ||
+            host === "fb.com" ||
+            host.endsWith(".fb.com")
+        );
+    }
+
+
+    function isMetaLikeVisit() {
+        var ua = (
+            navigator.userAgent || ""
+        ).toLowerCase();
+
+        if (
+            ua.indexOf("instagram") !== -1 ||
+            ua.indexOf("fb_iab/") !== -1 ||
+            ua.indexOf("fban/") !== -1 ||
+            ua.indexOf("fbav/") !== -1
+        ) {
+            return true;
+        }
+
+        return isMetaHost(
+            getReferrerHost()
+        );
+    }
+
+
+    function postBeacon(
+        stage,
+        trigger,
+        extraData
+    ) {
         var params = new URLSearchParams();
 
         params.append(
@@ -40,7 +126,21 @@
         params.append("stage", stage);
 
         if (trigger) {
-            params.append("trigger", trigger);
+            params.append(
+                "trigger",
+                trigger
+            );
+        }
+
+        if (extraData) {
+            Object.keys(
+                extraData
+            ).forEach(function (key) {
+                params.append(
+                    key,
+                    String(extraData[key])
+                );
+            });
         }
 
         var body = params.toString();
@@ -78,19 +178,12 @@
         }).catch(function () {});
     }
 
-    function sendBrowserConfirmation(
-        trigger,
-        allowHidden
-    ) {
-        if (browserSent) {
-            return;
-        }
 
-        if (allowHidden) {
-            if (!hasBeenVisible) {
-                return;
-            }
-        } else if (!isActuallyVisible()) {
+    function sendBrowserConfirmation() {
+        if (
+            browserSent ||
+            !isActuallyVisible()
+        ) {
             return;
         }
 
@@ -98,9 +191,10 @@
 
         postBeacon(
             "browser",
-            trigger || "timer"
+            "timer"
         );
     }
+
 
     function sendEngagedConfirmation() {
         if (
@@ -118,6 +212,7 @@
         );
     }
 
+
     function clearTimers() {
         if (browserTimer !== null) {
             clearTimeout(browserTimer);
@@ -130,12 +225,59 @@
         }
     }
 
+
+    // -------------------------------------------------
+    // Měření skutečně viditelných intervalů.
+    //
+    // Neovlivňuje Browser ani Engaged.
+    // Slouží pouze diagnostice.
+    // -------------------------------------------------
+
+    function startVisibleSpan() {
+        if (
+            !isActuallyVisible() ||
+            visibleStartedAt !== null
+        ) {
+            return;
+        }
+
+        visibleStartedAt = (
+            performance.now()
+        );
+
+        visibleIntervals += 1;
+    }
+
+
+    function endVisibleSpan() {
+        if (visibleStartedAt === null) {
+            return;
+        }
+
+        var now = performance.now();
+
+        var spanMs = Math.max(
+            0,
+            now - visibleStartedAt
+        );
+
+        totalVisibleMs += spanMs;
+
+        maxVisibleSpanMs = Math.max(
+            maxVisibleSpanMs,
+            spanMs
+        );
+
+        visibleStartedAt = null;
+    }
+
+
     function scheduleVisibleTimers() {
         if (!isActuallyVisible()) {
             return;
         }
 
-        hasBeenVisible = true;
+        startVisibleSpan();
 
         if (
             !browserSent &&
@@ -145,10 +287,7 @@
                 function () {
                     browserTimer = null;
 
-                    sendBrowserConfirmation(
-                        "timer",
-                        false
-                    );
+                    sendBrowserConfirmation();
                 },
                 750
             );
@@ -169,39 +308,247 @@
         }
     }
 
+
+    // -------------------------------------------------
+    // Interakce
+    //
+    // Ani jedna z nich není podmínkou Browser/Engaged.
+    // Jsou pouze diagnostické signály.
+    // -------------------------------------------------
+
+    document.addEventListener(
+        "pointerdown",
+        function (event) {
+            if (
+                event &&
+                event.isTrusted === false
+            ) {
+                return;
+            }
+
+            hadPointer = true;
+        },
+        {
+            passive: true
+        }
+    );
+
+
+    document.addEventListener(
+        "touchstart",
+        function (event) {
+            if (
+                event &&
+                event.isTrusted === false
+            ) {
+                return;
+            }
+
+            hadTouch = true;
+        },
+        {
+            passive: true
+        }
+    );
+
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+            if (
+                event &&
+                event.isTrusted === false
+            ) {
+                return;
+            }
+
+            hadKey = true;
+        }
+    );
+
+
+    function updateScrollDiagnostic() {
+        hadScroll = true;
+
+        var documentElement = (
+            document.documentElement
+        );
+
+        var body = document.body;
+
+        var scrollTop = Math.max(
+            window.scrollY || 0,
+            documentElement
+                ? documentElement.scrollTop || 0
+                : 0,
+            body
+                ? body.scrollTop || 0
+                : 0
+        );
+
+        var documentHeight = Math.max(
+            documentElement
+                ? documentElement.scrollHeight || 0
+                : 0,
+            body
+                ? body.scrollHeight || 0
+                : 0
+        );
+
+        var scrollableHeight = Math.max(
+            documentHeight -
+                window.innerHeight,
+            0
+        );
+
+        if (scrollableHeight > 0) {
+            var pct = Math.round(
+                (
+                    scrollTop /
+                    scrollableHeight
+                ) * 100
+            );
+
+            pct = Math.max(
+                0,
+                Math.min(100, pct)
+            );
+
+            maxScrollPct = Math.max(
+                maxScrollPct,
+                pct
+            );
+        }
+    }
+
+
+    window.addEventListener(
+        "scroll",
+        updateScrollDiagnostic,
+        {
+            passive: true
+        }
+    );
+
+
+    // -------------------------------------------------
+    // Meta diagnostika při odchodu
+    // -------------------------------------------------
+
+    function sendMetaExitDiagnostic() {
+        if (
+            diagnosticSent ||
+            !isMetaLikeVisit()
+        ) {
+            return;
+        }
+
+        diagnosticSent = true;
+
+        // Uzavřeme případný právě běžící visible interval.
+        endVisibleSpan();
+
+        var elapsedMs = Math.max(
+            0,
+            performance.now() -
+                pageStartedAt
+        );
+
+        postBeacon(
+            "diagnostic",
+            "pagehide",
+            {
+                elapsed_ms:
+                    Math.round(elapsedMs),
+
+                total_visible_ms:
+                    Math.round(totalVisibleMs),
+
+                max_visible_span_ms:
+                    Math.round(maxVisibleSpanMs),
+
+                visibility_changes:
+                    visibilityChanges,
+
+                visible_intervals:
+                    visibleIntervals,
+
+                browser_sent:
+                    browserSent ? 1 : 0,
+
+                engaged_sent:
+                    engagedSent ? 1 : 0,
+
+                had_pointer:
+                    hadPointer ? 1 : 0,
+
+                had_touch:
+                    hadTouch ? 1 : 0,
+
+                had_scroll:
+                    hadScroll ? 1 : 0,
+
+                had_key:
+                    hadKey ? 1 : 0,
+
+                max_scroll_pct:
+                    maxScrollPct,
+
+                prerendered:
+                    wasPrerendered ? 1 : 0
+            }
+        );
+    }
+
+
     document.addEventListener(
         "visibilitychange",
         function () {
+            visibilityChanges += 1;
+
             if (isActuallyVisible()) {
                 scheduleVisibleTimers();
             } else {
+                endVisibleSpan();
                 clearTimers();
             }
         }
     );
 
+
     if ("prerendering" in document) {
         document.addEventListener(
             "prerenderingchange",
             function () {
-                scheduleVisibleTimers();
+                wasPrerendered = true;
+
+                if (isActuallyVisible()) {
+                    scheduleVisibleTimers();
+                }
             }
         );
     }
+
 
     window.addEventListener(
         "pagehide",
         function () {
             clearTimers();
-
-            // I návštěva kratší než 750 ms je skutečný
-            // browser, pokud byla stránka opravdu vidět.
-            sendBrowserConfirmation(
-                "pagehide",
-                true
-            );
+            sendMetaExitDiagnostic();
         }
     );
+
+
+    // BFCache návrat.
+    window.addEventListener(
+        "pageshow",
+        function () {
+            if (isActuallyVisible()) {
+                scheduleVisibleTimers();
+            }
+        }
+    );
+
 
     scheduleVisibleTimers();
 })();

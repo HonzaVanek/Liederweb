@@ -34,10 +34,10 @@ VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
 
 TRAFFIC_KIND_RE = re.compile(
     r"\|\s+liederweb\.traffic\s+\|\s+"
-    r"(NETWORK_PATTERN_CANDIDATE|RAPID_IDENTITY_CANDIDATE|"
-    r"POSTHOC_CLEANUP|VISIT_DUPLICATE|"
-    r"BROWSER_CONFIRMED|BROWSER_SKIP|ENGAGED_SKIP|ENGAGED|"
-    r"VISIT|BOT_LIKE|CLEANUP)\s+"
+    r"(META_EXIT_DIAG|NETWORK_PATTERN_CANDIDATE|"
+    r"RAPID_IDENTITY_CANDIDATE|POSTHOC_CLEANUP|"
+    r"VISIT_DUPLICATE|BROWSER_CONFIRMED|BROWSER_SKIP|"
+    r"ENGAGED_SKIP|ENGAGED|VISIT|BOT_LIKE|CLEANUP)\s+"
 )
 
 TRAFFIC_TS_RE = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
@@ -54,6 +54,20 @@ TRAFFIC_FIELD_PATTERNS = {
     "reason": re.compile(r"\breason=([^\s]*)"),
     "score": re.compile(r"\bscore=([^\s]*)"),
     "trigger": re.compile(r"\btrigger=([^\s]*)"),
+    "source": re.compile(r"\bsource=([^\s]+)"),
+    "elapsed_ms": re.compile(r"\belapsed_ms=(\d+)"),
+    "total_visible_ms": re.compile(r"\btotal_visible_ms=(\d+)"),
+    "max_visible_span_ms": re.compile(r"\bmax_visible_span_ms=(\d+)"),
+    "visibility_changes": re.compile(r"\bvisibility_changes=(\d+)"),
+    "visible_intervals": re.compile(r"\bvisible_intervals=(\d+)"),
+    "browser_sent": re.compile(r"\bbrowser_sent=([01])"),
+    "engaged_sent": re.compile(r"\bengaged_sent=([01])"),
+    "had_pointer": re.compile(r"\bhad_pointer=([01])"),
+    "had_touch": re.compile(r"\bhad_touch=([01])"),
+    "had_scroll": re.compile(r"\bhad_scroll=([01])"),
+    "had_key": re.compile(r"\bhad_key=([01])"),
+    "max_scroll_pct": re.compile(r"\bmax_scroll_pct=(\d+)"),
+    "prerendered": re.compile(r"\bprerendered=([01])"),
     "removed_pageviews": re.compile(r"\bremoved_pageviews=(\d+)"),
     "candidates": re.compile(r"\bcandidates=(\d+)"),
     "fetch_user": re.compile(r"\bfetch_user=([^\s]*)"),
@@ -301,6 +315,20 @@ def parse_traffic_log_line(line):
         "reason": "",
         "score": "",
         "trigger": "",
+        "source": "",
+        "elapsed_ms": "",
+        "total_visible_ms": "",
+        "max_visible_span_ms": "",
+        "visibility_changes": "",
+        "visible_intervals": "",
+        "browser_sent": "",
+        "engaged_sent": "",
+        "had_pointer": "",
+        "had_touch": "",
+        "had_scroll": "",
+        "had_key": "",
+        "max_scroll_pct": "",
+        "prerendered": "",
         "fetch_user": "",
         "fetch_mode": "",
         "fetch_dest": "",
@@ -1117,6 +1145,146 @@ def build_traffic_audit(log_text, since=None):
 
         if len(rapid_identity_candidates) >= 30:
             break
+    meta_exit_diag_rows = []
+
+    def audit_diag_int(value):
+        try:
+            return int(value or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    for item in reversed(items):
+        if item["kind"] != "META_EXIT_DIAG":
+            continue
+
+        elapsed_ms = audit_diag_int(
+            item["elapsed_ms"]
+        )
+
+        total_visible_ms = audit_diag_int(
+            item["total_visible_ms"]
+        )
+
+        max_visible_span_ms = audit_diag_int(
+            item["max_visible_span_ms"]
+        )
+
+        visibility_changes = audit_diag_int(
+            item["visibility_changes"]
+        )
+
+        visible_intervals = audit_diag_int(
+            item["visible_intervals"]
+        )
+
+        max_scroll_pct = audit_diag_int(
+            item["max_scroll_pct"]
+        )
+
+        browser_sent = (
+            item["browser_sent"] == "1"
+        )
+
+        engaged_sent = (
+            item["engaged_sent"] == "1"
+        )
+
+        had_pointer = (
+            item["had_pointer"] == "1"
+        )
+
+        had_touch = (
+            item["had_touch"] == "1"
+        )
+
+        had_scroll = (
+            item["had_scroll"] == "1"
+        )
+
+        had_key = (
+            item["had_key"] == "1"
+        )
+
+        prerendered = (
+            item["prerendered"] == "1"
+        )
+
+        interaction_parts = []
+
+        if had_pointer:
+            interaction_parts.append("pointer")
+
+        if had_touch:
+            interaction_parts.append("touch")
+
+        if had_scroll:
+            interaction_parts.append("scroll")
+
+        if had_key:
+            interaction_parts.append("key")
+
+        had_any_interaction = bool(
+            interaction_parts
+        )
+
+        # Pouze diagnostický flag.
+        #
+        # Dokument existoval alespoň 3 sekundy,
+        # ale nikdy nebyl 750 ms v kuse visible,
+        # neposlal Browser ani Engaged a nebyla
+        # zachycena žádná uživatelská interakce.
+        background_candidate = (
+            elapsed_ms >= 3000
+            and max_visible_span_ms < 750
+            and not browser_sent
+            and not engaged_sent
+            and not had_any_interaction
+        )
+
+        meta_exit_diag_rows.append({
+            "time": item["timestamp"],
+            "source": (
+                item["source"]
+                or "unknown"
+            ),
+            "ip": item["ip"],
+            "client": item["client"],
+            "visitor": item["visitor"],
+            "path": item["path"],
+            "elapsed_ms": elapsed_ms,
+            "total_visible_ms": total_visible_ms,
+            "max_visible_span_ms": (
+                max_visible_span_ms
+            ),
+            "visibility_changes": (
+                visibility_changes
+            ),
+            "visible_intervals": (
+                visible_intervals
+            ),
+            "browser_sent": browser_sent,
+            "engaged_sent": engaged_sent,
+            "interaction": (
+                ", ".join(interaction_parts)
+                if interaction_parts
+                else "—"
+            ),
+            "max_scroll_pct": (
+                max_scroll_pct
+            ),
+            "prerendered": prerendered,
+            "background_candidate": (
+                background_candidate
+            ),
+            "ua": shorten_text(
+                item["ua"],
+                180,
+            ),
+        })
+
+        if len(meta_exit_diag_rows) >= 50:
+            break
+
     network_pattern_candidates = []
 
     for item in reversed(items):
@@ -1162,6 +1330,7 @@ def build_traffic_audit(log_text, since=None):
         "suspicious_visits": suspicious_visits[:30],
         "rapid_identity_candidates": rapid_identity_candidates,
         "network_pattern_candidates": network_pattern_candidates,
+        "meta_exit_diag_rows": meta_exit_diag_rows,
         "browser_skip_reasons": browser_skip_reasons.most_common(10),
         "browser_confirmed_triggers": browser_confirmed_triggers.most_common(10),
         "browser_confirmed_rows": browser_confirmed_rows,
