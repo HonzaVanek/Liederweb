@@ -168,7 +168,8 @@ BOT_USER_AGENT_PARTS = (
     "recscan",
     "uk-nhs-data",
     "watchtowr",
-    "get_titles/"
+    "get_titles/",
+    "referentiel-industriel/",
 )
 
 BOT_REFERER_PARTS = (
