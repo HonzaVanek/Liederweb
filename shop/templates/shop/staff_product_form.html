@@ -23,7 +23,13 @@
         </p>
       </div>
 
-      <div class="top-action">
+      <div class="shop-top-actions">
+        {% if product.pk %}
+          <a href="{% url 'shop_staff:product_track_list' product.id %}">
+            Spravovat stopy
+          </a>
+        {% endif %}
+
         <a href="{% url 'shop_staff:product_list' %}">
           Zpět na produkty
         </a>

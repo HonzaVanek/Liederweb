@@ -35,6 +35,7 @@ from .services.checkout import CheckoutError, create_order_from_cart
 from .services.orders import OrderManagementError, update_order_states, cancel_order
 from .services.payments import get_bank_transfer_payment_data
 from .services.invoice_pdf import build_invoice_pdf, build_invoice_pdf_filename
+from .services.audio import AudioProcessingError, generate_track_preview
 
 
 def _active_variant_queryset():
@@ -431,10 +432,24 @@ def staff_product_track_create(request, product_id):
             track.product = product
             track.save()
 
-            messages.success(
-                request,
-                f'Stopa „{track.title}“ byla vytvořena.',
-            )
+            try:
+                generate_track_preview(track)
+            except AudioProcessingError as exc:
+                messages.warning(
+                    request,
+                    (
+                        f'Stopa „{track.title}“ byla uložena, '
+                        f"ale preview se nepodařilo vytvořit: {exc}"
+                    ),
+                )
+            else:
+                messages.success(
+                    request,
+                    (
+                        f'Stopa „{track.title}“ byla vytvořena '
+                        f"včetně 30sekundové ukázky."
+                    ),
+                )
 
             return redirect(
                 "shop_staff:product_track_list",
@@ -484,12 +499,35 @@ def staff_product_track_edit(
         )
 
         if form.is_valid():
+            regenerate_preview = (
+                "full_audio" in form.changed_data
+                or "preview_start_seconds" in form.changed_data
+                or not track.preview_audio
+            )
+
             track = form.save()
 
-            messages.success(
-                request,
-                f'Stopa „{track.title}“ byla upravena.',
-            )
+            if regenerate_preview:
+                try:
+                    generate_track_preview(track)
+                except AudioProcessingError as exc:
+                    messages.warning(
+                        request,
+                        (
+                            "Stopa byla uložena, ale preview "
+                            f"se nepodařilo vytvořit: {exc}"
+                        ),
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f'Stopa „{track.title}“ byla upravena.',
+                    )
+            else:
+                messages.success(
+                    request,
+                    f'Stopa „{track.title}“ byla upravena.',
+                )
 
             return redirect(
                 "shop_staff:product_track_list",

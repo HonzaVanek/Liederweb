@@ -1,0 +1,185 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop_staff.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block title %}E-shop | {{ page_title }}{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="shop-admin-page">
+
+    <div class="admin-page-header">
+      <div>
+        <h2>{{ page_title }}</h2>
+
+        <p class="muted">
+          Produkt:
+          <strong>{{ product.name }}</strong>
+        </p>
+      </div>
+
+      <div class="shop-top-actions">
+        <a href="{% url 'shop_staff:product_track_list' product.id %}">
+          Zpět na stopy
+        </a>
+
+        <a href="{% url 'shop_staff:product_edit' product.id %}">
+          Upravit produkt
+        </a>
+      </div>
+    </div>
+
+    <form
+      method="post"
+      enctype="multipart/form-data"
+      class="shop-product-form"
+    >
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="form-errors">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <section class="content-section">
+        <h3>Základní údaje stopy</h3>
+
+        <div class="shop-track-form-grid">
+          <div class="form-group">
+            {{ form.track_number.label_tag }}
+            {{ form.track_number }}
+            {{ form.track_number.errors }}
+
+            {% if form.track_number.help_text %}
+              <p class="small muted">
+                {{ form.track_number.help_text }}
+              </p>
+            {% endif %}
+          </div>
+
+          <div class="form-group">
+            {{ form.title.label_tag }}
+            {{ form.title }}
+            {{ form.title.errors }}
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section">
+        <h3>Audio</h3>
+
+        {% if track and track.full_audio %}
+          <div class="shop-current-audio">
+            <strong>Aktuální plná MP3</strong>
+
+            <div class="small muted">
+              {{ track.full_audio.name }}
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="form-group">
+          {{ form.full_audio.label_tag }}
+          {{ form.full_audio }}
+          {{ form.full_audio.errors }}
+
+          {% if form.full_audio.help_text %}
+            <p class="small muted">
+              {{ form.full_audio.help_text }}
+            </p>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          {{ form.preview_start_seconds.label_tag }}
+          {{ form.preview_start_seconds }}
+          {{ form.preview_start_seconds.errors }}
+
+          {% if form.preview_start_seconds.help_text %}
+            <p class="small muted">
+              {{ form.preview_start_seconds.help_text }}
+            </p>
+          {% endif %}
+        </div>
+
+        {% if track %}
+          <div class="shop-track-preview-status">
+            <strong>30sekundová ukázka</strong>
+
+            {% if track.preview_audio %}
+              <p>
+                <span class="shop-status shop-status--published">
+                  Vytvořeno
+                </span>
+              </p>
+
+              <audio controls preload="none">
+                <source
+                  src="{{ track.preview_audio.url }}"
+                  type="audio/mpeg"
+                >
+              </audio>
+            {% else %}
+              <p>
+                <span class="shop-status shop-status--draft">
+                  Zatím nevytvořeno
+                </span>
+              </p>
+
+              <p class="small muted">
+                Preview budeme generovat automaticky z plné MP3.
+              </p>
+            {% endif %}
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="content-section">
+        <h3>Prodej</h3>
+
+        <div class="form-group">
+          {{ form.purchase_variant.label_tag }}
+          {{ form.purchase_variant }}
+          {{ form.purchase_variant.errors }}
+
+          {% if form.purchase_variant.help_text %}
+            <p class="small muted">
+              {{ form.purchase_variant.help_text }}
+            </p>
+          {% endif %}
+        </div>
+
+        <div class="shop-checkbox-field">
+          {{ form.is_active }}
+          {{ form.is_active.label_tag }}
+          {{ form.is_active.errors }}
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button type="submit">
+          {% if track %}
+            Uložit stopu
+          {% else %}
+            Přidat stopu
+          {% endif %}
+        </button>
+
+        <a
+          class="btn-link"
+          href="{% url 'shop_staff:product_track_list' product.id %}"
+        >
+          Zrušit
+        </a>
+      </div>
+    </form>
+
+  </div>
+{% endblock rozesilac_content %}

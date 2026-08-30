@@ -323,6 +323,79 @@
     border-color: #d6a2a2;
 }
 
+.shop-top-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.shop-action-button {
+    display: inline-block;
+    padding: 10px 16px;
+    border: 1px solid #111;
+    border-radius: 5px;
+    background: #111;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.shop-action-button:hover {
+    text-decoration: none;
+}
+
+.shop-track-table strong {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.shop-track-file-name {
+    max-width: 280px;
+    margin-top: 5px;
+    overflow-wrap: anywhere;
+}
+
+.shop-table-actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.shop-track-form-grid {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 16px;
+}
+
+.shop-current-audio,
+.shop-track-preview-status {
+    margin-bottom: 20px;
+    padding: 16px;
+    border: 1px solid #ddd;
+    border-radius: 7px;
+    background: #fafafa;
+}
+
+.shop-track-preview-status audio {
+    display: block;
+    width: min(100%, 500px);
+    margin-top: 12px;
+}
+
+
+body.dark-mode .shop-current-audio,
+body.dark-mode .shop-track-preview-status {
+    background: #202020;
+    border-color: #444;
+}
+
+body.dark-mode .shop-action-button {
+    border-color: #eee;
+    background: #eee;
+    color: #111;
+}
+
 body.dark-mode .shop-order-data > div,
 body.dark-mode .shop-order-totals > div {
     border-color: #444;
@@ -436,6 +509,21 @@ body.dark-mode .shop-variant-card__header {
 
     .shop-variant-image-field--alt {
         grid-column: auto;
+    }
+
+    .shop-top-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .shop-track-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-action-button {
+        width: 100%;
+        box-sizing: border-box;
+        text-align: center;
     }
 }
 

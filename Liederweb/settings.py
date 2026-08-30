@@ -402,6 +402,7 @@ SHOP_EMAIL_REPLY_TO = os.getenv("SHOP_EMAIL_REPLY_TO", "info@liedersociety.cz")
 SHOP_ORDER_EXPIRY_DAYS = LIEDER_SHOP_INVOICE_DUE_DAYS
 
 SHOP_BASE_URL = ("https://lieder-society.cz" if APP_ENV == "prod" else "http://127.0.0.1:8000").rstrip("/")
+SHOP_PRIVATE_MEDIA_ROOT = BASE_DIR / "private_shop_media"
 
 
 # komu přijde upozornění o nové objednávce z e-shopu - pak je nutné se přihlásit do adminsitrace a šéfit objednávku.

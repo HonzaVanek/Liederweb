@@ -5,6 +5,8 @@ from django.conf import settings
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
+from .storage import private_shop_storage
+
 
 class Product(models.Model):
     name = models.CharField("název", max_length=200)
@@ -207,7 +209,8 @@ class AlbumTrack(models.Model):
 
     full_audio = models.FileField(
         "plná MP3",
-        upload_to="shop_private/audio/",
+        upload_to="audio/",
+        storage=private_shop_storage,
     )
 
     preview_audio = models.FileField(

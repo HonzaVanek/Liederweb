@@ -1,0 +1,193 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop_staff.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block title %}E-shop | Stopy | {{ product.name }}{% endblock title %}
+
+{% block rozesilac_content %}
+  <div class="shop-admin-page">
+
+    <div class="admin-page-header">
+      <div>
+        <h2>Stopy: {{ product.name }}</h2>
+
+        <p class="muted">
+          Zde se spravují jednotlivé skladby alba,
+          jejich plné MP3 soubory a veřejné ukázky.
+        </p>
+      </div>
+
+      <div class="shop-top-actions">
+        <a href="{% url 'shop_staff:product_edit' product.id %}">
+          Upravit produkt
+        </a>
+
+        <a href="{% url 'shop_staff:product_list' %}">
+          Zpět na produkty
+        </a>
+      </div>
+    </div>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">
+            {{ message }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <section class="content-section">
+      <div class="shop-section-header">
+        <div>
+          <h3>Tracklist</h3>
+
+          <p class="muted">
+            Každá stopa může být propojena s digitální variantou
+            produktu pro samostatný nákup.
+          </p>
+        </div>
+
+        <a
+          class="shop-action-button"
+          href="{% url 'shop_staff:product_track_create' product.id %}"
+        >
+          Přidat stopu
+        </a>
+      </div>
+
+      {% if tracks %}
+        <div class="table-responsive">
+          <table class="table shop-track-table">
+            <thead>
+              <tr>
+                <th>Stopa</th>
+                <th>Plná MP3</th>
+                <th>Preview</th>
+                <th>Samostatný nákup</th>
+                <th>Stav</th>
+                <th></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for track in tracks %}
+                <tr>
+                  <td>
+                    <strong>
+                      {{ track.track_number|stringformat:"02d" }}.
+                      {{ track.title }}
+                    </strong>
+
+                    <div class="small muted">
+                      {% if track.duration_seconds %}
+                        Délka: {{ track.duration_seconds }} s ·
+                      {% endif %}
+
+                      ukázka od {{ track.preview_start_seconds }} s
+                    </div>
+                  </td>
+
+                  <td>
+                    {% if track.full_audio %}
+                      <span class="shop-status shop-status--published">
+                        Nahráno
+                      </span>
+
+                      <div class="small muted shop-track-file-name">
+                        {{ track.full_audio.name }}
+                      </div>
+                    {% else %}
+                      <span class="shop-status shop-status--draft">
+                        Chybí
+                      </span>
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    {% if track.preview_audio %}
+                      <span class="shop-status shop-status--published">
+                        Vytvořeno
+                      </span>
+
+                      <div class="small muted">
+                        30s ukázka
+                      </div>
+                    {% else %}
+                      <span class="shop-status shop-status--draft">
+                        Zatím nevytvořeno
+                      </span>
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    {% if track.purchase_variant %}
+                      <strong>
+                        {{ track.purchase_variant.name }}
+                      </strong>
+
+                      <div class="small muted">
+                        {{ track.purchase_variant.price|floatformat:"-2" }} Kč
+                      </div>
+                    {% else %}
+                      <span class="muted">
+                        Neprodává se samostatně
+                      </span>
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    {% if track.is_active %}
+                      <span class="shop-status shop-status--published">
+                        Aktivní
+                      </span>
+                    {% else %}
+                      <span class="shop-status shop-status--draft">
+                        Skrytá
+                      </span>
+                    {% endif %}
+                  </td>
+
+                  <td class="shop-table-actions">
+                    <a
+                      href="{% url 'shop_staff:product_track_edit' product.id track.id %}"
+                    >
+                      Upravit
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="shop-empty-state">
+          <h3>Zatím tu nejsou žádné stopy</h3>
+
+          <p class="muted">
+            Přidejte první skladbu, nahrajte její plnou MP3
+            a nastavte variantu pro případný samostatný nákup.
+          </p>
+
+          <p>
+            <a
+              class="shop-action-button"
+              href="{% url 'shop_staff:product_track_create' product.id %}"
+            >
+              Přidat první stopu
+            </a>
+          </p>
+        </div>
+      {% endif %}
+    </section>
+
+  </div>
+{% endblock rozesilac_content %}
