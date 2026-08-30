@@ -549,3 +549,137 @@ body.dark-mode .shop-variant-image-preview {
     border-color: #555;
     color: #aaa;
 }
+
+.rozesilac-main a.shop-action-button {
+    display: inline-block;
+    padding: 10px 18px;
+    background-color: #fff;
+    color: #000;
+    border: 2px solid #000;
+    border-radius: 6px;
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+        background-color 0.25s ease,
+        color 0.25s ease,
+        transform 0.15s ease;
+}
+
+.rozesilac-main a.shop-action-button:hover {
+    background-color: #000;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+body.dark-mode .rozesilac-main a.shop-action-button {
+    background: #1b1b1b;
+    color: #eee;
+    border-color: #555;
+}
+
+body.dark-mode .rozesilac-main a.shop-action-button:hover {
+    background: #eee;
+    color: #111;
+}
+
+.shop-track-form-grid--identity {
+    grid-template-columns:
+        120px
+        140px
+        minmax(0, 1fr);
+}
+
+.shop-disc-list {
+    display: grid;
+    gap: 30px;
+}
+
+.shop-disc-section + .shop-disc-section {
+    padding-top: 6px;
+}
+
+.shop-disc-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 10px;
+}
+
+.shop-disc-header h3 {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.shop-track-audio-small {
+    display: block;
+    width: 190px;
+    height: 32px;
+    margin-top: 8px;
+}
+
+.shop-track-sale-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    margin: 4px 0 20px;
+    padding: 12px 14px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fafafa;
+}
+
+.shop-track-metadata-raw {
+    margin-top: 20px;
+}
+
+.shop-track-metadata-raw summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.shop-track-metadata-raw .shop-order-data {
+    margin-top: 16px;
+}
+
+body.dark-mode .shop-track-sale-info {
+    background: #202020;
+    border-color: #444;
+}
+
+@media (max-width: 760px) {
+    .shop-track-form-grid--identity {
+        grid-template-columns: 1fr;
+    }
+
+    .shop-disc-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 3px;
+    }
+}
+
+.shop-full-album-option {
+    margin: 4px 0 16px;
+    padding: 12px 14px;
+    border: 1px solid #ddd;
+    border-radius: 7px;
+    background: #fafafa;
+}
+
+.shop-full-album-option .shop-checkbox-field {
+    margin: 0;
+}
+
+.shop-full-album-option .small {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+body.dark-mode .shop-full-album-option {
+    background: #202020;
+    border-color: #444;
+}

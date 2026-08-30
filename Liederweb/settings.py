@@ -404,6 +404,10 @@ SHOP_ORDER_EXPIRY_DAYS = LIEDER_SHOP_INVOICE_DUE_DAYS
 SHOP_BASE_URL = ("https://lieder-society.cz" if APP_ENV == "prod" else "http://127.0.0.1:8000").rstrip("/")
 SHOP_PRIVATE_MEDIA_ROOT = BASE_DIR / "private_shop_media"
 
+SHOP_FFMPEG_BIN = os.getenv("SHOP_FFMPEG_BIN", "ffmpeg")
+
+SHOP_FFPROBE_BIN = os.getenv("SHOP_FFPROBE_BIN", "ffprobe")
+
 
 # komu přijde upozornění o nové objednávce z e-shopu - pak je nutné se přihlásit do adminsitrace a šéfit objednávku.
 SHOP_STAFF_NOTIFICATION_EMAILS = ["vanek.hv@gmail.com"]

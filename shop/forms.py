@@ -1,5 +1,6 @@
 from django import forms
-from django.forms import inlineformset_factory
+from django.forms import inlineformset_factory, BaseInlineFormSet
+from pathlib import Path
 
 from .models import Product, ProductVariant, Order, ShippingMethod, ProductVariantImage, AlbumTrack
 from .cart import SessionCart
@@ -55,6 +56,7 @@ class ProductVariantForm(forms.ModelForm):
             "sku",
             "fulfilment_type",
             "price",
+            "is_full_album_download",
             "track_stock",
             "stock_quantity",
             "is_active",
@@ -87,6 +89,11 @@ class ProductVariantForm(forms.ModelForm):
                 "U digitálních produktů obvykle vypnuto. "
                 "U CD, knih a merche zapnuto."
             ),
+            "is_full_album_download": (
+                "Zaškrtněte u digitální varianty, jejímž "
+                "zakoupením zákazník získá všechny MP3 "
+                "tohoto alba."
+            ),
         }
 
     def clean(self):
@@ -114,15 +121,26 @@ class ProductVariantForm(forms.ModelForm):
         return cleaned_data
 
 
+class ProductVariantBaseFormSet(BaseInlineFormSet):
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(album_track__isnull=True)
+        )
+
+
 ProductVariantFormSet = inlineformset_factory(
     parent_model=Product,
     model=ProductVariant,
     form=ProductVariantForm,
+    formset=ProductVariantBaseFormSet,
     fields=[
         "name",
         "sku",
         "fulfilment_type",
         "price",
+        "is_full_album_download",
         "track_stock",
         "stock_quantity",
         "is_active",
@@ -219,18 +237,42 @@ ProductVariantImageFormSet = inlineformset_factory(
 
 
 class AlbumTrackForm(forms.ModelForm):
+    single_track_price = forms.DecimalField(
+        label="Cena samostatné MP3",
+        min_value=0,
+        decimal_places=2,
+        max_digits=10,
+        required=False,
+        widget=forms.NumberInput(
+            attrs={
+                "min": "0",
+                "step": "0.01",
+            }
+        ),
+        help_text=(
+            "Pokud je cena vyplněna, lze tuto stopu "
+            "koupit samostatně. Prázdné = samostatně "
+            "se neprodává."
+        ),
+    )
+
     class Meta:
         model = AlbumTrack
         fields = [
+            "disc_number",
             "track_number",
             "title",
             "full_audio",
             "preview_start_seconds",
-            "purchase_variant",
             "is_active",
         ]
 
         widgets = {
+            "disc_number": forms.NumberInput(
+                attrs={
+                    "min": 1,
+                }
+            ),
             "track_number": forms.NumberInput(
                 attrs={
                     "min": 1,
@@ -238,7 +280,10 @@ class AlbumTrackForm(forms.ModelForm):
             ),
             "title": forms.TextInput(
                 attrs={
-                    "placeholder": "Např. Die Nacht",
+                    "placeholder": (
+                        "Pokud zůstane prázdné, "
+                        "použije se název souboru."
+                    ),
                 }
             ),
             "full_audio": forms.ClearableFileInput(
@@ -255,25 +300,25 @@ class AlbumTrackForm(forms.ModelForm):
         }
 
         help_texts = {
+            "disc_number": (
+                "Číslo CD / disku. U běžného alba ponechte 1."
+            ),
             "track_number": (
-                "Pořadové číslo skladby na albu."
+                "Pořadové číslo skladby na daném disku."
             ),
             "full_audio": (
                 "Nahrajte celou skladbu ve formátu MP3. "
-                "30sekundová ukázka se později vytvoří automaticky."
+                "Plný soubor zůstane neveřejný; "
+                "30sekundová ukázka se vytvoří automaticky."
             ),
             "preview_start_seconds": (
-                "Sekunda, od které má začínat veřejná "
-                "30sekundová ukázka. Například 45 znamená, "
-                "že ukázka bude přibližně 0:45–1:15."
-            ),
-            "purchase_variant": (
-                "Digitální varianta používaná při samostatném "
-                "nákupu této stopy. Pokud stopu samostatně "
-                "prodávat nechcete, nechte prázdné."
+                "Sekunda, od které začne veřejná "
+                "30sekundová ukázka. Například 45 "
+                "znamená ukázku přibližně 0:45–1:15."
             ),
             "is_active": (
-                "Určuje, zda se stopa zobrazí ve veřejném tracklistu."
+                "Určuje, zda se stopa zobrazí "
+                "ve veřejném tracklistu."
             ),
         }
 
@@ -286,24 +331,18 @@ class AlbumTrackForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         self.product = product
+        self.fields["title"].required = False
 
-        self.fields["purchase_variant"].queryset = (
-            ProductVariant.objects
-            .filter(
-                product=product,
-                fulfilment_type=ProductVariant.FulfilmentType.DIGITAL,
+        if (
+            self.instance
+            and self.instance.pk
+            and self.instance.purchase_variant
+        ):
+            self.fields[
+                "single_track_price"
+            ].initial = (
+                self.instance.purchase_variant.price
             )
-            .order_by("sort_order", "name")
-        )
-
-        self.fields["purchase_variant"].required = False
-
-        self.fields["purchase_variant"].label_from_instance = (
-            lambda variant: (
-                f"{variant.name} – "
-                f"{variant.price:.2f} Kč"
-            )
-        )
 
     def clean_full_audio(self):
         audio = self.cleaned_data.get("full_audio")
@@ -323,24 +362,54 @@ class AlbumTrackForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
 
-        purchase_variant = cleaned_data.get(
-            "purchase_variant"
-        )
+        title = (
+            cleaned_data.get("title") or ""
+        ).strip()
 
-        if purchase_variant:
-            if purchase_variant.product_id != self.product.id:
-                self.add_error(
-                    "purchase_variant",
-                    "Vybraná varianta patří k jinému produktu.",
-                )
+        audio = cleaned_data.get("full_audio")
 
-            if not purchase_variant.is_digital:
+        if not title:
+            if audio:
+                title = Path(audio.name).stem
+
+            elif (
+                self.instance
+                and self.instance.pk
+                and self.instance.original_filename
+            ):
+                title = Path(
+                    self.instance.original_filename
+                ).stem
+
+            if title:
+                cleaned_data["title"] = title
+            else:
                 self.add_error(
-                    "purchase_variant",
-                    "Pro stopu lze použít pouze digitální variantu.",
+                    "title",
+                    "Zadejte název nebo nahrajte MP3.",
                 )
 
         return cleaned_data
+
+    def save(self, commit=True):
+        track = super().save(commit=False)
+
+        uploaded_audio = self.cleaned_data.get(
+            "full_audio"
+        )
+
+        if (
+            uploaded_audio
+            and "full_audio" in self.changed_data
+        ):
+            track.original_filename = (
+                uploaded_audio.name
+            )
+
+        if commit:
+            track.save()
+
+        return track
 
 
 

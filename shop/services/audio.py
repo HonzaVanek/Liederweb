@@ -1,5 +1,8 @@
 import subprocess
 import tempfile
+import json
+from django.conf import settings
+
 from pathlib import Path
 
 from django.core.files import File
@@ -11,6 +14,70 @@ PREVIEW_DURATION_SECONDS = 30
 class AudioProcessingError(Exception):
     pass
 
+
+
+def _probe_audio(file_path):
+    try:
+        result = subprocess.run(
+            [
+                settings.SHOP_FFPROBE_BIN,
+                "-v",
+                "error",
+                "-show_format",
+                "-show_streams",
+                "-of",
+                "json",
+                str(file_path),
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (
+        subprocess.CalledProcessError,
+        FileNotFoundError,
+    ) as exc:
+        raise AudioProcessingError(
+            "Nepodařilo se načíst informace o MP3."
+        ) from exc
+
+    try:
+        data = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise AudioProcessingError(
+            "ffprobe vrátil neplatná data."
+        ) from exc
+
+    try:
+        duration = float(
+            data["format"]["duration"]
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        raise AudioProcessingError(
+            "Nepodařilo se zjistit délku MP3."
+        ) from exc
+
+    metadata = {}
+
+    # Metadata streamu.
+    for stream in data.get("streams", []):
+        if stream.get("codec_type") != "audio":
+            continue
+
+        for key, value in (
+            stream.get("tags", {}) or {}
+        ).items():
+            metadata[str(key).lower()] = value
+
+        break
+
+    # Metadata celého souboru mají přednost.
+    for key, value in (
+        data.get("format", {}).get("tags", {}) or {}
+    ).items():
+        metadata[str(key).lower()] = value
+
+    return duration, metadata
 
 def _get_audio_duration(file_path):
     try:
@@ -53,6 +120,11 @@ def generate_track_preview(track):
     duration = _get_audio_duration(full_audio_path)
 
     preview_start = track.preview_start_seconds
+
+    duration, metadata = _probe_audio(full_audio_path)
+
+    track.duration_seconds = round(duration)
+    track.audio_metadata = metadata
 
     if preview_start >= duration:
         raise AudioProcessingError(
@@ -98,9 +170,7 @@ def generate_track_preview(track):
 
         # Při regeneraci odstraníme staré preview.
         if track.preview_audio:
-            track.preview_audio.delete(
-                save=False,
-            )
+            track.preview_audio.delete(save=False)
 
         with temp_path.open("rb") as preview_file:
             track.preview_audio.save(
@@ -112,6 +182,7 @@ def generate_track_preview(track):
         track.save(
             update_fields=[
                 "duration_seconds",
+                "audio_metadata",
                 "preview_audio",
             ]
         )

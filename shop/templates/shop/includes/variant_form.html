@@ -120,6 +120,20 @@
 
   </div>
 
+  <div class="shop-full-album-option">
+    <div class="shop-checkbox-field">
+      {{ variant_form.is_full_album_download }}
+      {{ variant_form.is_full_album_download.label_tag }}
+      {{ variant_form.is_full_album_download.errors }}
+
+      {% if variant_form.is_full_album_download.help_text %}
+        <p class="small muted">
+          {{ variant_form.is_full_album_download.help_text }}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
   <div class="shop-variant-grid shop-variant-grid--settings">
 
     <div class="shop-checkbox-field">

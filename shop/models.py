@@ -75,6 +75,15 @@ class ProductVariant(models.Model):
         decimal_places=2,
     )
 
+    is_full_album_download = models.BooleanField(
+        "celé digitální album",
+        default=False,
+        help_text=(
+            "Tato digitální varianta zpřístupní po zaplacení "
+            "všechny stopy produktu."
+        ),
+    )
+
     track_stock = models.BooleanField(
         "sledovat sklad",
         default=True,
@@ -99,10 +108,34 @@ class ProductVariant(models.Model):
                 fields=("product", "name"),
                 name="unique_shop_variant_name_per_product",
             ),
+            models.UniqueConstraint(
+                fields=("product",),
+                condition=models.Q(
+                    is_full_album_download=True,
+                ),
+                name="unique_full_album_variant_per_product",
+            ),
         ]
 
     def __str__(self):
         return f"{self.product.name} – {self.name}"
+
+    def clean(self):
+        super().clean()
+
+        if (
+            self.is_full_album_download
+            and self.fulfilment_type
+            != self.FulfilmentType.DIGITAL
+        ):
+            raise ValidationError(
+                {
+                    "is_full_album_download": (
+                        "Celé album ke stažení musí být "
+                        "digitální varianta."
+                    )
+                }
+            )
 
     @property
     def requires_shipping(self):
@@ -198,6 +231,11 @@ class AlbumTrack(models.Model):
         related_name="tracks",
     )
 
+    disc_number = models.PositiveSmallIntegerField(
+        "číslo disku",
+        default=1,
+    )
+
     track_number = models.PositiveSmallIntegerField(
         "číslo stopy",
     )
@@ -223,14 +261,25 @@ class AlbumTrack(models.Model):
     preview_start_seconds = models.PositiveIntegerField(
         "začátek ukázky v sekundách",
         default=0,
-        help_text=(
-            "Od které sekundy začne 30sekundová ukázka."
-        ),
     )
 
     duration_seconds = models.PositiveIntegerField(
         "délka stopy v sekundách",
         null=True,
+        blank=True,
+        editable=False,
+    )
+
+    original_filename = models.CharField(
+        "původní název souboru",
+        max_length=255,
+        blank=True,
+        editable=False,
+    )
+
+    audio_metadata = models.JSONField(
+        "metadata MP3",
+        default=dict,
         blank=True,
         editable=False,
     )
@@ -242,10 +291,6 @@ class AlbumTrack(models.Model):
         related_name="album_track",
         null=True,
         blank=True,
-        help_text=(
-            "Digitální varianta produktu, kterou zákazník "
-            "kupuje při nákupu této jedné stopy."
-        ),
     )
 
     is_active = models.BooleanField(
@@ -254,19 +299,28 @@ class AlbumTrack(models.Model):
     )
 
     class Meta:
-        ordering = ("track_number", "id")
+        ordering = (
+            "disc_number",
+            "track_number",
+            "id",
+        )
         verbose_name = "stopa alba"
         verbose_name_plural = "stopy alba"
         constraints = [
             models.UniqueConstraint(
-                fields=("product", "track_number"),
-                name="unique_shop_track_number_per_product",
+                fields=(
+                    "product",
+                    "disc_number",
+                    "track_number",
+                ),
+                name="unique_shop_track_per_disc",
             ),
         ]
 
     def __str__(self):
         return (
             f"{self.product.name} – "
+            f"CD {self.disc_number}, "
             f"{self.track_number:02d}. {self.title}"
         )
 

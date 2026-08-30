@@ -36,12 +36,16 @@ from .services.orders import OrderManagementError, update_order_states, cancel_o
 from .services.payments import get_bank_transfer_payment_data
 from .services.invoice_pdf import build_invoice_pdf, build_invoice_pdf_filename
 from .services.audio import AudioProcessingError, generate_track_preview
+from .services.tracks import sync_track_purchase_variant
 
 
 def _active_variant_queryset():
     return (
         ProductVariant.objects
-        .filter(is_active=True)
+        .filter(
+            is_active=True,
+            album_track__isnull=True,
+        )
         .order_by("sort_order", "name")
     )
 
@@ -55,16 +59,25 @@ def _public_product_queryset():
         .annotate(
             active_variant_count=Count(
                 "variants",
-                filter=Q(variants__is_active=True),
+                filter=Q(
+                    variants__is_active=True,
+                    variants__album_track__isnull=True,
+                ),
                 distinct=True,
             ),
             min_price=Min(
                 "variants__price",
-                filter=Q(variants__is_active=True),
+                filter=Q(
+                    variants__is_active=True,
+                    variants__album_track__isnull=True,
+                ),
             ),
             max_price=Max(
                 "variants__price",
-                filter=Q(variants__is_active=True),
+                filter=Q(
+                    variants__is_active=True,
+                    variants__album_track__isnull=True,
+                ),
             ),
         )
         .prefetch_related(
@@ -111,7 +124,11 @@ def _public_product_detail_queryset():
         AlbumTrack.objects
         .filter(is_active=True)
         .select_related("purchase_variant")
-        .order_by("track_number", "id")
+        .order_by(
+            "disc_number",
+            "track_number",
+            "id",
+        )
     )
 
     return (
@@ -198,20 +215,32 @@ def staff_product_list(request):
         .annotate(
             variant_count=Count(
                 "variants",
+                filter=Q(
+                    variants__album_track__isnull=True,
+                ),
                 distinct=True,
             ),
             active_variant_count=Count(
                 "variants",
-                filter=Q(variants__is_active=True),
+                filter=Q(
+                    variants__is_active=True,
+                    variants__album_track__isnull=True,
+                ),
                 distinct=True,
             ),
             min_price=Min(
                 "variants__price",
-                filter=Q(variants__is_active=True),
+                filter=Q(
+                    variants__is_active=True,
+                    variants__album_track__isnull=True,
+                ),
             ),
             max_price=Max(
                 "variants__price",
-                filter=Q(variants__is_active=True),
+                filter=Q(
+                    variants__is_active=True,
+                    variants__album_track__isnull=True,
+                ),
             ),
         )
         .order_by("sort_order", "name")
@@ -428,26 +457,37 @@ def staff_product_track_create(request, product_id):
         )
 
         if form.is_valid():
-            track = form.save(commit=False)
-            track.product = product
-            track.save()
+            with transaction.atomic():
+                track = form.save(commit=False)
+                track.product = product
+                track.save()
+
+                sync_track_purchase_variant(
+                    track,
+                    price=form.cleaned_data.get(
+                        "single_track_price"
+                    ),
+                )
 
             try:
                 generate_track_preview(track)
+
             except AudioProcessingError as exc:
                 messages.warning(
                     request,
                     (
                         f'Stopa „{track.title}“ byla uložena, '
-                        f"ale preview se nepodařilo vytvořit: {exc}"
+                        "ale preview se nepodařilo vytvořit: "
+                        f"{exc}"
                     ),
                 )
+
             else:
                 messages.success(
                     request,
                     (
                         f'Stopa „{track.title}“ byla vytvořena '
-                        f"včetně 30sekundové ukázky."
+                        "včetně 30sekundové ukázky."
                     ),
                 )
 
@@ -485,7 +525,9 @@ def staff_product_track_edit(
     )
 
     track = get_object_or_404(
-        AlbumTrack,
+        AlbumTrack.objects.select_related(
+            "purchase_variant"
+        ),
         id=track_id,
         product=product,
     )
@@ -505,24 +547,36 @@ def staff_product_track_edit(
                 or not track.preview_audio
             )
 
-            track = form.save()
+            with transaction.atomic():
+                track = form.save()
+
+                sync_track_purchase_variant(
+                    track,
+                    price=form.cleaned_data.get(
+                        "single_track_price"
+                    ),
+                )
 
             if regenerate_preview:
                 try:
                     generate_track_preview(track)
+
                 except AudioProcessingError as exc:
                     messages.warning(
                         request,
                         (
                             "Stopa byla uložena, ale preview "
-                            f"se nepodařilo vytvořit: {exc}"
+                            "se nepodařilo vytvořit: "
+                            f"{exc}"
                         ),
                     )
+
                 else:
                     messages.success(
                         request,
                         f'Stopa „{track.title}“ byla upravena.',
                     )
+
             else:
                 messages.success(
                     request,

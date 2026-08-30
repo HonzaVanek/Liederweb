@@ -51,7 +51,20 @@
       <section class="content-section">
         <h3>Základní údaje stopy</h3>
 
-        <div class="shop-track-form-grid">
+        <div class="shop-track-form-grid shop-track-form-grid--identity">
+
+          <div class="form-group">
+            {{ form.disc_number.label_tag }}
+            {{ form.disc_number }}
+            {{ form.disc_number.errors }}
+
+            {% if form.disc_number.help_text %}
+              <p class="small muted">
+                {{ form.disc_number.help_text }}
+              </p>
+            {% endif %}
+          </div>
+
           <div class="form-group">
             {{ form.track_number.label_tag }}
             {{ form.track_number }}
@@ -68,7 +81,13 @@
             {{ form.title.label_tag }}
             {{ form.title }}
             {{ form.title.errors }}
+
+            <p class="small muted">
+              Pokud název nevyplníte, vezme se automaticky
+              z názvu nahraného MP3 souboru.
+            </p>
           </div>
+
         </div>
       </section>
 
@@ -80,8 +99,18 @@
             <strong>Aktuální plná MP3</strong>
 
             <div class="small muted">
-              {{ track.full_audio.name }}
+              {% if track.original_filename %}
+                {{ track.original_filename }}
+              {% else %}
+                {{ track.full_audio.name }}
+              {% endif %}
             </div>
+
+            {% if track.duration_seconds %}
+              <div class="small muted">
+                Délka: {{ track.duration_seconds }} s
+              </div>
+            {% endif %}
           </div>
         {% endif %}
 
@@ -125,6 +154,7 @@
                   src="{{ track.preview_audio.url }}"
                   type="audio/mpeg"
                 >
+                Váš prohlížeč nepodporuje přehrávání audia.
               </audio>
             {% else %}
               <p>
@@ -134,27 +164,152 @@
               </p>
 
               <p class="small muted">
-                Preview budeme generovat automaticky z plné MP3.
+                Preview se vytvoří automaticky z plné MP3.
               </p>
             {% endif %}
           </div>
         {% endif %}
       </section>
 
+      {% if track and track.audio_metadata %}
+        <section class="content-section">
+          <h3>Metadata MP3</h3>
+
+          <p class="muted">
+            Metadata byla načtena z nahraného souboru.
+            Originální MP3 ukládáme beze změny, takže její
+            původní metadata zůstávají zachována.
+          </p>
+
+          <dl class="shop-order-data shop-track-metadata">
+
+            {% if track.audio_metadata.title %}
+              <div>
+                <dt>Název</dt>
+                <dd>{{ track.audio_metadata.title }}</dd>
+              </div>
+            {% endif %}
+
+            {% if track.audio_metadata.artist %}
+              <div>
+                <dt>Interpret</dt>
+                <dd>{{ track.audio_metadata.artist }}</dd>
+              </div>
+            {% endif %}
+
+            {% if track.audio_metadata.album_artist %}
+              <div>
+                <dt>Interpret alba</dt>
+                <dd>{{ track.audio_metadata.album_artist }}</dd>
+              </div>
+            {% endif %}
+
+            {% if track.audio_metadata.album %}
+              <div>
+                <dt>Album</dt>
+                <dd>{{ track.audio_metadata.album }}</dd>
+              </div>
+            {% endif %}
+
+            {% if track.audio_metadata.composer %}
+              <div>
+                <dt>Skladatel</dt>
+                <dd>{{ track.audio_metadata.composer }}</dd>
+              </div>
+            {% endif %}
+
+            {% if track.audio_metadata.performer %}
+              <div>
+                <dt>Performer</dt>
+                <dd>{{ track.audio_metadata.performer }}</dd>
+              </div>
+            {% endif %}
+
+            {% if track.audio_metadata.track %}
+              <div>
+                <dt>Track</dt>
+                <dd>{{ track.audio_metadata.track }}</dd>
+              </div>
+            {% endif %}
+
+            {% if track.audio_metadata.disc %}
+              <div>
+                <dt>Disk</dt>
+                <dd>{{ track.audio_metadata.disc }}</dd>
+              </div>
+            {% endif %}
+
+            {% if track.audio_metadata.date %}
+              <div>
+                <dt>Rok / datum</dt>
+                <dd>{{ track.audio_metadata.date }}</dd>
+              </div>
+            {% endif %}
+
+            {% if track.audio_metadata.genre %}
+              <div>
+                <dt>Žánr</dt>
+                <dd>{{ track.audio_metadata.genre }}</dd>
+              </div>
+            {% endif %}
+
+          </dl>
+
+          <details class="shop-track-metadata-raw">
+            <summary>Všechna načtená metadata</summary>
+
+            <dl class="shop-order-data">
+              {% for key, value in track.audio_metadata.items %}
+                <div>
+                  <dt>{{ key }}</dt>
+                  <dd>{{ value }}</dd>
+                </div>
+              {% endfor %}
+            </dl>
+          </details>
+        </section>
+      {% endif %}
+
       <section class="content-section">
-        <h3>Prodej</h3>
+        <h3>Prodej samostatné stopy</h3>
 
         <div class="form-group">
-          {{ form.purchase_variant.label_tag }}
-          {{ form.purchase_variant }}
-          {{ form.purchase_variant.errors }}
+          {{ form.single_track_price.label_tag }}
+          {{ form.single_track_price }}
+          {{ form.single_track_price.errors }}
 
-          {% if form.purchase_variant.help_text %}
+          {% if form.single_track_price.help_text %}
             <p class="small muted">
-              {{ form.purchase_variant.help_text }}
+              {{ form.single_track_price.help_text }}
             </p>
           {% endif %}
         </div>
+
+        {% if track and track.purchase_variant %}
+          <div class="shop-track-sale-info">
+            <span class="small muted">
+              Interní varianta:
+            </span>
+
+            <strong>
+              {{ track.purchase_variant.name }}
+            </strong>
+
+            <span class="small muted">
+              SKU {{ track.purchase_variant.sku }}
+            </span>
+
+            {% if track.purchase_variant.is_active %}
+              <span class="shop-status shop-status--published">
+                Prodej aktivní
+              </span>
+            {% else %}
+              <span class="shop-status shop-status--draft">
+                Samostatný prodej vypnutý
+              </span>
+            {% endif %}
+          </div>
+        {% endif %}
 
         <div class="shop-checkbox-field">
           {{ form.is_active }}

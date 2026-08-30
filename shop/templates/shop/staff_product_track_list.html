@@ -20,7 +20,8 @@
 
         <p class="muted">
           Zde se spravují jednotlivé skladby alba,
-          jejich plné MP3 soubory a veřejné ukázky.
+          jejich plné MP3 soubory, veřejné ukázky
+          a ceny samostatného stažení.
         </p>
       </div>
 
@@ -51,8 +52,9 @@
           <h3>Tracklist</h3>
 
           <p class="muted">
-            Každá stopa může být propojena s digitální variantou
-            produktu pro samostatný nákup.
+            Jednotlivé skladby mohou být prodávány samostatně.
+            Cena celého digitálního alba se nastavuje
+            mezi variantami produktu.
           </p>
         </div>
 
@@ -65,116 +67,173 @@
       </div>
 
       {% if tracks %}
-        <div class="table-responsive">
-          <table class="table shop-track-table">
-            <thead>
-              <tr>
-                <th>Stopa</th>
-                <th>Plná MP3</th>
-                <th>Preview</th>
-                <th>Samostatný nákup</th>
-                <th>Stav</th>
-                <th></th>
-              </tr>
-            </thead>
 
-            <tbody>
-              {% for track in tracks %}
-                <tr>
-                  <td>
-                    <strong>
-                      {{ track.track_number|stringformat:"02d" }}.
-                      {{ track.title }}
-                    </strong>
+        {% regroup tracks by disc_number as disc_list %}
 
-                    <div class="small muted">
-                      {% if track.duration_seconds %}
-                        Délka: {{ track.duration_seconds }} s ·
-                      {% endif %}
+        <div class="shop-disc-list">
 
-                      ukázka od {{ track.preview_start_seconds }} s
-                    </div>
-                  </td>
+          {% for disc in disc_list %}
+            <div class="shop-disc-section">
 
-                  <td>
-                    {% if track.full_audio %}
-                      <span class="shop-status shop-status--published">
-                        Nahráno
-                      </span>
+              <div class="shop-disc-header">
+                <h3>CD {{ disc.grouper }}</h3>
 
-                      <div class="small muted shop-track-file-name">
-                        {{ track.full_audio.name }}
-                      </div>
-                    {% else %}
-                      <span class="shop-status shop-status--draft">
-                        Chybí
-                      </span>
-                    {% endif %}
-                  </td>
+                <span class="small muted">
+                  {{ disc.list|length }}
+                  {% if disc.list|length == 1 %}
+                    stopa
+                  {% else %}
+                    stop
+                  {% endif %}
+                </span>
+              </div>
 
-                  <td>
-                    {% if track.preview_audio %}
-                      <span class="shop-status shop-status--published">
-                        Vytvořeno
-                      </span>
+              <div class="table-responsive">
+                <table class="table shop-track-table">
+                  <thead>
+                    <tr>
+                      <th>Stopa</th>
+                      <th>MP3</th>
+                      <th>Preview</th>
+                      <th>Samostatně</th>
+                      <th>Stav</th>
+                      <th></th>
+                    </tr>
+                  </thead>
 
-                      <div class="small muted">
-                        30s ukázka
-                      </div>
-                    {% else %}
-                      <span class="shop-status shop-status--draft">
-                        Zatím nevytvořeno
-                      </span>
-                    {% endif %}
-                  </td>
+                  <tbody>
+                    {% for track in disc.list %}
+                      <tr>
+                        <td>
+                          <strong>
+                            {{ track.track_number|stringformat:"02d" }}.
+                            {{ track.title }}
+                          </strong>
 
-                  <td>
-                    {% if track.purchase_variant %}
-                      <strong>
-                        {{ track.purchase_variant.name }}
-                      </strong>
+                          {% if track.audio_metadata.artist %}
+                            <div class="small muted">
+                              {{ track.audio_metadata.artist }}
+                            </div>
+                          {% endif %}
 
-                      <div class="small muted">
-                        {{ track.purchase_variant.price|floatformat:"-2" }} Kč
-                      </div>
-                    {% else %}
-                      <span class="muted">
-                        Neprodává se samostatně
-                      </span>
-                    {% endif %}
-                  </td>
+                          {% if track.audio_metadata.composer %}
+                            <div class="small muted">
+                              {{ track.audio_metadata.composer }}
+                            </div>
+                          {% endif %}
 
-                  <td>
-                    {% if track.is_active %}
-                      <span class="shop-status shop-status--published">
-                        Aktivní
-                      </span>
-                    {% else %}
-                      <span class="shop-status shop-status--draft">
-                        Skrytá
-                      </span>
-                    {% endif %}
-                  </td>
+                          <div class="small muted">
+                            {% if track.duration_seconds %}
+                              {{ track.duration_seconds }} s
+                            {% endif %}
 
-                  <td class="shop-table-actions">
-                    <a
-                      href="{% url 'shop_staff:product_track_edit' product.id track.id %}"
-                    >
-                      Upravit
-                    </a>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+                            {% if track.duration_seconds %}
+                              ·
+                            {% endif %}
+
+                            preview od
+                            {{ track.preview_start_seconds }} s
+                          </div>
+                        </td>
+
+                        <td>
+                          {% if track.full_audio %}
+                            <span class="shop-status shop-status--published">
+                              Nahráno
+                            </span>
+
+                            <div class="small muted shop-track-file-name">
+                              {% if track.original_filename %}
+                                {{ track.original_filename }}
+                              {% else %}
+                                {{ track.full_audio.name }}
+                              {% endif %}
+                            </div>
+                          {% else %}
+                            <span class="shop-status shop-status--draft">
+                              Chybí
+                            </span>
+                          {% endif %}
+                        </td>
+
+                        <td>
+                          {% if track.preview_audio %}
+                            <span class="shop-status shop-status--published">
+                              Vytvořeno
+                            </span>
+
+                            <audio
+                              class="shop-track-audio-small"
+                              controls
+                              preload="none"
+                            >
+                              <source
+                                src="{{ track.preview_audio.url }}"
+                                type="audio/mpeg"
+                              >
+                            </audio>
+                          {% else %}
+                            <span class="shop-status shop-status--draft">
+                              Chybí
+                            </span>
+                          {% endif %}
+                        </td>
+
+                        <td>
+                          {% if track.purchase_variant and track.purchase_variant.is_active %}
+                            <strong>
+                              {{ track.purchase_variant.price|floatformat:"-2" }}
+                              Kč
+                            </strong>
+
+                            <div class="small muted">
+                              {{ track.purchase_variant.sku }}
+                            </div>
+                          {% else %}
+                            <span class="muted">
+                              Neprodává se
+                            </span>
+                          {% endif %}
+                        </td>
+
+                        <td>
+                          {% if track.is_active %}
+                            <span class="shop-status shop-status--published">
+                              Aktivní
+                            </span>
+                          {% else %}
+                            <span class="shop-status shop-status--draft">
+                              Skrytá
+                            </span>
+                          {% endif %}
+                        </td>
+
+                        <td class="shop-table-actions">
+                          <a
+                            href="{% url 'shop_staff:product_track_edit' product.id track.id %}"
+                          >
+                            Upravit
+                          </a>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          {% endfor %}
+
         </div>
+
       {% else %}
+
         <div class="shop-empty-state">
           <h3>Zatím tu nejsou žádné stopy</h3>
 
           <p class="muted">
-            Přidejte první skladbu, nahrajte její plnou MP3
-            a nastavte variantu pro případný samostatný nákup.
+            Přidejte první skladbu. Název lze zadat ručně,
+            nebo se automaticky převezme z názvu MP3 souboru.
           </p>
 
           <p>
@@ -186,6 +245,7 @@
             </a>
           </p>
         </div>
+
       {% endif %}
     </section>
 
