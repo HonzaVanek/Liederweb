@@ -13,6 +13,26 @@ Doprava: {{ order.shipping_method_name }} – {{ order.shipping_price }} Kč
 
 Celkem k úhradě: {{ order.total }} Kč
 
+{% if order.contains_digital_content %}
+DIGITÁLNÍ OBSAH
+
+Objednávka obsahuje digitální nahrávky.
+
+{% if order.payment_method == "bank_transfer" %}
+Ke stažení budou dostupné po připsání platby na náš účet,
+zpravidla během 1–2 pracovních dnů.
+{% elif order.payment_method == "stripe" %}
+Po potvrzení platby kartou se soubory zpřístupní automaticky,
+zpravidla během několika minut.
+{% endif %}
+
+Stav objednávky a soubory ke stažení:
+{{ download_url }}
+
+Tento odkaz je určen pouze vám. Nepřeposílejte jej dalším osobám.
+
+{% endif %}
+
 Číslo účtu: {{ invoice.bank_account }}
 IBAN: {{ invoice.iban }}
 Variabilní symbol: {{ invoice.variable_symbol }}

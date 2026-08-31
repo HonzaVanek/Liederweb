@@ -65,9 +65,23 @@ def send_order_confirmation_email(order_id):
     try:
         invoice_pdf = build_invoice_pdf(order.invoice)
 
+        download_url = None
+
+        if order.contains_digital_content:
+            download_url = (
+                settings.SHOP_BASE_URL.rstrip("/")
+                + reverse(
+                    "shop:digital_downloads",
+                    kwargs={
+                        "token": order.download_token,
+                    },
+                )
+            )
+
         context = {
             "order": order,
             "invoice": order.invoice,
+            "download_url": download_url,
         }
 
         text_body = render_to_string(

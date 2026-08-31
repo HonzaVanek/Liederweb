@@ -414,5 +414,4 @@ SHOP_STAFF_NOTIFICATION_EMAILS = ["vanek.hv@gmail.com"]
 
 
 
-
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"

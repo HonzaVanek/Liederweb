@@ -33,6 +33,7 @@ from .models import (
     AlbumTrack,
     Order,
     ShippingMethod,
+    DigitalDownloadGrant
 )
 from .services.checkout import CheckoutError, create_order_from_cart
 from .services.orders import OrderManagementError, update_order_states, cancel_order
@@ -627,6 +628,90 @@ def staff_private_file(request, path):
         file_handle,
         as_attachment=False,
         filename=Path(path).name,
+        content_type=(
+            content_type
+            or "application/octet-stream"
+        ),
+    )
+
+
+def digital_downloads(request, token):
+    order = get_object_or_404(
+        Order.objects.prefetch_related(
+            "download_grants",
+        ),
+        download_token=token,
+        contains_digital_content=True,
+    )
+
+    track_grants = []
+    booklet_grants = []
+
+    if order.payment_status == Order.PaymentStatus.PAID:
+        track_grants = list(
+            order.download_grants.filter(
+                file_type=(
+                    DigitalDownloadGrant.FileType.TRACK
+                ),
+            ).order_by(
+                "product_name",
+                "disc_number",
+                "track_number",
+                "id",
+            )
+        )
+
+        booklet_grants = list(
+            order.download_grants.filter(
+                file_type=(
+                    DigitalDownloadGrant.FileType.BOOKLET
+                ),
+            ).order_by(
+                "product_name",
+                "id",
+            )
+        )
+
+    return render(
+        request,
+        "shop/digital_downloads.html",
+        {
+            "order": order,
+            "track_grants": track_grants,
+            "booklet_grants": booklet_grants,
+            "cart_item_count": 0,
+        },
+    )
+
+
+def digital_download_file(request, token, grant_id):
+    grant = get_object_or_404(
+        DigitalDownloadGrant.objects.select_related(
+            "order",
+        ),
+        id=grant_id,
+        order__download_token=token,
+        order__payment_status=Order.PaymentStatus.PAID,
+    )
+
+    try:
+        file_handle = private_shop_storage.open(
+            grant.storage_name,
+            "rb",
+        )
+    except FileNotFoundError:
+        raise Http404(
+            "Soubor už není v úložišti dostupný."
+        )
+
+    content_type, _ = mimetypes.guess_type(
+        grant.download_filename
+    )
+
+    return FileResponse(
+        file_handle,
+        as_attachment=True,
+        filename=grant.download_filename,
         content_type=(
             content_type
             or "application/octet-stream"
