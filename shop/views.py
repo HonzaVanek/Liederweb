@@ -33,6 +33,7 @@ from .models import (
     AlbumTrack,
     Order,
     ShippingMethod,
+    DigitalDownloadGrant
 )
 from .services.checkout import CheckoutError, create_order_from_cart
 from .services.orders import OrderManagementError, update_order_states, cancel_order
@@ -40,6 +41,7 @@ from .services.payments import get_bank_transfer_payment_data
 from .services.invoice_pdf import build_invoice_pdf, build_invoice_pdf_filename
 from .services.audio import AudioProcessingError, generate_track_preview
 from .services.tracks import sync_track_purchase_variant
+from .services.downloads import DigitalDownloadGrantError, grant_digital_downloads
 from .storage import private_shop_storage
 
 
@@ -634,6 +636,90 @@ def staff_private_file(request, path):
     )
 
 
+def digital_downloads(request, token):
+    order = get_object_or_404(
+        Order.objects.prefetch_related(
+            "download_grants",
+        ),
+        download_token=token,
+        contains_digital_content=True,
+    )
+
+    track_grants = []
+    booklet_grants = []
+
+    if order.payment_status == Order.PaymentStatus.PAID:
+        track_grants = list(
+            order.download_grants.filter(
+                file_type=(
+                    DigitalDownloadGrant.FileType.TRACK
+                ),
+            ).order_by(
+                "product_name",
+                "disc_number",
+                "track_number",
+                "id",
+            )
+        )
+
+        booklet_grants = list(
+            order.download_grants.filter(
+                file_type=(
+                    DigitalDownloadGrant.FileType.BOOKLET
+                ),
+            ).order_by(
+                "product_name",
+                "id",
+            )
+        )
+
+    return render(
+        request,
+        "shop/digital_downloads.html",
+        {
+            "order": order,
+            "track_grants": track_grants,
+            "booklet_grants": booklet_grants,
+            "cart_item_count": 0,
+        },
+    )
+
+
+def digital_download_file(request, token, grant_id):
+    grant = get_object_or_404(
+        DigitalDownloadGrant.objects.select_related(
+            "order",
+        ),
+        id=grant_id,
+        order__download_token=token,
+        order__payment_status=Order.PaymentStatus.PAID,
+    )
+
+    try:
+        file_handle = private_shop_storage.open(
+            grant.storage_name,
+            "rb",
+        )
+    except FileNotFoundError:
+        raise Http404(
+            "Soubor už není v úložišti dostupný."
+        )
+
+    content_type, _ = mimetypes.guess_type(
+        grant.download_filename
+    )
+
+    return FileResponse(
+        file_handle,
+        as_attachment=True,
+        filename=grant.download_filename,
+        content_type=(
+            content_type
+            or "application/octet-stream"
+        ),
+    )
+
+
 @shop_public_or_staff_preview
 def cart_detail(request):
     cart = SessionCart(request)
@@ -1045,17 +1131,51 @@ def staff_order_update_states(request, order_id):
 
     except OrderManagementError as exc:
         messages.error(request, str(exc))
+
+        return redirect(
+            "shop_staff:order_detail",
+            order_id=order_id,
+        )
+
+    if changed:
+        messages.success(
+            request,
+            "Stavy objednávky byly upraveny.",
+        )
     else:
-        if changed:
-            messages.success(
+        messages.info(
+            request,
+            "Nebyly provedeny žádné změny.",
+        )
+
+    # Digitální obsah řešíme až POTÉ,
+    # co je změna platby bezpečně uložená.
+    if (
+        order.payment_status == Order.PaymentStatus.PAID
+        and order.contains_digital_content
+    ):
+        try:
+            created_downloads = grant_digital_downloads(
+                order
+            )
+        except DigitalDownloadGrantError as exc:
+            messages.warning(
                 request,
-                "Stavy objednávky byly upraveny.",
+                (
+                    "Platba byla uložena jako zaplacená, "
+                    "ale digitální obsah se nepodařilo "
+                    f"zpřístupnit: {exc}"
+                ),
             )
         else:
-            messages.info(
-                request,
-                "Nebyly provedeny žádné změny.",
-            )
+            if created_downloads:
+                messages.success(
+                    request,
+                    (
+                        "Digitální obsah byl zpřístupněn "
+                        f"({created_downloads} souborů)."
+                    ),
+                )
 
     return redirect(
         "shop_staff:order_detail",

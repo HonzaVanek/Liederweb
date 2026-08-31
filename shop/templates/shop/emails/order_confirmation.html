@@ -59,6 +59,71 @@
         <strong>{{ order.total|floatformat:"-2" }} Kč</strong>
       </p>
 
+    {% if order.contains_digital_content %}
+      <div
+        style="
+          margin:24px 0;
+          padding:20px;
+          background:#f4f4f4;
+          border-left:4px solid #222;
+        "
+      >
+        <h2 style="margin:0 0 12px;font-size:18px;">
+          Digitální obsah
+        </h2>
+
+        {% if order.payment_method == "bank_transfer" %}
+          <p style="margin:0 0 12px;">
+            Objednávka obsahuje digitální nahrávky.
+            Ke stažení budou dostupné po připsání platby
+            na náš účet, zpravidla během
+            <strong>1–2 pracovních dnů</strong>.
+          </p>
+
+        {% elif order.payment_method == "stripe" %}
+          <p style="margin:0 0 12px;">
+            Objednávka obsahuje digitální nahrávky.
+            Po potvrzení platby kartou se soubory
+            zpřístupní automaticky, zpravidla během
+            několika minut.
+          </p>
+        {% endif %}
+
+        <p style="margin:0 0 16px;">
+          Stav objednávky a soubory ke stažení
+          najdete na tomto odkazu:
+        </p>
+
+        <p style="margin:0;">
+          <a
+            href="{{ download_url }}"
+            style="
+              display:inline-block;
+              padding:12px 18px;
+              background:#222;
+              color:#fff;
+              text-decoration:none;
+              font-weight:bold;
+            "
+          >
+            Digitální obsah objednávky
+          </a>
+        </p>
+
+        <p
+          style="
+            margin:16px 0 0;
+            font-size:13px;
+            color:#666;
+          "
+        >
+          Odkaz je určen pouze vám.
+          Nepřeposílejte jej dalším osobám.
+        </p>
+      </div>
+    {% endif %}
+
+
       <div style="margin:24px 0;padding:20px;background:#f4f4f4;">
         <h2 style="margin:0 0 14px;font-size:18px;">
           Platební údaje

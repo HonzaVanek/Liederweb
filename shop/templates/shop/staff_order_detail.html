@@ -309,6 +309,45 @@
       </a>
     </section>
 
+  {% if order.contains_digital_content %}
+    <section class="content-section">
+      <h3>Digitální obsah</h3>
+
+      {% if order.payment_status == "paid" %}
+
+        {% with grant_count=order.download_grants.count %}
+          {% if grant_count %}
+            <p>
+              Zákazník má zpřístupněno
+              <strong>{{ grant_count }}</strong>
+              digitálních souborů.
+            </p>
+          {% else %}
+            <p class="form-errors">
+              Objednávka je zaplacená, ale zatím pro ni
+              nejsou vytvořeny žádné soubory ke stažení.
+            </p>
+          {% endif %}
+        {% endwith %}
+
+      {% else %}
+        <p class="muted">
+          Digitální soubory se zákazníkovi zpřístupní
+          po označení objednávky jako zaplacené.
+        </p>
+      {% endif %}
+
+      <a
+        href="{% url 'shop:digital_downloads' order.download_token %}"
+        target="_blank"
+        rel="noopener"
+      >
+        Otevřít zákaznickou stránku se soubory
+      </a>
+    </section>
+  {% endif %}
+
+
     {% if order.status != "cancelled" %}
       <section class="content-section">
         <h3>Změnit stavy</h3>

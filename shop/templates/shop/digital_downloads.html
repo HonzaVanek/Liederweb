@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+  Digitální obsah | {{ order.number }} | Lieder Society
+{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block content %}
+  <main class="shop-page">
+
+    <section class="shop-download-page">
+
+      <p class="shop-eyebrow">
+        Lieder Society
+      </p>
+
+      <h1>Vaše digitální nahrávky</h1>
+
+      <p>
+        Objednávka
+        <strong>{{ order.number }}</strong>
+      </p>
+
+
+      {% if order.payment_status == "awaiting" %}
+
+        <div class="shop-download-status">
+          <h2>Čekáme na platbu</h2>
+
+          {% if order.payment_method == "bank_transfer" %}
+            <p>
+              Digitální obsah zpřístupníme po připsání
+              platby na náš účet. U bankovního převodu
+              to může trvat přibližně 1–2 pracovní dny.
+            </p>
+          {% elif order.payment_method == "stripe" %}
+            <p>
+              Čekáme na potvrzení platby kartou.
+              Po jejím potvrzení se digitální obsah
+              zpřístupní automaticky.
+            </p>
+          {% endif %}
+
+          <p>
+            Tuto stránku nemusíte hledat znovu.
+            Po zaznamenání platby budou soubory
+            dostupné přímo na tomto odkazu.
+          </p>
+        </div>
+
+
+      {% elif order.payment_status == "paid" %}
+
+        {% if track_grants or booklet_grants %}
+
+          <div class="shop-download-status">
+            <h2>Objednávka je zaplacena</h2>
+
+            <p>
+              Vaše digitální soubory jsou připraveny
+              ke stažení.
+            </p>
+          </div>
+
+
+          {% if track_grants %}
+
+            {% regroup track_grants by product_name as products %}
+
+            {% for product_group in products %}
+              <section class="shop-download-product">
+
+                <h2>{{ product_group.grouper }}</h2>
+
+                {% regroup product_group.list by disc_number as discs %}
+
+                {% for disc in discs %}
+
+                  {% if discs|length > 1 %}
+                    <h3>CD {{ disc.grouper }}</h3>
+                  {% endif %}
+
+                  <div class="shop-download-track-list">
+
+                    {% for grant in disc.list %}
+                      <div class="shop-download-track">
+
+                        <div>
+                          {% if grant.track_number %}
+                            <span>
+                              {{ grant.track_number|stringformat:"02d" }}.
+                            </span>
+                          {% endif %}
+
+                          <strong>
+                            {{ grant.display_title }}
+                          </strong>
+                        </div>
+
+                        <a
+                          href="{% url 'shop:digital_download_file' token=order.download_token grant_id=grant.id %}"
+                        >
+                          Stáhnout MP3
+                        </a>
+
+                      </div>
+                    {% endfor %}
+
+                  </div>
+
+                {% endfor %}
+
+              </section>
+            {% endfor %}
+
+          {% endif %}
+
+
+          {% if booklet_grants %}
+            <section class="shop-download-booklets">
+              <h2>Booklet</h2>
+
+              {% for grant in booklet_grants %}
+                <div class="shop-download-booklet">
+
+                  <div>
+                    <strong>
+                      {{ grant.product_name }}
+                    </strong>
+
+                    <div>
+                      {{ grant.download_filename }}
+                    </div>
+                  </div>
+
+                  <a
+                    href="{% url 'shop:digital_download_file' token=order.download_token grant_id=grant.id %}"
+                  >
+                    Stáhnout PDF
+                  </a>
+
+                </div>
+              {% endfor %}
+
+            </section>
+          {% endif %}
+
+
+        {% else %}
+
+          <div class="shop-download-status">
+            <h2>Platbu jsme přijali</h2>
+
+            <p>
+              Digitální soubory právě připravujeme.
+              Pokud se zde během několika minut
+              neobjeví, kontaktujte nás.
+            </p>
+          </div>
+
+        {% endif %}
+
+
+      {% elif order.payment_status == "refunded" %}
+
+        <div class="shop-download-status">
+          <h2>Platba byla vrácena</h2>
+
+          <p>
+            Digitální obsah této objednávky
+            již není dostupný.
+          </p>
+        </div>
+
+
+      {% else %}
+
+        <div class="shop-download-status">
+          <h2>Digitální obsah není dostupný</h2>
+
+          <p>
+            Stav platby této objednávky neumožňuje
+            stažení souborů.
+          </p>
+        </div>
+
+      {% endif %}
+
+
+      <p class="small muted">
+        Tento odkaz je určen pouze vám.
+        Nepřeposílejte jej dalším osobám.
+      </p>
+
+    </section>
+
+  </main>
+{% endblock content %}

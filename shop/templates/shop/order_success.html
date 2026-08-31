@@ -151,6 +151,37 @@
         Otevřít fakturu v PDF
       </a>
 
+      {% if order.contains_digital_content %}
+        <section class="shop-payment-instructions">
+          <div class="shop-payment-instructions__content">
+            <p class="shop-eyebrow">
+              Digitální obsah
+            </p>
+
+            <h2>Vaše nahrávky</h2>
+
+            {% if order.payment_status == "paid" %}
+              <p>
+                Platbu jsme přijali. Vaše digitální soubory
+                jsou připravené ke stažení.
+              </p>
+            {% else %}
+              <p>
+                Na této stránce najdete digitální soubory
+                po přijetí a zpracování platby.
+              </p>
+            {% endif %}
+
+            <a
+              class="shop-primary-button"
+              href="{% url 'shop:digital_downloads' order.download_token %}"
+            >
+              Otevřít digitální obsah
+            </a>
+          </div>
+        </section>
+      {% endif %}
+
       {% if order.confirmation_email_sent_at %}
         <p class="shop-order-email-status shop-order-email-status--success">
           Potvrzení bylo odesláno
