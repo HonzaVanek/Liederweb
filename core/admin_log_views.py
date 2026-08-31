@@ -34,7 +34,8 @@ VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
 
 TRAFFIC_KIND_RE = re.compile(
     r"\|\s+liederweb\.traffic\s+\|\s+"
-    r"(META_EXIT_DIAG|NETWORK_PATTERN_CANDIDATE|"
+    r"(META_EXIT_DIAG|SOCIAL_DUP_PAIR|"
+    r"NETWORK_PATTERN_CANDIDATE|"
     r"RAPID_IDENTITY_CANDIDATE|POSTHOC_CLEANUP|"
     r"VISIT_DUPLICATE|BROWSER_CONFIRMED|BROWSER_SKIP|"
     r"ENGAGED_SKIP|ENGAGED|VISIT|BOT_LIKE|CLEANUP)\s+"
@@ -86,6 +87,26 @@ TRAFFIC_FIELD_PATTERNS = {
     "ips": re.compile(r"\bips=(\d+)"),
     "span_seconds": re.compile(r"\bspan_seconds=(\d+)"),
     "sample_paths": re.compile(r"\bsample_paths=(.*)$"),
+    "source_visitor": re.compile(r"\bsource_visitor=([a-f0-9]{8})"),
+    "beacon_visitor": re.compile(r"\bbeacon_visitor=([a-f0-9]{8})"),
+    "doc": re.compile(r"\bdoc=([^\s]+)"),
+    "initial_visibility": re.compile(r"\binitial_visibility=([^\s]+)"),
+    "final_visibility": re.compile(r"\bfinal_visibility=([^\s]+)"),
+    "initial_focus": re.compile(r"\binitial_focus=([01])"),
+    "final_focus": re.compile(r"\bfinal_focus=([01])"),
+    "navigation_type": re.compile(r"\bnavigation_type=([^\s]+)"),
+    "exit_trigger": re.compile(r"\bexit_trigger=([^\s]+)"),
+    "pagehide_persisted": re.compile(r"\bpagehide_persisted=([01])"),
+    "document_referrer": re.compile(r"\bdocument_referrer=([^\s]*)"),
+    "document_ua": re.compile(r"\bdocument_ua=(.*?)\s+ua="),
+
+    # SOCIAL_DUP_PAIR
+    "age_ms": re.compile(r"\bage_ms=(\d+)"),
+    "previous_visitor": re.compile(r"\bprevious_visitor=([a-f0-9]{8})"),
+    "current_visitor": re.compile(r"\bcurrent_visitor=([a-f0-9]{8})"),
+    "referer_host": re.compile(r"\breferer_host=([^\s]*)"),
+    "previous_ua": re.compile(r"\bprevious_ua=(.*?)\s+current_ua="),
+    "current_ua": re.compile(r"\bcurrent_ua=(.*)$"),
 }
 
 UA_RE = re.compile(r"\bua=(.*)$")
@@ -348,6 +369,25 @@ def parse_traffic_log_line(line):
         "span_seconds": "",
         "sample_paths": "",
         "details": "",
+        "source_visitor": "",
+        "beacon_visitor": "",
+        "doc": "",
+        "initial_visibility": "",
+        "final_visibility": "",
+        "initial_focus": "",
+        "final_focus": "",
+        "navigation_type": "",
+        "exit_trigger": "",
+        "pagehide_persisted": "",
+        "document_referrer": "",
+        "document_ua": "",
+
+        "age_ms": "",
+        "previous_visitor": "",
+        "current_visitor": "",
+        "referer_host": "",
+        "previous_ua": "",
+        "current_ua": "",
     }
 
     timestamp_match = TRAFFIC_TS_RE.search(line)
@@ -1241,48 +1281,156 @@ def build_traffic_audit(log_text, since=None):
             and not had_any_interaction
         )
 
+        initial_focus = (
+            item["initial_focus"] == "1"
+        )
+
+        final_focus = (
+            item["final_focus"] == "1"
+        )
+
+        pagehide_persisted = (
+            item["pagehide_persisted"] == "1"
+        )
+
+        # Kompatibilita se starými META_EXIT_DIAG řádky,
+        # které měly jen visitor=...
+        source_visitor = (
+            item["source_visitor"]
+            or item["visitor"]
+        )
+
+        beacon_visitor = (
+            item["beacon_visitor"]
+            or item["visitor"]
+        )
+
+
         meta_exit_diag_rows.append({
             "time": item["timestamp"],
-            "source": (
-                item["source"]
-                or "unknown"
-            ),
+
+            "source": (item["source"] or "unknown"),
+
             "ip": item["ip"],
             "client": item["client"],
-            "visitor": item["visitor"],
+
+            "source_visitor": source_visitor,
+            "beacon_visitor": beacon_visitor,
+
+            "doc": item["doc"],
+
             "path": item["path"],
+
             "elapsed_ms": elapsed_ms,
             "total_visible_ms": total_visible_ms,
-            "max_visible_span_ms": (
-                max_visible_span_ms
+            "max_visible_span_ms": max_visible_span_ms,
+
+            "visibility_changes": visibility_changes,
+            "visible_intervals": visible_intervals,
+
+            "initial_visibility": (
+                item["initial_visibility"]
+                or "—"
             ),
-            "visibility_changes": (
-                visibility_changes
+
+            "final_visibility": (
+                item["final_visibility"]
+                or "—"
             ),
-            "visible_intervals": (
-                visible_intervals
+
+            "initial_focus": initial_focus,
+            "final_focus": final_focus,
+
+            "navigation_type": (
+                item["navigation_type"]
+                or "—"
             ),
+
+            "exit_trigger": (
+                item["exit_trigger"]
+                or item["trigger"]
+                or "—"
+            ),
+
+            "pagehide_persisted": (
+                pagehide_persisted
+            ),
+
             "browser_sent": browser_sent,
             "engaged_sent": engaged_sent,
+
             "interaction": (
                 ", ".join(interaction_parts)
                 if interaction_parts
                 else "—"
             ),
-            "max_scroll_pct": (
-                max_scroll_pct
-            ),
+
+            "max_scroll_pct": max_scroll_pct,
             "prerendered": prerendered,
+
             "background_candidate": (
                 background_candidate
             ),
+
+            "document_referrer": shorten_text(
+                item["document_referrer"],
+                180,
+            ),
+
+            "document_ua": shorten_text(
+                item["document_ua"],
+                220,
+            ),
+
             "ua": shorten_text(
                 item["ua"],
-                180,
+                220,
             ),
         })
 
         if len(meta_exit_diag_rows) >= 50:
+            break
+
+
+    social_dup_pair_rows = []
+
+    for item in reversed(items):
+        if item["kind"] != "SOCIAL_DUP_PAIR":
+            continue
+
+        social_dup_pair_rows.append({
+            "time": item["timestamp"],
+            "client": item["client"],
+            "path": item["path"],
+
+            "age_ms": audit_diag_int(
+                item["age_ms"]
+            ),
+
+            "previous_visitor": (
+                item["previous_visitor"]
+            ),
+
+            "current_visitor": (
+                item["current_visitor"]
+            ),
+
+            "referer_host": (
+                item["referer_host"]
+            ),
+
+            "previous_ua": shorten_text(
+                item["previous_ua"],
+                260,
+            ),
+
+            "current_ua": shorten_text(
+                item["current_ua"],
+                260,
+            ),
+        })
+
+        if len(social_dup_pair_rows) >= 50:
             break
 
     network_pattern_candidates = []
@@ -1331,6 +1479,7 @@ def build_traffic_audit(log_text, since=None):
         "rapid_identity_candidates": rapid_identity_candidates,
         "network_pattern_candidates": network_pattern_candidates,
         "meta_exit_diag_rows": meta_exit_diag_rows,
+        "social_dup_pair_rows": social_dup_pair_rows,
         "browser_skip_reasons": browser_skip_reasons.most_common(10),
         "browser_confirmed_triggers": browser_confirmed_triggers.most_common(10),
         "browser_confirmed_rows": browser_confirmed_rows,

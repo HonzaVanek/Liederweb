@@ -14,6 +14,88 @@
     var browserTimer = null;
     var engagedTimer = null;
 
+
+    // -------------------------------------------------
+    // Identita konkrétního JS dokumentu
+    // -------------------------------------------------
+
+    function createDocumentId() {
+        try {
+            if (
+                window.crypto &&
+                typeof window.crypto.randomUUID === "function"
+            ) {
+                return window.crypto.randomUUID();
+            }
+        } catch (error) {}
+
+        return (
+            Date.now().toString(36) +
+            "-" +
+            Math.random().toString(36).slice(2) +
+            "-" +
+            Math.round(performance.now()).toString(36)
+        );
+    }
+
+
+    function hasDocumentFocus() {
+        try {
+            return (
+                typeof document.hasFocus === "function" &&
+                document.hasFocus()
+            );
+        } catch (error) {
+            return false;
+        }
+    }
+
+
+    function getNavigationType() {
+        try {
+            if (
+                performance &&
+                typeof performance.getEntriesByType === "function"
+            ) {
+                var entries = performance.getEntriesByType(
+                    "navigation"
+                );
+
+                if (
+                    entries &&
+                    entries.length &&
+                    entries[0].type
+                ) {
+                    return String(entries[0].type);
+                }
+            }
+        } catch (error) {}
+
+        return "unknown";
+    }
+
+
+    var trafficDocumentId = createDocumentId();
+
+    var initialVisibility = (
+        document.visibilityState || "unknown"
+    );
+
+    var initialFocus = hasDocumentFocus();
+
+    var navigationType = getNavigationType();
+
+    // Zachytíme hodnoty při vzniku dokumentu.
+    // Důležité: později se WebView / UA může chovat jinak.
+    var initialDocumentUserAgent = (
+        navigator.userAgent || ""
+    );
+
+    var initialDocumentReferrer = (
+        document.referrer || ""
+    );
+
+
     // -------------------------------------------------
     // Diagnostika viditelnosti
     // -------------------------------------------------
@@ -111,6 +193,10 @@
     }
 
 
+    // -------------------------------------------------
+    // Beacon POST
+    // -------------------------------------------------
+
     function postBeacon(
         stage,
         trigger,
@@ -123,7 +209,44 @@
             window.location.pathname
         );
 
-        params.append("stage", stage);
+        params.append(
+            "stage",
+            stage
+        );
+
+        // Identita konkrétní instance HTML dokumentu.
+        params.append(
+            "document_id",
+            trafficDocumentId
+        );
+
+        // Stav dokumentu při jeho vzniku.
+        params.append(
+            "initial_visibility",
+            initialVisibility
+        );
+
+        params.append(
+            "initial_focus",
+            initialFocus ? "1" : "0"
+        );
+
+        params.append(
+            "navigation_type",
+            navigationType
+        );
+
+        // UA zachycené JavaScriptem při vzniku dokumentu.
+        // To chceme porovnat s HTTP User-Agentem beacon requestu.
+        params.append(
+            "document_ua",
+            initialDocumentUserAgent
+        );
+
+        params.append(
+            "document_referrer",
+            initialDocumentReferrer
+        );
 
         if (trigger) {
             params.append(
@@ -179,6 +302,10 @@
     }
 
 
+    // -------------------------------------------------
+    // Browser / Engaged
+    // -------------------------------------------------
+
     function sendBrowserConfirmation() {
         if (
             browserSent ||
@@ -227,10 +354,7 @@
 
 
     // -------------------------------------------------
-    // Měření skutečně viditelných intervalů.
-    //
-    // Neovlivňuje Browser ani Engaged.
-    // Slouží pouze diagnostice.
+    // Měření skutečně viditelných intervalů
     // -------------------------------------------------
 
     function startVisibleSpan() {
@@ -241,9 +365,7 @@
             return;
         }
 
-        visibleStartedAt = (
-            performance.now()
-        );
+        visibleStartedAt = performance.now();
 
         visibleIntervals += 1;
     }
@@ -311,9 +433,6 @@
 
     // -------------------------------------------------
     // Interakce
-    //
-    // Ani jedna z nich není podmínkou Browser/Engaged.
-    // Jsou pouze diagnostické signály.
     // -------------------------------------------------
 
     document.addEventListener(
@@ -435,7 +554,9 @@
     // Meta diagnostika při odchodu
     // -------------------------------------------------
 
-    function sendMetaExitDiagnostic() {
+    function sendMetaExitDiagnostic(
+        pagehidePersisted
+    ) {
         if (
             diagnosticSent ||
             !isMetaLikeVisit()
@@ -495,11 +616,24 @@
                     maxScrollPct,
 
                 prerendered:
-                    wasPrerendered ? 1 : 0
+                    wasPrerendered ? 1 : 0,
+
+                final_visibility:
+                    document.visibilityState || "unknown",
+
+                final_focus:
+                    hasDocumentFocus() ? 1 : 0,
+
+                pagehide_persisted:
+                    pagehidePersisted ? 1 : 0
             }
         );
     }
 
+
+    // -------------------------------------------------
+    // Lifecycle
+    // -------------------------------------------------
 
     document.addEventListener(
         "visibilitychange",
@@ -532,9 +666,15 @@
 
     window.addEventListener(
         "pagehide",
-        function () {
+        function (event) {
             clearTimers();
-            sendMetaExitDiagnostic();
+
+            sendMetaExitDiagnostic(
+                !!(
+                    event &&
+                    event.persisted
+                )
+            );
         }
     );
 

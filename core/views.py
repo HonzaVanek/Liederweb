@@ -1076,6 +1076,83 @@ def traffic_engaged(request):
         )
         return HttpResponse(status=204)
 
+    document_id = (
+        request.POST.get("document_id")
+        or ""
+    ).strip()[:64]
+
+    # Jen jednoduché bezpečné znaky do logu.
+    document_id = "".join(
+        char
+        for char in document_id
+        if char.isalnum() or char in "-_"
+    )
+
+
+    initial_visibility = (
+        request.POST.get("initial_visibility")
+        or ""
+    ).strip().lower()[:20]
+
+
+    final_visibility = (
+        request.POST.get("final_visibility")
+        or ""
+    ).strip().lower()[:20]
+
+
+    navigation_type = (
+        request.POST.get("navigation_type")
+        or ""
+    ).strip().lower()[:30]
+
+
+    initial_focus = (
+        1
+        if (
+            request.POST.get("initial_focus")
+            or ""
+        ).strip() == "1"
+        else 0
+    )
+
+
+    final_focus = (
+        1
+        if (
+            request.POST.get("final_focus")
+            or ""
+        ).strip() == "1"
+        else 0
+    )
+
+
+    pagehide_persisted = (
+        1
+        if (
+            request.POST.get("pagehide_persisted")
+            or ""
+        ).strip() == "1"
+        else 0
+    )
+
+
+    document_ua = (
+        request.POST.get("document_ua")
+        or ""
+    ).strip()[:500]
+
+
+    document_referrer = (
+        request.POST.get("document_referrer")
+        or ""
+    ).strip()
+
+    document_referrer = (
+        document_referrer
+        .split("?", 1)[0][:300]
+    )
+
     if stage == "browser":
         skip_kind = "BROWSER_SKIP"
     elif stage == "engaged":
@@ -1344,13 +1421,20 @@ def traffic_engaged(request):
             maximum=1,
         )
 
+        exit_trigger = (
+            request.POST.get("trigger")
+            or "unknown"
+        ).strip().lower()[:30]
+
 
         logger.info(
             "META_EXIT_DIAG "
             "source=%s "
             "ip=%s "
             "client=%s "
-            "visitor=%s "
+            "source_visitor=%s "
+            "beacon_visitor=%s "
+            "doc=%s "
             "path=%s "
             "elapsed_ms=%s "
             "total_visible_ms=%s "
@@ -1365,12 +1449,23 @@ def traffic_engaged(request):
             "had_key=%s "
             "max_scroll_pct=%s "
             "prerendered=%s "
+            "initial_visibility=%s "
+            "final_visibility=%s "
+            "initial_focus=%s "
+            "final_focus=%s "
+            "navigation_type=%s "
+            "exit_trigger=%s "
+            "pagehide_persisted=%s "
+            "document_referrer=%s "
             "source_referer=%s "
+            "document_ua=%s "
             "ua=%s",
             diagnostic_source,
             ip,
             client_label,
+            source_visitor_label,
             visitor_label,
+            document_id,
             path[:300],
             elapsed_ms,
             total_visible_ms,
@@ -1385,7 +1480,16 @@ def traffic_engaged(request):
             had_key,
             max_scroll_pct,
             prerendered,
+            initial_visibility,
+            final_visibility,
+            initial_focus,
+            final_focus,
+            navigation_type,
+            exit_trigger,
+            pagehide_persisted,
+            document_referrer,
             source_referer[:300],
+            document_ua[:300],
             user_agent[:300],
         )
 
@@ -1537,18 +1641,28 @@ def traffic_engaged(request):
             "BROWSER_CONFIRMED "
             "ip=%s client=%s visitor=%s "
             "beacon_visitor=%s "
+            "doc=%s "
             "method=POST status=204 "
             "path=%s trigger=%s "
+            "initial_visibility=%s "
+            "initial_focus=%s "
+            "navigation_type=%s "
             "referer=%s source_referer=%s "
+            "document_ua=%s "
             "ua=%s",
             ip,
             client_label,
             confirmed_visitor_label,
             visitor_label,
+            document_id,
             path[:300],
             trigger,
+            initial_visibility,
+            initial_focus,
+            navigation_type,
             referer,
             attribution_referer[:300],
+            document_ua[:300],
             user_agent[:300],
         )
 
@@ -1642,16 +1756,27 @@ def traffic_engaged(request):
         "ENGAGED "
         "ip=%s client=%s visitor=%s "
         "beacon_visitor=%s "
+        "doc=%s "
         "method=POST status=204 "
-        "path=%s referer=%s "
-        "source_referer=%s ua=%s",
+        "path=%s "
+        "initial_visibility=%s "
+        "initial_focus=%s "
+        "navigation_type=%s "
+        "referer=%s source_referer=%s "
+        "document_ua=%s "
+        "ua=%s",
         ip,
         client_label,
         confirmed_visitor_label,
         visitor_label,
+        document_id,
         path[:300],
+        initial_visibility,
+        initial_focus,
+        navigation_type,
         referer,
         attribution_referer[:300],
+        document_ua[:300],
         user_agent[:300],
     )
 

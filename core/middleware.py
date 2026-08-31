@@ -1384,7 +1384,7 @@ class SiteVisitStatsMiddleware:
 
         return ua        
 
-    def is_recent_social_page_duplicate(self, client_label, path, user_agent, referer_raw,):
+    def is_recent_social_page_duplicate(self, client_label, visitor_label, path, user_agent, referer_raw,):
         """
         Detekuje technický dvojrequest Facebook/Instagram in-app browseru.
 
@@ -1438,6 +1438,22 @@ class SiteVisitStatsMiddleware:
             ):
                 # Duplicitu schválně NEukládáme jako nový základ,
                 # aby se nám nevytvořil řetězec A -> B -> A.
+                logger.info(
+                    "SOCIAL_DUP_PAIR "
+                    "client=%s path=%s age_ms=%s "
+                    "previous_visitor=%s current_visitor=%s "
+                    "referer_host=%s "
+                    "previous_ua=%s current_ua=%s",
+                    client_label,
+                    path[:300],
+                    round(age * 1000),
+                    previous.get("visitor", ""),
+                    visitor_label,
+                    referer_host,
+                    previous.get("raw_ua", "")[:300],
+                    raw_ua[:300],
+                )
+
                 return True
 
         cache.set(
@@ -1447,6 +1463,7 @@ class SiteVisitStatsMiddleware:
                 "raw_ua": raw_ua,
                 "normalized_ua": normalized_ua,
                 "referer_host": referer_host,
+                "visitor": visitor_label,
             },
             timeout=15,
         )
@@ -2319,6 +2336,7 @@ class SiteVisitStatsMiddleware:
 
             elif self.is_recent_social_page_duplicate(
                 client_label=client_label,
+                visitor_label=visitor_label,
                 path=path,
                 user_agent=user_agent,
                 referer_raw=referer_raw,

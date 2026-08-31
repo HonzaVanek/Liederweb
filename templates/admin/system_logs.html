@@ -176,6 +176,8 @@
                   NETWORK_PATTERN_CANDIDATE (diagnostika)
               {% elif label == "META_EXIT_DIAG" %}
                   META_EXIT_DIAG (Meta diagnostika)
+              {% elif label == "SOCIAL_DUP_PAIR" %}
+                  SOCIAL_DUP_PAIR (Meta dvojrequest diagnostika)
               {% else %}
                   {{ label }}
               {% endif %}
@@ -674,8 +676,13 @@
   <h3>Meta exit diagnostika</h3>
 
   <p class="help">
-    Diagnostika odchodů návštěv z Facebooku a Instagramu.
-    Nemění statistiky ani nikoho automaticky neoznačuje jako bota.
+    Diagnostika jednotlivých HTML dokumentů otevřených z Facebooku
+    a Instagramu. Nemění statistiky ani nikoho automaticky
+    neoznačuje jako bota.
+
+    <strong>doc</strong> je unikátní ID konkrétní instance dokumentu.
+    Dvě různé hodnoty doc u stejného client/path znamenají,
+    že byly skutečně spuštěny dvě samostatné JS instance stránky.
 
     <strong>BACKGROUND?</strong> znamená, že dokument existoval
     alespoň 3 sekundy, ale nikdy nebyl alespoň 750 ms v kuse
@@ -688,15 +695,16 @@
       <thead>
         <tr>
           <th>Čas / zdroj</th>
-          <th>IP / identity</th>
+          <th>Identity / dokument</th>
           <th>Path</th>
           <th>Časy</th>
           <th>Visibility</th>
+          <th>Focus / navigation</th>
           <th>Browser</th>
           <th>Engaged</th>
           <th>Interakce</th>
           <th>Scroll</th>
-          <th>Prerender</th>
+          <th>Lifecycle</th>
           <th>Diagnostika</th>
           <th>User-Agent</th>
         </tr>
@@ -725,8 +733,20 @@
               <code>{{ row.client }}</code>
               <br>
 
-              visitor:
-              <code>{{ row.visitor }}</code>
+              source visitor:
+              <code>{{ row.source_visitor|default:"—" }}</code>
+              <br>
+
+              beacon visitor:
+              <code>{{ row.beacon_visitor|default:"—" }}</code>
+              <br>
+
+              doc:
+              {% if row.doc %}
+                <code>{{ row.doc }}</code>
+              {% else %}
+                —
+              {% endif %}
             </td>
 
             <td>
@@ -749,12 +769,41 @@
             </td>
 
             <td>
+              initial:
+              <code>{{ row.initial_visibility }}</code>
+              <br>
+
+              final:
+              <code>{{ row.final_visibility }}</code>
+              <br>
+
               changes:
               {{ row.visibility_changes }}
               <br>
 
               intervals:
               {{ row.visible_intervals }}
+            </td>
+
+            <td>
+              initial focus:
+              {% if row.initial_focus %}
+                <strong>ANO</strong>
+              {% else %}
+                ne
+              {% endif %}
+              <br>
+
+              final focus:
+              {% if row.final_focus %}
+                <strong>ANO</strong>
+              {% else %}
+                ne
+              {% endif %}
+              <br>
+
+              nav:
+              <code>{{ row.navigation_type }}</code>
             </td>
 
             <td>
@@ -782,7 +831,20 @@
             </td>
 
             <td>
+              prerender:
               {% if row.prerendered %}
+                <strong>ANO</strong>
+              {% else %}
+                ne
+              {% endif %}
+              <br>
+
+              trigger:
+              <code>{{ row.exit_trigger }}</code>
+              <br>
+
+              BFCache:
+              {% if row.pagehide_persisted %}
                 <strong>ANO</strong>
               {% else %}
                 ne
@@ -800,13 +862,32 @@
             </td>
 
             <td>
+              document UA:
+              <br>
+              {% if row.document_ua %}
+                <code>{{ row.document_ua }}</code>
+              {% else %}
+                —
+              {% endif %}
+
+              <br><br>
+
+              beacon HTTP UA:
+              <br>
               <code>{{ row.ua }}</code>
+
+              {% if row.document_referrer %}
+                <br><br>
+                document ref:
+                <br>
+                <code>{{ row.document_referrer }}</code>
+              {% endif %}
             </td>
           </tr>
 
         {% empty %}
           <tr>
-            <td colspan="12">
+            <td colspan="13">
               Zatím žádná Meta exit diagnostika.
             </td>
           </tr>
@@ -815,6 +896,85 @@
     </table>
   </div>
 
+
+  <h3>Meta technické dvojrequesty</h3>
+
+  <p class="help">
+    Páry requestů, které middleware vyhodnotil jako
+    <code>social_ua_variant</code>.
+
+    Jde o stejný client, stejnou stránku a stejný referer host
+    v krátkém čase, přičemž se změnil pouze volatilní
+    Facebook/Instagram User-Agent.
+  </p>
+
+  <div class="stats-table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Čas</th>
+          <th>Client</th>
+          <th>Path</th>
+          <th>Rozestup</th>
+          <th>Visitoři</th>
+          <th>Referer host</th>
+          <th>User-Agent změna</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in traffic_audit.social_dup_pair_rows %}
+          <tr>
+            <td>{{ row.time }}</td>
+
+            <td>
+              <code>{{ row.client }}</code>
+            </td>
+
+            <td>
+              <code>{{ row.path }}</code>
+            </td>
+
+            <td>
+              <strong>{{ row.age_ms }} ms</strong>
+            </td>
+
+            <td>
+              previous:
+              <code>{{ row.previous_visitor }}</code>
+              <br>
+
+              current:
+              <code>{{ row.current_visitor }}</code>
+            </td>
+
+            <td>
+              <code>{{ row.referer_host }}</code>
+            </td>
+
+            <td>
+              <strong>předchozí:</strong>
+              <br>
+              <code>{{ row.previous_ua }}</code>
+
+              <br><br>
+
+              <strong>druhý:</strong>
+              <br>
+              <code>{{ row.current_ua }}</code>
+            </td>
+          </tr>
+
+        {% empty %}
+          <tr>
+            <td colspan="7">
+              Zatím žádný Meta technický dvojrequest.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
   <h3>Poslední VISIT_DUPLICATE</h3>
 
