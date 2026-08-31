@@ -14,9 +14,11 @@ class ProductForm(forms.ModelForm):
             "short_description",
             "description",
             "main_image",
+            "digital_booklet",
             "is_published",
             "sort_order",
         ]
+
         widgets = {
             "short_description": forms.Textarea(
                 attrs={
@@ -30,22 +32,83 @@ class ProductForm(forms.ModelForm):
                     "placeholder": "Podrobný popis produktu.",
                 }
             ),
+            "digital_booklet": forms.ClearableFileInput(
+                attrs={
+                    "accept": ".pdf,application/pdf",
+                }
+            ),
             "sort_order": forms.NumberInput(
                 attrs={
                     "min": 0,
                 }
             ),
         }
+
         help_texts = {
             "slug": (
                 "Část URL produktu, například slava-vorlova-pisne. "
                 "Používej malá písmena, čísla a pomlčky."
             ),
             "main_image": "Hlavní obrázek produktu z Media Assets.",
+            "digital_booklet": (
+                "PDF booklet, který zákazník získá při zakoupení "
+                "celého digitálního alba."
+            ),
             "is_published": (
-                "Produkt se zobrazí ve veřejném katalogu až po zveřejnění e-shopu."
+                "Produkt se zobrazí ve veřejném katalogu "
+                "až po zveřejnění e-shopu."
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.has_full_album_variant = (
+            self.instance
+            and self.instance.pk
+            and self.instance.variants.filter(
+                fulfilment_type=ProductVariant.FulfilmentType.DIGITAL,
+                is_full_album_download=True,
+            ).exists()
+        )
+
+        # Booklet nabízíme jen u produktu, který skutečně
+        # obsahuje variantu celého digitálního alba.
+        if not self.has_full_album_variant:
+            self.fields.pop("digital_booklet", None)
+
+    def clean_digital_booklet(self):
+        booklet = self.cleaned_data.get("digital_booklet")
+
+        # False znamená, že staff zaškrtl "Vymazat".
+        if not booklet:
+            return booklet
+
+        if not booklet.name.lower().endswith(".pdf"):
+            raise forms.ValidationError(
+                "Booklet musí být soubor ve formátu PDF."
+            )
+
+        return booklet
+
+    def save(self, commit=True):
+        product = super().save(commit=False)
+
+        if "digital_booklet" in self.changed_data:
+            booklet = self.cleaned_data.get("digital_booklet")
+
+            if booklet:
+                product.digital_booklet_original_filename = (
+                    booklet.name
+                )
+            else:
+                # Staff booklet odstranil.
+                product.digital_booklet_original_filename = ""
+
+        if commit:
+            product.save()
+
+        return product
 
 
 class ProductVariantForm(forms.ModelForm):

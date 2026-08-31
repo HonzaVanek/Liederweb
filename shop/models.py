@@ -28,6 +28,20 @@ class Product(models.Model):
         blank=True,
     )
 
+    digital_booklet = models.FileField(
+        "booklet k digitálnímu albu",
+        upload_to="booklets/",
+        storage=private_shop_storage,
+        blank=True,
+    )
+
+    digital_booklet_original_filename = models.CharField(
+        "původní název bookletu",
+        max_length=255,
+        blank=True,
+        editable=False,
+    )
+
     is_published = models.BooleanField("zveřejněno", default=False)
     sort_order = models.PositiveIntegerField("pořadí", default=0)
 
@@ -367,6 +381,8 @@ class AlbumTrack(models.Model):
             )
 
 
+
+
 class Order(models.Model):
     class Status(models.TextChoices):
         NEW = "new", "Nová"
@@ -402,6 +418,13 @@ class Order(models.Model):
 
     public_token = models.UUIDField(
         "veřejný token",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+
+    download_token = models.UUIDField(
+        "token pro stažení digitálního obsahu",
         default=uuid.uuid4,
         unique=True,
         editable=False,
@@ -775,6 +798,97 @@ class OrderStatusHistory(models.Model):
     def __str__(self):
         return f"{self.order} – {self.get_action_display()}"
 
+
+class DigitalDownloadGrant(models.Model):
+    class FileType(models.TextChoices):
+        TRACK = "track", "MP3 stopa"
+        BOOKLET = "booklet", "Booklet"
+
+    order = models.ForeignKey(
+        Order,
+        verbose_name="objednávka",
+        on_delete=models.CASCADE,
+        related_name="download_grants",
+    )
+
+    order_item = models.ForeignKey(
+        OrderItem,
+        verbose_name="položka objednávky",
+        on_delete=models.SET_NULL,
+        related_name="download_grants",
+        null=True,
+        blank=True,
+    )
+
+    file_type = models.CharField(
+        "typ souboru",
+        max_length=20,
+        choices=FileType.choices,
+    )
+
+    product_name = models.CharField(
+        "produkt",
+        max_length=200,
+    )
+
+    display_title = models.CharField(
+        "název",
+        max_length=255,
+    )
+
+    storage_name = models.CharField(
+        "soubor v privátním úložišti",
+        max_length=500,
+    )
+
+    download_filename = models.CharField(
+        "název stahovaného souboru",
+        max_length=255,
+    )
+
+    disc_number = models.PositiveSmallIntegerField(
+        "číslo disku",
+        null=True,
+        blank=True,
+    )
+
+    track_number = models.PositiveSmallIntegerField(
+        "číslo stopy",
+        null=True,
+        blank=True,
+    )
+
+    created_at = models.DateTimeField(
+        "zpřístupněno",
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = (
+            "product_name",
+            "file_type",
+            "disc_number",
+            "track_number",
+            "id",
+        )
+        verbose_name = "digitální soubor objednávky"
+        verbose_name_plural = "digitální soubory objednávek"
+        constraints = [
+            models.UniqueConstraint(
+                fields=(
+                    "order",
+                    "file_type",
+                    "storage_name",
+                ),
+                name="unique_shop_download_grant",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.order} – "
+            f"{self.display_title}"
+        )
 
 class Invoice(models.Model):
     class Status(models.TextChoices):

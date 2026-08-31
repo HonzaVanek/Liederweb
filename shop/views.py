@@ -1,10 +1,13 @@
+import mimetypes
+from pathlib import Path
+
 from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
 from django.core.paginator import Paginator
 from django.db.models import Count, Max, Min, Q, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse, Http404
 from django.views.decorators.http import require_POST
 
 from .decorators import shop_public_or_staff_preview
@@ -37,6 +40,7 @@ from .services.payments import get_bank_transfer_payment_data
 from .services.invoice_pdf import build_invoice_pdf, build_invoice_pdf_filename
 from .services.audio import AudioProcessingError, generate_track_preview
 from .services.tracks import sync_track_purchase_variant
+from .storage import private_shop_storage
 
 
 def _active_variant_queryset():
@@ -289,6 +293,7 @@ def staff_product_create(request):
     if request.method == "POST":
         form = ProductForm(
             request.POST,
+            request.FILES,
             instance=product,
         )
         variant_formset = ProductVariantFormSet(
@@ -345,6 +350,7 @@ def staff_product_edit(request, product_id):
     if request.method == "POST":
         form = ProductForm(
             request.POST,
+            request.FILES,
             instance=product,
         )
 
@@ -605,7 +611,27 @@ def staff_product_track_edit(
         },
     )
 
+@staff_required
+def staff_private_file(request, path):
+    try:
+        file_handle = private_shop_storage.open(
+            path,
+            "rb",
+        )
+    except FileNotFoundError:
+        raise Http404
 
+    content_type, _ = mimetypes.guess_type(path)
+
+    return FileResponse(
+        file_handle,
+        as_attachment=False,
+        filename=Path(path).name,
+        content_type=(
+            content_type
+            or "application/octet-stream"
+        ),
+    )
 
 
 @shop_public_or_staff_preview

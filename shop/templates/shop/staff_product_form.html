@@ -36,7 +36,7 @@
       </div>
     </div>
 
-    <form method="post" class="shop-product-form">
+    <form method="post" class="shop-product-form" enctype="multipart/form-data">
       {% csrf_token %}
 
       {% if form.non_field_errors %}
@@ -106,6 +106,44 @@
           </div>
         </div>
       </section>
+
+    {% if form.digital_booklet %}
+      <section class="content-section">
+        <h3>Digitální album</h3>
+
+        <p class="muted">
+          Booklet bude dostupný pouze zákazníkům,
+          kteří zakoupí celé digitální album.
+        </p>
+
+        {% if product.digital_booklet %}
+          <div class="shop-current-audio">
+            <strong>Aktuální booklet</strong>
+
+            <div class="small muted">
+              {% if product.digital_booklet_original_filename %}
+                {{ product.digital_booklet_original_filename }}
+              {% else %}
+                {{ product.digital_booklet.name }}
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+
+        <div class="form-group">
+          {{ form.digital_booklet.label_tag }}
+          {{ form.digital_booklet }}
+          {{ form.digital_booklet.errors }}
+
+          {% if form.digital_booklet.help_text %}
+            <p class="small muted">
+              {{ form.digital_booklet.help_text }}
+            </p>
+          {% endif %}
+        </div>
+      </section>
+    {% endif %}
+
 
       <section class="content-section">
         <div class="shop-section-header">
