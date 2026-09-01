@@ -35,6 +35,7 @@ VISITOR_RE = re.compile(r"\bvisitor=([a-f0-9]{8})")
 TRAFFIC_KIND_RE = re.compile(
     r"\|\s+liederweb\.traffic\s+\|\s+"
     r"(META_EXIT_DIAG|SOCIAL_DUP_PAIR|"
+    r"MEANINGFUL_INTERACTION|INTERACTION_SKIP|"
     r"NETWORK_PATTERN_CANDIDATE|"
     r"RAPID_IDENTITY_CANDIDATE|POSTHOC_CLEANUP|"
     r"VISIT_DUPLICATE|BROWSER_CONFIRMED|BROWSER_SKIP|"
@@ -63,6 +64,23 @@ TRAFFIC_FIELD_PATTERNS = {
     "visible_intervals": re.compile(r"\bvisible_intervals=(\d+)"),
     "browser_sent": re.compile(r"\bbrowser_sent=([01])"),
     "engaged_sent": re.compile(r"\bengaged_sent=([01])"),
+    "meaningful_sent": re.compile(r"\bmeaningful_sent=([01])"),
+    "meaningful_type": re.compile(r"\bmeaningful_type=([^\s]+)"),
+    "first_pointer_ms": re.compile(r"\bfirst_pointer_ms=(-?\d+)"),
+    "first_touch_ms": re.compile(r"\bfirst_touch_ms=(-?\d+)"),
+    "first_scroll_ms": re.compile(
+        r"\bfirst_scroll_ms=(-?\d+)"
+    ),
+    "first_meaningful_ms": re.compile(
+        r"\bfirst_meaningful_ms=(-?\d+)"
+    ),
+
+    "interaction_type": re.compile(
+        r"\binteraction_type=([^\s]+)"
+    ),
+    "interaction_ms": re.compile(
+        r"\binteraction_ms=(-?\d+)"
+    ),
     "had_pointer": re.compile(r"\bhad_pointer=([01])"),
     "had_touch": re.compile(r"\bhad_touch=([01])"),
     "had_scroll": re.compile(r"\bhad_scroll=([01])"),
@@ -344,6 +362,16 @@ def parse_traffic_log_line(line):
         "visible_intervals": "",
         "browser_sent": "",
         "engaged_sent": "",
+        "meaningful_sent": "",
+        "meaningful_type": "",
+
+        "first_pointer_ms": "",
+        "first_touch_ms": "",
+        "first_scroll_ms": "",
+        "first_meaningful_ms": "",
+
+        "interaction_type": "",
+        "interaction_ms": "",
         "had_pointer": "",
         "had_touch": "",
         "had_scroll": "",
@@ -621,6 +649,18 @@ def build_traffic_audit(log_text, since=None):
         if item["kind"] == "BROWSER_SKIP"
     )
 
+    interaction_skip_reasons = Counter(
+        item["reason"] or "bez důvodu"
+        for item in items
+        if item["kind"] == "INTERACTION_SKIP"
+    )
+
+    interaction_type_counts = Counter(
+        item["interaction_type"] or "bez typu"
+        for item in items
+        if item["kind"] == "MEANINGFUL_INTERACTION"
+    )
+
     browser_confirmed_triggers = Counter(
         item["trigger"] or "bez triggeru"
         for item in items
@@ -736,12 +776,31 @@ def build_traffic_audit(log_text, since=None):
         )
     }
 
-    # ENGAGED je také jednoznačné JS potvrzení skutečného browseru.
-    # Kdyby z nějakého důvodu chyběl samostatný BROWSER_CONFIRMED,
-    # nechceme takového návštěvníka považovat za nepotvrzeného.
+    interaction_keys = {
+        (
+            get_audit_day(item),
+            item["visitor"],
+        )
+        for item in items
+        if (
+            item["kind"] == "MEANINGFUL_INTERACTION"
+            and item["visitor"]
+        )
+    }
+
+    # Silný human signal:
+    # 3 s visibility NEBO smysluplná trusted interakce.
+    strong_human_keys = (
+        engaged_keys
+        | interaction_keys
+    )
+
+    # Jakýkoli smysluplný JS signál.
+    # Browser samotný je pořád pouze slabý technický signal.
     js_confirmed_keys = (
         browser_confirmed_keys
         | engaged_keys
+        | interaction_keys
     )
 
     cleaned_visitor_keys = set()
@@ -816,30 +875,52 @@ def build_traffic_audit(log_text, since=None):
         if client_keys & cleaned_client_keys:
             cleaned_visit_keys.add(visitor_key)
 
-    browser_confirmed_visit_keys = (
+    active_visit_keys = (
         visit_keys
+        - cleaned_visit_keys
+    )
+
+    browser_confirmed_visit_keys = (
+        active_visit_keys
         & browser_confirmed_keys
     )
 
     engaged_visit_keys = (
-        visit_keys
+        active_visit_keys
         & engaged_keys
     )
 
+    interaction_visit_keys = (
+        active_visit_keys
+        & interaction_keys
+    )
+
+    strong_human_visit_keys = (
+        active_visit_keys
+        & strong_human_keys
+    )
+
     js_confirmed_visit_keys = (
-        visit_keys
+        active_visit_keys
         & js_confirmed_keys
     )
 
-    # Tohle je množina, kterou chceme skutečně zkoumat:
-    #
-    # VISIT
-    # - browser/engaged confirmation
-    # - realtime/posthoc cleanup
+    # Browser >=750 ms, ale žádný strong human signal.
+    weak_visible_only_visit_keys = (
+        browser_confirmed_visit_keys
+        - strong_human_visit_keys
+    )
+
+    # Aktivní VISIT, ale bez Engaged i Meaningful Interaction.
+    without_strong_human_visit_keys = (
+        active_visit_keys
+        - strong_human_keys
+    )
+
+    # Žádný JS signal vůbec.
     unconfirmed_visit_keys = (
-        visit_keys
+        active_visit_keys
         - js_confirmed_keys
-        - cleaned_visit_keys
     )
 
     visits_by_visitor = defaultdict(list)
@@ -1121,6 +1202,77 @@ def build_traffic_audit(log_text, since=None):
             break
 
 
+    meaningful_interaction_rows = []
+
+    for item in reversed(items):
+        if item["kind"] != "MEANINGFUL_INTERACTION":
+            continue
+
+        meaningful_interaction_rows.append({
+            "time": item["timestamp"],
+            "ip": item["ip"],
+            "client": item["client"],
+            "visitor": item["visitor"],
+            "doc": item["doc"],
+            "path": item["path"],
+            "interaction_type": (
+                item["interaction_type"]
+                or "—"
+            ),
+            "interaction_ms": (
+                item["interaction_ms"]
+                or "—"
+            ),
+            "initial_visibility": (
+                item["initial_visibility"]
+                or "—"
+            ),
+            "navigation_type": (
+                item["navigation_type"]
+                or "—"
+            ),
+            "source_referer": (
+                item["source_referer"]
+            ),
+            "ua": shorten_text(
+                item["ua"],
+                180,
+            ),
+        })
+
+        if len(meaningful_interaction_rows) >= 30:
+            break
+
+
+    interaction_skip_rows = []
+
+    for item in reversed(items):
+        if item["kind"] != "INTERACTION_SKIP":
+            continue
+
+        interaction_skip_rows.append({
+            "time": item["timestamp"],
+            "ip": item["ip"],
+            "client": item["client"],
+            "visitor": item["visitor"],
+            "doc": item["doc"],
+            "path": item["path"],
+            "reason": (
+                item["reason"]
+                or "bez důvodu"
+            ),
+            "source_referer": (
+                item["source_referer"]
+            ),
+            "ua": shorten_text(
+                item["ua"],
+                180,
+            ),
+        })
+
+        if len(interaction_skip_rows) >= 30:
+            break
+
     browser_skip_rows = []
 
     for item in reversed(items):
@@ -1192,6 +1344,17 @@ def build_traffic_audit(log_text, since=None):
             return int(value or 0)
         except (TypeError, ValueError):
             return 0
+    def audit_diag_optional_ms(value):
+        try:
+            result = int(value)
+        except (TypeError, ValueError):
+            return -1
+
+        if result < 0:
+            return -1
+
+        return result
+
 
     for item in reversed(items):
         if item["kind"] != "META_EXIT_DIAG":
@@ -1229,6 +1392,31 @@ def build_traffic_audit(log_text, since=None):
             item["engaged_sent"] == "1"
         )
 
+        meaningful_sent = (
+            item["meaningful_sent"] == "1"
+        )
+
+        meaningful_type = (
+            item["meaningful_type"]
+            or "none"
+        )
+
+        first_pointer_ms = audit_diag_optional_ms(
+            item["first_pointer_ms"]
+        )
+
+        first_touch_ms = audit_diag_optional_ms(
+            item["first_touch_ms"]
+        )
+
+        first_scroll_ms = audit_diag_optional_ms(
+            item["first_scroll_ms"]
+        )
+
+        first_meaningful_ms = audit_diag_optional_ms(
+            item["first_meaningful_ms"]
+        )
+
         had_pointer = (
             item["had_pointer"] == "1"
         )
@@ -1263,9 +1451,6 @@ def build_traffic_audit(log_text, since=None):
         if had_key:
             interaction_parts.append("key")
 
-        had_any_interaction = bool(
-            interaction_parts
-        )
 
         # Pouze diagnostický flag.
         #
@@ -1273,12 +1458,21 @@ def build_traffic_audit(log_text, since=None):
         # ale nikdy nebyl 750 ms v kuse visible,
         # neposlal Browser ani Engaged a nebyla
         # zachycena žádná uživatelská interakce.
-        background_candidate = (
-            elapsed_ms >= 3000
-            and max_visible_span_ms < 750
-            and not browser_sent
-            and not engaged_sent
-            and not had_any_interaction
+        if max_visible_span_ms == 0:
+            visibility_class = "HIDDEN"
+
+        elif max_visible_span_ms < 750:
+            visibility_class = "TRANSIENT"
+
+        elif max_visible_span_ms < 3000:
+            visibility_class = "WEAK"
+
+        else:
+            visibility_class = "ENGAGED"
+
+        strong_human = (
+            engaged_sent
+            or meaningful_sent
         )
 
         initial_focus = (
@@ -1358,6 +1552,14 @@ def build_traffic_audit(log_text, since=None):
 
             "browser_sent": browser_sent,
             "engaged_sent": engaged_sent,
+            "meaningful_sent": meaningful_sent,
+            "meaningful_type": meaningful_type,
+            "strong_human": strong_human,
+
+            "first_pointer_ms": first_pointer_ms,
+            "first_touch_ms": first_touch_ms,
+            "first_scroll_ms": first_scroll_ms,
+            "first_meaningful_ms": first_meaningful_ms,
 
             "interaction": (
                 ", ".join(interaction_parts)
@@ -1368,9 +1570,7 @@ def build_traffic_audit(log_text, since=None):
             "max_scroll_pct": max_scroll_pct,
             "prerendered": prerendered,
 
-            "background_candidate": (
-                background_candidate
-            ),
+            "visibility_class": visibility_class,
 
             "document_referrer": shorten_text(
                 item["document_referrer"],
@@ -1498,6 +1698,25 @@ def build_traffic_audit(log_text, since=None):
         "unconfirmed_visit_distribution": (unconfirmed_visit_distribution),
         "unconfirmed_top_uas": unconfirmed_top_uas,
         "unconfirmed_rows": unconfirmed_rows[:50],
+        "interaction_skip_reasons": interaction_skip_reasons.most_common(10),
+        "interaction_type_counts": interaction_type_counts.most_common(10),
+        "meaningful_interaction_rows": meaningful_interaction_rows,
+        "interaction_skip_rows": interaction_skip_rows,
+        "meaningful_interaction_visit_visitor_count": (
+            len(interaction_visit_keys)
+        ),
+
+        "strong_human_visit_visitor_count": (
+            len(strong_human_visit_keys)
+        ),
+
+        "weak_visible_only_visit_visitor_count": (
+            len(weak_visible_only_visit_keys)
+        ),
+
+        "without_strong_human_visit_visitor_count": (
+            len(without_strong_human_visit_keys)
+        ),
     }
 
 

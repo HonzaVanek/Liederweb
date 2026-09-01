@@ -165,7 +165,11 @@
           <tr>
             <td>
               {% if label == "BROWSER_CONFIRMED" %}
-                  BROWSER_CONFIRMED (viditelný browser)
+                  BROWSER_CONFIRMED (visible ≥ 750 ms)
+              {% elif label == "MEANINGFUL_INTERACTION" %}
+                  MEANINGFUL_INTERACTION (silný human signal)
+              {% elif label == "INTERACTION_SKIP" %}
+                  INTERACTION_SKIP
               {% elif label == "BROWSER_SKIP" %}
                   BROWSER_SKIP
               {% elif label == "ENGAGED" %}
@@ -188,16 +192,20 @@
         {% endfor %}
       </table>
         <p class="help">
-          BROWSER_CONFIRMED je JS potvrzení, že stránka byla skutečně
-          spuštěná a viditelná v prohlížeči. ENGAGED znamená viditelnou
-          stránku alespoň přibližně 3 sekundy.
+          <code>BROWSER_CONFIRMED</code> znamená, že JS dokument byl
+          alespoň 750 ms souvisle browserem označen jako visible.
+          Jde o slabý technický visibility signal, nikoliv sám o sobě
+          o potvrzení člověka.
 
-          Oba typy jsou jednotlivé beacon události, nikoliv počet
-          unikátních lidí; jeden návštěvník může při procházení webu
-          odeslat více beaconů.
+          <code>ENGAGED</code> znamená alespoň přibližně 3 sekundy
+          souvislé visibility.
 
-          VISIT_DUPLICATE označuje technický dvojrequest, který nebyl
-          započítán jako další analytická pageview.
+          <code>MEANINGFUL_INTERACTION</code> znamená zachycenou
+          trusted uživatelskou akci, kterou považujeme za silný
+          human signal.
+
+          <strong>Silně potvrzený člověk</strong> je prozatím v auditu
+          visitor s ENGAGED nebo MEANINGFUL_INTERACTION.
         </p>
     </div>
 
@@ -275,6 +283,42 @@
       </table>
     </div>
 
+    
+    <div class="traffic-audit-card">
+      <h3>MEANINGFUL_INTERACTION typy</h3>
+
+      <table>
+        {% for label, count in traffic_audit.interaction_type_counts %}
+          <tr>
+            <td><code>{{ label }}</code></td>
+            <td>{{ count }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2">Zatím nic.</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+
+    <div class="traffic-audit-card">
+      <h3>INTERACTION_SKIP důvody</h3>
+
+      <table>
+        {% for label, count in traffic_audit.interaction_skip_reasons %}
+          <tr>
+            <td><code>{{ label }}</code></td>
+            <td>{{ count }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2">Nic.</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+
     <div class="traffic-audit-card">
       <h3>VISIT stránky</h3>
       <table>
@@ -331,13 +375,19 @@
   </div>
 
 
-  <h3>VISIT bez JS potvrzení</h3>
+  <h3>VISIT a JS / human signály</h3>
 
   <p class="help">
     Diagnostika unikátních server-side VISIT identit.
 
-    Za JS potvrzeného se považuje visitor s
-    <code>BROWSER_CONFIRMED</code> nebo <code>ENGAGED</code>.
+    Za <strong>jakýkoli JS signál</strong> se zde považuje
+    <code>BROWSER_CONFIRMED</code>, <code>ENGAGED</code> nebo
+    <code>MEANINGFUL_INTERACTION</code>.
+
+    Za <strong>silný human signal</strong> se považuje
+    <code>ENGAGED</code> nebo <code>MEANINGFUL_INTERACTION</code>.
+    Samotný <code>BROWSER_CONFIRMED</code> je pouze slabý
+    visibility signal.
 
     Z výsledku jsou odečteny také identity odstraněné realtime
     nebo post-hoc cleanupem.
@@ -362,25 +412,57 @@
         </tr>
 
         <tr>
-          <td>BROWSER_CONFIRMED</td>
+          <td>Visible ≥ 750 ms</td>
           <td>
             {{ traffic_audit.browser_confirmed_visit_visitor_count }}
           </td>
         </tr>
 
         <tr>
-          <td>ENGAGED</td>
+          <td>ENGAGED ≥ 3 s</td>
           <td>
             {{ traffic_audit.engaged_visit_visitor_count }}
           </td>
         </tr>
 
         <tr>
-          <td>JS potvrzeno celkem</td>
+          <td>MEANINGFUL_INTERACTION</td>
+          <td>
+            {{ traffic_audit.meaningful_interaction_visit_visitor_count }}
+          </td>
+        </tr>
+
+        <tr>
+          <td>
+            <strong>Silně potvrzený člověk</strong>
+            <br>
+            <small>Engaged ∪ meaningful interaction</small>
+          </td>
           <td>
             <strong>
-              {{ traffic_audit.js_confirmed_visit_visitor_count }}
+              {{ traffic_audit.strong_human_visit_visitor_count }}
             </strong>
+          </td>
+        </tr>
+
+        <tr>
+          <td>Pouze weak visible</td>
+          <td>
+            {{ traffic_audit.weak_visible_only_visit_visitor_count }}
+          </td>
+        </tr>
+
+        <tr>
+          <td>Bez silného human signálu</td>
+          <td>
+            {{ traffic_audit.without_strong_human_visit_visitor_count }}
+          </td>
+        </tr>
+
+        <tr>
+          <td>Jakýkoli JS signál</td>
+          <td>
+            {{ traffic_audit.js_confirmed_visit_visitor_count }}
           </td>
         </tr>
 
@@ -392,7 +474,7 @@
         </tr>
 
         <tr>
-          <td>Nepotvrzeno</td>
+          <td>Bez JS signálu</td>
           <td>
             <strong>
               {{ traffic_audit.unconfirmed_visit_visitor_count }}
@@ -680,14 +762,13 @@
     a Instagramu. Nemění statistiky ani nikoho automaticky
     neoznačuje jako bota.
 
-    <strong>doc</strong> je unikátní ID konkrétní instance dokumentu.
-    Dvě různé hodnoty doc u stejného client/path znamenají,
-    že byly skutečně spuštěny dvě samostatné JS instance stránky.
+    <strong>HIDDEN</strong> = dokument nebyl ani chvíli visible.
+    <strong>TRANSIENT</strong> = max. visible interval 1–749 ms.
+    <strong>WEAK</strong> = 750–2999 ms.
+    <strong>ENGAGED</strong> = alespoň 3000 ms.
 
-    <strong>BACKGROUND?</strong> znamená, že dokument existoval
-    alespoň 3 sekundy, ale nikdy nebyl alespoň 750 ms v kuse
-    viditelný, neposlal Browser ani Engaged beacon a nebyla
-    zachycena žádná uživatelská interakce.
+    <strong>STRONG HUMAN</strong> znamená, že dokument poslal
+    ENGAGED nebo MEANINGFUL_INTERACTION.
   </p>
 
   <div class="stats-table-scroll">
@@ -702,6 +783,7 @@
           <th>Focus / navigation</th>
           <th>Browser</th>
           <th>Engaged</th>
+          <th>Meaningful</th>
           <th>Interakce</th>
           <th>Scroll</th>
           <th>Lifecycle</th>
@@ -712,11 +794,7 @@
 
       <tbody>
         {% for row in traffic_audit.meta_exit_diag_rows %}
-          <tr
-            {% if row.background_candidate %}
-              class="meta-diag-background-row"
-            {% endif %}
-          >
+          <tr>
             <td>
               {{ row.time }}
               <br>
@@ -823,7 +901,37 @@
             </td>
 
             <td>
+              {% if row.meaningful_sent %}
+                <strong>ANO</strong>
+                <br>
+                <code>{{ row.meaningful_type }}</code>
+
+                {% if row.first_meaningful_ms != -1 %}
+                  <br>
+                  po {{ row.first_meaningful_ms }} ms
+                {% endif %}
+              {% else %}
+                ne
+              {% endif %}
+            </td>
+
+            <td>
               {{ row.interaction }}
+
+              {% if row.first_pointer_ms != -1 %}
+                <br>
+                pointer: {{ row.first_pointer_ms }} ms
+              {% endif %}
+
+              {% if row.first_touch_ms != -1 %}
+                <br>
+                touch: {{ row.first_touch_ms }} ms
+              {% endif %}
+
+              {% if row.first_scroll_ms != -1 %}
+                <br>
+                scroll: {{ row.first_scroll_ms }} ms
+              {% endif %}
             </td>
 
             <td>
@@ -852,12 +960,13 @@
             </td>
 
             <td>
-              {% if row.background_candidate %}
-                <strong class="meta-diag-background-badge">
-                  BACKGROUND?
-                </strong>
-              {% else %}
-                —
+              <strong>
+                {{ row.visibility_class }}
+              </strong>
+
+              {% if row.strong_human %}
+                <br>
+                <strong>STRONG HUMAN</strong>
               {% endif %}
             </td>
 
@@ -887,7 +996,7 @@
 
         {% empty %}
           <tr>
-            <td colspan="13">
+            <td colspan="14">
               Zatím žádná Meta exit diagnostika.
             </td>
           </tr>
@@ -1035,6 +1144,94 @@
     </tbody>
   </table>
 
+
+  <h3>Poslední MEANINGFUL_INTERACTION</h3>
+
+  <p class="help">
+    Silný human signal založený na trusted uživatelské akci.
+    Zatím jde pouze o audit traffic logu; není ještě ukládán
+    do samostatné denní Human statistiky.
+  </p>
+
+  <div class="stats-table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Čas</th>
+          <th>IP / identity</th>
+          <th>Path</th>
+          <th>Interakce</th>
+          <th>Dokument</th>
+          <th>Navigation</th>
+          <th>Source referer</th>
+          <th>User-Agent</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in traffic_audit.meaningful_interaction_rows %}
+          <tr>
+            <td>{{ row.time }}</td>
+
+            <td>
+              {% if row.ip %}
+                <code>{{ row.ip }}</code>
+                <br>
+              {% endif %}
+
+              client:
+              <code>{{ row.client }}</code>
+              <br>
+
+              visitor:
+              <code>{{ row.visitor }}</code>
+            </td>
+
+            <td>
+              <code>{{ row.path }}</code>
+            </td>
+
+            <td>
+              <strong>{{ row.interaction_type }}</strong>
+              <br>
+              po {{ row.interaction_ms }} ms
+            </td>
+
+            <td>
+              <code>{{ row.doc|default:"—" }}</code>
+            </td>
+
+            <td>
+              initial:
+              <code>{{ row.initial_visibility }}</code>
+              <br>
+              nav:
+              <code>{{ row.navigation_type }}</code>
+            </td>
+
+            <td>
+              {% if row.source_referer %}
+                <code>{{ row.source_referer }}</code>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <td>
+              <code>{{ row.ua }}</code>
+            </td>
+          </tr>
+
+        {% empty %}
+          <tr>
+            <td colspan="8">
+              Zatím žádný MEANINGFUL_INTERACTION.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
   <h3>Poslední BROWSER_CONFIRMED</h3>
 
@@ -1620,6 +1817,27 @@
         padding: 1px 7px;
         border-radius: 999px;
         background: #4ade80;
+        color: #111;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+    }
+
+    .system-log-output
+    .system-log-line.traffic-kind-meaningful-interaction {
+        background: rgba(34, 197, 94, 0.38) !important;
+        border-left-color: #22c55e !important;
+        font-weight: 700;
+    }
+
+    .system-log-output
+    .system-log-line.traffic-kind-meaningful-interaction::before {
+        content: "HUMAN ACTION";
+        display: inline-block;
+        margin-right: 8px;
+        padding: 1px 7px;
+        border-radius: 999px;
+        background: #22c55e;
         color: #111;
         font-size: 11px;
         font-weight: 800;
