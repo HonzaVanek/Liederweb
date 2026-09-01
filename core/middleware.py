@@ -1365,6 +1365,138 @@ class SiteVisitStatsMiddleware:
 
         return moved
 
+    def classify_recent_social_page_duplicate(
+        self,
+        client_label,
+        visitor_label,
+        path,
+        user_agent,
+        referer_raw,
+    ):
+        """
+        Deduplikace technických FB/IG document burstů.
+
+        1) Nejprve hledáme známou UA variantu A -> B
+        v okně 10 sekund.
+
+        2) Jakmile ji skutečně najdeme, zapneme pro stejný
+        client/path/normalized-UA krátký 5s burst lock.
+
+        Ten zachytí např.:
+            A -> B -> A -> B
+
+        aniž bychom obecně zakazovali normální reloady.
+        """
+        if not self.is_social_or_in_app_ua(user_agent):
+            return ""
+
+        raw_ua = (user_agent or "").strip()
+        normalized_ua = self.normalize_visitor_user_agent(raw_ua)
+        referer_host = self.get_referer_host(referer_raw)
+
+        now_ts = timezone.now().timestamp()
+
+        path_key = hashlib.sha256(
+            (path or "").encode("utf-8")
+        ).hexdigest()[:16]
+
+        base_key = (
+            f"traffic_social_page:"
+            f"{client_label}:"
+            f"{path_key}"
+        )
+
+        burst_key = (
+            f"traffic_social_burst:"
+            f"{client_label}:"
+            f"{path_key}"
+        )
+
+        # -------------------------------------------------
+        # 1. Už jsme u tohoto client/path prokázali
+        #    technický Meta burst.
+        # -------------------------------------------------
+        burst = cache.get(burst_key)
+
+        if (
+            burst
+            and burst.get("normalized_ua") == normalized_ua
+        ):
+            return "social_burst"
+
+        # -------------------------------------------------
+        # 2. Hledání první variantní dvojice A -> B.
+        # -------------------------------------------------
+        previous = cache.get(base_key)
+
+        if previous:
+            previous_ts = previous.get("ts", 0)
+            age = now_ts - previous_ts
+
+            is_recent = 0 <= age <= 10
+
+            raw_ua_changed = (
+                previous.get("raw_ua", "") != raw_ua
+            )
+
+            normalized_ua_same = (
+                previous.get("normalized_ua", "")
+                == normalized_ua
+            )
+
+            referer_host_same = (
+                previous.get("referer_host", "")
+                == referer_host
+            )
+
+            if (
+                is_recent
+                and raw_ua_changed
+                and normalized_ua_same
+                and referer_host_same
+            ):
+                logger.info(
+                    "SOCIAL_DUP_PAIR "
+                    "client=%s path=%s age_ms=%s "
+                    "previous_visitor=%s current_visitor=%s "
+                    "referer_host=%s "
+                    "previous_ua=%s current_ua=%s",
+                    client_label,
+                    path[:300],
+                    round(age * 1000),
+                    previous.get("visitor", ""),
+                    visitor_label,
+                    referer_host,
+                    previous.get("raw_ua", "")[:300],
+                    raw_ua[:300],
+                )
+
+                # Teprve teď víme, že jde o Meta technický burst.
+                cache.set(
+                    burst_key,
+                    {
+                        "normalized_ua": normalized_ua,
+                    },
+                    timeout=5,
+                )
+
+                return "social_ua_variant"
+
+        # Normální request si zapamatujeme jako základ.
+        cache.set(
+            base_key,
+            {
+                "ts": now_ts,
+                "raw_ua": raw_ua,
+                "normalized_ua": normalized_ua,
+                "referer_host": referer_host,
+                "visitor": visitor_label,
+            },
+            timeout=15,
+        )
+
+        return ""  
+
     def normalize_visitor_user_agent(self, user_agent):
         ua = (user_agent or "").strip()
 
@@ -2334,14 +2466,19 @@ class SiteVisitStatsMiddleware:
             ):
                 duplicate_reason = "rapid_exact_repeat"
 
-            elif self.is_recent_social_page_duplicate(
-                client_label=client_label,
-                visitor_label=visitor_label,
-                path=path,
-                user_agent=user_agent,
-                referer_raw=referer_raw,
-            ):
-                duplicate_reason = "social_ua_variant"
+            else:
+                social_duplicate_reason = (
+                    self.classify_recent_social_page_duplicate(
+                        client_label=client_label,
+                        visitor_label=visitor_label,
+                        path=path,
+                        user_agent=user_agent,
+                        referer_raw=referer_raw,
+                    )
+                )
+
+                if social_duplicate_reason:
+                    duplicate_reason = social_duplicate_reason
 
         if duplicate_reason:
             logger.info(

@@ -7,8 +7,16 @@
 
     window.__liederTrafficBeaconSent = true;
 
+
+    // -------------------------------------------------
+    // Základní stav dokumentu
+    // -------------------------------------------------
+
+    var pageStartedAt = performance.now();
+
     var browserSent = false;
     var engagedSent = false;
+    var meaningfulInteractionSent = false;
     var diagnosticSent = false;
 
     var browserTimer = null;
@@ -16,8 +24,56 @@
 
 
     // -------------------------------------------------
-    // Identita konkrétního JS dokumentu
+    // Diagnostika interakcí
     // -------------------------------------------------
+
+    var hadPointer = false;
+    var hadTouch = false;
+    var hadScroll = false;
+    var hadKey = false;
+
+    var firstPointerMs = null;
+    var firstTouchMs = null;
+    var firstScrollMs = null;
+    var firstMeaningfulMs = null;
+
+    var meaningfulInteractionType = "";
+
+    // Poslední skutečný touch/pointer input.
+    // Použijeme ho pro rozlišení skutečného user scrollu
+    // od technického obnovení scroll pozice browserem.
+    var lastTrustedPointerOrTouchAt = null;
+
+    var maxScrollPct = 0;
+
+
+    // -------------------------------------------------
+    // Diagnostika viditelnosti
+    // -------------------------------------------------
+
+    var visibleStartedAt = null;
+    var totalVisibleMs = 0;
+    var maxVisibleSpanMs = 0;
+
+    var visibilityChanges = 0;
+    var visibleIntervals = 0;
+
+    var wasPrerendered = false;
+
+
+    // -------------------------------------------------
+    // Pomocné funkce
+    // -------------------------------------------------
+
+    function elapsedFromStart() {
+        return Math.max(
+            0,
+            Math.round(
+                performance.now() - pageStartedAt
+            )
+        );
+    }
+
 
     function createDocumentId() {
         try {
@@ -75,50 +131,6 @@
     }
 
 
-    var trafficDocumentId = createDocumentId();
-
-    var initialVisibility = (
-        document.visibilityState || "unknown"
-    );
-
-    var initialFocus = hasDocumentFocus();
-
-    var navigationType = getNavigationType();
-
-    // Zachytíme hodnoty při vzniku dokumentu.
-    // Důležité: později se WebView / UA může chovat jinak.
-    var initialDocumentUserAgent = (
-        navigator.userAgent || ""
-    );
-
-    var initialDocumentReferrer = (
-        document.referrer || ""
-    );
-
-
-    // -------------------------------------------------
-    // Diagnostika viditelnosti
-    // -------------------------------------------------
-
-    var pageStartedAt = performance.now();
-
-    var visibleStartedAt = null;
-    var totalVisibleMs = 0;
-    var maxVisibleSpanMs = 0;
-
-    var visibilityChanges = 0;
-    var visibleIntervals = 0;
-
-    var hadPointer = false;
-    var hadTouch = false;
-    var hadScroll = false;
-    var hadKey = false;
-
-    var maxScrollPct = 0;
-
-    var wasPrerendered = false;
-
-
     function isPrerendering() {
         return (
             "prerendering" in document &&
@@ -132,11 +144,6 @@
             document.visibilityState === "visible" &&
             !isPrerendering()
         );
-    }
-
-
-    if (isPrerendering()) {
-        wasPrerendered = true;
     }
 
 
@@ -194,6 +201,35 @@
 
 
     // -------------------------------------------------
+    // Identita konkrétního JS dokumentu
+    // -------------------------------------------------
+
+    var trafficDocumentId = createDocumentId();
+
+    var initialVisibility = (
+        document.visibilityState || "unknown"
+    );
+
+    var initialFocus = hasDocumentFocus();
+
+    var navigationType = getNavigationType();
+
+    // Hodnoty při vytvoření konkrétní instance dokumentu.
+    var initialDocumentUserAgent = (
+        navigator.userAgent || ""
+    );
+
+    var initialDocumentReferrer = (
+        document.referrer || ""
+    );
+
+
+    if (isPrerendering()) {
+        wasPrerendered = true;
+    }
+
+
+    // -------------------------------------------------
     // Beacon POST
     // -------------------------------------------------
 
@@ -214,13 +250,11 @@
             stage
         );
 
-        // Identita konkrétní instance HTML dokumentu.
         params.append(
             "document_id",
             trafficDocumentId
         );
 
-        // Stav dokumentu při jeho vzniku.
         params.append(
             "initial_visibility",
             initialVisibility
@@ -236,8 +270,6 @@
             navigationType
         );
 
-        // UA zachycené JavaScriptem při vzniku dokumentu.
-        // To chceme porovnat s HTTP User-Agentem beacon requestu.
         params.append(
             "document_ua",
             initialDocumentUserAgent
@@ -288,22 +320,25 @@
             }
         }
 
-        fetch("/traffic/engaged/", {
-            method: "POST",
-            body: body,
-            headers: {
-                "Content-Type":
-                    "application/x-www-form-urlencoded;" +
-                    "charset=UTF-8"
-            },
-            credentials: "same-origin",
-            keepalive: true
-        }).catch(function () {});
+        fetch(
+            "/traffic/engaged/",
+            {
+                method: "POST",
+                body: body,
+                headers: {
+                    "Content-Type":
+                        "application/x-www-form-urlencoded;" +
+                        "charset=UTF-8"
+                },
+                credentials: "same-origin",
+                keepalive: true
+            }
+        ).catch(function () {});
     }
 
 
     // -------------------------------------------------
-    // Browser / Engaged
+    // Slabý Browser signal >= 750 ms
     // -------------------------------------------------
 
     function sendBrowserConfirmation() {
@@ -323,6 +358,10 @@
     }
 
 
+    // -------------------------------------------------
+    // Silný Engaged signal >= 3000 ms
+    // -------------------------------------------------
+
     function sendEngagedConfirmation() {
         if (
             engagedSent ||
@@ -340,21 +379,35 @@
     }
 
 
-    function clearTimers() {
-        if (browserTimer !== null) {
-            clearTimeout(browserTimer);
-            browserTimer = null;
+    // -------------------------------------------------
+    // Silná smysluplná interakce
+    // -------------------------------------------------
+
+    function sendMeaningfulInteraction(type) {
+        if (
+            meaningfulInteractionSent ||
+            !isActuallyVisible()
+        ) {
+            return;
         }
 
-        if (engagedTimer !== null) {
-            clearTimeout(engagedTimer);
-            engagedTimer = null;
-        }
+        meaningfulInteractionSent = true;
+        meaningfulInteractionType = type;
+        firstMeaningfulMs = elapsedFromStart();
+
+        postBeacon(
+            "interaction",
+            type,
+            {
+                interaction_type: type,
+                interaction_ms: firstMeaningfulMs
+            }
+        );
     }
 
 
     // -------------------------------------------------
-    // Měření skutečně viditelných intervalů
+    // Visible interval
     // -------------------------------------------------
 
     function startVisibleSpan() {
@@ -366,7 +419,6 @@
         }
 
         visibleStartedAt = performance.now();
-
         visibleIntervals += 1;
     }
 
@@ -394,6 +446,19 @@
     }
 
 
+    function clearTimers() {
+        if (browserTimer !== null) {
+            clearTimeout(browserTimer);
+            browserTimer = null;
+        }
+
+        if (engagedTimer !== null) {
+            clearTimeout(engagedTimer);
+            engagedTimer = null;
+        }
+    }
+
+
     function scheduleVisibleTimers() {
         if (!isActuallyVisible()) {
             return;
@@ -408,7 +473,6 @@
             browserTimer = setTimeout(
                 function () {
                     browserTimer = null;
-
                     sendBrowserConfirmation();
                 },
                 750
@@ -422,7 +486,6 @@
             engagedTimer = setTimeout(
                 function () {
                     engagedTimer = null;
-
                     sendEngagedConfirmation();
                 },
                 3000
@@ -432,7 +495,10 @@
 
 
     // -------------------------------------------------
-    // Interakce
+    // Pointer / touch
+    //
+    // Samotný pointerdown/touchstart NENÍ strong human
+    // signal. Pouze ho diagnosticky zaznamenáme.
     // -------------------------------------------------
 
     document.addEventListener(
@@ -446,9 +512,15 @@
             }
 
             hadPointer = true;
+            lastTrustedPointerOrTouchAt = performance.now();
+
+            if (firstPointerMs === null) {
+                firstPointerMs = elapsedFromStart();
+            }
         },
         {
-            passive: true
+            passive: true,
+            capture: true
         }
     );
 
@@ -464,30 +536,128 @@
             }
 
             hadTouch = true;
+            lastTrustedPointerOrTouchAt = performance.now();
+
+            if (firstTouchMs === null) {
+                firstTouchMs = elapsedFromStart();
+            }
         },
         {
-            passive: true
+            passive: true,
+            capture: true
         }
     );
 
+
+    // -------------------------------------------------
+    // Kliknutí na skutečně interaktivní prvek
+    // = silný human signal.
+    // -------------------------------------------------
+
+    document.addEventListener(
+        "click",
+        function (event) {
+            if (
+                !event ||
+                event.isTrusted === false ||
+                !isActuallyVisible()
+            ) {
+                return;
+            }
+
+            var target = event.target;
+
+            if (
+                !target ||
+                typeof target.closest !== "function"
+            ) {
+                return;
+            }
+
+            var interactiveElement = target.closest(
+                "a, button, input, select, textarea, " +
+                "summary, [role='button']"
+            );
+
+            if (!interactiveElement) {
+                return;
+            }
+
+            sendMeaningfulInteraction(
+                "click"
+            );
+        },
+        true
+    );
+
+
+    // -------------------------------------------------
+    // Klávesnice
+    // = silný human signal.
+    // -------------------------------------------------
 
     document.addEventListener(
         "keydown",
         function (event) {
             if (
-                event &&
+                !event ||
                 event.isTrusted === false
             ) {
                 return;
             }
 
             hadKey = true;
+
+            sendMeaningfulInteraction(
+                "keydown"
+            );
+        },
+        true
+    );
+
+
+    // -------------------------------------------------
+    // Mouse wheel
+    // = skutečný uživatelský input.
+    // -------------------------------------------------
+
+    window.addEventListener(
+        "wheel",
+        function (event) {
+            if (
+                !event ||
+                event.isTrusted === false
+            ) {
+                return;
+            }
+
+            sendMeaningfulInteraction(
+                "wheel"
+            );
+        },
+        {
+            passive: true,
+            capture: true
         }
     );
 
 
+    // -------------------------------------------------
+    // Scroll diagnostika
+    //
+    // Samotný scroll event nestačí:
+    // browser může technicky obnovit scroll pozici.
+    //
+    // Pokud mu ale těsně předcházel trusted touch/pointer,
+    // považujeme jej za user scroll.
+    // -------------------------------------------------
+
     function updateScrollDiagnostic() {
         hadScroll = true;
+
+        if (firstScrollMs === null) {
+            firstScrollMs = elapsedFromStart();
+        }
 
         var documentElement = (
             document.documentElement
@@ -536,6 +706,18 @@
             maxScrollPct = Math.max(
                 maxScrollPct,
                 pct
+            );
+        }
+
+        if (
+            lastTrustedPointerOrTouchAt !== null &&
+            (
+                performance.now() -
+                lastTrustedPointerOrTouchAt
+            ) <= 2000
+        ) {
+            sendMeaningfulInteraction(
+                "scroll"
             );
         }
     }
@@ -600,6 +782,12 @@
                 engaged_sent:
                     engagedSent ? 1 : 0,
 
+                meaningful_sent:
+                    meaningfulInteractionSent ? 1 : 0,
+
+                meaningful_type:
+                    meaningfulInteractionType || "none",
+
                 had_pointer:
                     hadPointer ? 1 : 0,
 
@@ -611,6 +799,26 @@
 
                 had_key:
                     hadKey ? 1 : 0,
+
+                first_pointer_ms:
+                    firstPointerMs === null
+                        ? -1
+                        : firstPointerMs,
+
+                first_touch_ms:
+                    firstTouchMs === null
+                        ? -1
+                        : firstTouchMs,
+
+                first_scroll_ms:
+                    firstScrollMs === null
+                        ? -1
+                        : firstScrollMs,
+
+                first_meaningful_ms:
+                    firstMeaningfulMs === null
+                        ? -1
+                        : firstMeaningfulMs,
 
                 max_scroll_pct:
                     maxScrollPct,
@@ -690,6 +898,7 @@
     );
 
 
+    // Dokument mohl být visible už při načtení.
     scheduleVisibleTimers();
 })();
 </script>

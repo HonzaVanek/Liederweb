@@ -1049,8 +1049,10 @@ def traffic_engaged(request):
     ip = get_client_ip(request)
     user_agent = request.META.get("HTTP_USER_AGENT", "")[:500]
     content_type = request.META.get("CONTENT_TYPE", "")
+
     referer = (
-        request.META.get("HTTP_REFERER", "") or ""
+        request.META.get("HTTP_REFERER", "")
+        or ""
     ).split("?", 1)[0][:300]
 
     try:
@@ -1066,6 +1068,7 @@ def traffic_engaged(request):
     if stage not in (
         "browser",
         "engaged",
+        "interaction",
         "diagnostic",
     ):
         logger.info(
@@ -1076,36 +1079,35 @@ def traffic_engaged(request):
         )
         return HttpResponse(status=204)
 
+    # -------------------------------------------------
+    # Identita JS dokumentu + základní diagnostika
+    # -------------------------------------------------
+
     document_id = (
         request.POST.get("document_id")
         or ""
     ).strip()[:64]
 
-    # Jen jednoduché bezpečné znaky do logu.
     document_id = "".join(
         char
         for char in document_id
         if char.isalnum() or char in "-_"
     )
 
-
     initial_visibility = (
         request.POST.get("initial_visibility")
         or ""
     ).strip().lower()[:20]
-
 
     final_visibility = (
         request.POST.get("final_visibility")
         or ""
     ).strip().lower()[:20]
 
-
     navigation_type = (
         request.POST.get("navigation_type")
         or ""
     ).strip().lower()[:30]
-
 
     initial_focus = (
         1
@@ -1116,7 +1118,6 @@ def traffic_engaged(request):
         else 0
     )
 
-
     final_focus = (
         1
         if (
@@ -1125,7 +1126,6 @@ def traffic_engaged(request):
         ).strip() == "1"
         else 0
     )
-
 
     pagehide_persisted = (
         1
@@ -1136,12 +1136,10 @@ def traffic_engaged(request):
         else 0
     )
 
-
     document_ua = (
         request.POST.get("document_ua")
         or ""
     ).strip()[:500]
-
 
     document_referrer = (
         request.POST.get("document_referrer")
@@ -1153,15 +1151,31 @@ def traffic_engaged(request):
         .split("?", 1)[0][:300]
     )
 
+    # -------------------------------------------------
+    # Typ skip logu
+    # -------------------------------------------------
+
     if stage == "browser":
         skip_kind = "BROWSER_SKIP"
+
     elif stage == "engaged":
         skip_kind = "ENGAGED_SKIP"
+
+    elif stage == "interaction":
+        skip_kind = "INTERACTION_SKIP"
+
     else:
         skip_kind = "META_EXIT_DIAG_SKIP"
 
+    # -------------------------------------------------
+    # Základní validace
+    # -------------------------------------------------
+
     if not ip:
-        logger.debug("%s reason=no_ip", skip_kind)
+        logger.debug(
+            "%s reason=no_ip",
+            skip_kind,
+        )
         return HttpResponse(status=204)
 
     if not user_agent.strip():
@@ -1172,7 +1186,10 @@ def traffic_engaged(request):
         )
         return HttpResponse(status=204)
 
-    path = (request.POST.get("path") or "").strip()
+    path = (
+        request.POST.get("path")
+        or ""
+    ).strip()
 
     if not path.startswith("/"):
         logger.debug(
@@ -1218,24 +1235,39 @@ def traffic_engaged(request):
         )
         return HttpResponse(status=204)
 
+    # -------------------------------------------------
+    # Identita
+    # -------------------------------------------------
+
     today = timezone.localdate()
 
     raw_client_id = (
         f"{today}|{ip}|{settings.SECRET_KEY}"
     )
+
     client_hash = hashlib.sha256(
         raw_client_id.encode("utf-8")
     ).hexdigest()
+
     client_label = client_hash[:8]
 
+    # Schválně stále raw beacon UA.
+    # U Meta diagnostiky díky tomu vidíme rozdíly UA
+    # mezi původním requestem a beaconem.
     raw_visitor_id = (
         f"{today}|{ip}|{user_agent}|"
         f"{settings.SECRET_KEY}"
     )
+
     visitor_hash = hashlib.sha256(
         raw_visitor_id.encode("utf-8")
     ).hexdigest()
+
     visitor_label = visitor_hash[:8]
+
+    # -------------------------------------------------
+    # Zdroj původního VISIT
+    # -------------------------------------------------
 
     source_info = cache.get(
         f"traffic_visit_source:"
@@ -1247,11 +1279,18 @@ def traffic_engaged(request):
 
     if isinstance(source_info, dict):
         source_referer = (
-            source_info.get("referer", "") or ""
+            source_info.get("referer", "")
+            or ""
         )
+
         source_visitor_label = (
-            source_info.get("visitor", "") or ""
+            source_info.get("visitor", "")
+            or ""
         )
+
+    # -------------------------------------------------
+    # Bot ochrany
+    # -------------------------------------------------
 
     if is_obvious_beacon_bot_ua(user_agent):
         logger.info(
@@ -1273,10 +1312,10 @@ def traffic_engaged(request):
     sticky_reason = cache.get(
         f"traffic_bot_like_client:{client_label}"
     )
-   
+
     if sticky_reason:
-        # Když už jsme klienta překlasifikovali jako bota,
-        # nesmí zůstat ani ve slabém ani silném JS signálu.
+        # Když už byl client překlasifikovaný jako bot,
+        # nesmí zůstat ani ve slabých/silných JS statistikách.
         DailyBrowserVisitor.objects.filter(
             day=today,
             client_hash=client_hash,
@@ -1309,31 +1348,23 @@ def traffic_engaged(request):
         )
         return HttpResponse(status=204)
 
-    # -------------------------------------------------
+    # =================================================
     # META EXIT DIAGNOSTIKA
     #
-    # Pouze loguje chování FB/IG návštěvy při odchodu.
-    # Nic nevytváří, nemaže ani nepřeklasifikuje.
-    # -------------------------------------------------
+    # Pouze loguje. Nic nevytváří ani nepřeklasifikuje.
+    # =================================================
 
     if stage == "diagnostic":
-
-        diagnostic_source = (
-            classify_engaged_source(
-                source_referer,
-                user_agent,
-            )
+        diagnostic_source = classify_engaged_source(
+            source_referer,
+            user_agent,
         )
 
-        # Endpoint sice může kdokoliv POSTnout ručně,
-        # ale tuto diagnostiku chceme pouze pro Meta
-        # provoz.
         if diagnostic_source not in (
             DailyEngagedVisitor.Source.FACEBOOK,
             DailyEngagedVisitor.Source.INSTAGRAM,
         ):
             return HttpResponse(status=204)
-
 
         def diagnostic_int(
             name,
@@ -1355,6 +1386,24 @@ def traffic_engaged(request):
                 min(value, maximum),
             )
 
+        def diagnostic_optional_ms(name):
+            raw_value = (
+                request.POST.get(name)
+                or "-1"
+            ).strip()
+
+            try:
+                value = int(raw_value)
+            except (TypeError, ValueError):
+                return -1
+
+            if value < 0:
+                return -1
+
+            return min(
+                value,
+                60 * 60 * 1000,
+            )
 
         elapsed_ms = diagnostic_int(
             "elapsed_ms",
@@ -1391,6 +1440,11 @@ def traffic_engaged(request):
             maximum=1,
         )
 
+        meaningful_sent = diagnostic_int(
+            "meaningful_sent",
+            maximum=1,
+        )
+
         had_pointer = diagnostic_int(
             "had_pointer",
             maximum=1,
@@ -1411,6 +1465,36 @@ def traffic_engaged(request):
             maximum=1,
         )
 
+        first_pointer_ms = diagnostic_optional_ms(
+            "first_pointer_ms"
+        )
+
+        first_touch_ms = diagnostic_optional_ms(
+            "first_touch_ms"
+        )
+
+        first_scroll_ms = diagnostic_optional_ms(
+            "first_scroll_ms"
+        )
+
+        first_meaningful_ms = diagnostic_optional_ms(
+            "first_meaningful_ms"
+        )
+
+        meaningful_type = (
+            request.POST.get("meaningful_type")
+            or "none"
+        ).strip().lower()[:30]
+
+        meaningful_type = "".join(
+            char
+            for char in meaningful_type
+            if (
+                char.isalnum()
+                or char in "-_"
+            )
+        ) or "none"
+
         max_scroll_pct = diagnostic_int(
             "max_scroll_pct",
             maximum=100,
@@ -1425,7 +1509,6 @@ def traffic_engaged(request):
             request.POST.get("trigger")
             or "unknown"
         ).strip().lower()[:30]
-
 
         logger.info(
             "META_EXIT_DIAG "
@@ -1443,10 +1526,16 @@ def traffic_engaged(request):
             "visible_intervals=%s "
             "browser_sent=%s "
             "engaged_sent=%s "
+            "meaningful_sent=%s "
+            "meaningful_type=%s "
             "had_pointer=%s "
             "had_touch=%s "
             "had_scroll=%s "
             "had_key=%s "
+            "first_pointer_ms=%s "
+            "first_touch_ms=%s "
+            "first_scroll_ms=%s "
+            "first_meaningful_ms=%s "
             "max_scroll_pct=%s "
             "prerendered=%s "
             "initial_visibility=%s "
@@ -1474,10 +1563,16 @@ def traffic_engaged(request):
             visible_intervals,
             browser_sent,
             engaged_sent,
+            meaningful_sent,
+            meaningful_type,
             had_pointer,
             had_touch,
             had_scroll,
             had_key,
+            first_pointer_ms,
+            first_touch_ms,
+            first_scroll_ms,
+            first_meaningful_ms,
             max_scroll_pct,
             prerendered,
             initial_visibility,
@@ -1495,13 +1590,17 @@ def traffic_engaged(request):
 
         return HttpResponse(status=204)
 
+    # =================================================
+    # BROWSER / ENGAGED / INTERACTION:
+    # musí existovat odpovídající skutečný VISIT.
+    # =================================================
+
     recent_cutoff = (
         timezone.now()
         - timedelta(minutes=15)
     )
 
-    # Nejdřív zkusíme přesně stejného návštěvníka.
-    # visitor_hash zahrnuje IP + User-Agent.
+    # Nejdřív přesný visitor + konkrétní page.
     matching_visit = (
         DailyPageVisitor.objects
         .filter(
@@ -1514,9 +1613,7 @@ def traffic_engaged(request):
         .first()
     )
 
-    # Fallback přes client_hash.
-    # Je důležitý hlavně pro FB/IG in-app browser,
-    # kde se User-Agent může mezi requesty lehce změnit.
+    # Fallback přes client_hash + poslední path.
     if not matching_visit:
         matching_visit = (
             DailySiteVisitor.objects
@@ -1530,13 +1627,19 @@ def traffic_engaged(request):
             .first()
         )
 
-    # U FB/IG in-app browseru se může User-Agent mezi
-    # původním GET a JS beaconem lehce změnit.
+    # Meta WebView může změnit UA.
     #
-    # Pokud proto nevyšel přesný visitor_hash ani aktuální
-    # DailySiteVisitor, dovolíme pro browser-stage ještě
-    # fallback přes konkrétní pageview stejného klienta.
-    if not matching_visit and stage == "browser":
+    # Browser a meaningful interaction proto smějí
+    # fallbacknout i přes konkrétní pageview clienta.
+    #
+    # ENGAGED schválně necháváme v dosavadním přísnějším režimu.
+    if (
+        not matching_visit
+        and stage in (
+            "browser",
+            "interaction",
+        )
+    ):
         matching_visit = (
             DailyPageVisitor.objects
             .filter(
@@ -1553,12 +1656,14 @@ def traffic_engaged(request):
         logger.info(
             "%s reason=no_matching_visit "
             "ip=%s client=%s visitor=%s "
+            "doc=%s "
             "path=%s referer=%s "
             "source_referer=%s ua=%s",
             skip_kind,
             ip,
             client_label,
             visitor_label,
+            document_id,
             path[:300],
             referer,
             source_referer[:300],
@@ -1569,6 +1674,7 @@ def traffic_engaged(request):
     confirmed_visitor_hash = (
         matching_visit.visitor_hash
     )
+
     confirmed_visitor_label = (
         confirmed_visitor_hash[:8]
     )
@@ -1587,9 +1693,13 @@ def traffic_engaged(request):
         user_agent,
     )
 
-    # --------------------------------------------
-    # STAGE 1: skutečně spuštěný viditelný browser
-    # --------------------------------------------
+    # =================================================
+    # STAGE 1: BROWSER >= 750 ms
+    #
+    # Slabý visibility signal.
+    # Pořád jej ukládáme kvůli diagnostice a bot heuristikám.
+    # =================================================
+
     if stage == "browser":
         trigger = (
             request.POST.get("trigger")
@@ -1612,9 +1722,7 @@ def traffic_engaged(request):
                 DailyBrowserVisitor.objects
                 .get_or_create(
                     day=today,
-                    visitor_hash=(
-                        confirmed_visitor_hash
-                    ),
+                    visitor_hash=confirmed_visitor_hash,
                     defaults=defaults,
                 )
             )
@@ -1622,9 +1730,7 @@ def traffic_engaged(request):
             browser = (
                 DailyBrowserVisitor.objects.get(
                     day=today,
-                    visitor_hash=(
-                        confirmed_visitor_hash
-                    ),
+                    visitor_hash=confirmed_visitor_hash,
                 )
             )
 
@@ -1668,9 +1774,104 @@ def traffic_engaged(request):
 
         return HttpResponse(status=204)
 
-    # --------------------------------------------
-    # STAGE 2: původní 3s engagement
-    # --------------------------------------------
+    # =================================================
+    # STAGE 2: MEANINGFUL INTERACTION
+    #
+    # Silný human signal.
+    #
+    # ZATÍM pouze logujeme.
+    # Do DailyHumanVisitor ho přidáme v dalším kroku
+    # po vytvoření modelu/migrace.
+    # =================================================
+
+    if stage == "interaction":
+        interaction_type = (
+            request.POST.get("interaction_type")
+            or ""
+        ).strip().lower()[:30]
+
+        allowed_interaction_types = {
+            "click",
+            "scroll",
+            "wheel",
+            "keydown",
+        }
+
+        if interaction_type not in allowed_interaction_types:
+            logger.info(
+                "INTERACTION_SKIP "
+                "reason=bad_interaction_type "
+                "ip=%s client=%s visitor=%s "
+                "doc=%s path=%s type=%s",
+                ip,
+                client_label,
+                confirmed_visitor_label,
+                document_id,
+                path[:300],
+                interaction_type,
+            )
+            return HttpResponse(status=204)
+
+        raw_interaction_ms = (
+            request.POST.get("interaction_ms")
+            or "-1"
+        ).strip()
+
+        try:
+            interaction_ms = int(
+                raw_interaction_ms
+            )
+        except (TypeError, ValueError):
+            interaction_ms = -1
+
+        if interaction_ms < 0:
+            interaction_ms = -1
+        else:
+            interaction_ms = min(
+                interaction_ms,
+                60 * 60 * 1000,
+            )
+
+        logger.info(
+            "MEANINGFUL_INTERACTION "
+            "ip=%s client=%s visitor=%s "
+            "beacon_visitor=%s "
+            "doc=%s "
+            "method=POST status=204 "
+            "path=%s "
+            "interaction_type=%s "
+            "interaction_ms=%s "
+            "initial_visibility=%s "
+            "initial_focus=%s "
+            "navigation_type=%s "
+            "referer=%s source_referer=%s "
+            "document_ua=%s "
+            "ua=%s",
+            ip,
+            client_label,
+            confirmed_visitor_label,
+            visitor_label,
+            document_id,
+            path[:300],
+            interaction_type,
+            interaction_ms,
+            initial_visibility,
+            initial_focus,
+            navigation_type,
+            referer,
+            attribution_referer[:300],
+            document_ua[:300],
+            user_agent[:300],
+        )
+
+        return HttpResponse(status=204)
+
+    # =================================================
+    # STAGE 3: ENGAGED >= 3000 ms
+    #
+    # Původní přísný engagement.
+    # =================================================
+
     defaults = {
         "client_hash": client_hash,
         "first_path": path,
@@ -1708,10 +1909,10 @@ def traffic_engaged(request):
         beacons=F("beacons") + 1,
     )
 
+    # -------------------------------------------------
+    # Engaged pro konkrétní stránku
+    # -------------------------------------------------
 
-    # --------------------------------------------
-    # 3s engagement pro konkrétní stránku
-    # --------------------------------------------
     page_source = classify_engaged_page_source(
         attribution_referer,
         user_agent,
