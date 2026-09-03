@@ -537,6 +537,78 @@
   </div>
 
 
+    {% if traffic_audit.search_cluster_rows %}
+    <h3>Podezřelé SEARCH clustery</h3>
+
+    <p class="help">
+      Diagnostické seskupení nepotvrzených návštěv ze search enginů.
+      Jde o 3+ různé clienty na stejné path během 20 minut.
+      Tyto návštěvy nejsou automaticky označeny jako boti ani odstraněny ze statistik.
+    </p>
+
+    <div class="stats-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Čas</th>
+            <th>Path</th>
+            <th>Rozpětí</th>
+            <th>Visitoři / clienti / IP</th>
+            <th>Fetch metadata</th>
+            <th>Ukázky UA</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for row in traffic_audit.search_cluster_rows %}
+            <tr>
+              <td>
+                {{ row.first_seen }}
+                <br>
+                →
+                {{ row.last_seen }}
+              </td>
+
+              <td>
+                <code>{{ row.path }}</code>
+              </td>
+
+              <td>
+                {{ row.span_seconds }} s
+              </td>
+
+              <td>
+                visitorů: <strong>{{ row.visitor_count }}</strong><br>
+                clientů: <strong>{{ row.client_count }}</strong><br>
+                IP: <strong>{{ row.ip_count }}</strong>
+              </td>
+
+              <td>
+                {% for shape in row.fetch_shapes %}
+                  <div>
+                    {{ shape.count }}×
+                    <code>
+                      {{ shape.fetch_user }} /
+                      {{ shape.fetch_mode }} /
+                      {{ shape.fetch_dest }} /
+                      {{ shape.fetch_site }}
+                    </code>
+                  </div>
+                {% endfor %}
+              </td>
+
+              <td>
+                {% for ua in row.ua_samples %}
+                  <div><code>{{ ua }}</code></div>
+                {% endfor %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+
   <h3>
     Poslední nepotvrzení VISIT visiteři
   </h3>
