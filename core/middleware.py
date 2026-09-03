@@ -170,6 +170,9 @@ BOT_USER_AGENT_PARTS = (
     "watchtowr",
     "get_titles/",
     "referentiel-industriel/",
+    "trafilatura",
+    "owler",
+    "newsai/",
 )
 
 BOT_REFERER_PARTS = (

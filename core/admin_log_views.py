@@ -1079,6 +1079,183 @@ def build_traffic_audit(log_text, since=None):
     ]
 
 
+    # =================================================
+    # Podezřelé SEARCH clustery
+    #
+    # Pouze diagnostika.
+    # Nic zde nemažeme ani nepřeklasifikováváme.
+    #
+    # Hledáme 3+ různé clienty, kteří:
+    # - nemají žádný JS signal,
+    # - přišli ze SEARCH refereru,
+    # - míří na stejnou path,
+    # - dorazí během 20 minut.
+    # =================================================
+
+    search_cluster_rows = []
+
+    search_rows_by_path = defaultdict(list)
+
+    for row in unconfirmed_rows:
+        if row["referer_kind"] != "SEARCH":
+            continue
+
+        if (
+            not row["first_seen"]
+            or not row["first_path"]
+        ):
+            continue
+
+        search_rows_by_path[
+            row["first_path"]
+        ].append(row)
+
+    cluster_window_seconds = 20 * 60
+
+    for path, path_rows in search_rows_by_path.items():
+        path_rows.sort(
+            key=lambda row: (
+                row["first_seen"]
+                or datetime.min
+            )
+        )
+
+        start = 0
+
+        while start < len(path_rows):
+            best_end = None
+            end = start
+
+            while end < len(path_rows):
+                span_seconds = (
+                    path_rows[end]["first_seen"]
+                    - path_rows[start]["first_seen"]
+                ).total_seconds()
+
+                if span_seconds > cluster_window_seconds:
+                    break
+
+                window_rows = (
+                    path_rows[start:end + 1]
+                )
+
+                window_clients = {
+                    row["client"]
+                    for row in window_rows
+                    if row["client"]
+                }
+
+                if len(window_clients) >= 3:
+                    best_end = end
+
+                end += 1
+
+            if best_end is None:
+                start += 1
+                continue
+
+            cluster_rows = (
+                path_rows[start:best_end + 1]
+            )
+
+            clients = {
+                row["client"]
+                for row in cluster_rows
+                if row["client"]
+            }
+
+            ips = {
+                row["ip"]
+                for row in cluster_rows
+                if row["ip"]
+            }
+
+            visitors = {
+                row["visitor"]
+                for row in cluster_rows
+                if row["visitor"]
+            }
+
+            fetch_shape_counter = Counter(
+                (
+                    row["fetch_user"] or "—",
+                    row["fetch_mode"] or "—",
+                    row["fetch_dest"] or "—",
+                    row["fetch_site"] or "—",
+                )
+                for row in cluster_rows
+            )
+
+            ua_samples = list(
+                dict.fromkeys(
+                    shorten_text(
+                        row["_ua_full"],
+                        140,
+                    )
+                    for row in cluster_rows
+                    if row["_ua_full"]
+                )
+            )[:5]
+
+            first_seen = (
+                cluster_rows[0]["first_seen"]
+            )
+
+            last_seen = (
+                cluster_rows[-1]["first_seen"]
+            )
+
+            search_cluster_rows.append({
+                "path": path,
+                "first_seen": first_seen,
+                "last_seen": last_seen,
+
+                "span_seconds": int(
+                    max(
+                        0,
+                        (
+                            last_seen
+                            - first_seen
+                        ).total_seconds(),
+                    )
+                ),
+
+                "visitor_count": len(visitors),
+                "client_count": len(clients),
+                "ip_count": len(ips),
+
+                "fetch_shapes": [
+                    {
+                        "fetch_user": shape[0],
+                        "fetch_mode": shape[1],
+                        "fetch_dest": shape[2],
+                        "fetch_site": shape[3],
+                        "count": count,
+                    }
+                    for shape, count
+                    in fetch_shape_counter.most_common()
+                ],
+
+                "ua_samples": ua_samples,
+
+                # Hodí se pro případné detailnější
+                # zobrazení v šabloně.
+                "rows": cluster_rows,
+            })
+
+            # Tento burst už máme zachycený.
+            # Pokračujeme až za ním, ať nevyrábíme
+            # několik překrývajících se clusterů.
+            start = best_end + 1
+
+    search_cluster_rows.sort(
+        key=lambda row: (
+            row["last_seen"]
+            or datetime.min
+        ),
+        reverse=True,
+    )
+
     ua_clients = defaultdict(set)
     client_uas = defaultdict(set)
     client_kinds = defaultdict(set)
@@ -1698,6 +1875,7 @@ def build_traffic_audit(log_text, since=None):
         "unconfirmed_visit_distribution": (unconfirmed_visit_distribution),
         "unconfirmed_top_uas": unconfirmed_top_uas,
         "unconfirmed_rows": unconfirmed_rows[:50],
+        "search_cluster_rows": search_cluster_rows[:30],
         "interaction_skip_reasons": interaction_skip_reasons.most_common(10),
         "interaction_type_counts": interaction_type_counts.most_common(10),
         "meaningful_interaction_rows": meaningful_interaction_rows,

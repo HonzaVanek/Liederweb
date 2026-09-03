@@ -1595,25 +1595,82 @@ def traffic_engaged(request):
     # musí existovat odpovídající skutečný VISIT.
     # =================================================
 
-    recent_cutoff = (
-        timezone.now()
+    now = timezone.now()
+
+    # Přesný visitor + path je velmi silná vazba.
+    # Stránka může být dlouho otevřená / schovaná na pozadí
+    # a uživatel se k ní může vrátit výrazně později.
+    exact_visit_cutoff = (
+        now
+        - timedelta(hours=2)
+    )
+
+    # Middleware drží traffic_visit_source 30 minut.
+    # Když ho ještě máme, známe visitor identity původního VISIT.
+    source_visit_cutoff = (
+        now
+        - timedelta(minutes=30)
+    )
+
+    # Fallback pouze přes client/IP necháváme schválně krátký,
+    # protože stejnou veřejnou IP může sdílet více zařízení.
+    client_fallback_cutoff = (
+        now
         - timedelta(minutes=15)
     )
 
-    # Nejdřív přesný visitor + konkrétní page.
+    # -------------------------------------------------
+    # 1. Nejsilnější match:
+    # přesně stejný visitor + konkrétní page.
+    #
+    # U normálních browserů dovolíme až 2 hodiny.
+    # -------------------------------------------------
+
     matching_visit = (
         DailyPageVisitor.objects
         .filter(
             day=today,
             visitor_hash=visitor_hash,
             path=path,
-            last_seen_at__gte=recent_cutoff,
+            last_seen_at__gte=exact_visit_cutoff,
         )
         .order_by("-last_seen_at")
         .first()
     )
 
-    # Fallback přes client_hash + poslední path.
+    # -------------------------------------------------
+    # 2. Match přes visitor identity uloženou middlewarem.
+    #
+    # Důležité hlavně pro FB/IG WebView:
+    # beacon HTTP User-Agent se může změnit, takže raw
+    # beacon visitor_hash už nemusí sedět na serverový VISIT.
+    #
+    # source_visitor_label ale pochází přímo z původního VISIT.
+    # -------------------------------------------------
+
+    if (
+        not matching_visit
+        and source_visitor_label
+    ):
+        matching_visit = (
+            DailyPageVisitor.objects
+            .filter(
+                day=today,
+                client_hash=client_hash,
+                path=path,
+                visitor_hash__startswith=source_visitor_label,
+                last_seen_at__gte=source_visit_cutoff,
+            )
+            .order_by("-last_seen_at")
+            .first()
+        )
+
+    # -------------------------------------------------
+    # 3. Fallback přes client + jeho poslední path.
+    #
+    # Tohle už je slabší vazba, proto pouze 15 minut.
+    # -------------------------------------------------
+
     if not matching_visit:
         matching_visit = (
             DailySiteVisitor.objects
@@ -1621,18 +1678,19 @@ def traffic_engaged(request):
                 day=today,
                 client_hash=client_hash,
                 last_path=path,
-                last_seen_at__gte=recent_cutoff,
+                last_seen_at__gte=client_fallback_cutoff,
             )
             .order_by("-last_seen_at")
             .first()
         )
 
-    # Meta WebView může změnit UA.
+    # -------------------------------------------------
+    # 4. Poslední fallback přes konkrétní page clienta.
     #
-    # Browser a meaningful interaction proto smějí
-    # fallbacknout i přes konkrétní pageview clienta.
-    #
-    # ENGAGED schválně necháváme v dosavadním přísnějším režimu.
+    # Browser a meaningful interaction ano.
+    # ENGAGED necháváme schválně přísnější.
+    # -------------------------------------------------
+
     if (
         not matching_visit
         and stage in (
@@ -1646,7 +1704,7 @@ def traffic_engaged(request):
                 day=today,
                 client_hash=client_hash,
                 path=path,
-                last_seen_at__gte=recent_cutoff,
+                last_seen_at__gte=client_fallback_cutoff,
             )
             .order_by("-last_seen_at")
             .first()
