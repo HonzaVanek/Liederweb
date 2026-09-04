@@ -228,6 +228,12 @@ class ContentBlock(models.Model):
         help_text="Používá se u tlačítkového bloku.",
     )
 
+    button_open_new_tab = models.BooleanField(
+        "Otevřít odkaz v nové záložce",
+        default=False,
+        help_text="Pokud je zaškrtnuto, tlačítko otevře odkaz v nové záložce.",
+    )
+
     created_at = models.DateTimeField("Vytvořeno", auto_now_add=True)
     updated_at = models.DateTimeField("Upraveno", auto_now=True)
 

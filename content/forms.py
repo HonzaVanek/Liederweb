@@ -88,6 +88,7 @@ class ContentBlockForm(forms.ModelForm):
             "button_label",
             "button_url",
             "button_color",
+            "button_open_new_tab",
         ]
         widgets = {
             "text": forms.Textarea(attrs={"class": "form-control content-richtext-textarea", "rows": 12, "data-content-richtext": "1"}),
@@ -95,6 +96,7 @@ class ContentBlockForm(forms.ModelForm):
             "button_label": forms.TextInput(attrs={"class": "form-control"}),
             "button_url": forms.URLInput(attrs={"class": "form-control"}),
             "button_color": forms.TextInput(attrs={"class": "form-control content-color-input", "type": "color"}),
+            "button_open_new_tab": forms.CheckboxInput(attrs={"class": "form-check-input"})
         }
 
     def __init__(self, *args, **kwargs):
@@ -126,11 +128,15 @@ class ContentBlockForm(forms.ModelForm):
             self.fields["button_color"].help_text = (
                 "Vyber barvu tlačítka. Barva textu se na veřejné stránce dopočítá automaticky podle kontrastu."
             )
+            self.fields["button_open_new_tab"].help_text = (
+                "Zaškrtni hlavně u externích odkazů, například GoOut, YouTube nebo Darujme."
+            )
 
             self.fields = {
                 "button_label": self.fields["button_label"],
                 "button_url": self.fields["button_url"],
                 "button_color": self.fields["button_color"],
+                "button_open_new_tab": self.fields["button_open_new_tab"],
             }
 
         elif self.block_type == ContentBlock.BLOCK_GALLERY:

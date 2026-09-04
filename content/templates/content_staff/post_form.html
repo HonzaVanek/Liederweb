@@ -249,6 +249,11 @@
                       <strong>{{ block.button_label|default:"Bez textu tlačítka" }}</strong><br>
                       <span class="muted">{{ block.button_url|default:"Bez URL" }}</span>
 
+                      {% if block.button_open_new_tab %}
+                        <br>
+                        <span class="muted">↗ Otevře se v nové záložce</span>
+                      {% endif %}
+
                       {% if block.button_color %}
                         <br>
                         <span class="muted">

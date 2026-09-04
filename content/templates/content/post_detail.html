@@ -116,6 +116,10 @@
                 <a
                   class="content-post-cta"
                   href="{{ item.button_url }}"
+                  {% if item.button_open_new_tab %}
+                    target="_blank"
+                    rel="noopener"
+                  {% endif %}
                   style="--content-cta-bg: {{ item.button_color|default:'#111111' }}; --content-cta-fg: {{ item.button_foreground_color|default:'#ffffff' }};"
                 >
                   {{ item.button_label|cz_nbsp }}
