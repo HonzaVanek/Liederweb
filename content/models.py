@@ -1,3 +1,4 @@
+import re
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -242,11 +243,18 @@ class ContentBlock(models.Model):
     def youtube_embed_url(self):
         """
         Z běžné YouTube URL udělá embed URL.
+
         Podporuje:
         - https://www.youtube.com/watch?v=...
         - https://youtu.be/...
         - https://www.youtube.com/embed/...
         - https://www.youtube.com/shorts/...
+
+        Zachovává také čas začátku videa:
+        - ?t=305
+        - ?t=305s
+        - ?t=5m5s
+        - ?start=305
         """
         url = (self.youtube_url or "").strip()
 
@@ -256,25 +264,68 @@ class ContentBlock(models.Model):
         parsed = urlparse(url)
         host = parsed.netloc.lower().replace("www.", "")
         path = parsed.path.strip("/")
-
-        if "youtube.com" in host and path.startswith("embed/"):
-            return url
+        query = parse_qs(parsed.query)
 
         video_id = ""
 
         if "youtu.be" in host:
             video_id = path.split("/")[0]
 
-        elif "youtube.com" in host:
+        elif "youtube.com" in host or "youtube-nocookie.com" in host:
             if path == "watch":
-                video_id = parse_qs(parsed.query).get("v", [""])[0]
+                video_id = query.get("v", [""])[0]
+
+            elif path.startswith("embed/"):
+                parts = path.split("/")
+                video_id = parts[1] if len(parts) > 1 else ""
+
             elif path.startswith("shorts/"):
-                video_id = path.split("/")[1] if len(path.split("/")) > 1 else ""
+                parts = path.split("/")
+                video_id = parts[1] if len(parts) > 1 else ""
 
         if not video_id:
             return ""
 
-        return f"https://www.youtube-nocookie.com/embed/{video_id}"    
+        # YouTube používá u běžných URL parametr "t",
+        # u iframe embedu parametr "start".
+        time_value = (
+            query.get("start", [""])[0]
+            or query.get("t", [""])[0]
+        )
+
+        start_seconds = 0
+
+        if time_value:
+            time_value = str(time_value).strip().lower()
+
+            # Např. 305 nebo 305s
+            if re.fullmatch(r"\d+s?", time_value):
+                start_seconds = int(time_value.rstrip("s"))
+
+            # Např. 5m5s nebo 1h2m3s
+            else:
+                match = re.fullmatch(
+                    r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?",
+                    time_value,
+                )
+
+                if match:
+                    hours = int(match.group(1) or 0)
+                    minutes = int(match.group(2) or 0)
+                    seconds = int(match.group(3) or 0)
+
+                    start_seconds = (
+                        hours * 3600
+                        + minutes * 60
+                        + seconds
+                    )
+
+        embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}"
+
+        if start_seconds > 0:
+            embed_url += f"?start={start_seconds}"
+
+        return embed_url    
 
     @property
     def button_foreground_color(self):
