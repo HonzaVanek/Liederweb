@@ -1,4 +1,5 @@
 import logging
+import re
 from collections import defaultdict
 from datetime import timedelta
 
@@ -43,6 +44,24 @@ NETWORK_DIAGNOSTIC_MIN_PATHS = 3
 # Smyslem tohoto pravidla je právě najít crawler,
 # který User-Agent rotuje.
 NETWORK_DIAGNOSTIC_MIN_UAS = 2
+
+
+# -------------------------------------------------
+# Post-hoc cleanup: distribuovaný no-JS Chrome burst
+# -------------------------------------------------
+
+DISTRIBUTED_NO_JS_BURST_SECONDS = 5 * 60
+
+DISTRIBUTED_NO_JS_BURST_MIN_CLIENTS = 8
+DISTRIBUTED_NO_JS_BURST_MIN_VISITORS = 8
+DISTRIBUTED_NO_JS_BURST_MIN_IPS = 8
+DISTRIBUTED_NO_JS_BURST_MIN_PATHS = 6
+
+# Chceme skutečně rotaci browserových verzí,
+# ne jen osm lidí se stejným aktuálním Chrome.
+DISTRIBUTED_NO_JS_BURST_MIN_CHROME_MAJORS = 4
+
+DESKTOP_CHROME_MAJOR_RE = re.compile(r"\bChrome/(\d+)\.")
 
 
 def find_distinct_client_bursts(
@@ -224,6 +243,132 @@ def find_distributed_multi_path_sweeps(
         if (
             len(unique_clients) >= min_clients
             and len(unique_paths) >= min_paths
+        ):
+            flagged.update(
+                row.pk
+                for row in window
+            )
+
+    return flagged
+
+def get_desktop_chrome_major(user_agent):
+    """
+    Vrátí major verzi klasického desktop Chrome UA.
+
+    Záměrně sem nepouštíme Edge, Operu, iOS Chrome
+    ani HeadlessChrome. Tohle pravidlo má být úzké.
+    """
+    ua = (user_agent or "").strip()
+
+    if (
+        "Windows NT" not in ua
+        and "Macintosh" not in ua
+    ):
+        return None
+
+    if any(
+        token in ua
+        for token in (
+            "Edg/",
+            "OPR/",
+            "CriOS/",
+            "HeadlessChrome/",
+        )
+    ):
+        return None
+
+    match = DESKTOP_CHROME_MAJOR_RE.search(ua)
+
+    if not match:
+        return None
+
+    try:
+        return int(match.group(1))
+    except (TypeError, ValueError):
+        return None
+
+
+def find_distributed_no_js_chrome_bursts(
+    rows,
+    *,
+    seconds,
+    min_clients,
+    min_visitors,
+    min_ips,
+    min_paths,
+    min_chrome_majors,
+):
+    """
+    Najde krátký distribuovaný burst singleton návštěv
+    s rotujícími desktop Chrome major verzemi.
+
+    rows už mají být předfiltrované na:
+    - EMPTY referer,
+    - žádný JS signal,
+    - ne social IAB,
+    - jeden candidate na visitora i clienta.
+    """
+
+    rows = sorted(
+        rows,
+        key=lambda row: row.created_at,
+    )
+
+    flagged = set()
+    left = 0
+
+    for right, current in enumerate(rows):
+        while (
+            left < right
+            and (
+                current.created_at
+                - rows[left].created_at
+            ).total_seconds() > seconds
+        ):
+            left += 1
+
+        window = rows[left:right + 1]
+
+        clients = {
+            row.client_hash
+            for row in window
+            if row.client_hash
+        }
+
+        visitors = {
+            row.visitor_hash
+            for row in window
+            if row.visitor_hash
+        }
+
+        ips = {
+            row.ip_hash
+            for row in window
+            if row.ip_hash
+        }
+
+        paths = {
+            row.path
+            for row in window
+            if row.path
+        }
+
+        chrome_majors = {
+            major
+            for row in window
+            if (
+                major := get_desktop_chrome_major(
+                    row.user_agent
+                )
+            ) is not None
+        }
+
+        if (
+            len(clients) >= min_clients
+            and len(visitors) >= min_visitors
+            and len(ips) >= min_ips
+            and len(paths) >= min_paths
+            and len(chrome_majors) >= min_chrome_majors
         ):
             flagged.update(
                 row.pk
@@ -461,19 +606,15 @@ class Command(BaseCommand):
             .order_by("created_at")[:10000]
         )
 
-        if not candidates:
-            network_patterns = self.log_network_pattern_candidates(now)
-            self.cleanup_old_candidates(now)
-            self.stdout.write(
-                "No candidates. "
-                f"network_patterns={network_patterns}"
-            )
-            return
-
         days = {
             candidate.day
             for candidate in candidates
         }
+
+        # I když zrovna není žádný nový PENDING candidate,
+        # chceme umět znovu vyhodnotit dnešní dříve KEPT
+        # no_posthoc_rule_matched kandidáty.
+        days.add(timezone.localdate())
 
         context_candidates = list(
             TrafficVisitCandidate.objects
@@ -840,6 +981,123 @@ class Command(BaseCommand):
                 reasons_by_candidate.setdefault(
                     candidate_id,
                     "distributed_same_ua_multi_path_no_engagement",
+                )
+
+
+        # -------------------------------------------------
+        # RULE 5:
+        # krátký distribuovaný no-JS burst:
+        #
+        # - EMPTY referer
+        # - desktop Chrome
+        # - rotující Chrome major verze
+        # - mnoho různých clientů/IP
+        # - mnoho různých paths
+        # - každý visitor i client má jen jeden candidate
+        #
+        # Jednotlivý request vypadá normálně.
+        # Podezřelý je až celý cluster.
+        # -------------------------------------------------
+
+        visitor_candidate_counts = defaultdict(int)
+        client_candidate_counts = defaultdict(int)
+
+        for candidate in context_working:
+            visitor_candidate_counts[
+                (
+                    candidate.day,
+                    candidate.visitor_hash,
+                )
+            ] += 1
+
+            client_candidate_counts[
+                (
+                    candidate.day,
+                    candidate.client_hash,
+                )
+            ] += 1
+
+        distributed_burst_groups = defaultdict(list)
+
+        for candidate in context_working:
+            if candidate.is_social_iab:
+                continue
+
+            if (
+                candidate.referer_kind
+                != TrafficVisitCandidate.RefererKind.EMPTY
+            ):
+                continue
+
+            if not candidate.ip_hash:
+                continue
+
+            # Každý visitor musí být čistý singleton.
+            if (
+                visitor_candidate_counts[
+                    (
+                        candidate.day,
+                        candidate.visitor_hash,
+                    )
+                ]
+                != 1
+            ):
+                continue
+
+            # Totéž pro client.
+            if (
+                client_candidate_counts[
+                    (
+                        candidate.day,
+                        candidate.client_hash,
+                    )
+                ]
+                != 1
+            ):
+                continue
+
+            # První verzi pravidla záměrně omezujeme
+            # na observed desktop-Chrome pattern.
+            if (
+                get_desktop_chrome_major(
+                    candidate.user_agent
+                )
+                is None
+            ):
+                continue
+
+            distributed_burst_groups[
+                candidate.day
+            ].append(candidate)
+
+        for rows in distributed_burst_groups.values():
+            ids = find_distributed_no_js_chrome_bursts(
+                rows,
+                seconds=DISTRIBUTED_NO_JS_BURST_SECONDS,
+                min_clients=(
+                    DISTRIBUTED_NO_JS_BURST_MIN_CLIENTS
+                ),
+                min_visitors=(
+                    DISTRIBUTED_NO_JS_BURST_MIN_VISITORS
+                ),
+                min_ips=(
+                    DISTRIBUTED_NO_JS_BURST_MIN_IPS
+                ),
+                min_paths=(
+                    DISTRIBUTED_NO_JS_BURST_MIN_PATHS
+                ),
+                min_chrome_majors=(
+                    DISTRIBUTED_NO_JS_BURST_MIN_CHROME_MAJORS
+                ),
+            )
+
+            for candidate_id in ids:
+                reasons_by_candidate.setdefault(
+                    candidate_id,
+                    (
+                        "distributed_rotating_chrome_"
+                        "burst_no_engagement"
+                    ),
                 )
 
 
