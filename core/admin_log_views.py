@@ -620,14 +620,31 @@ def is_audit_client_level_cleanup_reason(reason):
 def build_traffic_audit(log_text, since=None):
     items = []
 
+    since_text = (
+        since.strftime("%Y-%m-%d %H:%M:%S")
+        if since is not None
+        else None
+    )
+
     for line in log_text.splitlines():
+
+        # Pokud auditujeme až od konkrétního času,
+        # starší řádky zahodíme JEŠTĚ PŘED drahým parsováním.
+        if since_text is not None:
+            timestamp_match = TRAFFIC_TS_RE.match(line)
+
+            if not timestamp_match:
+                continue
+
+            # Formát YYYY-MM-DD HH:MM:SS lze bezpečně
+            # porovnávat lexikograficky.
+            if timestamp_match.group(1) < since_text:
+                continue
+
         item = parse_traffic_log_line(line)
 
         if item:
             items.append(item)
-
-    if since is not None:
-        items = [item for item in items if item["timestamp"] is not None and item["timestamp"] >= since]
 
     kind_counts = Counter(item["kind"] for item in items)
 
