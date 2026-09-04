@@ -32,7 +32,7 @@ NETWORK_DIAGNOSTIC_WINDOW_HOURS = 12
 
 # Pattern zalogujeme jen tehdy, pokud v něm nedávno
 # přibyl nový request. Cron běží po 15 minutách.
-NETWORK_DIAGNOSTIC_RECENT_MINUTES = 16
+NETWORK_DIAGNOSTIC_RECENT_MINUTES = 30
 
 # Zatím pouze diagnostické prahy.
 # Nic podle nich nemažeme.
@@ -62,6 +62,20 @@ DISTRIBUTED_NO_JS_BURST_MIN_PATHS = 6
 DISTRIBUTED_NO_JS_BURST_MIN_CHROME_MAJORS = 4
 
 DESKTOP_CHROME_MAJOR_RE = re.compile(r"\bChrome/(\d+)\.")
+
+
+
+# -------------------------------------------------
+# Post-hoc cleanup: pomalý distribuovaný network sweep
+# -------------------------------------------------
+
+SLOW_NETWORK_SWEEP_SECONDS = 12 * 60 * 60
+
+SLOW_NETWORK_SWEEP_MIN_CLIENTS = 6
+SLOW_NETWORK_SWEEP_MIN_VISITORS = 6
+SLOW_NETWORK_SWEEP_MIN_IPS = 6
+SLOW_NETWORK_SWEEP_MIN_PATHS = 4
+SLOW_NETWORK_SWEEP_MIN_UAS = 4
 
 
 def find_distinct_client_bursts(
@@ -376,6 +390,82 @@ def find_distributed_no_js_chrome_bursts(
             )
 
     return flagged
+
+
+def find_slow_network_sweeps(
+    rows,
+    *,
+    seconds,
+    min_clients,
+    min_visitors,
+    min_ips,
+    min_paths,
+    min_uas,
+):
+    rows = sorted(
+        rows,
+        key=lambda row: row.created_at,
+    )
+
+    flagged = set()
+    left = 0
+
+    for right, current in enumerate(rows):
+        while (
+            left < right
+            and (
+                current.created_at
+                - rows[left].created_at
+            ).total_seconds() > seconds
+        ):
+            left += 1
+
+        window = rows[left:right + 1]
+
+        clients = {
+            row.client_hash
+            for row in window
+            if row.client_hash
+        }
+
+        visitors = {
+            row.visitor_hash
+            for row in window
+            if row.visitor_hash
+        }
+
+        ips = {
+            row.ip_hash
+            for row in window
+            if row.ip_hash
+        }
+
+        paths = {
+            row.path
+            for row in window
+            if row.path
+        }
+
+        uas = {
+            row.user_agent_hash
+            for row in window
+            if row.user_agent_hash
+        }
+
+        if (
+            len(clients) >= min_clients
+            and len(visitors) >= min_visitors
+            and len(ips) >= min_ips
+            and len(paths) >= min_paths
+            and len(uas) >= min_uas
+        ):
+            flagged.update(
+                row.pk
+                for row in window
+            )
+
+    return flagged
+
 
 class Command(BaseCommand):
     help = (
@@ -1099,6 +1189,90 @@ class Command(BaseCommand):
                         "burst_no_engagement"
                     ),
                 )
+
+
+
+        # -------------------------------------------------
+        # RULE 6:
+        # pomalý distribuovaný crawler v jednom networku
+        #
+        # - několik různých IP/clientů
+        # - několik různých stránek
+        # - několik různých UA
+        # - EMPTY referer
+        # - žádný JS
+        # - každý client i visitor pouze singleton
+        #
+        # Pattern může být roztažený přes několik hodin.
+        # -------------------------------------------------
+
+        slow_network_groups = defaultdict(list)
+
+        for candidate in context_working:
+            if candidate.is_social_iab:
+                continue
+
+            if (
+                candidate.referer_kind
+                != TrafficVisitCandidate.RefererKind.EMPTY
+            ):
+                continue
+
+            if (
+                not candidate.network_hash
+                or not candidate.ip_hash
+            ):
+                continue
+
+            # Nechceme tím mazat normální browsing session.
+            if (
+                visitor_candidate_counts[
+                    (
+                        candidate.day,
+                        candidate.visitor_hash,
+                    )
+                ]
+                != 1
+            ):
+                continue
+
+            if (
+                client_candidate_counts[
+                    (
+                        candidate.day,
+                        candidate.client_hash,
+                    )
+                ]
+                != 1
+            ):
+                continue
+
+            slow_network_groups[
+                (
+                    candidate.day,
+                    candidate.network_hash,
+                )
+            ].append(candidate)
+
+        for rows in slow_network_groups.values():
+            ids = find_slow_network_sweeps(
+                rows,
+                seconds=SLOW_NETWORK_SWEEP_SECONDS,
+                min_clients=SLOW_NETWORK_SWEEP_MIN_CLIENTS,
+                min_visitors=SLOW_NETWORK_SWEEP_MIN_VISITORS,
+                min_ips=SLOW_NETWORK_SWEEP_MIN_IPS,
+                min_paths=SLOW_NETWORK_SWEEP_MIN_PATHS,
+                min_uas=SLOW_NETWORK_SWEEP_MIN_UAS,
+            )
+
+            for candidate_id in ids:
+                reasons_by_candidate.setdefault(
+                    candidate_id,
+                    "slow_network_sweep_no_engagement",
+                )
+
+
+
 
 
         suspicious_candidates = [
