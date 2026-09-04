@@ -173,6 +173,7 @@ BOT_USER_AGENT_PARTS = (
     "trafilatura",
     "owler",
     "newsai/",
+    "eshoplist/",
 )
 
 BOT_REFERER_PARTS = (

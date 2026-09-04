@@ -1,5 +1,6 @@
 import logging
 import re
+import ipaddress
 from collections import defaultdict
 from datetime import timedelta
 
@@ -31,7 +32,7 @@ logger = logging.getLogger("liederweb.traffic")
 NETWORK_DIAGNOSTIC_WINDOW_HOURS = 12
 
 # Pattern zalogujeme jen tehdy, pokud v něm nedávno
-# přibyl nový request. Cron běží po 15 minutách.
+# přibyl nový request. Cron běží po 10 minutách.
 NETWORK_DIAGNOSTIC_RECENT_MINUTES = 30
 
 # Zatím pouze diagnostické prahy.
@@ -76,6 +77,21 @@ SLOW_NETWORK_SWEEP_MIN_VISITORS = 6
 SLOW_NETWORK_SWEEP_MIN_IPS = 6
 SLOW_NETWORK_SWEEP_MIN_PATHS = 4
 SLOW_NETWORK_SWEEP_MIN_UAS = 4
+
+
+
+
+
+###############################################
+
+
+
+DISTRIBUTED_SAME_PATH_BURST_SECONDS = 10 * 60
+
+DISTRIBUTED_SAME_PATH_BURST_MIN_CLIENTS = 10
+DISTRIBUTED_SAME_PATH_BURST_MIN_VISITORS = 10
+DISTRIBUTED_SAME_PATH_BURST_MIN_IPS = 10
+DISTRIBUTED_SAME_PATH_BURST_MIN_UAS = 4
 
 
 def find_distinct_client_bursts(
@@ -465,6 +481,89 @@ def find_slow_network_sweeps(
             )
 
     return flagged
+
+
+
+def find_distributed_same_path_bursts(
+    rows,
+    *,
+    seconds,
+    min_clients,
+    min_visitors,
+    min_ips,
+    min_uas,
+):
+    rows = sorted(
+        rows,
+        key=lambda row: row.created_at,
+    )
+
+    flagged = set()
+    left = 0
+
+    for right, current in enumerate(rows):
+        while (
+            left < right
+            and (
+                current.created_at
+                - rows[left].created_at
+            ).total_seconds() > seconds
+        ):
+            left += 1
+
+        window = rows[left:right + 1]
+
+        clients = {
+            row.client_hash
+            for row in window
+            if row.client_hash
+        }
+
+        visitors = {
+            row.visitor_hash
+            for row in window
+            if row.visitor_hash
+        }
+
+        ips = {
+            row.ip_hash
+            for row in window
+            if row.ip_hash
+        }
+
+        uas = {
+            row.user_agent_hash
+            for row in window
+            if row.user_agent_hash
+        }
+
+        if (
+            len(clients) >= min_clients
+            and len(visitors) >= min_visitors
+            and len(ips) >= min_ips
+            and len(uas) >= min_uas
+        ):
+            flagged.update(
+                row.pk
+                for row in window
+            )
+
+    return flagged
+
+
+def is_literal_ip_host(host):
+    host = (host or "").strip()
+
+    if not host:
+        return False
+
+    try:
+        ipaddress.ip_address(host)
+        return True
+    except ValueError:
+        return False
+
+
 
 
 class Command(BaseCommand):
@@ -1270,6 +1369,82 @@ class Command(BaseCommand):
                     candidate_id,
                     "slow_network_sweep_no_engagement",
                 )
+
+
+        # -------------------------------------------------
+        # RULE 7:
+        # distribuovaný no-JS burst na stejné stránce
+        #
+        # Např. mnoho různých IP/clientů během pár minut
+        # otevře pouze homepage, s rotujícími UA.
+        # -------------------------------------------------
+
+        same_path_burst_groups = defaultdict(list)
+
+        for candidate in context_working:
+            if candidate.is_social_iab:
+                continue
+
+            # Rule 7 je zatím cílený na observed homepage swarm.
+            if candidate.path != "/":
+                continue
+
+            referer_allowed = (
+                candidate.referer_kind
+                in {
+                    TrafficVisitCandidate.RefererKind.EMPTY,
+                    TrafficVisitCandidate.RefererKind.OWN,
+                }
+                or (
+                    candidate.referer_kind
+                    == TrafficVisitCandidate.RefererKind.EXTERNAL
+                    and is_literal_ip_host(candidate.referer_host)
+                )
+            )
+
+            if not referer_allowed:
+                continue
+
+            if not candidate.ip_hash:
+                continue
+
+            # Chráníme reálného visitora, který měl víc než
+            # jeden server-side pageview.
+            if (
+                visitor_candidate_counts[
+                    (
+                        candidate.day,
+                        candidate.visitor_hash,
+                    )
+                ]
+                != 1
+            ):
+                continue
+
+            same_path_burst_groups[
+                (
+                    candidate.day,
+                    candidate.path,
+                )
+            ].append(candidate)
+
+        for rows in same_path_burst_groups.values():
+            ids = find_distributed_same_path_bursts(
+                rows,
+                seconds=DISTRIBUTED_SAME_PATH_BURST_SECONDS,
+                min_clients=DISTRIBUTED_SAME_PATH_BURST_MIN_CLIENTS,
+                min_visitors=DISTRIBUTED_SAME_PATH_BURST_MIN_VISITORS,
+                min_ips=DISTRIBUTED_SAME_PATH_BURST_MIN_IPS,
+                min_uas=DISTRIBUTED_SAME_PATH_BURST_MIN_UAS,
+            )
+
+            for candidate_id in ids:
+                reasons_by_candidate.setdefault(
+                    candidate_id,
+                    "distributed_same_path_burst_no_engagement",
+                )
+
+
 
 
 
