@@ -72,11 +72,11 @@ DESKTOP_CHROME_MAJOR_RE = re.compile(r"\bChrome/(\d+)\.")
 
 SLOW_NETWORK_SWEEP_SECONDS = 12 * 60 * 60
 
-SLOW_NETWORK_SWEEP_MIN_CLIENTS = 6
-SLOW_NETWORK_SWEEP_MIN_VISITORS = 6
-SLOW_NETWORK_SWEEP_MIN_IPS = 6
-SLOW_NETWORK_SWEEP_MIN_PATHS = 4
-SLOW_NETWORK_SWEEP_MIN_UAS = 4
+SLOW_NETWORK_SWEEP_MIN_CLIENTS = 4
+SLOW_NETWORK_SWEEP_MIN_VISITORS = 4
+SLOW_NETWORK_SWEEP_MIN_IPS = 4
+SLOW_NETWORK_SWEEP_MIN_PATHS = 3
+SLOW_NETWORK_SWEEP_MIN_UAS = 3
 
 
 
@@ -92,6 +92,22 @@ DISTRIBUTED_SAME_PATH_BURST_MIN_CLIENTS = 10
 DISTRIBUTED_SAME_PATH_BURST_MIN_VISITORS = 10
 DISTRIBUTED_SAME_PATH_BURST_MIN_IPS = 10
 DISTRIBUTED_SAME_PATH_BURST_MIN_UAS = 4
+
+
+
+
+# -------------------------------------------------
+# Post-hoc cleanup:
+# pomalý distribuovaný homepage sweep napříč sítěmi
+# -------------------------------------------------
+
+SLOW_GLOBAL_HOMEPAGE_SECONDS = 12 * 60 * 60
+
+SLOW_GLOBAL_HOMEPAGE_MIN_CLIENTS = 10
+SLOW_GLOBAL_HOMEPAGE_MIN_VISITORS = 10
+SLOW_GLOBAL_HOMEPAGE_MIN_IPS = 10
+SLOW_GLOBAL_HOMEPAGE_MIN_NETWORKS = 8
+SLOW_GLOBAL_HOMEPAGE_MIN_UAS = 5
 
 
 def find_distinct_client_bursts(
@@ -562,6 +578,81 @@ def is_literal_ip_host(host):
         return True
     except ValueError:
         return False
+
+
+def find_slow_global_homepage_sweeps(
+    rows,
+    *,
+    seconds,
+    min_clients,
+    min_visitors,
+    min_ips,
+    min_networks,
+    min_uas,
+):
+    rows = sorted(
+        rows,
+        key=lambda row: row.created_at,
+    )
+
+    flagged = set()
+    left = 0
+
+    for right, current in enumerate(rows):
+        while (
+            left < right
+            and (
+                current.created_at
+                - rows[left].created_at
+            ).total_seconds() > seconds
+        ):
+            left += 1
+
+        window = rows[left:right + 1]
+
+        clients = {
+            row.client_hash
+            for row in window
+            if row.client_hash
+        }
+
+        visitors = {
+            row.visitor_hash
+            for row in window
+            if row.visitor_hash
+        }
+
+        ips = {
+            row.ip_hash
+            for row in window
+            if row.ip_hash
+        }
+
+        networks = {
+            row.network_hash
+            for row in window
+            if row.network_hash
+        }
+
+        uas = {
+            row.user_agent_hash
+            for row in window
+            if row.user_agent_hash
+        }
+
+        if (
+            len(clients) >= min_clients
+            and len(visitors) >= min_visitors
+            and len(ips) >= min_ips
+            and len(networks) >= min_networks
+            and len(uas) >= min_uas
+        ):
+            flagged.update(
+                row.pk
+                for row in window
+            )
+
+    return flagged
 
 
 
@@ -1385,7 +1476,8 @@ class Command(BaseCommand):
             if candidate.is_social_iab:
                 continue
 
-            # Rule 7 je zatím cílený na observed homepage swarm.
+            # Rule 7 máme empiricky potvrzený hlavně
+            # pro distribuované homepage bursty.
             if candidate.path != "/":
                 continue
 
@@ -1398,7 +1490,9 @@ class Command(BaseCommand):
                 or (
                     candidate.referer_kind
                     == TrafficVisitCandidate.RefererKind.EXTERNAL
-                    and is_literal_ip_host(candidate.referer_host)
+                    and is_literal_ip_host(
+                        candidate.referer_host
+                    )
                 )
             )
 
@@ -1408,8 +1502,9 @@ class Command(BaseCommand):
             if not candidate.ip_hash:
                 continue
 
-            # Chráníme reálného visitora, který měl víc než
-            # jeden server-side pageview.
+            # Reálný visitor, který měl během dne víc
+            # než jeden candidate, nedává smysl jako
+            # člen jednorázového distribuovaného sweepu.
             if (
                 visitor_candidate_counts[
                     (
@@ -1422,10 +1517,7 @@ class Command(BaseCommand):
                 continue
 
             same_path_burst_groups[
-                (
-                    candidate.day,
-                    candidate.path,
-                )
+                candidate.day
             ].append(candidate)
 
         for rows in same_path_burst_groups.values():
@@ -1446,7 +1538,99 @@ class Command(BaseCommand):
 
 
 
+        # -------------------------------------------------
+        # RULE 8:
+        # pomalý distribuovaný homepage sweep
+        # napříč mnoha různými sítěmi
+        #
+        # Typický pattern:
+        # - jedna homepage návštěva
+        # - žádný JS
+        # - EMPTY / OWN / literal-IP referer
+        # - mnoho IP, clientů, networků a UA
+        # - roztažené přes několik hodin
+        # -------------------------------------------------
 
+        slow_global_homepage_groups = defaultdict(list)
+
+        for candidate in context_working:
+            if candidate.is_social_iab:
+                continue
+
+            if candidate.path != "/":
+                continue
+
+            referer_allowed = (
+                candidate.referer_kind
+                in {
+                    TrafficVisitCandidate.RefererKind.EMPTY,
+                    TrafficVisitCandidate.RefererKind.OWN,
+                }
+                or (
+                    candidate.referer_kind
+                    == TrafficVisitCandidate.RefererKind.EXTERNAL
+                    and is_literal_ip_host(
+                        candidate.referer_host
+                    )
+                )
+            )
+
+            if not referer_allowed:
+                continue
+
+            if (
+                not candidate.ip_hash
+                or not candidate.network_hash
+            ):
+                continue
+
+            # Chceme jednorázovou visitor identitu.
+            # Nevyžadujeme singleton clienta:
+            # bot může na jedné IP přepínat identity.
+            if (
+                visitor_candidate_counts[
+                    (
+                        candidate.day,
+                        candidate.visitor_hash,
+                    )
+                ]
+                != 1
+            ):
+                continue
+
+            slow_global_homepage_groups[
+                candidate.day
+            ].append(candidate)
+
+        for rows in slow_global_homepage_groups.values():
+            ids = find_slow_global_homepage_sweeps(
+                rows,
+                seconds=SLOW_GLOBAL_HOMEPAGE_SECONDS,
+                min_clients=(
+                    SLOW_GLOBAL_HOMEPAGE_MIN_CLIENTS
+                ),
+                min_visitors=(
+                    SLOW_GLOBAL_HOMEPAGE_MIN_VISITORS
+                ),
+                min_ips=(
+                    SLOW_GLOBAL_HOMEPAGE_MIN_IPS
+                ),
+                min_networks=(
+                    SLOW_GLOBAL_HOMEPAGE_MIN_NETWORKS
+                ),
+                min_uas=(
+                    SLOW_GLOBAL_HOMEPAGE_MIN_UAS
+                ),
+            )
+
+            for candidate_id in ids:
+                reasons_by_candidate.setdefault(
+                    candidate_id,
+                    (
+                        "slow_global_homepage_sweep_"
+                        "no_engagement"
+                    ),
+                )
 
 
 

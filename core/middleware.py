@@ -174,6 +174,7 @@ BOT_USER_AGENT_PARTS = (
     "owler",
     "newsai/",
     "eshoplist/",
+    "beacon-prober/",
 )
 
 BOT_REFERER_PARTS = (
@@ -491,6 +492,89 @@ class SiteVisitStatsMiddleware:
 
         return False
 
+
+    def cleanup_previous_shared_ua_empty_ref_visitors(
+        self,
+        today,
+        user_agent,
+        current_visitor_hash,
+    ):
+        """
+        Když se až na N-tém requestu ukáže, že stejný přesný UA
+        bez refereru přichází z podezřele mnoha clientů,
+        odstraníme i první seed VISITy, které prošly před dosažením
+        shared-UA thresholdu.
+
+        JS potvrzeného visitora nikdy nemažeme.
+        """
+        ua = (user_agent or "").strip().lower()
+
+        if not ua:
+            return 0
+
+        user_agent_hash = hashlib.sha256(
+            ua.encode("utf-8")
+        ).hexdigest()
+
+        previous_rows = (
+            TrafficVisitCandidate.objects
+            .filter(
+                day=today,
+                user_agent_hash=user_agent_hash,
+                referer_kind=(
+                    TrafficVisitCandidate.RefererKind.EMPTY
+                ),
+            )
+            .exclude(
+                visitor_hash=current_visitor_hash,
+            )
+            .exclude(
+                decision__in=[
+                    TrafficVisitCandidate.Decision.CLEANED,
+                    TrafficVisitCandidate.Decision.ALREADY_REMOVED,
+                ]
+            )
+            .values(
+                "visitor_hash",
+                "client_hash",
+            )
+            .distinct()
+        )
+
+        cleaned_visitors = 0
+
+        for row in previous_rows:
+            previous_visitor_hash = row["visitor_hash"]
+
+            # Absolutní ochrana skutečně spuštěného browseru.
+            if self.has_js_browser_confirmation(
+                today,
+                previous_visitor_hash,
+            ):
+                continue
+
+            removed = self.cleanup_visitor_human_stats(
+                today,
+                previous_visitor_hash,
+            )
+
+            if not removed:
+                continue
+
+            cleaned_visitors += 1
+
+            logger.info(
+                "CLEANUP client=%s visitor=%s "
+                "reason=shared_ua_seed_cleanup "
+                "removed_pageviews=%s",
+                row["client_hash"][:8],
+                previous_visitor_hash[:8],
+                removed,
+            )
+
+        return cleaned_visitors
+
+
     def is_suspicious_shared_user_agent(self, path, referer_raw, user_agent, client_label):
         ua = (user_agent or "").strip().lower()
 
@@ -783,14 +867,23 @@ class SiteVisitStatsMiddleware:
     def is_common_mobile_browser_ua(self, user_agent):
         ua = (user_agent or "").lower()
 
-        if "mobile safari" not in ua:
-            return False
+        # iPhone/iPad UA typicky neobsahuje doslova
+        # "mobile safari", ale např.:
+        # Mobile/15E148 Safari/604.1
+        if any(token in ua for token in (
+            "iphone",
+            "ipad",
+            "ipod",
+        )):
+            return True
 
-        return (
-            "android" in ua
-            or "iphone" in ua
-            or "samsungbrowser" in ua
-        )    
+        if "android" in ua:
+            return (
+                "mobile" in ua
+                or "samsungbrowser/" in ua
+            )
+
+        return False   
 
     def get_referer_host(self, referer):
         referer = (referer or "").strip()
@@ -2088,6 +2181,18 @@ class SiteVisitStatsMiddleware:
             )
 
             if is_shared_ua:
+                # Pokud teprve tento request překročil threshold
+                # distribuovaného EMPTY shared-UA patternu,
+                # uklidíme i první seed VISITy.
+                if shared_ua_reason.startswith(
+                    "same_ua_empty_ref_clients:"
+                ):
+                    self.cleanup_previous_shared_ua_empty_ref_visitors(
+                        today=today,
+                        user_agent=user_agent,
+                        current_visitor_hash=visitor_hash,
+                    )
+
                 is_bot_like = True
                 should_mark_sticky_bot_like = True
                 bot_like_reason = "shared_ua:" + shared_ua_reason
