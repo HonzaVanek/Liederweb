@@ -1726,7 +1726,7 @@ class Command(BaseCommand):
                 sample = rows[0]
 
                 logger.info(
-                    "POSTHOC_CLEANUP "
+                    "POSTHOC(CRON)_CLEANUP "
                     "client=%s visitor=%s "
                     "path=%s reason=%s "
                     "removed_pageviews=%s candidates=%s",
