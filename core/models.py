@@ -416,6 +416,8 @@ class TrafficVisitCandidate(models.Model):
         KEPT = "kept", "Ponecháno jako návštěva"
         CLEANED = "cleaned", "Odstraněno post-hoc"
         ALREADY_REMOVED = "already_removed", "Odstraněno už realtime"
+        QUARANTINED = "quarantined", "Karanténa kvůli IP reputaci"
+        REHABILITATED = "rehabilitated", "Obnoveno browser beaconem"
 
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -541,6 +543,44 @@ class TrafficVisitCandidate(models.Model):
             f"{self.visitor_hash[:8]} {self.path} "
             f"{self.decision}"
         )
+
+
+
+class TrafficBotIPReputation(models.Model):
+    ip_hash = models.CharField(
+        max_length=64,
+        unique=True,
+    )
+
+    reason = models.CharField(
+        max_length=160,
+        blank=True,
+    )
+
+    first_flagged_at = models.DateTimeField(
+        default=timezone.now,
+    )
+
+    last_flagged_at = models.DateTimeField(
+        default=timezone.now,
+    )
+
+    expires_at = models.DateTimeField(
+        db_index=True,
+    )
+
+    class Meta:
+        ordering = ["-expires_at"]
+        verbose_name = "Bot IP reputace"
+        verbose_name_plural = "Bot IP reputace"
+
+    def __str__(self):
+        return (
+            f"{self.ip_hash[:12]} "
+            f"do {self.expires_at:%Y-%m-%d %H:%M}"
+        )
+
+
 
 #### KONEC STATISTIK NÁVŠTĚVNOSTI WEBU
 

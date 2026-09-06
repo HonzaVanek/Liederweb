@@ -11,7 +11,7 @@ from django.db.models import F, Sum
 from django.utils import timezone
 from django.urls import resolve
 
-from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, DailyEngagedPageVisitor, TrafficVisitCandidate, DailyBrowserVisitor
+from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, DailyEngagedPageVisitor, TrafficVisitCandidate, DailyBrowserVisitor, TrafficBotIPReputation
 
 from urllib.parse import urlsplit, urlunsplit
 from .traffic_cleanup import (cleanup_visitor_human_stats as cleanup_visitor_stats)
@@ -1971,6 +1971,26 @@ class SiteVisitStatsMiddleware:
             str(address),
         )
 
+    def get_active_bot_ip_reputation(self, ip):
+        ip_hash = self.get_traffic_ip_hash(ip)
+
+        if not ip_hash:
+            return None
+
+        return (
+            TrafficBotIPReputation.objects
+            .filter(
+                ip_hash=ip_hash,
+                expires_at__gt=timezone.now(),
+            )
+            .only(
+                "ip_hash",
+                "reason",
+                "expires_at",
+            )
+            .first()
+        )
+
 
     def get_traffic_network_hash(self, ip):
         address = self.normalize_traffic_ip(ip)
@@ -2002,6 +2022,9 @@ class SiteVisitStatsMiddleware:
         path,
         user_agent,
         referer_raw,
+        *,
+        decision=TrafficVisitCandidate.Decision.PENDING,
+        decision_reason="",
     ):
         referer_kind, referer_host = self.get_referer_kind(
             referer_raw
@@ -2028,9 +2051,10 @@ class SiteVisitStatsMiddleware:
                 user_agent=ua[:500],
                 referer_kind=referer_kind,
                 referer_host=referer_host[:255],
-                is_social_iab=self.is_social_or_in_app_ua(
-                    user_agent
-                ),
+                is_social_iab=self.is_social_or_in_app_ua(user_agent),
+                decision=decision,
+                decision_reason=decision_reason[:160],
+                processed_at=(timezone.now() if decision != TrafficVisitCandidate.Decision.PENDING else None),
             )
         except Exception:
             logger.exception(
@@ -2115,6 +2139,7 @@ class SiteVisitStatsMiddleware:
         is_bot_like = False
         bot_like_reason = ""
         should_mark_sticky_bot_like = False
+        is_posthoc_ip_quarantine = False
         disguised_score = 0
         disguised_reasons = []
         pre_duplicate_reason = ""
@@ -2126,6 +2151,40 @@ class SiteVisitStatsMiddleware:
             if sticky_reason:
                 is_bot_like = True
                 bot_like_reason = "sticky:" + sticky_reason
+
+        # -------------------------------------------------
+        # Persistentní post-hoc IP reputace.
+        #
+        # Cron už danou IP jednou dostatečně přesvědčivě
+        # chytil některým z konzervativních Rules 1-10.
+        #
+        # Pokud je ale tento konkrétní visitor už dnes
+        # browser-confirmed, reputaci pro něj ignorujeme.
+        # IP samotná tím reputaci neztrácí.
+        # -------------------------------------------------
+
+        if not is_known_bot and not is_bot_like:
+            ip_reputation = self.get_active_bot_ip_reputation(ip)
+
+            if (
+                ip_reputation
+                and not self.has_js_browser_confirmation(
+                    today,
+                    visitor_hash,
+                )
+            ):
+                is_bot_like = True
+                is_posthoc_ip_quarantine = True
+
+                bot_like_reason = (
+                    "posthoc_ip_reputation:"
+                    + (
+                        ip_reputation.reason
+                        or "cron_cleanup"
+                    )
+                )
+
+        ##############################################        
 
         if not is_known_bot and not is_bot_like:
             if self.is_suspicious_rapid_identity_switch(
@@ -2382,6 +2441,36 @@ class SiteVisitStatsMiddleware:
         )
 
         if is_bot_like:
+            # Post-hoc reputace je speciální:
+            #
+            # request zatím počítáme jako BOT, ale úspěšný
+            # HTML document GET si uložíme jako quarantine
+            # candidate, aby ho browser beacon mohl později
+            # rehabilitovat.
+            if (
+                is_posthoc_ip_quarantine
+                and request.method == "GET"
+                and status_code == 200
+                and not self.is_ignored_path(path)
+                and "text/html" in content_type
+                and not is_prefetch_or_prerender
+                and is_document_request
+            ):
+                self.record_visit_candidate(
+                    today=today,
+                    visitor_hash=visitor_hash,
+                    client_hash=client_hash,
+                    ip=ip,
+                    path=path,
+                    user_agent=user_agent,
+                    referer_raw=referer_raw,
+                    decision=(
+                        TrafficVisitCandidate
+                        .Decision.QUARANTINED
+                    ),
+                    decision_reason=bot_like_reason,
+                )
+                
             if should_mark_sticky_bot_like:
                 self.mark_sticky_bot_like_client(client_label, bot_like_reason)
 

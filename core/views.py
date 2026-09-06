@@ -1,7 +1,7 @@
 import hashlib
 import logging
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import F
 from urllib.parse import urldefrag, urlsplit
 from django.shortcuts import render, redirect, get_object_or_404
@@ -26,7 +26,7 @@ from django.core.cache import cache
 from django.utils.decorators import method_decorator
 
 from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm, HomeSupportPromoForm, HomeQuoteSlideForm
-from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor, DailyEngagedPageVisitor, DailySiteVisitor, DailyPageVisitor, DailyBrowserVisitor, DailySiteTraffic, DailyPageTraffic
+from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor, DailyEngagedPageVisitor, DailySiteVisitor, DailyPageVisitor, DailyBrowserVisitor, DailySiteTraffic, DailyPageTraffic, TrafficVisitCandidate
 from events.models import Event
 from media_assets.models import MediaAsset
 from social_feed.models import SocialPost, SocialSource
@@ -1036,6 +1036,183 @@ def is_obvious_beacon_bot_ua(user_agent):
         "watchtowr",
     ))
 
+
+
+def rehabilitate_quarantined_visit(candidate):
+    """
+    Jeden konkrétní BOT pageview z IP reputace
+    překlasifikuje zpět na HUMAN.
+
+    IP reputace se zde NIKDY nemaže.
+    """
+    now = timezone.now()
+
+    with transaction.atomic():
+        candidate = (
+            TrafficVisitCandidate.objects
+            .select_for_update()
+            .get(pk=candidate.pk)
+        )
+
+        # Ochrana proti dvojitému beaconu / race condition.
+        if (
+            candidate.decision
+            != TrafficVisitCandidate.Decision.QUARANTINED
+        ):
+            return False
+
+        original_reason = (
+            candidate.decision_reason
+            or "posthoc_ip_reputation"
+        )
+
+        # ---------------------------------------------
+        # DailySiteVisitor
+        # ---------------------------------------------
+
+        defaults = {
+            "pageviews": 0,
+            "client_hash": candidate.client_hash,
+            "first_path": candidate.path,
+            "last_path": candidate.path,
+        }
+
+        try:
+            visit, _created = (
+                DailySiteVisitor.objects.get_or_create(
+                    day=candidate.day,
+                    visitor_hash=candidate.visitor_hash,
+                    defaults=defaults,
+                )
+            )
+        except IntegrityError:
+            visit = DailySiteVisitor.objects.get(
+                day=candidate.day,
+                visitor_hash=candidate.visitor_hash,
+            )
+
+        DailySiteVisitor.objects.filter(
+            pk=visit.pk
+        ).update(
+            pageviews=F("pageviews") + 1,
+            client_hash=candidate.client_hash,
+            last_seen_at=now,
+            last_path=candidate.path,
+        )
+
+        # ---------------------------------------------
+        # DailyPageVisitor
+        # ---------------------------------------------
+
+        try:
+            page_visit, _created = (
+                DailyPageVisitor.objects.get_or_create(
+                    day=candidate.day,
+                    path=candidate.path,
+                    visitor_hash=candidate.visitor_hash,
+                    defaults={
+                        "pageviews": 0,
+                        "client_hash": candidate.client_hash,
+                    },
+                )
+            )
+        except IntegrityError:
+            page_visit = DailyPageVisitor.objects.get(
+                day=candidate.day,
+                path=candidate.path,
+                visitor_hash=candidate.visitor_hash,
+            )
+
+        DailyPageVisitor.objects.filter(
+            pk=page_visit.pk
+        ).update(
+            pageviews=F("pageviews") + 1,
+            client_hash=candidate.client_hash,
+            last_seen_at=now,
+        )
+
+        # ---------------------------------------------
+        # Technická traffic statistika:
+        # BOT -> HUMAN
+        #
+        # total_hits se NEMĚNÍ.
+        # ---------------------------------------------
+
+        site_traffic = (
+            DailySiteTraffic.objects
+            .select_for_update()
+            .filter(day=candidate.day)
+            .first()
+        )
+
+        if site_traffic:
+            site_traffic.bot_hits = max(
+                site_traffic.bot_hits - 1,
+                0,
+            )
+
+            site_traffic.human_hits += 1
+
+            site_traffic.save(
+                update_fields=[
+                    "bot_hits",
+                    "human_hits",
+                ]
+            )
+
+        page_traffic = (
+            DailyPageTraffic.objects
+            .select_for_update()
+            .filter(
+                day=candidate.day,
+                path=candidate.path,
+            )
+            .first()
+        )
+
+        if page_traffic:
+            page_traffic.bot_hits = max(
+                page_traffic.bot_hits - 1,
+                0,
+            )
+
+            page_traffic.human_hits += 1
+
+            page_traffic.save(
+                update_fields=[
+                    "bot_hits",
+                    "human_hits",
+                ]
+            )
+
+        # ---------------------------------------------
+        # Candidate je definitivně rehabilitovaný.
+        # ---------------------------------------------
+
+        candidate.decision = (
+            TrafficVisitCandidate.Decision.REHABILITATED
+        )
+
+        candidate.decision_reason = (
+            "browser_rehabilitated:"
+            + original_reason
+        )[:160]
+
+        candidate.processed_at = now
+
+        candidate.save(
+            update_fields=[
+                "decision",
+                "decision_reason",
+                "processed_at",
+            ]
+        )
+
+    return True
+
+
+
+
 logger = logging.getLogger("liederweb.traffic")
 
 @csrf_exempt
@@ -1685,7 +1862,7 @@ def traffic_engaged(request):
         )
 
     # -------------------------------------------------
-    # 4. Poslední fallback přes konkrétní page clienta.
+    # 4. Předposlední fallback přes konkrétní page clienta.
     #
     # Browser a meaningful interaction ano.
     # ENGAGED necháváme schválně přísnější.
@@ -1709,6 +1886,109 @@ def traffic_engaged(request):
             .order_by("-last_seen_at")
             .first()
         )
+
+    # -------------------------------------------------
+    # 5. Browser fallback pro IP-reputation quarantine.
+    #
+    # Normální VISIT neexistuje záměrně:
+    # middleware request předběžně započítal jako BOT.
+    #
+    # Povolujeme pouze stage=browser >= 750 ms.
+    # -------------------------------------------------
+
+    quarantine_candidate = None
+
+    if (
+        not matching_visit
+        and stage == "browser"
+    ):
+        quarantine_ua_hashes = set()
+
+        for quarantine_ua in (
+            document_ua,
+            user_agent,
+        ):
+            quarantine_ua = (
+                quarantine_ua or ""
+            ).strip().lower()
+
+            if quarantine_ua:
+                quarantine_ua_hashes.add(
+                    hashlib.sha256(
+                        quarantine_ua.encode("utf-8")
+                    ).hexdigest()
+                )
+
+        if quarantine_ua_hashes:
+            quarantine_candidate = (
+                TrafficVisitCandidate.objects
+                .filter(
+                    day=today,
+                    client_hash=client_hash,
+                    path=path,
+                    user_agent_hash__in=(
+                        quarantine_ua_hashes
+                    ),
+                    decision=(
+                        TrafficVisitCandidate
+                        .Decision.QUARANTINED
+                    ),
+                    created_at__gte=exact_visit_cutoff,
+                )
+                .order_by("-created_at")
+                .first()
+            )
+
+        if quarantine_candidate:
+            rehabilitate_quarantined_visit(
+                quarantine_candidate
+            )
+
+            matching_visit = (
+                DailyPageVisitor.objects
+                .filter(
+                    day=today,
+                    path=path,
+                    visitor_hash=(
+                        quarantine_candidate
+                        .visitor_hash
+                    ),
+                )
+                .order_by("-last_seen_at")
+                .first()
+            )
+
+            if matching_visit:
+                # U quarantine VISIT nemusel přežít
+                # LocMem source cache mezi Gunicorn workery.
+                # JS nám ale poslal document.referrer.
+                if document_referrer:
+                    source_referer = (
+                        document_referrer
+                    )
+
+                source_visitor_label = (
+                    quarantine_candidate
+                    .visitor_hash[:8]
+                )
+
+                logger.info(
+                    "IP_REPUTATION_REHABILITATED "
+                    "ip=%s client=%s visitor=%s "
+                    "path=%s "
+                    "original_reason=%s",
+                    ip,
+                    client_label,
+                    quarantine_candidate
+                    .visitor_hash[:8],
+                    path[:300],
+                    quarantine_candidate
+                    .decision_reason,
+                )
+
+
+
+
 
     if not matching_visit:
         logger.info(
@@ -1744,7 +2024,34 @@ def traffic_engaged(request):
         and source_visitor_label
         != confirmed_visitor_label
     ):
+        # Cache patřila jinému visitorovi stejného clienta/path.
         attribution_referer = ""
+
+    elif not attribution_referer:
+        # Persistentní fallback.
+        #
+        # Důležité zejména pro visitor rehabilitovaný
+        # z IP-reputation quarantine:
+        # jeho původní GET nebyl klasický VISIT a source cache
+        # navíc používá LocMem, takže mezi Gunicorn workery
+        # nemusí být dostupná.
+        browser_confirmation = (
+            DailyBrowserVisitor.objects
+            .filter(
+                day=today,
+                visitor_hash=confirmed_visitor_hash,
+            )
+            .only("source_referer")
+            .first()
+        )
+
+        if (
+            browser_confirmation
+            and browser_confirmation.source_referer
+        ):
+            attribution_referer = (
+                browser_confirmation.source_referer
+            )
 
     source = classify_engaged_source(
         attribution_referer,

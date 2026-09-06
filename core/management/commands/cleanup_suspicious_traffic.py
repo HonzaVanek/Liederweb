@@ -15,10 +15,9 @@ from core.models import (
     DailySiteVisitor,
     TrafficVisitCandidate,
     DailyBrowserVisitor,
+    TrafficBotIPReputation
 )
-from core.traffic_cleanup import (
-    cleanup_visitor_human_stats,
-)
+from core.traffic_cleanup import cleanup_visitor_human_stats
 
 
 logger = logging.getLogger("liederweb.traffic")
@@ -135,6 +134,11 @@ SLOW_OWN_SAME_UA_NETWORK_MIN_CLIENTS = 3
 SLOW_OWN_SAME_UA_NETWORK_MIN_VISITORS = 3
 SLOW_OWN_SAME_UA_NETWORK_MIN_IPS = 3
 
+
+
+
+
+POSTHOC_IP_REPUTATION_HOURS = 24
 
 
 
@@ -2096,6 +2100,46 @@ class Command(BaseCommand):
                 cleaned_visitors += 1
                 cleaned_pageviews += removed
 
+                reputation_expires_at = (
+                    now
+                    + timedelta(
+                        hours=POSTHOC_IP_REPUTATION_HOURS
+                    )
+                )
+
+                reputation_ip_hashes = {
+                    row.ip_hash
+                    for row in rows
+                    if row.ip_hash
+                }
+
+                for ip_hash in reputation_ip_hashes:
+                    reputation, created = (
+                        TrafficBotIPReputation.objects
+                        .update_or_create(
+                            ip_hash=ip_hash,
+                            defaults={
+                                "reason": reason[:160],
+                                "last_flagged_at": now,
+                                "expires_at": (
+                                    reputation_expires_at
+                                ),
+                            },
+                        )
+                    )
+
+                    logger.info(
+                        "IP_REPUTATION "
+                        "ip_hash=%s "
+                        "reason=%s "
+                        "expires_at=%s "
+                        "created=%s",
+                        ip_hash[:12],
+                        reason,
+                        reputation_expires_at.isoformat(),
+                        int(created),
+                    )
+
                 TrafficVisitCandidate.objects.filter(
                     day=day,
                     visitor_hash=visitor_hash,
@@ -2172,4 +2216,8 @@ class Command(BaseCommand):
     def cleanup_old_candidates(self, now):
         TrafficVisitCandidate.objects.filter(
             created_at__lt=now - timedelta(days=14)
+        ).delete()
+
+        TrafficBotIPReputation.objects.filter(
+            expires_at__lte=now
         ).delete()
