@@ -72,9 +72,9 @@ DESKTOP_CHROME_MAJOR_RE = re.compile(r"\bChrome/(\d+)\.")
 
 SLOW_NETWORK_SWEEP_SECONDS = 12 * 60 * 60
 
-SLOW_NETWORK_SWEEP_MIN_CLIENTS = 4
-SLOW_NETWORK_SWEEP_MIN_VISITORS = 4
-SLOW_NETWORK_SWEEP_MIN_IPS = 4
+SLOW_NETWORK_SWEEP_MIN_CLIENTS = 3
+SLOW_NETWORK_SWEEP_MIN_VISITORS = 3
+SLOW_NETWORK_SWEEP_MIN_IPS = 3
 SLOW_NETWORK_SWEEP_MIN_PATHS = 3
 SLOW_NETWORK_SWEEP_MIN_UAS = 3
 
@@ -103,11 +103,39 @@ DISTRIBUTED_SAME_PATH_BURST_MIN_UAS = 4
 
 SLOW_GLOBAL_HOMEPAGE_SECONDS = 12 * 60 * 60
 
-SLOW_GLOBAL_HOMEPAGE_MIN_CLIENTS = 10
-SLOW_GLOBAL_HOMEPAGE_MIN_VISITORS = 10
-SLOW_GLOBAL_HOMEPAGE_MIN_IPS = 10
-SLOW_GLOBAL_HOMEPAGE_MIN_NETWORKS = 8
-SLOW_GLOBAL_HOMEPAGE_MIN_UAS = 5
+SLOW_GLOBAL_HOMEPAGE_MIN_CLIENTS = 8
+SLOW_GLOBAL_HOMEPAGE_MIN_VISITORS = 8
+SLOW_GLOBAL_HOMEPAGE_MIN_IPS = 8
+SLOW_GLOBAL_HOMEPAGE_MIN_NETWORKS = 6
+SLOW_GLOBAL_HOMEPAGE_MIN_UAS = 4
+
+
+
+
+# -------------------------------------------------
+# Post-hoc cleanup:
+# pomalá rotace browserové identity na jednom clientu
+# -------------------------------------------------
+
+SLOW_CLIENT_IDENTITY_ROTATION_SECONDS = 12 * 60 * 60
+
+SLOW_CLIENT_IDENTITY_ROTATION_MIN_VISITORS = 3
+SLOW_CLIENT_IDENTITY_ROTATION_MIN_PATHS = 3
+SLOW_CLIENT_IDENTITY_ROTATION_MIN_SIGNATURES = 3
+
+
+# -------------------------------------------------
+# Post-hoc cleanup:
+# stejný desktop UA + OWN + stejná path v jednom networku
+# -------------------------------------------------
+
+SLOW_OWN_SAME_UA_NETWORK_SECONDS = 12 * 60 * 60
+
+SLOW_OWN_SAME_UA_NETWORK_MIN_CLIENTS = 3
+SLOW_OWN_SAME_UA_NETWORK_MIN_VISITORS = 3
+SLOW_OWN_SAME_UA_NETWORK_MIN_IPS = 3
+
+
 
 
 def find_distinct_client_bursts(
@@ -646,6 +674,191 @@ def find_slow_global_homepage_sweeps(
             and len(ips) >= min_ips
             and len(networks) >= min_networks
             and len(uas) >= min_uas
+        ):
+            flagged.update(
+                row.pk
+                for row in window
+            )
+
+    return flagged
+
+
+def get_desktop_browser_signature(user_agent):
+    """
+    Vrátí hrubou desktopovou identitu browseru:
+
+        windows:chrome
+        windows:edge
+        windows:firefox
+        mac:chrome
+        mac:safari
+        linux:firefox
+        ...
+
+    Neřešíme konkrétní verzi browseru.
+
+    Rule 9 tím pádem nereaguje jen na změnu Chrome/121 -> Chrome/122,
+    ale až na výraznější přepínání platformy/browseru.
+    """
+    ua = (user_agent or "").strip().lower()
+
+    if not ua:
+        return None
+
+    # Mobilní browsery do tohoto pravidla vůbec nepouštíme.
+    if any(
+        token in ua
+        for token in (
+            "android",
+            "iphone",
+            "ipad",
+            "ipod",
+            "mobile/",
+            "mobile safari",
+        )
+    ):
+        return None
+
+    if "windows nt" in ua:
+        platform = "windows"
+    elif "macintosh" in ua or "mac os x" in ua:
+        platform = "mac"
+    elif "x11" in ua or "linux" in ua:
+        platform = "linux"
+    else:
+        return None
+
+    if "edg/" in ua:
+        browser = "edge"
+    elif "firefox/" in ua:
+        browser = "firefox"
+    elif "opr/" in ua or "opera/" in ua:
+        browser = "opera"
+    elif "chrome/" in ua:
+        browser = "chrome"
+    elif "safari/" in ua and "version/" in ua:
+        browser = "safari"
+    else:
+        return None
+
+    return f"{platform}:{browser}"
+
+
+
+def find_slow_client_identity_rotations(
+    rows,
+    *,
+    seconds,
+    min_visitors,
+    min_paths,
+    min_signatures,
+):
+    rows = sorted(
+        rows,
+        key=lambda row: row.created_at,
+    )
+
+    flagged = set()
+    left = 0
+
+    for right, current in enumerate(rows):
+        while (
+            left < right
+            and (
+                current.created_at
+                - rows[left].created_at
+            ).total_seconds() > seconds
+        ):
+            left += 1
+
+        window = rows[left:right + 1]
+
+        visitors = {
+            row.visitor_hash
+            for row in window
+            if row.visitor_hash
+        }
+
+        paths = {
+            row.path
+            for row in window
+            if row.path
+        }
+
+        signatures = {
+            signature
+            for row in window
+            if (
+                signature := get_desktop_browser_signature(
+                    row.user_agent
+                )
+            )
+            is not None
+        }
+
+        if (
+            len(visitors) >= min_visitors
+            and len(paths) >= min_paths
+            and len(signatures) >= min_signatures
+        ):
+            flagged.update(
+                row.pk
+                for row in window
+            )
+
+    return flagged
+
+
+def find_slow_same_ua_own_network_swarms(
+    rows,
+    *,
+    seconds,
+    min_clients,
+    min_visitors,
+    min_ips,
+):
+    rows = sorted(
+        rows,
+        key=lambda row: row.created_at,
+    )
+
+    flagged = set()
+    left = 0
+
+    for right, current in enumerate(rows):
+        while (
+            left < right
+            and (
+                current.created_at
+                - rows[left].created_at
+            ).total_seconds() > seconds
+        ):
+            left += 1
+
+        window = rows[left:right + 1]
+
+        clients = {
+            row.client_hash
+            for row in window
+            if row.client_hash
+        }
+
+        visitors = {
+            row.visitor_hash
+            for row in window
+            if row.visitor_hash
+        }
+
+        ips = {
+            row.ip_hash
+            for row in window
+            if row.ip_hash
+        }
+
+        if (
+            len(clients) >= min_clients
+            and len(visitors) >= min_visitors
+            and len(ips) >= min_ips
         ):
             flagged.update(
                 row.pk
@@ -1632,6 +1845,184 @@ class Command(BaseCommand):
                     ),
                 )
 
+
+
+        # -------------------------------------------------
+        # RULE 9:
+        # pomalá rotace identity na jednom clientu
+        #
+        # Např. jeden client během několika hodin:
+        #
+        # Linux / Firefox
+        # Windows / Edge
+        # Windows / Chrome
+        # Mac / Safari
+        #
+        # Přitom:
+        # - EMPTY referer
+        # - žádný JS
+        # - různé visitor identity
+        # - různé stránky
+        #
+        # Neřešíme pouhou změnu verze browseru.
+        # Vyžadujeme různé platform/browser signatures.
+        # -------------------------------------------------
+
+        slow_client_rotation_groups = defaultdict(list)
+
+        for candidate in context_working:
+            if candidate.is_social_iab:
+                continue
+
+            if (
+                candidate.referer_kind
+                != TrafficVisitCandidate.RefererKind.EMPTY
+            ):
+                continue
+
+            if not candidate.client_hash:
+                continue
+
+            # Rule 9 je záměrně pouze desktop.
+            if (
+                get_desktop_browser_signature(
+                    candidate.user_agent
+                )
+                is None
+            ):
+                continue
+
+            # Jednotlivé identity chceme jako singletony.
+            # Normální browsing session tím chráníme.
+            if (
+                visitor_candidate_counts[
+                    (
+                        candidate.day,
+                        candidate.visitor_hash,
+                    )
+                ]
+                != 1
+            ):
+                continue
+
+            slow_client_rotation_groups[
+                (
+                    candidate.day,
+                    candidate.client_hash,
+                )
+            ].append(candidate)
+
+        for rows in slow_client_rotation_groups.values():
+            ids = find_slow_client_identity_rotations(
+                rows,
+                seconds=(
+                    SLOW_CLIENT_IDENTITY_ROTATION_SECONDS
+                ),
+                min_visitors=(
+                    SLOW_CLIENT_IDENTITY_ROTATION_MIN_VISITORS
+                ),
+                min_paths=(
+                    SLOW_CLIENT_IDENTITY_ROTATION_MIN_PATHS
+                ),
+                min_signatures=(
+                    SLOW_CLIENT_IDENTITY_ROTATION_MIN_SIGNATURES
+                ),
+            )
+
+            for candidate_id in ids:
+                reasons_by_candidate.setdefault(
+                    candidate_id,
+                    (
+                        "slow_client_identity_rotation_"
+                        "no_engagement"
+                    ),
+                )
+
+
+
+        # -------------------------------------------------
+        # RULE 10:
+        # pomalý same-UA OWN swarm v jednom networku
+        #
+        # - stejný network
+        # - stejný přesný desktop UA
+        # - stejná path
+        # - OWN referer
+        # - žádný JS
+        # - >= 3 clienti
+        # - >= 3 visiteři
+        # - >= 3 IP
+        #
+        # Typický observed pattern:
+        # několik IP ze stejného networku otevírá během hodin
+        # homepage se stejným UA a self-refererem.
+        # -------------------------------------------------
+
+        slow_own_same_ua_groups = defaultdict(list)
+
+        for candidate in context_working:
+            if candidate.is_social_iab:
+                continue
+
+            if (
+                candidate.referer_kind
+                != TrafficVisitCandidate.RefererKind.OWN
+            ):
+                continue
+
+            if (
+                not candidate.network_hash
+                or not candidate.ip_hash
+                or not candidate.user_agent_hash
+                or not candidate.path
+            ):
+                continue
+
+            # Záměrně jen běžný desktop browser.
+            # Identické mobilní UA jsou mezi reálnými uživateli
+            # podstatně běžnější.
+            if (
+                get_desktop_browser_signature(
+                    candidate.user_agent
+                )
+                is None
+            ):
+                continue
+
+            slow_own_same_ua_groups[
+                (
+                    candidate.day,
+                    candidate.network_hash,
+                    candidate.user_agent_hash,
+                    candidate.path,
+                )
+            ].append(candidate)
+
+        for rows in slow_own_same_ua_groups.values():
+            ids = find_slow_same_ua_own_network_swarms(
+                rows,
+                seconds=(
+                    SLOW_OWN_SAME_UA_NETWORK_SECONDS
+                ),
+                min_clients=(
+                    SLOW_OWN_SAME_UA_NETWORK_MIN_CLIENTS
+                ),
+                min_visitors=(
+                    SLOW_OWN_SAME_UA_NETWORK_MIN_VISITORS
+                ),
+                min_ips=(
+                    SLOW_OWN_SAME_UA_NETWORK_MIN_IPS
+                ),
+            )
+
+            for candidate_id in ids:
+                reasons_by_candidate.setdefault(
+                    candidate_id,
+                    (
+                        "slow_same_ua_own_network_"
+                        "no_engagement"
+                    ),
+                )
 
 
         suspicious_candidates = [
