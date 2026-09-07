@@ -591,6 +591,17 @@ class Order(models.Model):
         blank=True,
     )
 
+    digital_ready_email_sent_at = models.DateTimeField(
+        "e-mail o zpřístupnění digitálního obsahu odeslán",
+        null=True,
+        blank=True,
+    )
+
+    digital_ready_email_error = models.TextField(
+        "chyba e-mailu o zpřístupnění digitálního obsahu",
+        blank=True,
+    )
+
     expires_at = models.DateTimeField(
         "objednávka expiruje",
         null=True,

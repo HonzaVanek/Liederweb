@@ -1,0 +1,15 @@
+Dobrý den,
+
+platbu za objednávku {{ order.number }} jsme přijali.
+
+Digitální obsah vaší objednávky je nyní připravený ke stažení.
+
+Nahrávky a případný booklet naleznete zde:
+
+{{ download_url }}
+
+Tento odkaz je určen pouze vám. Nepřeposílejte jej dalším osobám.
+
+S pozdravem
+
+Lieder Society

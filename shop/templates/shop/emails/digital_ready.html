@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Vaše nahrávky jsou připravené</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f3f3f3;font-family:Arial,sans-serif;color:#222;">
+  <div style="max-width:680px;margin:0 auto;padding:32px 16px;">
+
+    <div style="background:#fff;padding:32px;border:1px solid #ddd;">
+
+      <h1 style="margin:0 0 20px;font-size:26px;">
+        Vaše nahrávky jsou připravené
+      </h1>
+
+      <p>
+        Dobrý den,
+      </p>
+
+      <p>
+        platbu za objednávku
+        <strong>{{ order.number }}</strong>
+        jsme přijali.
+      </p>
+
+      <p>
+        Digitální obsah vaší objednávky je nyní
+        připravený ke stažení.
+      </p>
+
+      <div style="margin:28px 0;">
+        <a
+          href="{{ download_url }}"
+          style="
+            display:inline-block;
+            padding:14px 20px;
+            background:#222;
+            color:#fff;
+            text-decoration:none;
+            font-weight:bold;
+          "
+        >
+          Stáhnout digitální obsah
+        </a>
+      </div>
+
+      <p style="font-size:14px;color:#666;">
+        Na stránce najdete všechny zakoupené nahrávky
+        a případně také booklet alba.
+      </p>
+
+      <p style="font-size:14px;color:#666;">
+        Tento odkaz je určen pouze vám.
+        Nepřeposílejte jej dalším osobám.
+      </p>
+
+      <p style="margin-top:30px;">
+        S pozdravem<br>
+        <strong>Lieder Society</strong>
+      </p>
+
+    </div>
+
+  </div>
+</body>
+</html>

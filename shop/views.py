@@ -41,7 +41,7 @@ from .services.payments import get_bank_transfer_payment_data
 from .services.invoice_pdf import build_invoice_pdf, build_invoice_pdf_filename
 from .services.audio import AudioProcessingError, generate_track_preview
 from .services.tracks import sync_track_purchase_variant
-from .services.downloads import DigitalDownloadGrantError, grant_digital_downloads
+from .services.payment_completion import mark_order_paid
 from .storage import private_shop_storage
 
 
@@ -1052,14 +1052,21 @@ def staff_order_detail(request, order_id):
         .select_related("user")
         .prefetch_related(
             "items",
+            "download_grants",
             "status_history__performed_by",
         ),
         id=order_id,
     )
 
     payment_data = None
-    if order.payment_method == Order.PaymentMethod.BANK_TRANSFER:
-        payment_data = get_bank_transfer_payment_data(order)
+
+    if (
+        order.payment_method
+        == Order.PaymentMethod.BANK_TRANSFER
+    ):
+        payment_data = get_bank_transfer_payment_data(
+            order
+        )
 
     return render(
         request,
@@ -1095,42 +1102,86 @@ def staff_order_update_states(request, order_id):
             "Zkontrolujte formulář.",
         )
 
+        order = (
+            Order.objects
+            .select_related("user")
+            .prefetch_related(
+                "items",
+                "download_grants",
+                "status_history__performed_by",
+            )
+            .get(id=order_id)
+        )
+
+        payment_data = None
+
+        if (
+            order.payment_method
+            == Order.PaymentMethod.BANK_TRANSFER
+        ):
+            payment_data = (
+                get_bank_transfer_payment_data(order)
+            )
+
         return render(
             request,
             "shop/staff_order_detail.html",
             {
-                "order": (
-                    Order.objects
-                    .select_related("user")
-                    .prefetch_related(
-                        "items",
-                        "status_history__performed_by",
-                    )
-                    .get(id=order_id)
-                ),
+                "order": order,
                 "state_form": form,
                 "cancel_form": CancelOrderForm(),
+                "payment_data": payment_data,
             },
         )
 
+    completion = None
+
     try:
-        order, changed = update_order_states(
-            order_id=order.id,
-            order_status=form.cleaned_data[
-                "order_status"
-            ],
-            payment_status=form.cleaned_data[
-                "payment_status"
-            ],
-            fulfilment_status=form.cleaned_data[
-                "fulfilment_status"
-            ],
-            note=form.cleaned_data.get("note", ""),
-            performed_by=request.user,
-        )
+        if (
+            form.cleaned_data["payment_status"]
+            == Order.PaymentStatus.PAID
+        ):
+            order, changed, completion = (
+                mark_order_paid(
+                    order_id=order.id,
+                    order_status=form.cleaned_data[
+                        "order_status"
+                    ],
+                    fulfilment_status=form.cleaned_data[
+                        "fulfilment_status"
+                    ],
+                    note=form.cleaned_data.get(
+                        "note",
+                        "",
+                    ),
+                    performed_by=request.user,
+                )
+            )
+
+        else:
+            order, changed = update_order_states(
+                order_id=order.id,
+                order_status=form.cleaned_data[
+                    "order_status"
+                ],
+                payment_status=form.cleaned_data[
+                    "payment_status"
+                ],
+                fulfilment_status=form.cleaned_data[
+                    "fulfilment_status"
+                ],
+                note=form.cleaned_data.get(
+                    "note",
+                    "",
+                ),
+                performed_by=request.user,
+            )
 
     except OrderManagementError as exc:
-        messages.error(request, str(exc))
+        messages.error(
+            request,
+            str(exc),
+        )
 
         return redirect(
             "shop_staff:order_detail",
@@ -1148,32 +1199,48 @@ def staff_order_update_states(request, order_id):
             "Nebyly provedeny žádné změny.",
         )
 
-    # Digitální obsah řešíme až POTÉ,
-    # co je změna platby bezpečně uložená.
-    if (
-        order.payment_status == Order.PaymentStatus.PAID
-        and order.contains_digital_content
-    ):
-        try:
-            created_downloads = grant_digital_downloads(
-                order
-            )
-        except DigitalDownloadGrantError as exc:
+    if completion is not None:
+        if completion.download_error:
             messages.warning(
                 request,
                 (
                     "Platba byla uložena jako zaplacená, "
                     "ale digitální obsah se nepodařilo "
-                    f"zpřístupnit: {exc}"
+                    "zpřístupnit: "
+                    f"{completion.download_error}"
                 ),
             )
+
         else:
-            if created_downloads:
+            if completion.created_downloads:
                 messages.success(
                     request,
                     (
                         "Digitální obsah byl zpřístupněn "
-                        f"({created_downloads} souborů)."
+                        f"({completion.created_downloads} "
+                        "souborů)."
+                    ),
+                )
+
+            if completion.email_sent:
+                messages.success(
+                    request,
+                    (
+                        "Zákazníkovi byl odeslán e-mail "
+                        "s odkazem ke stažení."
+                    ),
+                )
+
+            elif (
+                completion.email_attempted
+                and completion.email_error
+            ):
+                messages.warning(
+                    request,
+                    (
+                        "Digitální obsah je dostupný, "
+                        "ale zákaznický e-mail se "
+                        "nepodařilo odeslat."
                     ),
                 )
 
