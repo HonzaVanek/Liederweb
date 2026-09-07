@@ -2,7 +2,7 @@ from pathlib import Path
 import subprocess
 import re
 from urllib.parse import urlparse
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import Counter, defaultdict
 
 from django.contrib.admin.views.decorators import staff_member_required
@@ -2186,6 +2186,8 @@ def system_logs_view(request):
                 break
             except ValueError:
                 pass
+    else:
+        audit_since = datetime.now() - timedelta(days=1)
 
     try:
         context_lines = int(request.GET.get("context_lines", 30))
@@ -2195,7 +2197,7 @@ def system_logs_view(request):
     context_lines = max(0, min(context_lines, 200))
 
     try:
-        scan_lines = int(request.GET.get("scan_lines", 50000))
+        scan_lines = int(request.GET.get("scan_lines", 10000))
     except ValueError:
         scan_lines = 50000
 
