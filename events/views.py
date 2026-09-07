@@ -302,6 +302,27 @@ def event_detail(request, pk):
         },
     )
 
+def _get_related_event_content(event):
+    related_content_posts = (
+        event.content_posts
+        .filter(is_published=True)
+        .select_related("cover_image")
+        .order_by("-published_at", "-created_at")
+    )
+
+    related_content_galleries = (
+        event.content_galleries
+        .filter(is_published=True)
+        .select_related("cover_image")
+        .prefetch_related("images", "images__image")
+        .order_by("-published_at", "-created_at")
+    )
+
+    return {
+        "related_content_posts": related_content_posts,
+        "related_content_galleries": related_content_galleries,
+    }
+
 
 def public_event_detail(request, slug):
     event = get_object_or_404(
@@ -394,20 +415,7 @@ def public_event_detail(request, slug):
 
     event_schema_json = _json_ld(event_schema)
 
-    related_content_posts = (
-        event.content_posts
-        .filter(is_published=True)
-        .select_related("cover_image")
-        .order_by("-published_at", "-created_at")
-    )
-
-    related_content_galleries = (
-        event.content_galleries
-        .filter(is_published=True)
-        .select_related("cover_image")
-        .prefetch_related("images", "images__image")
-        .order_by("-published_at", "-created_at")
-    )
+    related_content = _get_related_event_content(event)
 
     gallery_images = list(event.gallery_images.all())
 
@@ -432,9 +440,8 @@ def public_event_detail(request, slug):
             "gallery_images": gallery_images,
             "gallery_preview_images": gallery_preview_images,
             "gallery_extra_count": gallery_extra_count,
-            "related_content_posts": related_content_posts,
-            "related_content_galleries": related_content_galleries,
             "event_schema_json": event_schema_json,
+            **related_content,
         },
     )
 
@@ -485,6 +492,8 @@ def vip_event_detail(request, token):
     initial_ticket_count = reservation.ticket_count if reservation else 1
     vip_form = VipReservationForm(initial={"ticket_count": initial_ticket_count})
 
+    related_content = _get_related_event_content(event)
+
     return render(request, "events/public_event_detail.html", {
         "event": event,
         "vip_mode": True,
@@ -493,6 +502,7 @@ def vip_event_detail(request, token):
         "reservation": reservation,
         "vip_form": vip_form,
         "hide_header": True,
+        **related_content,
     })
 
 def vip_reserve(request, token):
@@ -551,14 +561,20 @@ def vip_reserve(request, token):
 
     form = VipReservationForm(request.POST)
     if not form.is_valid():
+        related_content = _get_related_event_content(event)
+
         return render(request, "events/public_event_detail.html", {
             "event": event,
             "vip_mode": True,
             "delivery": delivery,
             "contact": contact,
-            "reservation": VipReservation.objects.filter(event=event, contact=contact).first(),
+            "reservation": VipReservation.objects.filter(
+                event=event,
+                contact=contact,
+            ).first(),
             "vip_form": form,
             "hide_header": True,
+            **related_content,
         })
 
     ticket_count = form.cleaned_data["ticket_count"]
