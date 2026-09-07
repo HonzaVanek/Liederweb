@@ -182,6 +182,12 @@
                   META_EXIT_DIAG (Meta diagnostika)
               {% elif label == "SOCIAL_DUP_PAIR" %}
                   SOCIAL_DUP_PAIR (Meta dvojrequest diagnostika)
+              {% elif label == "POSTHOC_CLEANUP" %}
+                  POSTHOC_CLEANUP (cron)
+              {% elif label == "IP_REPUTATION" %}
+                  IP_REPUTATION (24h reputace)
+              {% elif label == "IP_REPUTATION_REHABILITATED" %}
+                  IP_REPUTATION_REHABILITATED (browser override)
               {% else %}
                   {{ label }}
               {% endif %}
@@ -608,6 +614,108 @@
       </table>
     </div>
   {% endif %}
+
+
+  <h3>Same-client identity rotation – diagnostika</h3>
+
+  <p class="help">
+    Pouze diagnostika. Hledá 2+ nepotvrzené visitor identity
+    stejného clienta na stejné path během 5 minut,
+    které používají 2+ různé User-Agenty.
+
+    Zahrnuty jsou pouze EMPTY / SEARCH referery
+    a alespoň jeden request musí mít EMPTY referer.
+
+    Nic se zde automaticky nemaže.
+    Client v této statistice prakticky odpovídá
+    denní identitě veřejné IP, takže například
+    sdílený NAT může vytvořit legitimní shodu.
+  </p>
+
+  <div class="stats-table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>Čas</th>
+          <th>IP / client</th>
+          <th>Path</th>
+          <th>Rozpětí</th>
+          <th>Visitoři</th>
+          <th>UA</th>
+          <th>Referer</th>
+          <th>Ukázky UA</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for row in traffic_audit.same_client_identity_rotation_rows %}
+          <tr>
+            <td>
+              {{ row.first_seen }}
+
+              {% if row.last_seen != row.first_seen %}
+                <br>
+                → {{ row.last_seen }}
+              {% endif %}
+            </td>
+
+            <td>
+              {% if row.ip %}
+                <code>{{ row.ip }}</code>
+                <br>
+              {% endif %}
+
+              client:
+              <code>{{ row.client }}</code>
+            </td>
+
+            <td>
+              <code>{{ row.path }}</code>
+            </td>
+
+            <td>
+              {{ row.span_seconds }} s
+            </td>
+
+            <td>
+              <strong>{{ row.visitor_count }}</strong>
+
+              {% for visitor in row.visitor_samples %}
+                <br>
+                <code>{{ visitor }}</code>
+              {% endfor %}
+            </td>
+
+            <td>
+              <strong>{{ row.ua_count }}</strong>
+            </td>
+
+            <td>
+              <code>{{ row.referer_kinds }}</code>
+            </td>
+
+            <td>
+              {% for ua in row.ua_samples %}
+                <div>
+                  <code>{{ ua }}</code>
+                </div>
+              {% endfor %}
+            </td>
+          </tr>
+
+        {% empty %}
+
+          <tr>
+            <td colspan="8">
+              Žádný same-client identity rotation kandidát.
+            </td>
+          </tr>
+
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
 
   <h3>
     Poslední nepotvrzení VISIT visiteři

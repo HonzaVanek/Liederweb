@@ -1631,23 +1631,16 @@ class Command(BaseCommand):
             ):
                 continue
 
-            # Nechceme tím mazat normální browsing session.
+            # Každá jednotlivá visitor identita musí být singleton.
+            #
+            # Client ale smí mít více různých visitor identit:
+            # právě rotace UA / identity na stejné IP může být
+            # součástí distribuovaného network sweepu.
             if (
                 visitor_candidate_counts[
                     (
                         candidate.day,
                         candidate.visitor_hash,
-                    )
-                ]
-                != 1
-            ):
-                continue
-
-            if (
-                client_candidate_counts[
-                    (
-                        candidate.day,
-                        candidate.client_hash,
                     )
                 ]
                 != 1

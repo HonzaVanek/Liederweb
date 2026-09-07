@@ -37,7 +37,9 @@ TRAFFIC_KIND_RE = re.compile(
     r"(META_EXIT_DIAG|SOCIAL_DUP_PAIR|"
     r"MEANINGFUL_INTERACTION|INTERACTION_SKIP|"
     r"NETWORK_PATTERN_CANDIDATE|"
-    r"RAPID_IDENTITY_CANDIDATE|POSTHOC_CLEANUP|"
+    r"RAPID_IDENTITY_CANDIDATE|"
+    r"IP_REPUTATION_REHABILITATED|IP_REPUTATION|"
+    r"POSTHOC(?:\(CRON\))?_CLEANUP|"
     r"VISIT_DUPLICATE|BROWSER_CONFIRMED|BROWSER_SKIP|"
     r"ENGAGED_SKIP|ENGAGED|VISIT|BOT_LIKE|CLEANUP)\s+"
 )
@@ -339,9 +341,16 @@ def parse_traffic_log_line(line):
     if not kind_match:
         return None
 
+    kind = kind_match.group(1)
+
+    # Cron historicky loguje POSTHOC(CRON)_CLEANUP,
+    # zatímco audit interně používá POSTHOC_CLEANUP.
+    if kind == "POSTHOC(CRON)_CLEANUP":
+        kind = "POSTHOC_CLEANUP"
+
     item = {
         "line": line,
-        "kind": kind_match.group(1),
+        "kind": kind,
         "timestamp": None,
         "ip": "",
         "client": "",
@@ -1094,6 +1103,210 @@ def build_traffic_audit(log_text, since=None):
         for ua, count
         in unconfirmed_ua_counter.most_common(10)
     ]
+
+
+    # =================================================
+    # SAME-CLIENT IDENTITY ROTATION
+    #
+    # Pouze diagnostika.
+    #
+    # Hledáme situaci, kdy stejný client:
+    # - má během max. 5 minut 2+ visitor identity,
+    # - míří na stejnou path,
+    # - používá 2+ různé přesné UA,
+    # - všechny identity jsou bez JS,
+    # - referer je pouze EMPTY / SEARCH,
+    # - alespoň jeden request má EMPTY referer.
+    #
+    # Nic nemažeme. Client je zde prakticky denní
+    # identita IP, takže stále může jít například o NAT.
+    # =================================================
+
+    same_client_identity_rotation_rows = []
+
+    rotation_groups = defaultdict(list)
+
+    for row in unconfirmed_rows:
+        if (
+            not row["client"]
+            or not row["first_seen"]
+            or not row["first_path"]
+            or not row["_ua_full"]
+        ):
+            continue
+
+        if row["referer_kind"] not in (
+            "EMPTY",
+            "SEARCH",
+        ):
+            continue
+
+        rotation_groups[
+            (
+                row["day"],
+                row["client"],
+                row["first_path"],
+            )
+        ].append(row)
+
+    rotation_window_seconds = 5 * 60
+
+    for (
+        _day,
+        client,
+        path,
+    ), rows in rotation_groups.items():
+
+        rows.sort(
+            key=lambda row: (
+                row["first_seen"]
+                or datetime.min
+            )
+        )
+
+        start = 0
+
+        while start < len(rows):
+            best_end = None
+
+            for end in range(
+                start + 1,
+                len(rows),
+            ):
+                span_seconds = (
+                    rows[end]["first_seen"]
+                    - rows[start]["first_seen"]
+                ).total_seconds()
+
+                if span_seconds > rotation_window_seconds:
+                    break
+
+                cluster_rows = rows[
+                    start:end + 1
+                ]
+
+                visitors = {
+                    row["visitor"]
+                    for row in cluster_rows
+                    if row["visitor"]
+                }
+
+                uas = {
+                    row["_ua_full"]
+                    for row in cluster_rows
+                    if row["_ua_full"]
+                }
+
+                referer_kinds = {
+                    row["referer_kind"]
+                    for row in cluster_rows
+                    if row["referer_kind"]
+                }
+
+                if (
+                    len(visitors) >= 2
+                    and len(uas) >= 2
+                    and "EMPTY" in referer_kinds
+                ):
+                    best_end = end
+
+            if best_end is None:
+                start += 1
+                continue
+
+            cluster_rows = rows[
+                start:best_end + 1
+            ]
+
+            first_seen = (
+                cluster_rows[0]["first_seen"]
+            )
+
+            last_seen = (
+                cluster_rows[-1]["first_seen"]
+            )
+
+            visitors = {
+                row["visitor"]
+                for row in cluster_rows
+                if row["visitor"]
+            }
+
+            uas = {
+                row["_ua_full"]
+                for row in cluster_rows
+                if row["_ua_full"]
+            }
+
+            referer_kinds = {
+                row["referer_kind"]
+                for row in cluster_rows
+                if row["referer_kind"]
+            }
+
+            ua_samples = list(
+                dict.fromkeys(
+                    shorten_text(
+                        row["_ua_full"],
+                        160,
+                    )
+                    for row in cluster_rows
+                    if row["_ua_full"]
+                )
+            )[:5]
+
+            visitor_samples = list(
+                dict.fromkeys(
+                    row["visitor"]
+                    for row in cluster_rows
+                    if row["visitor"]
+                )
+            )[:8]
+
+            same_client_identity_rotation_rows.append({
+                "first_seen": first_seen,
+                "last_seen": last_seen,
+
+                "span_seconds": int(
+                    max(
+                        0,
+                        (
+                            last_seen
+                            - first_seen
+                        ).total_seconds(),
+                    )
+                ),
+
+                "ip": (
+                    cluster_rows[0]["ip"]
+                    or ""
+                ),
+
+                "client": client,
+                "path": path,
+
+                "visitor_count": len(visitors),
+                "ua_count": len(uas),
+
+                "referer_kinds": ", ".join(
+                    sorted(referer_kinds)
+                ),
+
+                "visitor_samples": visitor_samples,
+                "ua_samples": ua_samples,
+            })
+
+            # Tento cluster už máme zachycený.
+            # Nepřidáváme překrývající se varianty.
+            start = best_end + 1
+
+    same_client_identity_rotation_rows.sort(
+        key=lambda row: (
+            row["last_seen"]
+            or datetime.min
+        ),
+        reverse=True,
+    )
 
 
     # =================================================
@@ -1892,7 +2105,8 @@ def build_traffic_audit(log_text, since=None):
         "unconfirmed_visit_distribution": (unconfirmed_visit_distribution),
         "unconfirmed_top_uas": unconfirmed_top_uas,
         "unconfirmed_rows": unconfirmed_rows[:50],
-        "search_cluster_rows": search_cluster_rows[:30],
+        "same_client_identity_rotation_rows": same_client_identity_rotation_rows[:30],
+        "search_cluster_rows": search_cluster_rows[:30],      
         "interaction_skip_reasons": interaction_skip_reasons.most_common(10),
         "interaction_type_counts": interaction_type_counts.most_common(10),
         "meaningful_interaction_rows": meaningful_interaction_rows,
