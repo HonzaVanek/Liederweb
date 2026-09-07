@@ -11,7 +11,7 @@ from django.db.models import F, Sum
 from django.utils import timezone
 from django.urls import resolve
 
-from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, DailyEngagedPageVisitor, TrafficVisitCandidate, DailyBrowserVisitor, TrafficBotIPReputation
+from .models import DailySiteVisitor, DailyPageVisitor, DailySiteTraffic, DailyPageTraffic, DailyEngagedVisitor, DailyEngagedPageVisitor, TrafficVisitCandidate, DailyBrowserVisitor, TrafficBotIPReputation, TrafficBotSubnetReputation
 
 from urllib.parse import urlsplit, urlunsplit
 from .traffic_cleanup import (cleanup_visitor_human_stats as cleanup_visitor_stats)
@@ -502,8 +502,10 @@ class SiteVisitStatsMiddleware:
         """
         Když se až na N-tém requestu ukáže, že stejný přesný UA
         bez refereru přichází z podezřele mnoha clientů,
-        odstraníme i první seed VISITy, které prošly před dosažením
-        shared-UA thresholdu.
+        odstraníme i první seed VISITy.
+
+        Tyto seed návštěvy ale necháme jako QUARANTINED,
+        aby je případný browser beacon mohl rehabilitovat.
 
         JS potvrzeného visitora nikdy nemažeme.
         """
@@ -532,6 +534,8 @@ class SiteVisitStatsMiddleware:
                 decision__in=[
                     TrafficVisitCandidate.Decision.CLEANED,
                     TrafficVisitCandidate.Decision.ALREADY_REMOVED,
+                    TrafficVisitCandidate.Decision.QUARANTINED,
+                    TrafficVisitCandidate.Decision.REHABILITATED,
                 ]
             )
             .values(
@@ -553,10 +557,52 @@ class SiteVisitStatsMiddleware:
             ):
                 continue
 
+            # Candidate IDs si uložíme ještě PŘED cleanupem,
+            # protože cleanup je může označit ALREADY_REMOVED.
+            candidate_ids = list(
+                TrafficVisitCandidate.objects
+                .filter(
+                    day=today,
+                    visitor_hash=previous_visitor_hash,
+                    user_agent_hash=user_agent_hash,
+                    referer_kind=(
+                        TrafficVisitCandidate.RefererKind.EMPTY
+                    ),
+                )
+                .exclude(
+                    decision__in=[
+                        TrafficVisitCandidate.Decision.CLEANED,
+                        TrafficVisitCandidate.Decision.ALREADY_REMOVED,
+                        TrafficVisitCandidate.Decision.QUARANTINED,
+                        TrafficVisitCandidate.Decision.REHABILITATED,
+                    ]
+                )
+                .values_list(
+                    "pk",
+                    flat=True,
+                )
+            )
+
             removed = self.cleanup_visitor_human_stats(
                 today,
                 previous_visitor_hash,
             )
+
+            # Ať cleanup udělal cokoli, právě tyto candidate
+            # chceme ponechat jako rehabilitovatelnou karanténu.
+            if candidate_ids:
+                TrafficVisitCandidate.objects.filter(
+                    pk__in=candidate_ids
+                ).update(
+                    decision=(
+                        TrafficVisitCandidate
+                        .Decision.QUARANTINED
+                    ),
+                    decision_reason=(
+                        "shared_ua_seed_cleanup"
+                    ),
+                    processed_at=timezone.now(),
+                )
 
             if not removed:
                 continue
@@ -1268,29 +1314,18 @@ class SiteVisitStatsMiddleware:
 
 
     def should_cleanup_client_human_stats(self, reason):
-        reason = reason or ""
-
-        if reason.startswith("sticky:"):
-            reason = reason.removeprefix("sticky:")
-
-        if reason.startswith("shared_ua:"):
-            return True
+        reason = (reason or "").removeprefix("sticky:")
 
         return reason in CLIENT_LEVEL_CLEANUP_REASONS
 
+
     def should_cleanup_visitor_human_stats(self, reason):
-        reason = reason or ""
+        reason = (reason or "").removeprefix("sticky:")
 
         if reason.startswith("shared_ua:"):
             return True
 
-        if reason.startswith("sticky:shared_ua:"):
-            return True
-
         if reason == "distributed_same_ua_own_ref":
-            return True
-
-        if reason == "sticky:distributed_same_ua_own_ref":
             return True
 
         return False
@@ -2013,6 +2048,52 @@ class SiteVisitStatsMiddleware:
             str(network),
         )
 
+    def get_traffic_subnet_hash(self, ip):
+        """
+        Persistentní fingerprint IPv4 /24 subnetu.
+
+        Schválně je oddělený od network_hash:
+        network_hash používá u IPv4 /16 pro Rule 6.
+        """
+        address = self.normalize_traffic_ip(ip)
+
+        if address is None:
+            return ""
+
+        if address.version != 4:
+            return ""
+
+        network = ipaddress.ip_network(
+            f"{address}/24",
+            strict=False,
+        )
+
+        return self.traffic_hmac(
+            "subnet24",
+            str(network),
+        )
+
+
+    def get_active_bot_subnet_reputation(self, ip):
+        subnet_hash = self.get_traffic_subnet_hash(ip)
+
+        if not subnet_hash:
+            return None
+
+        return (
+            TrafficBotSubnetReputation.objects
+            .filter(
+                subnet_hash=subnet_hash,
+                expires_at__gt=timezone.now(),
+            )
+            .only(
+                "subnet_hash",
+                "reason",
+                "expires_at",
+            )
+            .first()
+        )
+
     def record_visit_candidate(
         self,
         today,
@@ -2038,6 +2119,7 @@ class SiteVisitStatsMiddleware:
 
         candidate_ip_hash = self.get_traffic_ip_hash(ip)
         candidate_network_hash = self.get_traffic_network_hash(ip)
+        candidate_subnet_hash = self.get_traffic_subnet_hash(ip)
 
         try:
             TrafficVisitCandidate.objects.create(
@@ -2046,6 +2128,7 @@ class SiteVisitStatsMiddleware:
                 client_hash=client_hash,
                 ip_hash=candidate_ip_hash,
                 network_hash=candidate_network_hash,
+                subnet_hash=candidate_subnet_hash,
                 path=path[:500],
                 user_agent_hash=user_agent_hash,
                 user_agent=ua[:500],
@@ -2139,18 +2222,41 @@ class SiteVisitStatsMiddleware:
         is_bot_like = False
         bot_like_reason = ""
         should_mark_sticky_bot_like = False
-        is_posthoc_ip_quarantine = False
+        is_rehabilitable_quarantine = False
         disguised_score = 0
         disguised_reasons = []
         pre_duplicate_reason = ""
         repeated_duplicate_human_hits = 0
 
         if not is_known_bot:
-            sticky_reason = self.get_sticky_bot_like_reason(client_label)
+            sticky_reason = self.get_sticky_bot_like_reason(
+                client_label
+            )
 
             if sticky_reason:
-                is_bot_like = True
-                bot_like_reason = "sticky:" + sticky_reason
+                is_shared_ua_sticky = (
+                    sticky_reason.startswith("shared_ua:")
+                )
+
+                visitor_is_confirmed = (
+                    is_shared_ua_sticky
+                    and self.has_js_browser_confirmation(
+                        today,
+                        visitor_hash,
+                    )
+                )
+
+                # Shared-UA sticky je rehabilitovatelné:
+                # konkrétní browser-confirmed visitor už dál
+                # nepodléhá tomuto sticky pravidlu.
+                if not visitor_is_confirmed:
+                    is_bot_like = True
+                    bot_like_reason = (
+                        "sticky:" + sticky_reason
+                    )
+
+                    if is_shared_ua_sticky:
+                        is_rehabilitable_quarantine = True
 
         # -------------------------------------------------
         # Persistentní post-hoc IP reputace.
@@ -2174,13 +2280,36 @@ class SiteVisitStatsMiddleware:
                 )
             ):
                 is_bot_like = True
-                is_posthoc_ip_quarantine = True
+                is_rehabilitable_quarantine = True
 
                 bot_like_reason = (
                     "posthoc_ip_reputation:"
                     + (
                         ip_reputation.reason
                         or "cron_cleanup"
+                    )
+                )
+
+        if not is_known_bot and not is_bot_like:
+            subnet_reputation = (
+                self.get_active_bot_subnet_reputation(ip)
+            )
+
+            if (
+                subnet_reputation
+                and not self.has_js_browser_confirmation(
+                    today,
+                    visitor_hash,
+                )
+            ):
+                is_bot_like = True
+                is_rehabilitable_quarantine = True
+
+                bot_like_reason = (
+                    "posthoc_subnet_reputation:"
+                    + (
+                        subnet_reputation.reason
+                        or "cron_cleaned_subnet"
                     )
                 )
 
@@ -2240,21 +2369,33 @@ class SiteVisitStatsMiddleware:
             )
 
             if is_shared_ua:
-                # Pokud teprve tento request překročil threshold
-                # distribuovaného EMPTY shared-UA patternu,
-                # uklidíme i první seed VISITy.
-                if shared_ua_reason.startswith(
-                    "same_ua_empty_ref_clients:"
-                ):
-                    self.cleanup_previous_shared_ua_empty_ref_visitors(
-                        today=today,
-                        user_agent=user_agent,
-                        current_visitor_hash=visitor_hash,
+                visitor_is_confirmed = (
+                    self.has_js_browser_confirmation(
+                        today,
+                        visitor_hash,
                     )
+                )
 
-                is_bot_like = True
-                should_mark_sticky_bot_like = True
-                bot_like_reason = "shared_ua:" + shared_ua_reason
+                if not visitor_is_confirmed:
+                    # Pokud teprve tento request překročil threshold
+                    # distribuovaného EMPTY shared-UA patternu,
+                    # uklidíme i první seed VISITy.
+                    if shared_ua_reason.startswith(
+                        "same_ua_empty_ref_clients:"
+                    ):
+                        self.cleanup_previous_shared_ua_empty_ref_visitors(
+                            today=today,
+                            user_agent=user_agent,
+                            current_visitor_hash=visitor_hash,
+                        )
+
+                    is_bot_like = True
+                    is_rehabilitable_quarantine = True
+                    should_mark_sticky_bot_like = True
+
+                    bot_like_reason = (
+                        "shared_ua:" + shared_ua_reason
+                    )
 
         content_type = response.headers.get("Content-Type", "").lower()
 
@@ -2441,14 +2582,59 @@ class SiteVisitStatsMiddleware:
         )
 
         if is_bot_like:
-            # Post-hoc reputace je speciální:
-            #
-            # request zatím počítáme jako BOT, ale úspěšný
-            # HTML document GET si uložíme jako quarantine
-            # candidate, aby ho browser beacon mohl později
-            # rehabilitovat.
+            if should_mark_sticky_bot_like:
+                self.mark_sticky_bot_like_client(
+                    client_label,
+                    bot_like_reason,
+                )
+
+            removed = 0
+
+            if self.should_cleanup_client_human_stats(
+                bot_like_reason
+            ):
+                removed = self.cleanup_client_human_stats(
+                    today,
+                    client_hash,
+                )
+
+            elif self.should_cleanup_visitor_human_stats(
+                bot_like_reason
+            ):
+                removed = self.cleanup_visitor_human_stats(
+                    today,
+                    visitor_hash,
+                )
+
+            reclassified_duplicate_hits = 0
+
             if (
-                is_posthoc_ip_quarantine
+                bot_like_reason
+                == "repeated_exact_no_ref_no_engagement"
+                and repeated_duplicate_human_hits
+            ):
+                reclassified_duplicate_hits = (
+                    self.reclassify_duplicate_human_hits_as_bot(
+                        day=today,
+                        path=path,
+                        count=repeated_duplicate_human_hits,
+                    )
+                )
+
+            # -------------------------------------------------
+            # Rehabilitovatelná karanténa.
+            #
+            # Request už je v technických statistikách BOT,
+            # ale candidate necháváme k dispozici browser
+            # beaconu pro případnou rehabilitaci.
+            #
+            # Důležité: vytváříme ho až PO případném cleanupu,
+            # aby jej realtime cleanup nepřepsal na
+            # ALREADY_REMOVED.
+            # -------------------------------------------------
+
+            if (
+                is_rehabilitable_quarantine
                 and request.method == "GET"
                 and status_code == 200
                 and not self.is_ignored_path(path)
@@ -2470,33 +2656,12 @@ class SiteVisitStatsMiddleware:
                     ),
                     decision_reason=bot_like_reason,
                 )
-                
-            if should_mark_sticky_bot_like:
-                self.mark_sticky_bot_like_client(client_label, bot_like_reason)
-
-            removed = 0
-
-            if self.should_cleanup_client_human_stats(bot_like_reason):
-                removed = self.cleanup_client_human_stats(today, client_hash)
-
-            elif self.should_cleanup_visitor_human_stats(bot_like_reason):
-                removed = self.cleanup_visitor_human_stats(today, visitor_hash)
-
-            reclassified_duplicate_hits = 0
-
-            if (bot_like_reason == "repeated_exact_no_ref_no_engagement" and repeated_duplicate_human_hits):
-                reclassified_duplicate_hits = (
-                    self.reclassify_duplicate_human_hits_as_bot(
-                        day=today,
-                        path=path,
-                        count=repeated_duplicate_human_hits,
-                    )
-                )
 
             if removed or reclassified_duplicate_hits:
                 logger.info(
                     "CLEANUP client=%s visitor=%s reason=%s "
-                    "removed_pageviews=%s reclassified_duplicate_hits=%s",
+                    "removed_pageviews=%s "
+                    "reclassified_duplicate_hits=%s",
                     client_label,
                     visitor_label,
                     bot_like_reason,
@@ -2505,7 +2670,9 @@ class SiteVisitStatsMiddleware:
                 )
 
             logger.info(
-                "BOT_LIKE client=%s visitor=%s method=%s status=%s path=%s referer=%s reason=%s score=%s ua=%s",
+                "BOT_LIKE client=%s visitor=%s "
+                "method=%s status=%s path=%s "
+                "referer=%s reason=%s score=%s ua=%s",
                 client_label,
                 visitor_label,
                 request.method,
@@ -2516,6 +2683,7 @@ class SiteVisitStatsMiddleware:
                 disguised_score,
                 user_agent[:300],
             )
+
             return
 
         if is_known_bot:

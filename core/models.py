@@ -507,6 +507,12 @@ class TrafficVisitCandidate(models.Model):
         db_index=True,
     )
 
+    subnet_hash = models.CharField(
+        max_length=64,
+        blank=True,
+        db_index=True,
+    )
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
@@ -580,6 +586,43 @@ class TrafficBotIPReputation(models.Model):
             f"do {self.expires_at:%Y-%m-%d %H:%M}"
         )
 
+class TrafficBotSubnetReputation(models.Model):
+    subnet_hash = models.CharField(
+        max_length=64,
+        unique=True,
+    )
+
+    reason = models.CharField(
+        max_length=160,
+        blank=True,
+    )
+
+    trigger_ip_count = models.PositiveSmallIntegerField(
+        default=0,
+    )
+
+    first_flagged_at = models.DateTimeField(
+        default=timezone.now,
+    )
+
+    last_flagged_at = models.DateTimeField(
+        default=timezone.now,
+    )
+
+    expires_at = models.DateTimeField(
+        db_index=True,
+    )
+
+    class Meta:
+        ordering = ["-expires_at"]
+        verbose_name = "Bot subnet reputace"
+        verbose_name_plural = "Bot subnet reputace"
+
+    def __str__(self):
+        return (
+            f"{self.subnet_hash[:12]} "
+            f"do {self.expires_at:%Y-%m-%d %H:%M}"
+        )
 
 
 #### KONEC STATISTIK NÁVŠTĚVNOSTI WEBU
