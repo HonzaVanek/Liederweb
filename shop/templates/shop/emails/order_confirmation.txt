@@ -39,6 +39,12 @@ Variabilní symbol: {{ invoice.variable_symbol }}
 Datum splatnosti: {{ invoice.due_date|date:"j. n. Y" }}
 
 Fakturu a platební údaje naleznete také v příloze tohoto e-mailu.
+{% if terms_url %}
+Obchodní podmínky platné pro tuto objednávku:
+{{ terms_url }}
+
+Jejich znění najdete také v příloze tohoto e-mailu.
+{% endif %}
 
 S pozdravem
 

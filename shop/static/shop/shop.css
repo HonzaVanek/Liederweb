@@ -2402,3 +2402,43 @@ body.dark-mode .shop-order-success > .shop-primary-button:hover {
         width: 100%;
     }
 }
+
+.shop-legal-document {
+    width: min(900px, 100%);
+    margin: 0 auto;
+}
+
+.shop-legal-document__header {
+    margin-bottom: 36px;
+}
+
+.shop-legal-document__header h1 {
+    margin: 0 0 10px;
+}
+
+.shop-legal-document__meta {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.shop-legal-document__body {
+    line-height: 1.7;
+}
+
+.shop-legal-document__body p {
+    margin: 0 0 18px;
+}
+
+.shop-legal-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.shop-legal-links a {
+    color: inherit;
+    text-decoration: underline;
+}

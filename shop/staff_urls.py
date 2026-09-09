@@ -22,4 +22,10 @@ urlpatterns = [
     path("doprava/", views.staff_shipping_method_list, name="shipping_method_list"),
     path("doprava/nova/", views.staff_shipping_method_create, name="shipping_method_create"),
     path("doprava/<int:shipping_method_id>/upravit/", views.staff_shipping_method_edit, name="shipping_method_edit"),
+
+    path("legal/", views.staff_legal_document_list, name="legal_document_list"),
+    path("legal/new/", views.staff_legal_document_create, name="legal_document_create"),
+    path("legal/<int:document_id>/edit/", views.staff_legal_document_edit, name="legal_document_edit"),
+    path("legal/<int:document_id>/new-version/", views.staff_legal_document_new_version, name="legal_document_new_version"),
+    path("legal/<int:document_id>/publish/", views.staff_legal_document_publish, name="legal_document_publish")
 ]

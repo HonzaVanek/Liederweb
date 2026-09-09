@@ -149,6 +149,30 @@
               {{ order.terms_accepted_at|date:"j. n. Y H:i" }}
             </dd>
           </div>
+
+          <div>
+            <dt>Verze obchodních podmínek</dt>
+
+            <dd>
+              {% if order.terms_document %}
+                <a
+                  href="{% url 'shop:terms_version' order.terms_document.version %}"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Verze {{ order.terms_document.version }}
+                  – účinná od
+                  {{ order.terms_document.effective_from|date:"j. n. Y" }}
+                </a>
+              {% else %}
+                —
+                <span class="muted">
+                  starší objednávka bez uložené verze
+                </span>
+              {% endif %}
+            </dd>
+          </div>
+
         </dl>
       </section>
 

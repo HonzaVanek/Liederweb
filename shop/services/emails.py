@@ -7,10 +7,8 @@ from django.utils import timezone
 from django.urls import reverse
 
 from shop.models import Order
-from shop.services.invoice_pdf import (
-    build_invoice_pdf,
-    build_invoice_pdf_filename,
-)
+from shop.services.invoice_pdf import build_invoice_pdf, build_invoice_pdf_filename
+from shop.services.legal import build_legal_document_text
 
 
 logger = logging.getLogger("liederweb.shop.emails")
@@ -69,7 +67,7 @@ def build_order_download_url(order):
 def send_order_confirmation_email(order_id):
     order = (
         Order.objects
-        .select_related("invoice")
+        .select_related("invoice", "terms_document")
         .prefetch_related("items")
         .get(pk=order_id)
     )
@@ -78,6 +76,19 @@ def send_order_confirmation_email(order_id):
         invoice_pdf = build_invoice_pdf(order.invoice)
 
         download_url = None
+        terms_url = None
+        if order.terms_document_id:
+            terms_url = (
+                settings.SHOP_BASE_URL.rstrip("/")
+                + reverse(
+                    "shop:terms_version",
+                    kwargs={
+                        "version": (
+                            order.terms_document.version
+                        ),
+                    },
+                )
+            )
 
         if order.contains_digital_content:
             download_url = build_order_download_url(order)
@@ -86,6 +97,7 @@ def send_order_confirmation_email(order_id):
             "order": order,
             "invoice": order.invoice,
             "download_url": download_url,
+            "terms_url": terms_url,
         }
 
         text_body = render_to_string(
@@ -130,6 +142,20 @@ def send_order_confirmation_email(order_id):
                 invoice_pdf,
                 "application/pdf",
             )
+
+            if order.terms_document_id:
+                terms_text = build_legal_document_text(
+                    order.terms_document
+                )
+
+                message.attach(
+                    (
+                        "obchodni-podminky-"
+                        f"v{order.terms_document.version}.txt"
+                    ),
+                    terms_text,
+                    "text/plain",
+                )
 
             sent_count = message.send(
                 fail_silently=False

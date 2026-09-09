@@ -6,10 +6,11 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from shop.models import Order, OrderItem, OrderStatusHistory, ProductVariant, ShippingMethod
+from shop.models import Order, OrderItem, OrderStatusHistory, ProductVariant, ShippingMethod, ShopLegalDocument
 from shop.services.newsletter import add_order_contact_to_newsletter
 from shop.services.emails import send_order_confirmation_email, send_staff_new_order_email
 from shop.services.invoices import issue_invoice_for_order
+from shop.services.legal import get_current_terms_document
 
 
 class CheckoutError(Exception):
@@ -23,7 +24,34 @@ def create_order_from_cart(
     cleaned_data,
     user=None,
     allow_unpublished=False,
+    terms_document,
 ):
+
+    current_terms = get_current_terms_document()
+
+    if current_terms is None:
+        raise CheckoutError(
+            "Nejsou publikované platné obchodní podmínky."
+        )
+
+    if (
+        terms_document is None
+        or terms_document.id != current_terms.id
+    ):
+        raise CheckoutError(
+            (
+                "Obchodní podmínky se mezitím změnily. "
+                "Vraťte se prosím do objednávky "
+                "a potvrďte jejich aktuální znění."
+            )
+        )
+
+    if not cleaned_data.get("terms_accepted"):
+        raise CheckoutError(
+            "Je nutné souhlasit s obchodními podmínkami."
+        )
+
+    
     cart_items = list(cart.items)
 
     if not cart_items:
@@ -156,6 +184,7 @@ def create_order_from_cart(
         ),
 
         terms_accepted_at=now,
+        terms_document=terms_document,
 
         expires_at=(
             now

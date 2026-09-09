@@ -124,6 +124,10 @@
             class="{% if request.resolver_match.namespace == 'shop_staff' and 'shipping_method' in request.resolver_match.url_name %}active{% endif %}">
             Doprava
             </a>
+
+            <a href="{% url 'shop_staff:legal_document_list' %}">
+            Obch. podmínky + GDPR
+            </a>
          </nav>
       {% endwith %}
       </div>

@@ -2,7 +2,7 @@ from django import forms
 from django.forms import inlineformset_factory, BaseInlineFormSet
 from pathlib import Path
 
-from .models import Product, ProductVariant, Order, ShippingMethod, ProductVariantImage, AlbumTrack
+from .models import Product, ProductVariant, Order, ShippingMethod, ProductVariantImage, AlbumTrack, ShopLegalDocument
 from .cart import SessionCart
 
 class ProductForm(forms.ModelForm):
@@ -795,3 +795,47 @@ class ShippingMethodForm(forms.ModelForm):
                 attrs={"min": "0"}
             ),
         }
+
+
+class ShopLegalDocumentForm(forms.ModelForm):
+    class Meta:
+        model = ShopLegalDocument
+        fields = [
+            "document_type",
+            "title",
+            "effective_from",
+            "body",
+        ]
+        widgets = {
+            "document_type": forms.Select(),
+            "title": forms.TextInput(),
+            "effective_from": forms.DateInput(
+                attrs={
+                    "type": "date",
+                }
+            ),
+            "body": forms.Textarea(
+                attrs={
+                    "rows": 35,
+                }
+            ),
+        }
+
+    def clean_title(self):
+        return (
+            self.cleaned_data.get("title")
+            or ""
+        ).strip()
+
+    def clean_body(self):
+        body = (
+            self.cleaned_data.get("body")
+            or ""
+        ).strip()
+
+        if not body:
+            raise forms.ValidationError(
+                "Text dokumentu nesmí být prázdný."
+            )
+
+        return body
