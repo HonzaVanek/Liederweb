@@ -188,10 +188,7 @@ def privacy(request):
     document = get_current_privacy_document()
 
     if document is None:
-        raise Http404(
-            "Podmínky ochrany osobních údajů "
-            "zatím nejsou publikované."
-        )
+        raise Http404("Podmínky ochrany osobních údajů zatím nejsou publikované.")
 
     return _render_legal_document(
         request,

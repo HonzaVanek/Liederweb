@@ -22,15 +22,11 @@ def get_current_legal_document(document_type):
 
 
 def get_current_terms_document():
-    return get_current_legal_document(
-        ShopLegalDocument.DocumentType.TERMS
-    )
+    return get_current_legal_document(ShopLegalDocument.DocumentType.TERMS)
 
 
 def get_current_privacy_document():
-    return get_current_legal_document(
-        ShopLegalDocument.DocumentType.PRIVACY
-    )
+    return get_current_legal_document(ShopLegalDocument.DocumentType.PRIVACY)
 
 
 def get_next_legal_document_version(document_type):
@@ -45,9 +41,7 @@ def get_next_legal_document_version(document_type):
 
 
 def build_legal_document_text(document):
-    effective_from = document.effective_from.strftime(
-        "%d.%m.%Y"
-    )
+    effective_from = document.effective_from.strftime("%d.%m.%Y")
 
     return (
         f"{document.title}\n"
