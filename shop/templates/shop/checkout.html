@@ -155,20 +155,33 @@
           </div>
 
           {{ form.newsletter_consent.errors }}
-
-          <div class="shop-checkout-checkbox">
-            {{ form.terms_accepted }}
-            {{ form.terms_accepted.label_tag }}
-          </div>
-
-          {{ form.terms_accepted.errors }}
         </section>
 
+
+        <div class="shop-checkout-checkbox">
+          {{ form.terms_accepted }}
+
+          <label for="{{ form.terms_accepted.id_for_label }}">
+            Souhlasím s
+            <a
+              href="{% url 'shop:terms_version' terms_document.version %}"
+              target="_blank"
+              rel="noopener"
+            >
+              obchodními podmínkami
+            </a>
+            a potvrzuji správnost objednávky.
+          </label>
+
+          {{ form.terms_accepted.errors }}
+        </div>
+
+
         <button
-          class="shop-primary-button"
           type="submit"
+          class="shop-primary-button"
         >
-          Vytvořit objednávku
+          Objednávka zavazující k platbě
         </button>
       </form>
 
@@ -219,6 +232,6 @@
       </aside>
 
     </div>
-
+{% include "shop/includes/legal_links.html" %}
   </main>
 {% endblock content %}

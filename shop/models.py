@@ -380,7 +380,106 @@ class AlbumTrack(models.Model):
                 }
             )
 
+class ShopLegalDocument(models.Model):
+    class DocumentType(models.TextChoices):
+        TERMS = "terms", "Obchodní podmínky"
+        PRIVACY = "privacy", "Ochrana osobních údajů"
 
+    document_type = models.CharField(
+        "typ dokumentu",
+        max_length=20,
+        choices=DocumentType.choices,
+        db_index=True,
+    )
+
+    version = models.PositiveIntegerField(
+        "verze",
+    )
+
+    title = models.CharField(
+        "název",
+        max_length=200,
+    )
+
+    body = models.TextField(
+        "text dokumentu",
+        help_text=(
+            "Text se na veřejné stránce zobrazí "
+            "se zachováním odstavců."
+        ),
+    )
+
+    effective_from = models.DateField(
+        "účinné od",
+        db_index=True,
+    )
+
+    is_published = models.BooleanField(
+        "publikováno",
+        default=False,
+        db_index=True,
+    )
+
+    published_at = models.DateTimeField(
+        "publikováno",
+        null=True,
+        blank=True,
+        editable=False,
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="vytvořil",
+        on_delete=models.SET_NULL,
+        related_name="shop_legal_documents_created",
+        null=True,
+        blank=True,
+        editable=False,
+    )
+
+    published_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="publikoval",
+        on_delete=models.SET_NULL,
+        related_name="shop_legal_documents_published",
+        null=True,
+        blank=True,
+        editable=False,
+    )
+
+    created_at = models.DateTimeField(
+        "vytvořeno",
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        "upraveno",
+        auto_now=True,
+    )
+
+    class Meta:
+        ordering = (
+            "document_type",
+            "-effective_from",
+            "-version",
+        )
+        verbose_name = "právní dokument"
+        verbose_name_plural = "právní dokumenty"
+        constraints = [
+            models.UniqueConstraint(
+                fields=(
+                    "document_type",
+                    "version",
+                ),
+                name="unique_shop_legal_document_version",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.get_document_type_display()} "
+            f"– verze {self.version}"
+        )
 
 
 class Order(models.Model):
@@ -561,6 +660,16 @@ class Order(models.Model):
         "obchodní podmínky přijaty",
         null=True,
         blank=True,
+    )
+
+    terms_document = models.ForeignKey(
+        "ShopLegalDocument",
+        verbose_name="přijaté obchodní podmínky",
+        on_delete=models.PROTECT,
+        related_name="accepted_orders",
+        null=True,
+        blank=True,
+        editable=False,
     )
 
     created_at = models.DateTimeField(

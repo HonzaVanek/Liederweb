@@ -8,6 +8,11 @@ app_name = "shop"
 urlpatterns = [
     path("", views.shop_home, name="home"),
 
+    path("obchodni-podminky/", views.terms, name="terms"),
+    path("obchodni-podminky/verze/<int:version>/", views.terms_version, name="terms_version"),
+    path("ochrana-osobnich-udaju/", views.privacy, name="privacy"),
+    path("ochrana-osobnich-udaju/verze/<int:version>/", views.privacy_version, name="privacy_version"),
+
     path("kosik/", views.cart_detail, name="cart_detail"),
     path("kosik/pridat/<slug:slug>/", views.cart_add, name="cart_add"),
     path("kosik/upravit/<int:variant_id>/", views.cart_update, name="cart_update"),

@@ -1,0 +1,139 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+{% block title %}Právní dokumenty | E-shop{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop_staff.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block rozesilac_content %}
+  <div class="shop-admin-page">
+
+    <div class="admin-page-header">
+      <div>
+        <h2>Právní dokumenty</h2>
+
+        <p class="muted">
+          Publikované verze už nelze přepisovat.
+          Změny se provádějí vytvořením nové verze.
+        </p>
+      </div>
+
+      <div class="top-action">
+        <a href="{% url 'shop_staff:legal_document_create' %}">
+          Nový dokument
+        </a>
+      </div>
+    </div>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">
+            {{ message }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <section class="content-section">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Dokument</th>
+              <th>Verze</th>
+              <th>Účinné od</th>
+              <th>Stav</th>
+              <th>Objednávky</th>
+              <th>Akce</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for document in documents %}
+              <tr>
+                <td>
+                  <strong>
+                    {{ document.get_document_type_display }}
+                  </strong>
+                </td>
+
+                <td>{{ document.version }}</td>
+
+                <td>
+                  {{ document.effective_from|date:"j. n. Y" }}
+                </td>
+
+                <td>
+                  {% if document.is_published %}
+                    Publikováno
+                  {% else %}
+                    Koncept
+                  {% endif %}
+                </td>
+
+                <td>
+                  {{ document.order_count }}
+                </td>
+
+                <td>
+                  {% if document.is_published %}
+
+                    {% if document.document_type == "terms" %}
+                      <a
+                        href="{% url 'shop:terms_version' document.version %}"
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        Zobrazit
+                      </a>
+                    {% else %}
+                      <a
+                        href="{% url 'shop:privacy_version' document.version %}"
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        Zobrazit
+                      </a>
+                    {% endif %}
+
+                    ·
+
+                    <a
+                      href="{% url 'shop_staff:legal_document_new_version' document.id %}"
+                    >
+                      Nová verze
+                    </a>
+
+                  {% else %}
+
+                    <a
+                      href="{% url 'shop_staff:legal_document_edit' document.id %}"
+                    >
+                      Upravit
+                    </a>
+
+                  {% endif %}
+                </td>
+              </tr>
+
+            {% empty %}
+              <tr>
+                <td colspan="6">
+                  Zatím nebyl vytvořen žádný dokument.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+{% endblock rozesilac_content %}

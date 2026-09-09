@@ -1,0 +1,150 @@
+{% extends "rozesilac/base_rozesilac.html" %}
+{% load static %}
+
+
+{% block title %}{{ page_title }} | E-shop{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop_staff.css' %}"
+  >
+
+  <link
+    rel="stylesheet"
+    href="{% static 'content/content_staff.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block rozesilac_content %}
+  <div class="shop-admin-page">
+
+    <div class="admin-page-header">
+      <div>
+        <h2>{{ page_title }}</h2>
+
+        {% if document %}
+          <p class="muted">
+            Verze {{ document.version }}
+          </p>
+        {% endif %}
+      </div>
+
+      <div class="top-action">
+        <a href="{% url 'shop_staff:legal_document_list' %}">
+          Zpět na právní dokumenty
+        </a>
+      </div>
+    </div>
+
+    <section class="content-section">
+
+      <form method="post">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        {% if form.errors %}
+          <div style="background:#fee; padding:15px; margin-bottom:20px;">
+            <strong>FORM ERRORS:</strong>
+            <pre>{{ form.errors }}</pre>
+          </div>
+        {% endif %}
+
+        <div class="form-group">
+          {{ form.document_type.label_tag }}
+          {{ form.document_type }}
+          {{ form.document_type.errors }}
+        </div>
+
+        <div class="form-group">
+          {{ form.title.label_tag }}
+          {{ form.title }}
+          {{ form.title.errors }}
+        </div>
+
+        <div class="form-group">
+          {{ form.effective_from.label_tag }}
+          {{ form.effective_from }}
+          {{ form.effective_from.errors }}
+        </div>
+
+        <div class="form-group content-form-row">
+          {{ form.body.label_tag }}
+
+          <div
+            class="content-richtext-toolbar"
+            aria-label="Jednoduché formátování textu"
+          >
+            <button
+              type="button"
+              class="content-richtext-btn"
+              data-richtext-action="bold"
+            >
+              Tučně
+            </button>
+
+            <button
+              type="button"
+              class="content-richtext-btn"
+              data-richtext-action="bullet"
+            >
+              Odrážka
+            </button>
+
+            <button
+              type="button"
+              class="content-richtext-btn"
+              data-richtext-action="italic"
+            >
+              Kurzíva
+            </button>
+          </div>
+
+          {{ form.body }}
+
+          {% if form.body.help_text %}
+            <small class="content-form-help">
+              {{ form.body.help_text }}
+            </small>
+          {% endif %}
+
+          {{ form.body.errors }}
+        </div>
+
+        <button type="submit">
+          Uložit
+        </button>
+      </form>
+
+    </section>
+
+    {% if document and not document.is_published %}
+      <section class="content-section">
+        <h3>Publikace</h3>
+
+        <p>
+          Po publikaci už nebude možné tuto verzi
+          přepisovat.
+        </p>
+
+        <form
+          method="post"
+          action="{% url 'shop_staff:legal_document_publish' document.id %}"
+          onsubmit="return confirm('Opravdu chcete tuto verzi publikovat?');"
+        >
+          {% csrf_token %}
+
+          <button type="submit">
+            Publikovat tuto verzi
+          </button>
+        </form>
+      </section>
+    {% endif %}
+
+  </div>
+
+<script src="{% static 'content/content_staff.js' %}"></script>
+{% endblock rozesilac_content %}

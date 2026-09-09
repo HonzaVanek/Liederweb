@@ -2402,3 +2402,73 @@ body.dark-mode .shop-order-success > .shop-primary-button:hover {
         width: 100%;
     }
 }
+
+.shop-legal-document {
+    width: min(900px, 100%);
+    margin: 0 auto;
+}
+
+.shop-legal-document__header {
+    margin-bottom: 36px;
+}
+
+.shop-legal-document__header h1 {
+    margin: 0 0 10px;
+}
+
+.shop-legal-document__meta {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.shop-legal-document__body {
+    line-height: 1.7;
+}
+
+.shop-legal-document__body p {
+    margin: 0 0 18px;
+}
+
+.shop-legal-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+
+    margin-top: 40px;
+    padding-top: 18px;
+
+    border-top: 1px solid #d8d8d2;
+}
+
+.shop-legal-links a {
+    color: #555;
+
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    transition: color 0.2s ease;
+}
+
+.shop-legal-links a:hover {
+    color: #111;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.shop-legal-document__body ul {
+    margin: 0 0 18px;
+    padding-left: 1.5rem;
+}
+
+.shop-legal-document__body li {
+    margin-bottom: 6px;
+}
+
+.shop-legal-document__body li:last-child {
+    margin-bottom: 0;
+}
+
+.shop-legal-document__body strong {
+    font-weight: 700;
+}

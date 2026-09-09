@@ -155,6 +155,18 @@
         ve formátu PDF.
       </p>
 
+      {% if terms_url %}
+        <p>
+          Obchodní podmínky platné pro tuto objednávku
+          najdete
+          <a href="{{ terms_url }}">
+            zde
+          </a>.
+          Jejich znění je zároveň přiloženo k tomuto
+          e-mailu v textové podobě.
+        </p>
+      {% endif %}
+
       <p style="margin-top:30px;">
         S pozdravem<br>
         <strong>Lieder Society</strong>

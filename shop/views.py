@@ -1,5 +1,6 @@
 import mimetypes
 from pathlib import Path
+from django.utils import timezone
 
 from django.conf import settings
 from django.contrib import messages
@@ -13,28 +14,10 @@ from django.views.decorators.http import require_POST
 from .decorators import shop_public_or_staff_preview
 from core.decorators import staff_required
 from .cart import CartQuantityError, SessionCart
-from .forms import (
-    ProductForm,
-    ProductVariantFormSet,
-    ProductVariantImageFormSet,
-    AddToCartForm,
-    CartQuantityForm,
-    CheckoutForm,
-    CancelOrderForm,
-    StaffOrderStateForm,
-    ShippingMethodForm,
-    AlbumTrackForm
-)
-from .models import (
-    Product,
-    ProductVariant,
-    ProductImage,
-    ProductVariantImage,
-    AlbumTrack,
-    Order,
-    ShippingMethod,
-    DigitalDownloadGrant
-)
+from .forms import ProductForm, ProductVariantFormSet, ProductVariantImageFormSet, AddToCartForm, CartQuantityForm, CheckoutForm, CancelOrderForm, StaffOrderStateForm, ShippingMethodForm, AlbumTrackForm, ShopLegalDocumentForm
+from .models import Product, ProductVariant, ProductImage, ProductVariantImage, AlbumTrack, Order, ShippingMethod, DigitalDownloadGrant, ShopLegalDocument
+
+from .services.legal import get_current_terms_document, get_current_privacy_document, get_next_legal_document_version
 from .services.checkout import CheckoutError, create_order_from_cart
 from .services.orders import OrderManagementError, update_order_states, cancel_order
 from .services.payments import get_bank_transfer_payment_data
@@ -158,6 +141,77 @@ def _public_product_detail_queryset():
             ),
         )
     )
+
+
+
+def _render_legal_document(request, document):
+    return render(
+        request,
+        "shop/legal_document.html",
+        {
+            "document": document,
+        },
+    )
+
+
+def terms(request):
+    document = get_current_terms_document()
+
+    if document is None:
+        raise Http404(
+            "Obchodní podmínky zatím nejsou publikované."
+        )
+
+    return _render_legal_document(
+        request,
+        document,
+    )
+
+
+def terms_version(request, version):
+    document = get_object_or_404(
+        ShopLegalDocument,
+        document_type=(
+            ShopLegalDocument.DocumentType.TERMS
+        ),
+        version=version,
+        is_published=True,
+    )
+
+    return _render_legal_document(
+        request,
+        document,
+    )
+
+
+def privacy(request):
+    document = get_current_privacy_document()
+
+    if document is None:
+        raise Http404("Podmínky ochrany osobních údajů zatím nejsou publikované.")
+
+    return _render_legal_document(
+        request,
+        document,
+    )
+
+
+def privacy_version(request, version):
+    document = get_object_or_404(
+        ShopLegalDocument,
+        document_type=(
+            ShopLegalDocument.DocumentType.PRIVACY
+        ),
+        version=version,
+        is_published=True,
+    )
+
+    return _render_legal_document(
+        request,
+        document,
+    )
+
+
 
 @shop_public_or_staff_preview
 def shop_home(request):
@@ -881,34 +935,68 @@ def checkout(request):
         )
         return redirect("shop:cart_detail")
 
+    terms_document = get_current_terms_document()
+
+    if terms_document is None:
+        messages.error(
+            request,
+            (
+                "E-shop momentálně nemá publikované "
+                "obchodní podmínky a nelze vytvořit "
+                "objednávku."
+            ),
+        )
+
+        return redirect(
+            "shop:cart_detail"
+        )
+
     form = CheckoutForm(
         request.POST or None,
         requires_shipping=cart.requires_shipping,
     )
 
     if request.method == "POST" and form.is_valid():
-        try:
-            order = create_order_from_cart(
-                cart=cart,
-                cleaned_data=form.cleaned_data,
-                user=(
-                    request.user
-                    if request.user.is_authenticated
-                    else None
+        posted_terms_document_id = (
+            request.POST.get("terms_document_id")
+        )
+
+        if (
+            posted_terms_document_id
+            != str(terms_document.id)
+        ):
+            form.add_error(
+                "terms_accepted",
+                (
+                    "Obchodní podmínky byly mezitím "
+                    "aktualizovány. Přečtěte si prosím "
+                    "nové znění a potvrďte souhlas znovu."
                 ),
-                allow_unpublished=request.user.is_staff,
             )
-
-        except CheckoutError as exc:
-            form.add_error(None, str(exc))
-
         else:
-            cart.clear()
+            try:
+                order = create_order_from_cart(
+                    cart=cart,
+                    cleaned_data=form.cleaned_data,
+                    user=(
+                        request.user
+                        if request.user.is_authenticated
+                        else None
+                    ),
+                    allow_unpublished=request.user.is_staff,
+                    terms_document=terms_document,
+                )
 
-            return redirect(
-                "shop:order_success",
-                token=order.public_token,
-            )
+            except CheckoutError as exc:
+                form.add_error(None, str(exc))
+
+            else:
+                cart.clear()
+
+                return redirect(
+                    "shop:order_success",
+                    token=order.public_token,
+                )
 
     return render(
         request,
@@ -918,6 +1006,7 @@ def checkout(request):
             "cart": cart,
             "cart_items": cart_items,
             "cart_item_count": len(cart),
+            "terms_document": terms_document,
             "shop_preview_mode": not getattr(
                 settings,
                 "SHOP_PUBLIC_ENABLED",
@@ -1049,7 +1138,7 @@ def staff_order_list(request):
 def staff_order_detail(request, order_id):
     order = get_object_or_404(
         Order.objects
-        .select_related("user")
+        .select_related("user", "terms_document")
         .prefetch_related(
             "items",
             "download_grants",
@@ -1104,7 +1193,7 @@ def staff_order_update_states(request, order_id):
 
         order = (
             Order.objects
-            .select_related("user")
+            .select_related("user", "terms_document")
             .prefetch_related(
                 "items",
                 "download_grants",
@@ -1404,4 +1493,293 @@ def staff_shipping_method_edit(request, shipping_method_id):
             "shipping_method": shipping_method,
             "page_title": "Upravit způsob dopravy",
         },
+    )
+
+@staff_required
+def staff_legal_document_list(request):
+    documents = (
+        ShopLegalDocument.objects
+        .select_related(
+            "created_by",
+            "published_by",
+        )
+        .annotate(
+            order_count=Count("accepted_orders")
+        )
+        .order_by(
+            "document_type",
+            "-version",
+        )
+    )
+
+    return render(
+        request,
+        "shop/staff_legal_document_list.html",
+        {
+            "documents": documents,
+            "current_terms": (
+                get_current_terms_document()
+            ),
+            "current_privacy": (
+                get_current_privacy_document()
+            ),
+        },
+    )
+
+
+@staff_required
+def staff_legal_document_create(request):
+    if request.method == "POST":
+        form = ShopLegalDocumentForm(
+            request.POST
+        )
+
+        if form.is_valid():
+            document = form.save(
+                commit=False
+            )
+
+            document.version = (
+                get_next_legal_document_version(
+                    document.document_type
+                )
+            )
+
+            document.created_by = (
+                request.user
+            )
+
+            document.save()
+
+            messages.success(
+                request,
+                (
+                    "Právní dokument byl vytvořen "
+                    f"jako verze {document.version}."
+                ),
+            )
+
+            return redirect(
+                "shop_staff:legal_document_edit",
+                document_id=document.id,
+            )
+
+    else:
+        form = ShopLegalDocumentForm(
+            initial={
+                "effective_from": (
+                    timezone.localdate()
+                ),
+            }
+        )
+
+    return render(
+        request,
+        "shop/staff_legal_document_form.html",
+        {
+            "form": form,
+            "document": None,
+            "page_title": (
+                "Nový právní dokument"
+            ),
+        },
+    )
+
+
+@staff_required
+def staff_legal_document_edit(
+    request,
+    document_id,
+):
+    document = get_object_or_404(
+        ShopLegalDocument,
+        id=document_id,
+    )
+
+    # Publikovanou verzi už neměníme.
+    if document.is_published:
+        messages.info(
+            request,
+            (
+                "Publikovanou verzi nelze přepisovat. "
+                "Pro změnu vytvořte novou verzi."
+            ),
+        )
+
+        return redirect(
+            "shop_staff:legal_document_list"
+        )
+
+    if request.method == "POST":
+        form = ShopLegalDocumentForm(
+            request.POST,
+            instance=document,
+        )
+
+        # Typ rozepsané verze už také neměníme.
+        form.fields["document_type"].disabled = True
+
+        if form.is_valid():
+            document = form.save()
+
+            messages.success(
+                request,
+                "Dokument byl uložen.",
+            )
+
+            return redirect(
+                "shop_staff:legal_document_edit",
+                document_id=document.id,
+            )
+
+    else:
+        form = ShopLegalDocumentForm(
+            instance=document,
+        )
+        form.fields[
+            "document_type"
+        ].disabled = True
+
+    return render(
+        request,
+        "shop/staff_legal_document_form.html",
+        {
+            "form": form,
+            "document": document,
+            "page_title": (
+                f"Upravit: {document.title} "
+                f"– verze {document.version}"
+            ),
+        },
+    )
+
+
+@staff_required
+def staff_legal_document_new_version(
+    request,
+    document_id,
+):
+    source = get_object_or_404(
+        ShopLegalDocument,
+        id=document_id,
+    )
+
+    initial = {
+        "document_type": source.document_type,
+        "title": source.title,
+        "body": source.body,
+        "effective_from": timezone.localdate(),
+    }
+
+    if request.method == "POST":
+        form = ShopLegalDocumentForm(
+            request.POST,
+            initial=initial,
+        )
+
+        form.fields[
+            "document_type"
+        ].disabled = True
+
+        if form.is_valid():
+            document = form.save(
+                commit=False
+            )
+
+            document.document_type = (
+                source.document_type
+            )
+
+            document.version = (
+                get_next_legal_document_version(
+                    source.document_type
+                )
+            )
+
+            document.created_by = (
+                request.user
+            )
+
+            document.save()
+
+            messages.success(
+                request,
+                (
+                    "Nová verze dokumentu "
+                    f"{document.version} byla vytvořena."
+                ),
+            )
+
+            return redirect(
+                "shop_staff:legal_document_edit",
+                document_id=document.id,
+            )
+
+    else:
+        form = ShopLegalDocumentForm(
+            initial=initial
+        )
+
+        form.fields[
+            "document_type"
+        ].disabled = True
+
+    return render(
+        request,
+        "shop/staff_legal_document_form.html",
+        {
+            "form": form,
+            "document": None,
+            "page_title": (
+                f"Nová verze: {source.title}"
+            ),
+            "source_document": source,
+        },
+    )
+
+
+@staff_required
+@require_POST
+def staff_legal_document_publish(
+    request,
+    document_id,
+):
+    document = get_object_or_404(
+        ShopLegalDocument,
+        id=document_id,
+    )
+
+    if document.is_published:
+        messages.info(
+            request,
+            "Dokument už je publikovaný.",
+        )
+
+        return redirect(
+            "shop_staff:legal_document_list"
+        )
+
+    document.is_published = True
+    document.published_at = timezone.now()
+    document.published_by = request.user
+
+    document.save(
+        update_fields=[
+            "is_published",
+            "published_at",
+            "published_by",
+            "updated_at",
+        ]
+    )
+
+    messages.success(
+        request,
+        (
+            f"{document.get_document_type_display()} "
+            f"verze {document.version} byly publikovány."
+        ),
+    )
+
+    return redirect(
+        "shop_staff:legal_document_list"
     )

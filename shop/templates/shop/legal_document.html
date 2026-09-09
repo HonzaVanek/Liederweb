@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+{% load content_tags %}
+
+
+
+{% block title %}
+  {{ document.title }} | Lieder Society
+{% endblock title %}
+
+{% block extra_css %}
+  {{ block.super }}
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop.css' %}"
+  >
+{% endblock extra_css %}
+
+{% block content %}
+  <main class="shop-page">
+
+    <article class="shop-legal-document">
+
+      <header class="shop-legal-document__header">
+        <p class="shop-eyebrow">
+          Lieder Society e-shop
+        </p>
+
+        <h1>{{ document.title }}</h1>
+
+        <p class="shop-legal-document__meta">
+          Verze {{ document.version }}
+          · účinné od
+          {{ document.effective_from|date:"j. n. Y" }}
+        </p>
+      </header>
+
+      <div class="shop-legal-document__body">
+        {{ document.body|content_richtext }}
+      </div>
+
+      {% include "shop/includes/legal_links.html" %}
+
+    </article>
+
+  </main>
+{% endblock content %}
