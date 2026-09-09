@@ -803,23 +803,40 @@ class ShopLegalDocumentForm(forms.ModelForm):
         fields = [
             "document_type",
             "title",
-            "effective_from",
             "body",
+            "effective_from",
         ]
         widgets = {
-            "document_type": forms.Select(),
-            "title": forms.TextInput(),
+            "document_type": forms.Select(
+                attrs={"class": "form-control"}
+            ),
+
+            "title": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
             "effective_from": forms.DateInput(
                 attrs={
+                    "class": "form-control",
                     "type": "date",
                 }
             ),
             "body": forms.Textarea(
                 attrs={
-                    "rows": 35,
+                    "class": "form-control content-richtext-textarea",
+                    "rows": 24,
+                    "data-content-richtext": "1",
                 }
             ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["body"].help_text = (
+            "Pro základní formátování označ text a použij tlačítka nad polem. "
+            "Tučně vloží **text**, odrážka přidá '- ' na začátek řádku. "
+            "Prázdný řádek vytvoří nový odstavec, běžný Enter nový řádek."
+        )
 
     def clean_title(self):
         return (

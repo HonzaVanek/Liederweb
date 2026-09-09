@@ -1,13 +1,20 @@
 {% extends "rozesilac/base_rozesilac.html" %}
 {% load static %}
 
+
 {% block title %}{{ page_title }} | E-shop{% endblock title %}
 
 {% block extra_css %}
   {{ block.super }}
+
   <link
     rel="stylesheet"
     href="{% static 'shop/shop_staff.css' %}"
+  >
+
+  <link
+    rel="stylesheet"
+    href="{% static 'content/content_staff.css' %}"
   >
 {% endblock extra_css %}
 
@@ -39,6 +46,13 @@
 
         {{ form.non_field_errors }}
 
+        {% if form.errors %}
+          <div style="background:#fee; padding:15px; margin-bottom:20px;">
+            <strong>FORM ERRORS:</strong>
+            <pre>{{ form.errors }}</pre>
+          </div>
+        {% endif %}
+
         <div class="form-group">
           {{ form.document_type.label_tag }}
           {{ form.document_type }}
@@ -57,9 +71,46 @@
           {{ form.effective_from.errors }}
         </div>
 
-        <div class="form-group">
+        <div class="form-group content-form-row">
           {{ form.body.label_tag }}
+
+          <div
+            class="content-richtext-toolbar"
+            aria-label="Jednoduché formátování textu"
+          >
+            <button
+              type="button"
+              class="content-richtext-btn"
+              data-richtext-action="bold"
+            >
+              Tučně
+            </button>
+
+            <button
+              type="button"
+              class="content-richtext-btn"
+              data-richtext-action="bullet"
+            >
+              Odrážka
+            </button>
+
+            <button
+              type="button"
+              class="content-richtext-btn"
+              data-richtext-action="italic"
+            >
+              Kurzíva
+            </button>
+          </div>
+
           {{ form.body }}
+
+          {% if form.body.help_text %}
+            <small class="content-form-help">
+              {{ form.body.help_text }}
+            </small>
+          {% endif %}
+
           {{ form.body.errors }}
         </div>
 
@@ -94,4 +145,6 @@
     {% endif %}
 
   </div>
+
+<script src="{% static 'content/content_staff.js' %}"></script>
 {% endblock rozesilac_content %}

@@ -2455,3 +2455,20 @@ body.dark-mode .shop-order-success > .shop-primary-button:hover {
     text-decoration: underline;
     text-underline-offset: 3px;
 }
+
+.shop-legal-document__body ul {
+    margin: 0 0 18px;
+    padding-left: 1.5rem;
+}
+
+.shop-legal-document__body li {
+    margin-bottom: 6px;
+}
+
+.shop-legal-document__body li:last-child {
+    margin-bottom: 0;
+}
+
+.shop-legal-document__body strong {
+    font-weight: 700;
+}

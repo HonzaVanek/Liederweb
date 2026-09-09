@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
+{% load content_tags %}
+
+
 
 {% block title %}
   {{ document.title }} | Lieder Society
@@ -33,7 +36,7 @@
       </header>
 
       <div class="shop-legal-document__body">
-        {{ document.body|linebreaks }}
+        {{ document.body|content_richtext }}
       </div>
 
       {% include "shop/includes/legal_links.html" %}
