@@ -155,20 +155,8 @@
           </div>
 
           {{ form.newsletter_consent.errors }}
-
-          <div class="shop-checkout-checkbox">
-            {{ form.terms_accepted }}
-            {{ form.terms_accepted.label_tag }}
-          </div>
-
-          {{ form.terms_accepted.errors }}
         </section>
 
-        <input
-          type="hidden"
-          name="terms_document_id"
-          value="{{ terms_document.id }}"
-        >
 
         <div class="shop-checkout-checkbox">
           {{ form.terms_accepted }}
