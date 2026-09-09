@@ -504,10 +504,8 @@ class SiteVisitStatsMiddleware:
         bez refereru přichází z podezřele mnoha clientů,
         odstraníme i první seed VISITy.
 
-        Tyto seed návštěvy ale necháme jako QUARANTINED,
-        aby je případný browser beacon mohl rehabilitovat.
-
-        JS potvrzeného visitora nikdy nemažeme.
+        U tohoto konkrétního distribuovaného shared-UA patternu
+        nepovažujeme samotný BROWSER / ENGAGED beacon za override.
         """
         ua = (user_agent or "").strip().lower()
 
@@ -550,59 +548,10 @@ class SiteVisitStatsMiddleware:
         for row in previous_rows:
             previous_visitor_hash = row["visitor_hash"]
 
-            # Absolutní ochrana skutečně spuštěného browseru.
-            if self.has_js_browser_confirmation(
-                today,
-                previous_visitor_hash,
-            ):
-                continue
-
-            # Candidate IDs si uložíme ještě PŘED cleanupem,
-            # protože cleanup je může označit ALREADY_REMOVED.
-            candidate_ids = list(
-                TrafficVisitCandidate.objects
-                .filter(
-                    day=today,
-                    visitor_hash=previous_visitor_hash,
-                    user_agent_hash=user_agent_hash,
-                    referer_kind=(
-                        TrafficVisitCandidate.RefererKind.EMPTY
-                    ),
-                )
-                .exclude(
-                    decision__in=[
-                        TrafficVisitCandidate.Decision.CLEANED,
-                        TrafficVisitCandidate.Decision.ALREADY_REMOVED,
-                        TrafficVisitCandidate.Decision.QUARANTINED,
-                        TrafficVisitCandidate.Decision.REHABILITATED,
-                    ]
-                )
-                .values_list(
-                    "pk",
-                    flat=True,
-                )
-            )
-
             removed = self.cleanup_visitor_human_stats(
                 today,
                 previous_visitor_hash,
             )
-
-            # Ať cleanup udělal cokoli, právě tyto candidate
-            # chceme ponechat jako rehabilitovatelnou karanténu.
-            if candidate_ids:
-                TrafficVisitCandidate.objects.filter(
-                    pk__in=candidate_ids
-                ).update(
-                    decision=(
-                        TrafficVisitCandidate
-                        .Decision.QUARANTINED
-                    ),
-                    decision_reason=(
-                        "shared_ua_seed_cleanup"
-                    ),
-                    processed_at=timezone.now(),
-                )
 
             if not removed:
                 continue
@@ -2234,29 +2183,10 @@ class SiteVisitStatsMiddleware:
             )
 
             if sticky_reason:
-                is_shared_ua_sticky = (
-                    sticky_reason.startswith("shared_ua:")
+                is_bot_like = True
+                bot_like_reason = (
+                    "sticky:" + sticky_reason
                 )
-
-                visitor_is_confirmed = (
-                    is_shared_ua_sticky
-                    and self.has_js_browser_confirmation(
-                        today,
-                        visitor_hash,
-                    )
-                )
-
-                # Shared-UA sticky je rehabilitovatelné:
-                # konkrétní browser-confirmed visitor už dál
-                # nepodléhá tomuto sticky pravidlu.
-                if not visitor_is_confirmed:
-                    is_bot_like = True
-                    bot_like_reason = (
-                        "sticky:" + sticky_reason
-                    )
-
-                    if is_shared_ua_sticky:
-                        is_rehabilitable_quarantine = True
 
         # -------------------------------------------------
         # Persistentní post-hoc IP reputace.
@@ -2369,33 +2299,28 @@ class SiteVisitStatsMiddleware:
             )
 
             if is_shared_ua:
-                visitor_is_confirmed = (
-                    self.has_js_browser_confirmation(
-                        today,
-                        visitor_hash,
+                # Pokud teprve tento request překročil threshold
+                # distribuovaného EMPTY shared-UA patternu,
+                # uklidíme i první seed VISITy.
+                #
+                # U tohoto konkrétního patternu už samotný
+                # BROWSER/ENGAGED beacon nepovažujeme za override:
+                # link-scanner nám ukázal, že ho umí poslat také.
+                if shared_ua_reason.startswith(
+                    "same_ua_empty_ref_clients:"
+                ):
+                    self.cleanup_previous_shared_ua_empty_ref_visitors(
+                        today=today,
+                        user_agent=user_agent,
+                        current_visitor_hash=visitor_hash,
                     )
+
+                is_bot_like = True
+                should_mark_sticky_bot_like = True
+
+                bot_like_reason = (
+                    "shared_ua:" + shared_ua_reason
                 )
-
-                if not visitor_is_confirmed:
-                    # Pokud teprve tento request překročil threshold
-                    # distribuovaného EMPTY shared-UA patternu,
-                    # uklidíme i první seed VISITy.
-                    if shared_ua_reason.startswith(
-                        "same_ua_empty_ref_clients:"
-                    ):
-                        self.cleanup_previous_shared_ua_empty_ref_visitors(
-                            today=today,
-                            user_agent=user_agent,
-                            current_visitor_hash=visitor_hash,
-                        )
-
-                    is_bot_like = True
-                    is_rehabilitable_quarantine = True
-                    should_mark_sticky_bot_like = True
-
-                    bot_like_reason = (
-                        "shared_ua:" + shared_ua_reason
-                    )
 
         content_type = response.headers.get("Content-Type", "").lower()
 
