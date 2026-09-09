@@ -2432,13 +2432,26 @@ body.dark-mode .shop-order-success > .shop-primary-button:hover {
 .shop-legal-links {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px 20px;
+    gap: 10px 24px;
+
     margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid #ddd;
+    padding-top: 18px;
+
+    border-top: 1px solid #d8d8d2;
 }
 
 .shop-legal-links a {
-    color: inherit;
+    color: #555;
+
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+
+    transition: color 0.2s ease;
+}
+
+.shop-legal-links a:hover {
+    color: #111;
     text-decoration: underline;
+    text-underline-offset: 3px;
 }
