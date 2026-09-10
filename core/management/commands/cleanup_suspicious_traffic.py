@@ -15,7 +15,8 @@ from core.models import (
     DailySiteVisitor,
     TrafficVisitCandidate,
     DailyBrowserVisitor,
-    TrafficBotIPReputation
+    TrafficBotIPReputation,
+    TrafficBotSubnetReputation
 )
 from core.traffic_cleanup import cleanup_visitor_human_stats
 
@@ -139,6 +140,10 @@ SLOW_OWN_SAME_UA_NETWORK_MIN_IPS = 3
 
 
 POSTHOC_IP_REPUTATION_HOURS = 24
+
+POSTHOC_SUBNET_REPUTATION_HOURS = 24
+POSTHOC_SUBNET_EVIDENCE_HOURS = 24
+POSTHOC_SUBNET_REPUTATION_MIN_IPS = 2
 
 
 
@@ -2093,6 +2098,10 @@ class Command(BaseCommand):
                 cleaned_visitors += 1
                 cleaned_pageviews += removed
 
+                # ---------------------------------------------
+                # Exact-IP reputace
+                # ---------------------------------------------
+
                 reputation_expires_at = (
                     now
                     + timedelta(
@@ -2114,9 +2123,7 @@ class Command(BaseCommand):
                             defaults={
                                 "reason": reason[:160],
                                 "last_flagged_at": now,
-                                "expires_at": (
-                                    reputation_expires_at
-                                ),
+                                "expires_at": reputation_expires_at,
                             },
                         )
                     )
@@ -2133,16 +2140,28 @@ class Command(BaseCommand):
                         int(created),
                     )
 
+                # ---------------------------------------------
+                # Candidate označíme CLEANED ještě před
+                # vyhodnocením subnet reputation.
+                #
+                # Díky tomu se právě uklizená IP započítá
+                # do /24 evidence okamžitě.
+                # ---------------------------------------------
+
                 TrafficVisitCandidate.objects.filter(
                     day=day,
                     visitor_hash=visitor_hash,
                 ).filter(
                     models.Q(
-                        decision=TrafficVisitCandidate.Decision.PENDING,
+                        decision=(
+                            TrafficVisitCandidate.Decision.PENDING
+                        ),
                     )
                     |
                     models.Q(
-                        decision=TrafficVisitCandidate.Decision.KEPT,
+                        decision=(
+                            TrafficVisitCandidate.Decision.KEPT
+                        ),
                         decision_reason="no_posthoc_rule_matched",
                     )
                 ).update(
@@ -2150,6 +2169,94 @@ class Command(BaseCommand):
                     decision_reason=reason[:160],
                     processed_at=now,
                 )
+
+                # ---------------------------------------------
+                # IPv4 /24 reputace
+                #
+                # Aktivujeme ji, pokud byly během posledních
+                # 24 hodin cronem CLEANED alespoň dvě různé
+                # exact IP ze stejného /24.
+                # ---------------------------------------------
+
+                reputation_subnet_hashes = {
+                    row.subnet_hash
+                    for row in rows
+                    if row.subnet_hash
+                }
+
+                subnet_evidence_start = (
+                    now
+                    - timedelta(
+                        hours=POSTHOC_SUBNET_EVIDENCE_HOURS
+                    )
+                )
+
+                for subnet_hash in reputation_subnet_hashes:
+                    cleaned_ip_hashes = set(
+                        TrafficVisitCandidate.objects
+                        .filter(
+                            subnet_hash=subnet_hash,
+                            decision=(
+                                TrafficVisitCandidate
+                                .Decision.CLEANED
+                            ),
+                            processed_at__gte=subnet_evidence_start,
+                        )
+                        .exclude(ip_hash="")
+                        .values_list(
+                            "ip_hash",
+                            flat=True,
+                        )
+                        .distinct()
+                    )
+
+                    if (
+                        len(cleaned_ip_hashes)
+                        < POSTHOC_SUBNET_REPUTATION_MIN_IPS
+                    ):
+                        continue
+
+                    subnet_expires_at = (
+                        now
+                        + timedelta(
+                            hours=POSTHOC_SUBNET_REPUTATION_HOURS
+                        )
+                    )
+
+                    subnet_reason = (
+                        "cron_cleaned_subnet:"
+                        f"{len(cleaned_ip_hashes)}_ips"
+                    )
+
+                    subnet_reputation, created = (
+                        TrafficBotSubnetReputation.objects
+                        .update_or_create(
+                            subnet_hash=subnet_hash,
+                            defaults={
+                                "reason": subnet_reason[:160],
+                                "trigger_ip_count": min(
+                                    len(cleaned_ip_hashes),
+                                    65535,
+                                ),
+                                "last_flagged_at": now,
+                                "expires_at": subnet_expires_at,
+                            },
+                        )
+                    )
+
+                    logger.info(
+                        "SUBNET_REPUTATION "
+                        "subnet_hash=%s "
+                        "ips=%s "
+                        "trigger_reason=%s "
+                        "expires_at=%s "
+                        "created=%s",
+                        subnet_hash[:12],
+                        len(cleaned_ip_hashes),
+                        reason,
+                        subnet_expires_at.isoformat(),
+                        int(created),
+                    )
 
                 sample = rows[0]
 
@@ -2212,5 +2319,9 @@ class Command(BaseCommand):
         ).delete()
 
         TrafficBotIPReputation.objects.filter(
+            expires_at__lte=now
+        ).delete()
+
+        TrafficBotSubnetReputation.objects.filter(
             expires_at__lte=now
         ).delete()
