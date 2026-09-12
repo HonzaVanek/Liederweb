@@ -598,6 +598,42 @@ class CheckoutForm(forms.Form):
         widget=forms.RadioSelect,
     )
 
+    pickup_point_id = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
+    pickup_point_name = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
+    pickup_point_street = forms.CharField(
+        max_length=200,
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
+    pickup_point_city = forms.CharField(
+        max_length=120,
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
+    pickup_point_postal_code = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
+    pickup_point_country = forms.CharField(
+        max_length=2,
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
     def __init__(
         self,
         *args,
@@ -614,7 +650,21 @@ class CheckoutForm(forms.Form):
             self.fields.pop("city")
             self.fields.pop("postal_code")
 
-        if requires_shipping:
+            self.fields.pop("shipping_method")
+
+            self.fields.pop("pickup_point_id")
+            self.fields.pop("pickup_point_name")
+            self.fields.pop("pickup_point_street")
+            self.fields.pop("pickup_point_city")
+            self.fields.pop("pickup_point_postal_code")
+            self.fields.pop("pickup_point_country")
+
+        else:
+            # Adresu budeme vyžadovat až podle zvoleného typu dopravy.
+            self.fields["address_line1"].required = False
+            self.fields["city"].required = False
+            self.fields["postal_code"].required = False
+
             self.fields["shipping_method"].required = True
             self.fields["shipping_method"].queryset = (
                 ShippingMethod.objects
@@ -628,13 +678,80 @@ class CheckoutForm(forms.Form):
                     f"{method.price:.2f} Kč"
                 )
             )
-        else:
-            self.fields.pop("shipping_method")
+
 
     def clean_postal_code(self):
         postal_code = self.cleaned_data["postal_code"]
 
         return postal_code.strip().upper()
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        if not self.requires_shipping:
+            return cleaned_data
+
+        shipping_method = cleaned_data.get("shipping_method")
+
+        if not shipping_method:
+            return cleaned_data
+
+        if shipping_method.method_type == ShippingMethod.MethodType.ADDRESS:
+            required_address_fields = {
+                "address_line1": "Vyplňte ulici a číslo.",
+                "city": "Vyplňte město.",
+                "postal_code": "Vyplňte PSČ.",
+            }
+
+            for field_name, error_message in required_address_fields.items():
+                if not (cleaned_data.get(field_name) or "").strip():
+                    self.add_error(
+                        field_name,
+                        error_message,
+                    )
+
+            self._clear_pickup_point(cleaned_data)
+
+        elif (
+            shipping_method.method_type
+            == ShippingMethod.MethodType.PICKUP_POINT
+        ):
+            if not cleaned_data.get("pickup_point_id"):
+                self.add_error(
+                    "shipping_method",
+                    "Vyberte prosím výdejní místo.",
+                )
+
+            # Doručovací adresu zákazníka pro výdejní místo nepotřebujeme.
+            cleaned_data["address_line1"] = ""
+            cleaned_data["address_line2"] = ""
+            cleaned_data["city"] = ""
+            cleaned_data["postal_code"] = ""
+
+        elif (
+            shipping_method.method_type
+            == ShippingMethod.MethodType.PERSONAL
+        ):
+            cleaned_data["address_line1"] = ""
+            cleaned_data["address_line2"] = ""
+            cleaned_data["city"] = ""
+            cleaned_data["postal_code"] = ""
+
+            self._clear_pickup_point(cleaned_data)
+
+        return cleaned_data
+
+
+    def _clear_pickup_point(self, cleaned_data):
+        for field_name in (
+            "pickup_point_id",
+            "pickup_point_name",
+            "pickup_point_street",
+            "pickup_point_city",
+            "pickup_point_postal_code",
+            "pickup_point_country",
+        ):
+            cleaned_data[field_name] = ""
 
 
 

@@ -25,6 +25,7 @@ def create_order_from_cart(
     user=None,
     allow_unpublished=False,
     terms_document,
+    validated_pickup_point=None,
 ):
 
     current_terms = get_current_terms_document()
@@ -85,6 +86,13 @@ def create_order_from_cart(
 
     shipping_method = None
     shipping_price = Decimal("0.00")
+    #pro Zásilkovnu
+    pickup_point_id = ""
+    pickup_point_name = ""
+    pickup_point_street = ""
+    pickup_point_city = ""
+    pickup_point_postal_code = ""
+    pickup_point_country = ""
 
     if cart.requires_shipping:
         submitted_shipping_method = cleaned_data.get(
@@ -114,6 +122,19 @@ def create_order_from_cart(
             )
 
         shipping_price = shipping_method.price
+
+        if shipping_method.code == "packeta-pickup":
+            if not validated_pickup_point:
+                raise CheckoutError(
+                    "Výdejní místo Zásilkovny nebylo ověřeno."
+                )
+
+            pickup_point_id = validated_pickup_point["id"]
+            pickup_point_name = validated_pickup_point["name"]
+            pickup_point_street = validated_pickup_point["street"]
+            pickup_point_city = validated_pickup_point["city"]
+            pickup_point_postal_code = validated_pickup_point["postal_code"]
+            pickup_point_country = validated_pickup_point["country"]
 
     # --------------------------------------------------
     # Základní údaje objednávky
@@ -175,6 +196,14 @@ def create_order_from_cart(
             else ""
         ),
         shipping_price=shipping_price,
+
+        # Snapshot výdejního místa
+        pickup_point_id=pickup_point_id,
+        pickup_point_name=pickup_point_name,
+        pickup_point_street=pickup_point_street,
+        pickup_point_city=pickup_point_city,
+        pickup_point_postal_code=pickup_point_postal_code,
+        pickup_point_country=pickup_point_country,
 
         newsletter_consent=newsletter_consent,
         newsletter_consent_at=(

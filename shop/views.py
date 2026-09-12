@@ -25,6 +25,7 @@ from .services.invoice_pdf import build_invoice_pdf, build_invoice_pdf_filename
 from .services.audio import AudioProcessingError, generate_track_preview
 from .services.tracks import sync_track_purchase_variant
 from .services.payment_completion import mark_order_paid
+from .services.packeta import PacketaValidationError, validate_packeta_pickup_point
 from .storage import private_shop_storage
 
 
@@ -957,9 +958,7 @@ def checkout(request):
     )
 
     if request.method == "POST" and form.is_valid():
-        posted_terms_document_id = (
-            request.POST.get("terms_document_id")
-        )
+        posted_terms_document_id = (request.POST.get("terms_document_id"))
 
         if (
             posted_terms_document_id
@@ -974,29 +973,58 @@ def checkout(request):
                 ),
             )
         else:
-            try:
-                order = create_order_from_cart(
-                    cart=cart,
-                    cleaned_data=form.cleaned_data,
-                    user=(
-                        request.user
-                        if request.user.is_authenticated
-                        else None
-                    ),
-                    allow_unpublished=request.user.is_staff,
-                    terms_document=terms_document,
-                )
+            validated_pickup_point = None
 
-            except CheckoutError as exc:
-                form.add_error(None, str(exc))
+            shipping_method = form.cleaned_data.get(
+                "shipping_method"
+            )
 
-            else:
-                cart.clear()
+            if (
+                shipping_method
+                and shipping_method.code == "packeta-pickup"
+            ):
+                try:
+                    validated_pickup_point = (
+                        validate_packeta_pickup_point(
+                            form.cleaned_data.get(
+                                "pickup_point_id"
+                            )
+                        )
+                    )
 
-                return redirect(
-                    "shop:order_success",
-                    token=order.public_token,
-                )
+                except PacketaValidationError as exc:
+                    form.add_error(
+                        "shipping_method",
+                        str(exc),
+                    )
+
+            if not form.errors:
+                try:
+                    order = create_order_from_cart(
+                        cart=cart,
+                        cleaned_data=form.cleaned_data,
+                        user=(
+                            request.user
+                            if request.user.is_authenticated
+                            else None
+                        ),
+                        allow_unpublished=request.user.is_staff,
+                        terms_document=terms_document,
+                        validated_pickup_point=(
+                            validated_pickup_point
+                        ),
+                    )
+
+                except CheckoutError as exc:
+                    form.add_error(None, str(exc))
+
+                else:
+                    cart.clear()
+
+                    return redirect(
+                        "shop:order_success",
+                        token=order.public_token,
+                    )
 
     return render(
         request,
@@ -1007,6 +1035,7 @@ def checkout(request):
             "cart_items": cart_items,
             "cart_item_count": len(cart),
             "terms_document": terms_document,
+            "packeta_api_key": settings.PACKETA_API_KEY,
             "shop_preview_mode": not getattr(
                 settings,
                 "SHOP_PUBLIC_ENABLED",

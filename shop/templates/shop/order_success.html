@@ -63,7 +63,27 @@
         <div class="shop-order-success__shipping">
           <span>
             Doprava
+
             <small>{{ order.shipping_method_name }}</small>
+
+            {% if order.pickup_point_id %}
+              <small>
+                <strong>{{ order.pickup_point_name }}</strong>
+              </small>
+
+              <small>
+                {{ order.pickup_point_street }},
+                {{ order.pickup_point_postal_code }}
+                {{ order.pickup_point_city }}
+              </small>
+
+            {% elif order.address_line1 or order.city or order.postal_code %}
+              <small>
+                {{ order.address_line1 }},
+                {{ order.postal_code }}
+                {{ order.city }}
+              </small>
+            {% endif %}
           </span>
 
           <strong>

@@ -92,53 +92,108 @@
           </div>
         </section>
 
-        {% if cart.requires_shipping %}
-          <section class="shop-checkout-section">
-            <h2>Doručovací adresa</h2>
+      {% if cart.requires_shipping %}
+        <section class="shop-checkout-section">
+          <h2>Doprava</h2>
 
-            <div class="shop-checkout-grid">
-              <div>
-                {{ form.address_line1.label_tag }}
-                {{ form.address_line1 }}
-                {{ form.address_line1.errors }}
-              </div>
-
-              <div>
-                {{ form.address_line2.label_tag }}
-                {{ form.address_line2 }}
-                {{ form.address_line2.errors }}
-              </div>
-
-              <div>
-                {{ form.city.label_tag }}
-                {{ form.city }}
-                {{ form.city.errors }}
-              </div>
-
-              <div>
-                {{ form.postal_code.label_tag }}
-                {{ form.postal_code }}
-                {{ form.postal_code.errors }}
-              </div>
+          {% if form.shipping_method.errors %}
+            <div class="form-errors">
+              {{ form.shipping_method.errors }}
             </div>
-          </section>
-        {% endif %}
+          {% endif %}
 
-        {% if cart.requires_shipping %}
-          <section class="shop-checkout-section">
-            <h2>Doprava</h2>
+          <div class="shop-shipping-methods">
+            {% for method in form.shipping_method.field.queryset %}
+              <label class="shop-shipping-method">
+                <input
+                  type="radio"
+                  name="{{ form.shipping_method.html_name }}"
+                  value="{{ method.pk }}"
+                  data-method-type="{{ method.method_type }}"
+                  data-method-code="{{ method.code }}"
+                  {% if form.shipping_method.value|stringformat:"s" == method.pk|stringformat:"s" %}
+                    checked
+                  {% endif %}
+                >
 
-            {% if form.shipping_method.errors %}
-              <div class="form-errors">
-                {{ form.shipping_method.errors }}
-              </div>
-            {% endif %}
+                <span>
+                  {{ method.name }}
+                  – {{ method.price|floatformat:"-2" }} Kč
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </section>
 
-            <div class="shop-shipping-methods">
-              {{ form.shipping_method }}
+
+        <section
+          class="shop-checkout-section"
+          id="shipping-address-section"
+          hidden
+        >
+          <h2>Doručovací adresa</h2>
+
+          <div class="shop-checkout-grid">
+            <div>
+              {{ form.address_line1.label_tag }}
+              {{ form.address_line1 }}
+              {{ form.address_line1.errors }}
             </div>
-          </section>
-        {% endif %}
+
+            <div>
+              {{ form.address_line2.label_tag }}
+              {{ form.address_line2 }}
+              {{ form.address_line2.errors }}
+            </div>
+
+            <div>
+              {{ form.city.label_tag }}
+              {{ form.city }}
+              {{ form.city.errors }}
+            </div>
+
+            <div>
+              {{ form.postal_code.label_tag }}
+              {{ form.postal_code }}
+              {{ form.postal_code.errors }}
+            </div>
+          </div>
+        </section>
+
+
+        <section
+          class="shop-checkout-section"
+          id="packeta-section"
+          hidden
+        >
+          <h2>Výdejní místo</h2>
+
+          {{ form.pickup_point_id }}
+          {{ form.pickup_point_name }}
+          {{ form.pickup_point_street }}
+          {{ form.pickup_point_city }}
+          {{ form.pickup_point_postal_code }}
+          {{ form.pickup_point_country }}
+
+          <button
+            type="button"
+            class="shop-secondary-button"
+            id="packeta-pick-button"
+          >
+            Vybrat výdejní místo
+          </button>
+
+          <div
+            id="packeta-selected-point"
+            class="shop-packeta-selected-point"
+            hidden
+          >
+            <strong>Vybrané výdejní místo</strong>
+            <div id="packeta-selected-point-name"></div>
+            <div id="packeta-selected-point-address"></div>
+          </div>
+        </section>
+      {% endif %}
 
         <section class="shop-checkout-section">
           <h2>Poznámka</h2>
@@ -176,6 +231,12 @@
           {{ form.terms_accepted.errors }}
         </div>
 
+
+        <input
+          type="hidden"
+          name="terms_document_id"
+          value="{{ terms_document.id }}"
+        >
 
         <button
           type="submit"
@@ -234,4 +295,160 @@
     </div>
 {% include "shop/includes/legal_links.html" %}
   </main>
+
+  {% if cart.requires_shipping %}
+    <script src="https://widget.packeta.com/v6/www/js/library.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const apiKey = "{{ packeta_api_key|escapejs }}";
+
+        const shippingInputs = document.querySelectorAll(
+          'input[name="shipping_method"]'
+        );
+
+        const addressSection = document.getElementById(
+          "shipping-address-section"
+        );
+
+        const packetaSection = document.getElementById(
+          "packeta-section"
+        );
+
+        const packetaButton = document.getElementById(
+          "packeta-pick-button"
+        );
+
+        const selectedPoint = document.getElementById(
+          "packeta-selected-point"
+        );
+
+        const selectedPointName = document.getElementById(
+          "packeta-selected-point-name"
+        );
+
+        const selectedPointAddress = document.getElementById(
+          "packeta-selected-point-address"
+        );
+
+        const pointId = document.getElementById(
+          "{{ form.pickup_point_id.id_for_label }}"
+        );
+
+        const pointName = document.getElementById(
+          "{{ form.pickup_point_name.id_for_label }}"
+        );
+
+        const pointStreet = document.getElementById(
+          "{{ form.pickup_point_street.id_for_label }}"
+        );
+
+        const pointCity = document.getElementById(
+          "{{ form.pickup_point_city.id_for_label }}"
+        );
+
+        const pointPostalCode = document.getElementById(
+          "{{ form.pickup_point_postal_code.id_for_label }}"
+        );
+
+        const pointCountry = document.getElementById(
+          "{{ form.pickup_point_country.id_for_label }}"
+        );
+
+
+        function updateShippingSections() {
+          const selected = document.querySelector(
+            'input[name="shipping_method"]:checked'
+          );
+
+          addressSection.hidden = true;
+          packetaSection.hidden = true;
+
+          if (!selected) {
+            return;
+          }
+
+          const methodType = selected.dataset.methodType;
+          const methodCode = selected.dataset.methodCode;
+
+          if (methodType === "address") {
+            addressSection.hidden = false;
+          }
+
+          if (methodCode === "packeta-pickup") {
+            packetaSection.hidden = false;
+          }
+        }
+
+
+        function showSelectedPoint() {
+          if (!pointId.value) {
+            selectedPoint.hidden = true;
+            return;
+          }
+
+          selectedPointName.textContent = pointName.value;
+
+          const addressParts = [
+            pointStreet.value,
+            pointCity.value,
+            pointPostalCode.value
+          ].filter(Boolean);
+
+          selectedPointAddress.textContent =
+            addressParts.join(", ");
+
+          selectedPoint.hidden = false;
+        }
+
+
+        shippingInputs.forEach(function (input) {
+          input.addEventListener(
+            "change",
+            updateShippingSections
+          );
+        });
+
+
+        packetaButton.addEventListener("click", function () {
+          const options = {
+            language: "cs",
+            country: "cz",
+            vendors: [
+              {
+                country: "cz"
+              },
+              {
+                country: "cz",
+                group: "zbox"
+              }
+            ]
+          };
+
+          Packeta.Widget.pick(
+            apiKey,
+            function (point) {
+              if (!point) {
+                return;
+              }
+
+              pointId.value = point.id || "";
+              pointName.value = point.name || "";
+              pointStreet.value = point.street || "";
+              pointCity.value = point.city || "";
+              pointPostalCode.value = point.zip || "";
+              pointCountry.value = point.country || "";
+
+              showSelectedPoint();
+            },
+            options
+          );
+        });
+
+
+        updateShippingSections();
+        showSelectedPoint();
+      });
+    </script>
+  {% endif %}
 {% endblock content %}

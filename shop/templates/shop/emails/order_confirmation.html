@@ -52,6 +52,45 @@
           <strong>{{ order.shipping_method_name }}</strong>
           – {{ order.shipping_price|floatformat:"-2" }} Kč
         </p>
+
+        {% if order.pickup_point_id %}
+          <div style="margin:16px 0;padding:16px;background:#f4f4f4;">
+            <p style="margin:0 0 6px;">
+              <strong>Vybrané výdejní místo:</strong>
+            </p>
+
+            <p style="margin:0;">
+              {{ order.pickup_point_name }}<br>
+
+              {% if order.pickup_point_street %}
+                {{ order.pickup_point_street }}<br>
+              {% endif %}
+
+              {{ order.pickup_point_postal_code }}
+              {{ order.pickup_point_city }}
+            </p>
+          </div>
+
+        {% elif order.address_line1 or order.city or order.postal_code %}
+          <div style="margin:16px 0;padding:16px;background:#f4f4f4;">
+            <p style="margin:0 0 6px;">
+              <strong>Doručovací adresa:</strong>
+            </p>
+
+            <p style="margin:0;">
+              {% if order.address_line1 %}
+                {{ order.address_line1 }}<br>
+              {% endif %}
+
+              {% if order.address_line2 %}
+                {{ order.address_line2 }}<br>
+              {% endif %}
+
+              {{ order.postal_code }} {{ order.city }}<br>
+              {{ order.country }}
+            </p>
+          </div>
+        {% endif %}
       {% endif %}
 
       <p style="font-size:18px;">

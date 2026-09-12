@@ -26,16 +26,41 @@
         {% endif %}
       </p>
 
-      {% if order.requires_shipping %}
-        <div style="margin:20px 0;padding:18px;background:#f4f4f4;">
-          <p style="margin:0 0 8px;">
-            <strong>Doprava:</strong>
-            {{ order.shipping_method_name }}
+    {% if order.requires_shipping %}
+      <div style="margin:20px 0;padding:18px;background:#f4f4f4;">
+        <p style="margin:0 0 8px;">
+          <strong>Doprava:</strong>
+          {{ order.shipping_method_name }}
+        </p>
+
+        {% if order.pickup_point_id %}
+          <p style="margin:0;">
+            <strong>Výdejní místo:</strong><br>
+            {{ order.pickup_point_name }}<br>
+
+            {% if order.pickup_point_street %}
+              {{ order.pickup_point_street }}<br>
+            {% endif %}
+
+            {{ order.pickup_point_postal_code }}
+            {{ order.pickup_point_city }}<br>
+
+            {% if order.pickup_point_country %}
+              {{ order.pickup_point_country }}<br>
+            {% endif %}
+
+            <span style="color:#777;font-size:13px;">
+              ID: {{ order.pickup_point_id }}
+            </span>
           </p>
 
+        {% elif order.address_line1 or order.city or order.postal_code %}
           <p style="margin:0;">
             <strong>Doručovací adresa:</strong><br>
-            {{ order.address_line1 }}<br>
+
+            {% if order.address_line1 %}
+              {{ order.address_line1 }}<br>
+            {% endif %}
 
             {% if order.address_line2 %}
               {{ order.address_line2 }}<br>
@@ -44,8 +69,9 @@
             {{ order.postal_code }} {{ order.city }}<br>
             {{ order.country }}
           </p>
-        </div>
-      {% endif %}
+        {% endif %}
+      </div>
+    {% endif %}
 
       <table
         role="presentation"

@@ -1236,6 +1236,39 @@ Django RadioSelect obvykle vygeneruje:
     cursor: pointer;
 }
 
+.shop-secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 44px;
+    padding: 10px 18px;
+
+    border: 1.5px solid #111;
+    border-radius: 999px;
+
+    background-color: #fff;
+    color: #111;
+
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.shop-secondary-button:hover {
+    background-color: #111;
+    color: #fff;
+    transform: translateY(-1px);
+}
 
 /* =========================================================
    SUBMIT
@@ -2287,6 +2320,28 @@ body.dark-mode .shop-order-success > .shop-primary-button:hover {
     border-color: #eee;
 }
 
+body.dark-mode .shop-secondary-button {
+    border-color: #ddd;
+    background-color: transparent;
+    color: #eee;
+}
+
+body.dark-mode .shop-secondary-button:hover {
+    background-color: #eee;
+    color: #111;
+}
+
+body.dark-mode .shop-public-track__buy-button {
+    border-color: #eee;
+    background-color: #eee;
+    color: #111;
+}
+
+body.dark-mode .shop-public-track__buy-button:hover {
+    background-color: #111;
+    color: #eee;
+}
+
 .shop-tracklist-section {
     margin-top: 48px;
 }
@@ -2374,6 +2429,40 @@ body.dark-mode .shop-order-success > .shop-primary-button:hover {
 
 .shop-public-track__purchase form {
     margin: 0;
+}
+
+.shop-public-track__buy-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 36px;
+    padding: 7px 13px;
+
+    border: 1.5px solid #111;
+    border-radius: 999px;
+
+    background-color: #111;
+    color: #fff;
+
+    font-family: "Barlow", "Segoe UI", sans-serif;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.shop-public-track__buy-button:hover {
+    background-color: #fff;
+    color: #111;
+    transform: translateY(-1px);
 }
 
 .shop-public-track__price {
