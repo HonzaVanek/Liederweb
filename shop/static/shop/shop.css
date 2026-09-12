@@ -2014,6 +2014,12 @@ body.dark-mode .shop-staff-actions a {
     color: #eee;
 }
 
+body.dark-mode .shop-checkout-form .form-errors {
+    background-color: #2b1a1a;
+    border-left-color: #d87575;
+    color: #efaaaa;
+}
+
 body.dark-mode .shop-staff-actions a:hover {
     background-color: #eee;
     color: #111;
@@ -2472,6 +2478,19 @@ body.dark-mode .shop-public-track__buy-button:hover {
 .shop-public-track__not-for-sale {
     color: #777;
     font-size: 0.9rem;
+}
+
+.shop-checkout-form .form-errors {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+
+    border-left: 3px solid #a13c3c;
+
+    background-color: #f8eeee;
+    color: #812d2d;
+
+    font-size: 0.86rem;
+    line-height: 1.4;
 }
 
 @media (max-width: 760px) {
