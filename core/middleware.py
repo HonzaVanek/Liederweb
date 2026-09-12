@@ -2258,11 +2258,21 @@ class SiteVisitStatsMiddleware:
                 bot_like_reason = "rapid_identity_switch"
 
         if not is_known_bot and not is_bot_like:
-            if self.is_suspicious_homepage_identity_switch(
-                client_label,
-                path,
-                referer_raw,
-                user_agent,
+            client_is_browser_confirmed = (
+                DailyBrowserVisitor.objects.filter(
+                    day=today,
+                    client_hash=client_hash,
+                ).exists()
+            )
+
+            if (
+                not client_is_browser_confirmed
+                and self.is_suspicious_homepage_identity_switch(
+                    client_label,
+                    path,
+                    referer_raw,
+                    user_agent,
+                )
             ):
                 is_bot_like = True
                 should_mark_sticky_bot_like = True
