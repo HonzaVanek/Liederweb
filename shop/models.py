@@ -746,6 +746,45 @@ class Order(models.Model):
         blank=True,
     )
 
+#kvůli zásilkovně přidáme ještě následující pole:
+
+    pickup_point_id = models.CharField(
+        "ID výdejního místa",
+        max_length=100,
+        blank=True,
+    )
+
+    pickup_point_name = models.CharField(
+        "výdejní místo",
+        max_length=255,
+        blank=True,
+    )
+
+    pickup_point_street = models.CharField(
+        "ulice výdejního místa",
+        max_length=200,
+        blank=True,
+    )
+
+    pickup_point_city = models.CharField(
+        "město výdejního místa",
+        max_length=120,
+        blank=True,
+    )
+
+    pickup_point_postal_code = models.CharField(
+        "PSČ výdejního místa",
+        max_length=20,
+        blank=True,
+    )
+
+    pickup_point_country = models.CharField(
+        "země výdejního místa",
+        max_length=2,
+        blank=True,
+    )
+
+
     class Meta:
         ordering = ("-created_at",)
         verbose_name = "objednávka"
