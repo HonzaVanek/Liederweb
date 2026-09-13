@@ -1,4 +1,4 @@
-Hej ty pyčo e-shop jede!!! Byla vytvořena nová objednávka {{ order.number }}.
+Byla vytvořena nová objednávka {{ order.number }}.
 
 Zákazník:
 {{ order.customer_name }}
