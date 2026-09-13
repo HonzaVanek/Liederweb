@@ -175,6 +175,7 @@ BOT_USER_AGENT_PARTS = (
     "newsai/",
     "eshoplist/",
     "beacon-prober/",
+    "domainatlas"
 )
 
 BOT_REFERER_PARTS = (
