@@ -70,6 +70,20 @@
             </p>
           </div>
 
+          <div class="shop-download-all">
+            <a
+              href="{% url 'shop:digital_download_zip' token=order.download_token %}"
+              class="shop-primary-button"
+            >
+              Stáhnout vše jako ZIP
+            </a>
+
+            <p class="small muted">
+              ZIP obsahuje všechny nahrávky a booklety
+              zakoupené v této objednávce.
+            </p>
+          </div>
+
 
           {% if track_grants %}
 

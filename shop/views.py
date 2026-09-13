@@ -1,6 +1,8 @@
 import mimetypes
 from pathlib import Path
-from django.utils import timezone
+import tempfile
+import zipfile
+import shutil
 
 from django.conf import settings
 from django.contrib import messages
@@ -10,6 +12,8 @@ from django.db.models import Count, Max, Min, Q, Prefetch
 from django.shortcuts import get_object_or_404, redirect, render
 from django.http import HttpResponse, FileResponse, Http404
 from django.views.decorators.http import require_POST
+from django.utils import timezone
+from django.utils.text import slugify
 
 from .decorators import shop_public_or_staff_preview
 from core.decorators import staff_required
@@ -772,6 +776,104 @@ def digital_download_file(request, token, grant_id):
             content_type
             or "application/octet-stream"
         ),
+    )
+
+
+
+def digital_download_zip(request, token):
+    order = get_object_or_404(
+        Order,
+        download_token=token,
+        contains_digital_content=True,
+        payment_status=Order.PaymentStatus.PAID,
+    )
+
+    grants = list(
+        order.download_grants.all().order_by(
+            "product_name",
+            "file_type",
+            "disc_number",
+            "track_number",
+            "id",
+        )
+    )
+
+    if not grants:
+        raise Http404(
+            "Pro tuto objednávku nejsou dostupné žádné soubory."
+        )
+
+    temp_file = tempfile.SpooledTemporaryFile(
+        max_size=20 * 1024 * 1024,
+        mode="w+b",
+    )
+
+    with zipfile.ZipFile(
+        temp_file,
+        mode="w",
+        compression=zipfile.ZIP_STORED,
+    ) as archive:
+
+        for grant in grants:
+            try:
+                source = private_shop_storage.open(
+                    grant.storage_name,
+                    "rb",
+                )
+            except FileNotFoundError:
+                continue
+
+            product_folder = (
+                grant.product_name
+                .replace("/", "-")
+                .replace("\\", "-")
+                .strip()
+                or "Nahrávky"
+            )
+
+            filename = Path(
+                grant.download_filename
+            ).name
+
+            if (
+                grant.file_type
+                == DigitalDownloadGrant.FileType.TRACK
+            ):
+                if grant.disc_number:
+                    archive_name = (
+                        f"{product_folder}/"
+                        f"CD {grant.disc_number}/"
+                        f"{filename}"
+                    )
+                else:
+                    archive_name = (
+                        f"{product_folder}/{filename}"
+                    )
+
+            else:
+                archive_name = (
+                    f"{product_folder}/{filename}"
+                )
+
+            with source:
+                with archive.open(archive_name, "w") as target:
+                    shutil.copyfileobj(
+                        source,
+                        target,
+                        length=1024 * 1024,
+                    )
+
+    temp_file.seek(0)
+
+    filename = (
+        f"{slugify(order.number) or 'digitalni-obsah'}.zip"
+    )
+
+    return FileResponse(
+        temp_file,
+        as_attachment=True,
+        filename=filename,
+        content_type="application/zip",
     )
 
 
