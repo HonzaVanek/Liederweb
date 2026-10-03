@@ -9,65 +9,929 @@
 {% endblock extra_css %}
 
 {% block content %}
-<section class="mlady-salon-page" aria-labelledby="mlady-salon-title">
+
+<div class="mlady-salon-page">
+
     <div class="mlady-salon-orb mlady-salon-orb--one" aria-hidden="true"></div>
     <div class="mlady-salon-orb mlady-salon-orb--two" aria-hidden="true"></div>
 
-    <div class="mlady-salon-shell">
-        <div class="mlady-salon-main">
-            <p class="mlady-salon-kicker">Připravujeme</p>
 
-            <h1 id="mlady-salon-title">
-                Mladý salón
-            </h1>
+    {# HERO #}
 
-            <p class="mlady-salon-lead">
-                Chystáme nový prostor pro mladé interprety, nové hlasy a současný pohled
-                na písňovou tvorbu.
-            </p>
+    <section class="mlady-salon-hero">
+        <div class="mlady-salon-container">
 
-            <p class="mlady-salon-text">
-                Stránka je zatím ve výstavbě. Brzy zde najdete program, účinkující
-                a další informace k připravovanému projektu Lieder Society.
-            </p>
+            <div class="mlady-salon-hero__content">
 
-            <div class="mlady-salon-actions">
-                <a href="{% url 'public_event_list' %}" class="mlady-salon-button mlady-salon-button--primary">
-                    Zobrazit koncerty
-                </a>
+                <p class="mlady-salon-kicker">
+                    Projekt Lieder Society
+                </p>
 
-                <a href="{% url 'core:contact' %}" class="mlady-salon-button mlady-salon-button--secondary">
-                    Napište nám
-                </a>
+                <h1>Mladý salón</h1>
+
+                <p class="mlady-salon-hero__subtitle">
+                    Prostor pro písňovou interpretaci a nová písňová dua
+                </p>
+
+                <p class="mlady-salon-hero__lead">
+                    Mladý salón je koncertně-vzdělávací platforma spolku
+                    Lieder Society, která podporuje mladé pěvkyně, pěvce,
+                    klavíristy a klavíristky na prahu profesní dráhy.
+                </p>
+
+                <p>
+                    Nabízí prostor pro společnou práci na písňovém repertoáru,
+                    setkávání se zkušenými osobnostmi z oboru i nové koncertní
+                    příležitosti.
+                </p>
+
+                <div class="mlady-salon-actions">
+
+                    <a href="#otevreny-salon"
+                       class="mlady-salon-button mlady-salon-button--primary">
+                        Otevřený salón
+                    </a>
+
+                    <a href="#historie"
+                       class="mlady-salon-button mlady-salon-button--secondary">
+                        Historie projektu
+                    </a>
+
+                </div>
+
             </div>
+
+        </div>
+    </section>
+
+
+    {# O MLADÉM SALÓNU #}
+
+    <section class="mlady-salon-section">
+        <div class="mlady-salon-container">
+
+            <header class="mlady-salon-section-heading">
+                <p class="mlady-salon-eyebrow">O projektu</p>
+                <h2>O Mladém salónu</h2>
+            </header>
+
+            <div class="mlady-salon-columns">
+
+                <p>
+                    Komorní píseň je žánr, ve kterém záleží na každém slově,
+                    každém nádechu i na jemném odstínu výrazu. Hlas a klavír
+                    společně utvářejí hudební i významovou podobu písně.
+                    Klavír zde není pouhým doprovodem, ale plnohodnotnou
+                    součástí interpretace.
+                </p>
+
+                <div>
+                    <p>
+                        Právě na tento způsob spolupráce se Mladý salón
+                        zaměřuje. Vytváří prostředí, ve kterém mohou mladí
+                        interpreti a interpretky hlouběji poznávat písňový
+                        repertoár, rozvíjet vlastní interpretační přístup
+                        a hledat společný umělecký výraz.
+                    </p>
+
+                    <p>
+                        Mladý salón navazuje na tradici
+                        <em>Liedgestaltung</em> – přístupu, v němž se hlas
+                        i klavír rovnocenně podílejí na výsledné podobě písně.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+
+    {# JAK PROBÍHÁ #}
+
+    <section class="mlady-salon-section mlady-salon-section--soft">
+
+        <div class="mlady-salon-container">
+
+            <header class="mlady-salon-section-heading">
+
+                <p class="mlady-salon-eyebrow">
+                    Program
+                </p>
+
+                <h2>Jak Mladý salón probíhá</h2>
+
+                <p>
+                    Základem Mladého salónu jsou workshopy, masterclass
+                    a koncertní příležitosti, které umožňují písňovým duům
+                    rozvíjet interpretační spolupráci a představit její
+                    výsledky publiku.
+                </p>
+
+            </header>
+
+
+            <div class="mlady-salon-feature-grid">
+
+                <article class="mlady-salon-feature">
+
+                    <span class="mlady-salon-feature__number">01</span>
+
+                    <h3>Práce s repertoárem</h3>
+
+                    <p>
+                        Hledání souvislostí mezi hudbou, textem a výrazem.
+                    </p>
+
+                </article>
+
+
+                <article class="mlady-salon-feature">
+
+                    <span class="mlady-salon-feature__number">02</span>
+
+                    <h3>Spolupráce hlasu a klavíru</h3>
+
+                    <p>
+                        Rozvíjení vzájemného naslouchání a společného
+                        interpretačního záměru.
+                    </p>
+
+                </article>
+
+
+                <article class="mlady-salon-feature">
+
+                    <span class="mlady-salon-feature__number">03</span>
+
+                    <h3>Setkávání s lektory a lektorkami</h3>
+
+                    <p>
+                        Možnost konzultovat vlastní interpretaci se
+                        zkušenými osobnostmi.
+                    </p>
+
+                </article>
+
+
+                <article class="mlady-salon-feature">
+
+                    <span class="mlady-salon-feature__number">04</span>
+
+                    <h3>Koncertní příležitosti</h3>
+
+                    <p>
+                        Sdílení výsledků práce s publikem a představování
+                        nových písňových duí.
+                    </p>
+
+                </article>
+
+            </div>
+
+            <p class="mlady-salon-note">
+                Podoba dalšího ročníku se nyní připravuje.
+            </p>
+
         </div>
 
-        <aside class="mlady-salon-card" aria-label="Stav přípravy stránky">
-            <div class="mlady-salon-card-mark" aria-hidden="true">
-                ♪
+    </section>
+
+
+    {# OTEVŘENÝ SALÓN #}
+
+    <section
+        class="mlady-salon-open"
+        id="otevreny-salon"
+    >
+
+        <div class="mlady-salon-container">
+
+            <div class="mlady-salon-open__inner">
+
+                <div>
+
+                    <p class="mlady-salon-eyebrow">
+                        Masterclass · 15. 10. 2026
+                    </p>
+
+                    <h2>Otevřený salón</h2>
+
+                    <p class="mlady-salon-open__lead">
+                        Den před koncertem Československý salón pořádáme
+                        otevřenou masterclass s pianistou
+                        <strong>Róbertem Pechancem</strong>.
+                    </p>
+
+                    <p>
+                        Masterclass nabízí možnost představit se, pracovat
+                        společně na vybraném repertoáru a získat zpětnou vazbu.
+                    </p>
+
+                    <p class="mlady-salon-open__repertoire">
+                        Připravte si české nebo slovenské písně.
+                    </p>
+
+                </div>
+
+
+                <div class="mlady-salon-open__cta">
+
+                    <span class="mlady-salon-open__date">
+                        15. října 2026
+                    </span>
+
+                    <p>
+                        Máte zájem se zapojit?
+                    </p>
+
+                    <button
+                        type="button"
+                        class="mlady-salon-button mlady-salon-button--light"
+                        data-open-salon-form
+                    >
+                        Přihlásit se do Otevřeného salónu
+                    </button>
+
+                </div>
+
             </div>
 
-            <h2>Na čem pracujeme</h2>
+        </div>
 
-            <ul>
-                <li>
-                    <span></span>
-                    Program mladého salónu
-                </li>
-                <li>
-                    <span></span>
-                    Představení účinkujících
-                </li>
-                <li>
-                    <span></span>
-                    Praktické informace pro návštěvníky
-                </li>
-            </ul>
+    </section>
+
+
+    {# HISTORIE #}
+
+    <section
+        class="mlady-salon-section"
+        id="historie"
+    >
+
+        <div class="mlady-salon-container">
+
+            <header class="mlady-salon-section-heading">
+
+                <p class="mlady-salon-eyebrow">
+                    Od roku 2023
+                </p>
+
+                <h2>Historie Mladého salónu</h2>
+
+            </header>
+
+
+            <div class="mlady-salon-timeline">
+
+
+                {# 2023 #}
+
+                <article class="mlady-salon-year">
+
+                    <div class="mlady-salon-year__image">
+
+                        <img
+                            src="https://lieder-society.cz/media/media_assets/image/2026/07/3924f69be9414274bb76b4b1d302108b.jpg"
+                            alt="Mladý salón 2023"
+                            loading="lazy"
+                        >
+
+                    </div>
+
+
+                    <div class="mlady-salon-year__content">
+
+                        <span class="mlady-salon-year__number">
+                            2023
+                        </span>
+
+                        <h3>Pilotní ročník</h3>
+
+                        <p>
+                            První tři písňová dua pracovala na výběru
+                            repertoáru a jeho interpretaci pod vedením
+                            mezzosopranistky Belly Adamové. Pilotní ročník
+                            vyústil ve společný koncert na Konzervatoři
+                            Jana Deyla.
+                        </p>
+
+                        <h4>Absolventi a absolventky</h4>
+
+                        <ul class="mlady-salon-people">
+
+                            <li>
+                                Magdaléna Hebousse (soprán)
+                                <span>&amp;</span>
+                                Filip Martinka (klavír)
+                            </li>
+
+                            <li>
+                                Anna Moriová (mezzosoprán)
+                                <span>&amp;</span>
+                                Martin Levický (klavír)
+                            </li>
+
+                            <li>
+                                Radek Martinec (baryton)
+                                <span>&amp;</span>
+                                Vojtěch Červenka (klavír)
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                </article>
+
+
+                {# 2024 #}
+
+                <article class="mlady-salon-year mlady-salon-year--reverse">
+
+                    <div class="mlady-salon-year__image">
+
+                        <img
+                            src="https://lieder-society.cz/media/media_assets/image/2026/07/73c2b803925a4e2faeb4c8f47783fa6a.jpg"
+                            alt="Mladý salón 2024"
+                            loading="lazy"
+                        >
+
+                    </div>
+
+
+                    <div class="mlady-salon-year__content">
+
+                        <span class="mlady-salon-year__number">
+                            2024
+                        </span>
+
+                        <h3>Nová dua a otevřené koncerty</h3>
+
+                        <p>
+                            Do Mladého salónu se zapojili zahraniční lektoři,
+                            klavírista Róbert Pechanec a jazykový specialista
+                            Sandro Wilhelm. Pod jejich vedením pracovala čtyři
+                            nová písňová dua.
+                        </p>
+
+                        <p>
+                            Společně jsme uspořádali také Otevřený salón
+                            ve Strašnickém divadle a Jarní koncert Mladého
+                            salónu. Intenzivní fáze byla věnována dílu
+                            Richarda Strausse.
+                        </p>
+
+
+                        <h4>Absolventi a absolventky</h4>
+
+                        <ul class="mlady-salon-people">
+
+                            <li>
+                                Natálie Šmausová (soprán)
+                                <span>&amp;</span>
+                                Pavol Praženica (klavír)
+                            </li>
+
+                            <li>
+                                Kristýna Kukalová (mezzosoprán)
+                                <span>&amp;</span>
+                                Filip Martinka (klavír)
+                            </li>
+
+                            <li>
+                                Marek Žihla (tenor)
+                                <span>&amp;</span>
+                                Kristina Marková (klavír)
+                            </li>
+
+                            <li>
+                                Pavel Josef Kšica (baryton)
+                                <span>&amp;</span>
+                                Filip Martinka (klavír)
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                </article>
+
+
+                {# 2025 #}
+
+                <article class="mlady-salon-year">
+
+                    <div class="mlady-salon-year__image">
+
+                        <img
+                            src="https://lieder-society.cz/media/media_assets/image/2026/07/912f0fe105e84e4a9825891d8d9374be.jpg"
+                            alt="Mladý salón 2025"
+                            loading="lazy"
+                        >
+
+                    </div>
+
+
+                    <div class="mlady-salon-year__content">
+
+                        <span class="mlady-salon-year__number">
+                            2025
+                        </span>
+
+                        <h3>Další koncertní příležitosti</h3>
+
+                        <p>
+                            Účastnice a účastníci Mladého salónu vystoupili
+                            na zahájení sezóny a připravili program věnovaný
+                            Hugu Wolfovi.
+                        </p>
+
+                        <h4>Absolventi a absolventky</h4>
+
+                        <ul class="mlady-salon-people">
+
+                            <li>
+                                Natálie Šmausová (soprán)
+                                <span>&amp;</span>
+                                Pavol Praženica (klavír)
+                            </li>
+
+                            <li>
+                                Kristýna Kukalová (mezzosoprán)
+                                <span>&amp;</span>
+                                Filip Martinka (klavír)
+                            </li>
+
+                            <li>
+                                Marek Žihla (tenor)
+                                <span>&amp;</span>
+                                Kristina Marková (klavír)
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    {# CENA #}
+
+    <section class="mlady-salon-section mlady-salon-section--award">
+
+        <div class="mlady-salon-container">
+
+            <header class="mlady-salon-section-heading">
+
+                <p class="mlady-salon-eyebrow">
+                    Mezinárodní pěvecká soutěž Antonína Dvořáka
+                </p>
+
+                <h2>Cena Mladého salónu</h2>
+
+                <p>
+                    Podpora písňových duí na Mezinárodní pěvecké soutěži
+                    Antonína Dvořáka.
+                </p>
+
+            </header>
+
+
+            <div class="mlady-salon-award-intro">
+
+                <p>
+                    Mladý salón udílí na Mezinárodní pěvecké soutěži
+                    Antonína Dvořáka cenu pro nejlepší písňové duo.
+                    Oceněné duo získává příležitost vystoupit na vlastním
+                    koncertě, představit se širšímu publiku a dále rozvíjet
+                    svou koncertní dráhu.
+                </p>
+
+                <p>
+                    Cenu jsme dosud udělili dvěma písňovým duům.
+                </p>
+
+            </div>
+
+
+            <div class="mlady-salon-award-grid">
+
+                <article class="mlady-salon-award-card">
+
+                    <img
+                        src="https://lieder-society.cz/media/media_assets/image/2026/07/ade9deee45f04396aad1e86d0f1e9d04.jpg"
+                        alt="Pavel Josef Kšica a Filip Martinka"
+                        loading="lazy"
+                    >
+
+                    <div class="mlady-salon-award-card__body">
+
+                        <span>2024</span>
+
+                        <h3>
+                            Pavel Josef Kšica
+                            <small>&amp;</small>
+                            Filip Martinka
+                        </h3>
+
+                        <p>
+                            V roce 2024 cenu jako první získali barytonista
+                            Pavel Josef Kšica a klavírista Filip Martinka.
+                            V rámci ocenění připravili koncert
+                            <em>Písně hrdinů a rebelů</em> s díly Viktora
+                            Ullmanna, Huga Wolfa a Gustava Mahlera.
+                        </p>
+
+                    </div>
+
+                </article>
+
+
+                <article class="mlady-salon-award-card">
+
+                    <img
+                        src="https://lieder-society.cz/media/media_assets/image/2026/10/a0866ae554d640948dac423681a96422.jpg"
+                        alt="Anna Moriová a Martin Levický"
+                        loading="lazy"
+                    >
+
+                    <div class="mlady-salon-award-card__body">
+
+                        <span>2025</span>
+
+                        <h3>
+                            Anna Moriová
+                            <small>&amp;</small>
+                            Martin Levický
+                        </h3>
+
+                        <p>
+                            O rok později byli oceněni mezzosopranistka
+                            Anna Moriová a klavírista Martin Levický.
+                            Jejich společný koncert <em>Ohně v mlhách</em>
+                            byl věnován tvorbě Sergeje Rachmaninova,
+                            Bély Bartóka a Leoše Janáčka.
+                        </p>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    {# DALŠÍ ROČNÍK #}
+
+    <section class="mlady-salon-future">
+
+        <div class="mlady-salon-container">
+
+            <div class="mlady-salon-future__inner">
+
+                <p class="mlady-salon-eyebrow">
+                    Co bude dál
+                </p>
+
+                <h2>Připravujeme další ročník</h2>
+
+                <p>
+                    Mladý salón bude pokračovat v roce 2027.
+                    Podrobnosti o programu, zapojených osobnostech
+                    a možnostech účasti zveřejníme, jakmile budou potvrzeny.
+                </p>
+
+                <h3>Chcete se zapojit?</h3>
+
+                <p>
+                    Zajímá vás komorní píseň a chcete rozvíjet spolupráci
+                    hlasu a klavíru? Sledujte aktuální výzvy Mladého salónu
+                    na našich stránkách a sociálních sítích nebo se nám
+                    ozvěte.
+                </p>
+
+                <a
+                    href="{% url 'core:contact' %}"
+                    class="mlady-salon-button mlady-salon-button--primary"
+                >
+                    Napište nám
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+{# FORM MODAL #}
+
+<dialog
+    class="salon-dialog"
+    id="salon-application-dialog"
+>
+
+    <div class="salon-dialog__inner">
+
+        <button
+            type="button"
+            class="salon-dialog__close"
+            data-close-salon-form
+            aria-label="Zavřít formulář"
+        >
+            ×
+        </button>
+
+
+        <header class="salon-dialog__header">
+
+            <p class="mlady-salon-eyebrow">
+                Otevřený salón · 15. 10. 2026
+            </p>
+
+            <h2>
+                Přihláška do Otevřeného salónu
+            </h2>
 
             <p>
-                Dáváme stránce finální podobu. Děkujeme za trpělivost.
+                Otevřený salón je příležitostí pro písňová dua –
+                pěvce či pěvkyni a klavíristu či klavíristku –
+                představit se a pracovat na českém nebo slovenském
+                repertoáru s pianistou Róbertem Pechancem.
             </p>
-        </aside>
+
+            <div class="salon-dialog__info">
+                <strong>
+                    Připravte si repertoár v délce max. 10–15 minut.
+                </strong>
+                Nahrávka je doporučená, nikoli povinná.
+            </div>
+
+        </header>
+
+
+        <form
+            method="post"
+            class="salon-form"
+            novalidate
+        >
+
+            {% csrf_token %}
+
+
+            {% if form.non_field_errors %}
+                <div class="salon-form__errors">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+
+            <div class="salon-form__honeypot" aria-hidden="true">
+                {{ form.website }}
+            </div>
+
+
+            <fieldset>
+
+                <legend>
+                    Pěvec / pěvkyně
+                </legend>
+
+                <div class="salon-form__grid">
+
+                    <div class="salon-form__field salon-form__field--wide">
+
+                        <label for="{{ form.singer_name.id_for_label }}">
+                            {{ form.singer_name.label }}
+                        </label>
+
+                        {{ form.singer_name }}
+                        {{ form.singer_name.errors }}
+
+                    </div>
+
+
+                    <div class="salon-form__field">
+
+                        <label for="{{ form.singer_email.id_for_label }}">
+                            {{ form.singer_email.label }}
+                        </label>
+
+                        {{ form.singer_email }}
+                        {{ form.singer_email.errors }}
+
+                    </div>
+
+
+                    <div class="salon-form__field">
+
+                        <label for="{{ form.voice_type.id_for_label }}">
+                            {{ form.voice_type.label }}
+                        </label>
+
+                        {{ form.voice_type }}
+                        {{ form.voice_type.errors }}
+
+                    </div>
+
+                </div>
+
+            </fieldset>
+
+
+            <fieldset>
+
+                <legend>
+                    Klavírista / klavíristka
+                </legend>
+
+                <div class="salon-form__grid">
+
+                    <div class="salon-form__field">
+
+                        <label for="{{ form.pianist_name.id_for_label }}">
+                            {{ form.pianist_name.label }}
+                        </label>
+
+                        {{ form.pianist_name }}
+                        {{ form.pianist_name.errors }}
+
+                    </div>
+
+
+                    <div class="salon-form__field">
+
+                        <label for="{{ form.pianist_email.id_for_label }}">
+                            {{ form.pianist_email.label }}
+                        </label>
+
+                        {{ form.pianist_email }}
+                        {{ form.pianist_email.errors }}
+
+                    </div>
+
+                </div>
+
+            </fieldset>
+
+
+            <fieldset>
+
+                <legend>
+                    Repertoár
+                </legend>
+
+                <div class="salon-form__field">
+
+                    <label for="{{ form.repertoire.id_for_label }}">
+                        {{ form.repertoire.label }}
+                    </label>
+
+                    {{ form.repertoire }}
+
+                    <small>
+                        Uveďte prosím skladatele a názvy skladeb/písní.
+                    </small>
+
+                    {{ form.repertoire.errors }}
+
+                </div>
+
+            </fieldset>
+
+
+            <fieldset>
+
+                <legend>
+                    Nahrávka
+                </legend>
+
+                <div class="salon-form__field">
+
+                    <label for="{{ form.recording_url.id_for_label }}">
+                        {{ form.recording_url.label }}
+                        <span>nepovinné</span>
+                    </label>
+
+                    {{ form.recording_url }}
+
+                    <small>
+                        Nahrávka je doporučená, ale není podmínkou přihlášení.
+                    </small>
+
+                    {{ form.recording_url.errors }}
+
+                </div>
+
+            </fieldset>
+
+
+            <fieldset>
+
+                <legend>
+                    Další informace
+                </legend>
+
+                <div class="salon-form__field">
+
+                    <label for="{{ form.note.id_for_label }}">
+                        {{ form.note.label }}
+                        <span>nepovinné</span>
+                    </label>
+
+                    {{ form.note }}
+                    {{ form.note.errors }}
+
+                </div>
+
+            </fieldset>
+
+
+            <div class="salon-form__submit">
+
+                <button
+                    type="submit"
+                    class="mlady-salon-button mlady-salon-button--primary"
+                >
+                    Odeslat přihlášku
+                </button>
+
+            </div>
+
+        </form>
+
     </div>
-</section>
+
+</dialog>
+
+
+{% if application_sent %}
+
+<dialog
+    class="salon-dialog salon-dialog--success"
+    id="salon-success-dialog"
+>
+
+    <div class="salon-dialog__success">
+
+        <button
+            type="button"
+            class="salon-dialog__close"
+            data-close-success
+            aria-label="Zavřít"
+        >
+            ×
+        </button>
+
+        <div class="salon-dialog__success-mark">
+            ✓
+        </div>
+
+        <h2>
+            Děkujeme za přihlášení
+        </h2>
+
+        <p>
+            Ozveme se vám s potvrzením účasti a podrobnostmi k masterclass.
+        </p>
+
+        <p>
+            Těšíme se na setkání s vámi a na českou a slovenskou píseň.
+        </p>
+
+    </div>
+
+</dialog>
+
+{% endif %}
+
 {% endblock content %}
+
+
+{% block extra_js %}
+    {{ block.super }}
+
+    <script src="{% static 'core/mlady_salon.js' %}" defer></script>
+
+    {% if form.errors %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                document
+                    .getElementById("salon-application-dialog")
+                    ?.showModal();
+            });
+        </script>
+    {% endif %}
+{% endblock extra_js %}

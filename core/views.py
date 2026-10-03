@@ -25,7 +25,7 @@ from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 
-from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm, HomeSupportPromoForm, HomeQuoteSlideForm
+from .forms import VlastniLoginForm, RegistraceForm, PersonForm, NewsletterSignupForm, PartnerForm, HomeCarouselManualSlideForm, AgnesSupportIntentForm, HomeSupportPromoForm, HomeQuoteSlideForm, OpenSalonApplicationForm
 from .models import Person, Partner, HomeCarouselManualSlide, HomeSupportPromo, HomeQuoteSlide, DailyEngagedVisitor, DailyEngagedPageVisitor, DailySiteVisitor, DailyPageVisitor, DailyBrowserVisitor, DailySiteTraffic, DailyPageTraffic, TrafficVisitCandidate
 from events.models import Event
 from media_assets.models import MediaAsset
@@ -904,7 +904,67 @@ def agnes_tyrrell_landing(request):
 
 
 def mlady_salon(request):
-    return render(request, "core/mlady_salon.html")
+    application_sent = request.GET.get("application") == "sent"
+
+    if request.method == "POST":
+        form = OpenSalonApplicationForm(request.POST)
+
+        if form.is_valid():
+            data = form.cleaned_data
+
+            recording = data["recording_url"] or "Neuvedeno"
+            note = data["note"] or "Neuvedeno"
+
+            message = f"""
+                Nová přihláška do Otevřeného salónu
+
+                PĚVEC / PĚVKYNĚ
+                Jméno: {data["singer_name"]}
+                E-mail: {data["singer_email"]}
+                Hlasový obor: {data["voice_type"]}
+
+                KLAVÍRISTA / KLAVÍRISTKA
+                Jméno: {data["pianist_name"]}
+                E-mail: {data["pianist_email"]}
+
+                REPERTOÁR
+                {data["repertoire"]}
+
+                NAHRÁVKA
+                {recording}
+
+                DALŠÍ INFORMACE
+                {note}
+                """.strip()
+
+            email = EmailMessage(
+                subject="Nová přihláška – Otevřený salón",
+                body=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=["info@lieder-society.cz"],
+                reply_to=[
+                    data["singer_email"],
+                    data["pianist_email"],
+                ],
+            )
+
+            email.send(fail_silently=False)
+
+            return redirect(
+                f"{reverse('core:mlady_salon')}?application=sent"
+            )
+
+    else:
+        form = OpenSalonApplicationForm()
+
+    return render(
+        request,
+        "core/mlady_salon.html",
+        {
+            "form": form,
+            "application_sent": application_sent,
+        },
+    )
 
 
 #JS beacon prodetekci lidských návštěv:

@@ -1,293 +1,1162 @@
+:root {
+    --salon-dark: #1f1b16;
+    --salon-text: #443b31;
+    --salon-muted: #73685b;
+
+    --salon-blue: #019BE3;
+    --salon-blue-dark: #017fbb;
+    --salon-blue-light: #35afe7;
+    --salon-blue-soft: rgba(1, 155, 227, 0.1);
+
+    --salon-cream: #faf4e8;
+}
+
+
 .mlady-salon-page {
     position: relative;
     overflow: hidden;
-    min-height: calc(100vh - 220px);
-    padding: 5rem 1.5rem 6rem;
-    background:
-        radial-gradient(circle at top left, rgba(199, 154, 67, 0.2), transparent 34rem),
-        linear-gradient(135deg, #fffaf0 0%, #f8f1e4 42%, #ffffff 100%);
+    color: var(--salon-text);
+    background: #fff;
 }
 
-.mlady-salon-shell {
+
+.mlady-salon-container {
     position: relative;
     z-index: 1;
-    display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
-    gap: 2.5rem;
-    align-items: center;
-    max-width: 1120px;
+    width: min(1120px, calc(100% - 3rem));
     margin: 0 auto;
 }
 
-.mlady-salon-main {
-    max-width: 720px;
+
+/* HERO */
+
+.mlady-salon-hero {
+    padding: 7rem 0 7.5rem;
+
+    background:
+        radial-gradient(
+            circle at 10% 0,
+            rgba(1, 155, 227, 0.12),
+            transparent 32rem
+        ),
+        linear-gradient(
+            135deg,
+            #f8fdff 0%,
+            #eef8fd 48%,
+            #ffffff 100%
+        );
 }
 
-.mlady-salon-kicker {
+
+.mlady-salon-hero__content {
+    max-width: 820px;
+}
+
+
+.mlady-salon-kicker,
+.mlady-salon-eyebrow {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+
     margin: 0 0 1rem;
-    padding: 0.35rem 0.75rem;
-    border: 1px solid rgba(138, 106, 45, 0.28);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.7);
-    color: #8a6a2d;
+
+    color: var(--salon-blue);
+
     font-size: 0.78rem;
     font-weight: 700;
-    letter-spacing: 0.09em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
 }
 
+
+.mlady-salon-kicker {
+    padding: 0.38rem 0.8rem;
+
+    border: 1px solid rgba(1, 155, 227, 0.25);
+    border-radius: 999px;
+
+    background: rgba(255, 255, 255, 0.7);
+}
+
+
 .mlady-salon-kicker::before {
     content: "";
+
     width: 0.45rem;
     height: 0.45rem;
-    border-radius: 999px;
-    background: #b78b37;
-    box-shadow: 0 0 0 0.35rem rgba(183, 139, 55, 0.16);
+
+    border-radius: 50%;
+
+    background: var(--salon-blue);
+
+    box-shadow:
+        0 0 0 0.35rem rgba(1, 155, 227, 0.14);
 }
 
-.mlady-salon-main h1 {
+
+.mlady-salon-hero h1 {
     margin: 0;
-    color: #1f1b16;
-    font-size: clamp(2.8rem, 8vw, 6.4rem);
-    line-height: 0.95;
-    letter-spacing: -0.07em;
+
+    color: var(--salon-dark);
+
+    font-size: clamp(3.5rem, 9vw, 7rem);
+    line-height: 0.93;
+    letter-spacing: -0.065em;
 }
 
-.mlady-salon-lead {
-    max-width: 650px;
+
+.mlady-salon-hero__subtitle {
+    max-width: 750px;
+
     margin: 1.5rem 0 0;
+
     color: #2f2922;
-    font-size: clamp(1.25rem, 2.4vw, 1.85rem);
-    line-height: 1.35;
+
+    font-size: clamp(1.45rem, 3vw, 2.25rem);
     font-weight: 600;
+    line-height: 1.25;
 }
 
-.mlady-salon-text {
-    max-width: 610px;
-    margin: 1.1rem 0 0;
-    color: #62584c;
-    font-size: 1.05rem;
+
+.mlady-salon-hero__lead {
+    max-width: 700px;
+
+    margin: 2rem 0 0;
+
+    font-size: 1.15rem;
     line-height: 1.75;
 }
+
+
+.mlady-salon-hero__content > p:last-of-type {
+    max-width: 700px;
+
+    line-height: 1.75;
+}
+
+
+/* BUTTONS */
 
 .mlady-salon-actions {
     display: flex;
     flex-wrap: wrap;
+
     gap: 0.8rem;
+
     margin-top: 2rem;
 }
 
+
 .mlady-salon-button {
     display: inline-flex;
+
     align-items: center;
     justify-content: center;
-    min-height: 44px;
-    padding: 0.75rem 1.15rem;
+
+    min-height: 46px;
+
+    padding: 0.8rem 1.25rem;
+
+    border: 0;
     border-radius: 999px;
+
+    font: inherit;
     font-weight: 700;
+
     text-decoration: none;
+
+    cursor: pointer;
+
     transition:
         transform 0.18s ease,
         box-shadow 0.18s ease,
-        background-color 0.18s ease,
+        background 0.18s ease,
         color 0.18s ease;
 }
+
 
 .mlady-salon-button:hover {
     transform: translateY(-2px);
 }
 
+
 .mlady-salon-button--primary {
-    background: #1f1b16;
     color: #fff;
-    box-shadow: 0 12px 26px rgba(31, 27, 22, 0.2);
+
+    background: var(--salon-blue);
+
+    box-shadow:
+        0 12px 28px rgba(1, 155, 227, 0.22);
 }
 
+
 .mlady-salon-button--primary:hover {
-    background: #8a6a2d;
     color: #fff;
+
+    background: var(--salon-blue-dark);
 }
+
 
 .mlady-salon-button--secondary {
     border: 1px solid rgba(31, 27, 22, 0.16);
-    background: rgba(255, 255, 255, 0.72);
-    color: #1f1b16;
+
+    color: var(--salon-dark);
+
+    background: rgba(255, 255, 255, 0.7);
 }
+
 
 .mlady-salon-button--secondary:hover {
+    color: var(--salon-blue);
+
     background: #fff;
-    color: #8a6a2d;
-    box-shadow: 0 10px 24px rgba(31, 27, 22, 0.08);
 }
 
-.mlady-salon-card {
-    position: relative;
-    padding: 2rem;
-    border: 1px solid rgba(138, 106, 45, 0.18);
-    border-radius: 28px;
-    background: rgba(255, 255, 255, 0.78);
-    box-shadow: 0 24px 70px rgba(64, 45, 18, 0.12);
-    backdrop-filter: blur(16px);
+
+.mlady-salon-button--light {
+    color: var(--salon-blue-dark);
+
+    background: #fff;
+
+    box-shadow:
+        0 12px 28px rgba(0, 0, 0, 0.12);
 }
 
-.mlady-salon-card-mark {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 4.2rem;
-    height: 4.2rem;
-    margin-bottom: 1.2rem;
-    border-radius: 50%;
-    background: #f2dfb8;
-    color: #8a6a2d;
-    font-size: 2.4rem;
-    line-height: 1;
+
+.mlady-salon-button--light:hover {
+    color: #fff;
+
+    background: var(--salon-dark);
 }
 
-.mlady-salon-card h2 {
-    margin: 0 0 1rem;
-    color: #1f1b16;
-    font-size: 1.45rem;
+
+/* SECTIONS */
+
+.mlady-salon-section {
+    padding: 6rem 0;
 }
 
-.mlady-salon-card ul {
-    display: grid;
-    gap: 0.75rem;
+
+.mlady-salon-section--soft {
+    background: #f7fbfd;
+}
+
+
+.mlady-salon-section-heading {
+    max-width: 760px;
+
+    margin-bottom: 3rem;
+}
+
+
+.mlady-salon-section-heading h2 {
     margin: 0;
-    padding: 0;
-    list-style: none;
+
+    color: var(--salon-dark);
+
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
 }
 
-.mlady-salon-card li {
-    display: flex;
-    gap: 0.65rem;
-    align-items: flex-start;
-    color: #443b31;
-    line-height: 1.45;
+
+.mlady-salon-section-heading > p:last-child {
+    margin-top: 1.25rem;
+
+    font-size: 1.1rem;
+    line-height: 1.75;
 }
 
-.mlady-salon-card li span {
-    flex: 0 0 auto;
-    width: 0.55rem;
-    height: 0.55rem;
-    margin-top: 0.45rem;
-    border-radius: 50%;
-    background: #b78b37;
+
+/* TEXT COLUMNS */
+
+.mlady-salon-columns {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 4rem;
+
+    font-size: 1.08rem;
+    line-height: 1.85;
 }
 
-.mlady-salon-card p {
-    margin: 1.35rem 0 0;
-    color: #73685b;
+
+.mlady-salon-columns p {
+    margin: 0;
+}
+
+
+.mlady-salon-columns p + p {
+    margin-top: 1.5rem;
+}
+
+
+/* FEATURES */
+
+.mlady-salon-feature-grid {
+    display: grid;
+
+    grid-template-columns: repeat(4, 1fr);
+
+    gap: 1rem;
+}
+
+
+.mlady-salon-feature {
+    padding: 1.8rem;
+
+    border: 1px solid rgba(1, 155, 227, 0.13);
+    border-radius: 22px;
+
+    background: #fff;
+}
+
+
+.mlady-salon-feature__number {
+    color: var(--salon-blue);
+
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+}
+
+
+.mlady-salon-feature h3 {
+    margin: 1.2rem 0 0.7rem;
+
+    color: var(--salon-dark);
+
+    font-size: 1.15rem;
+}
+
+
+.mlady-salon-feature p {
+    margin: 0;
+
+    color: var(--salon-muted);
+
     line-height: 1.6;
 }
 
+
+.mlady-salon-note {
+    margin: 2rem 0 0;
+
+    color: var(--salon-muted);
+
+    font-style: italic;
+}
+
+
+/* OPEN SALON */
+
+.mlady-salon-open {
+    padding: 6rem 0;
+
+    color: #fff;
+
+    background:
+        radial-gradient(
+            circle at right top,
+            rgba(255, 255, 255, 0.18),
+            transparent 28rem
+        ),
+        linear-gradient(
+            135deg,
+            #017fbb 0%,
+            #019BE3 55%,
+            #35afe7 100%
+        );
+}
+
+
+.mlady-salon-open .mlady-salon-eyebrow {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+
+.mlady-salon-open__inner {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1.35fr)
+        minmax(280px, 0.65fr);
+
+    gap: 4rem;
+
+    align-items: center;
+}
+
+
+.mlady-salon-open h2 {
+    margin: 0 0 1.5rem;
+
+    color: #fff;
+
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    letter-spacing: -0.04em;
+}
+
+
+.mlady-salon-open p {
+    max-width: 700px;
+
+    line-height: 1.75;
+}
+
+
+.mlady-salon-open__lead {
+    font-size: 1.2rem;
+}
+
+
+.mlady-salon-open__repertoire {
+    margin-top: 1.5rem;
+
+    color: #fff;
+
+    font-weight: 700;
+}
+
+
+.mlady-salon-open__cta {
+    padding: 2rem;
+
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 24px;
+
+    background: rgba(255, 255, 255, 0.12);
+
+    backdrop-filter: blur(10px);
+}
+
+
+.mlady-salon-open__date {
+    display: inline-block;
+
+    margin-bottom: 0.65rem;
+
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+
+    opacity: 0.78;
+}
+
+
+.mlady-salon-open__cta p {
+    margin: 0 0 1.4rem;
+
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+
+/* HISTORY */
+
+.mlady-salon-timeline {
+    display: grid;
+
+    gap: 6rem;
+}
+
+
+.mlady-salon-year {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 4rem;
+
+    align-items: center;
+}
+
+
+.mlady-salon-year--reverse .mlady-salon-year__image {
+    order: 2;
+}
+
+
+.mlady-salon-year__image {
+    overflow: hidden;
+
+    border-radius: 28px;
+
+    background: #eee;
+
+    box-shadow:
+        0 25px 70px rgba(52, 40, 24, 0.13);
+}
+
+
+.mlady-salon-year__image img {
+    display: block;
+
+    width: 100%;
+
+    aspect-ratio: 4 / 3;
+
+    object-fit: cover;
+}
+
+
+.mlady-salon-year__number {
+    display: block;
+
+    margin-bottom: 0.65rem;
+
+    color: var(--salon-blue);
+
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+}
+
+
+.mlady-salon-year h3 {
+    margin: 0 0 1.2rem;
+
+    color: var(--salon-dark);
+
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    letter-spacing: -0.035em;
+}
+
+
+.mlady-salon-year p {
+    color: var(--salon-text);
+
+    line-height: 1.75;
+}
+
+
+.mlady-salon-year h4 {
+    margin: 2rem 0 0.8rem;
+
+    color: var(--salon-dark);
+}
+
+
+.mlady-salon-people {
+    display: grid;
+
+    gap: 0.55rem;
+
+    margin: 0;
+    padding: 0;
+
+    list-style: none;
+}
+
+
+.mlady-salon-people li {
+    padding-left: 1rem;
+
+    border-left: 2px solid rgba(1, 155, 227, 0.35);
+
+    line-height: 1.5;
+}
+
+
+.mlady-salon-people span {
+    color: var(--salon-blue);
+}
+
+
+/* AWARD */
+
+.mlady-salon-section--award {
+    background:
+        linear-gradient(
+            135deg,
+            #f7fcff,
+            #edf8fd
+        );
+}
+
+
+.mlady-salon-award-intro {
+    max-width: 820px;
+
+    margin-bottom: 3rem;
+
+    font-size: 1.08rem;
+    line-height: 1.8;
+}
+
+
+.mlady-salon-award-grid {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 2rem;
+}
+
+
+.mlady-salon-award-card {
+    overflow: hidden;
+
+    border: 1px solid rgba(1, 155, 227, 0.14);
+    border-radius: 28px;
+
+    background: #fff;
+
+    box-shadow:
+        0 22px 60px rgba(52, 40, 24, 0.09);
+}
+
+
+.mlady-salon-award-card img {
+    display: block;
+
+    width: 100%;
+
+    aspect-ratio: 16 / 10;
+
+    object-fit: cover;
+}
+
+
+.mlady-salon-award-card__body {
+    padding: 2rem;
+}
+
+
+.mlady-salon-award-card__body > span {
+    color: var(--salon-blue);
+
+    font-weight: 800;
+}
+
+
+.mlady-salon-award-card h3 {
+    margin: 0.5rem 0 1rem;
+
+    color: var(--salon-dark);
+
+    font-size: 1.55rem;
+}
+
+
+.mlady-salon-award-card h3 small {
+    color: var(--salon-blue);
+}
+
+
+.mlady-salon-award-card p {
+    margin: 0;
+
+    line-height: 1.75;
+}
+
+
+/* FUTURE */
+
+.mlady-salon-future {
+    padding: 7rem 0;
+}
+
+
+.mlady-salon-future__inner {
+    max-width: 800px;
+}
+
+
+.mlady-salon-future h2 {
+    margin: 0 0 1.5rem;
+
+    color: var(--salon-dark);
+
+    font-size: clamp(2.4rem, 5vw, 4rem);
+    letter-spacing: -0.045em;
+}
+
+
+.mlady-salon-future h3 {
+    margin: 2.5rem 0 0.6rem;
+
+    color: var(--salon-dark);
+}
+
+
+.mlady-salon-future p {
+    line-height: 1.8;
+}
+
+
+.mlady-salon-future .mlady-salon-button {
+    margin-top: 1.25rem;
+}
+
+
+/* DECORATION */
+
 .mlady-salon-orb {
     position: absolute;
-    border-radius: 999px;
+
+    z-index: 0;
+
+    border-radius: 50%;
+
     pointer-events: none;
-    filter: blur(3px);
-    opacity: 0.55;
 }
+
 
 .mlady-salon-orb--one {
-    right: -6rem;
-    top: 6rem;
-    width: 18rem;
-    height: 18rem;
-    background: rgba(183, 139, 55, 0.16);
+    top: 15rem;
+    right: -9rem;
+
+    width: 22rem;
+    height: 22rem;
+
+    background: rgba(1, 155, 227, 0.05);
 }
+
 
 .mlady-salon-orb--two {
-    left: 8%;
-    bottom: -7rem;
-    width: 15rem;
-    height: 15rem;
-    background: rgba(31, 27, 22, 0.08);
+    top: 80rem;
+    left: -10rem;
+
+    width: 25rem;
+    height: 25rem;
+
+    background: rgba(1, 155, 227, 0.04);
 }
 
-/* Dark mode */
+
+/* MODAL */
+
+.salon-dialog {
+    width: min(760px, calc(100% - 2rem));
+
+    max-height: calc(100vh - 2rem);
+
+    margin: auto;
+
+    inset: 0;
+
+    padding: 0;
+
+    border: 0;
+    border-radius: 26px;
+
+    background: #fff;
+
+    box-shadow:
+        0 30px 100px rgba(0, 0, 0, 0.35);
+}
+
+
+.salon-dialog::backdrop {
+    background: rgba(16, 13, 10, 0.72);
+
+    backdrop-filter: blur(5px);
+}
+
+
+.salon-dialog__inner {
+    position: relative;
+
+    padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+
+.salon-dialog__close {
+    position: absolute;
+
+    top: 1rem;
+    right: 1rem;
+
+    display: grid;
+
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+
+    padding: 0;
+
+    border: 0;
+    border-radius: 50%;
+
+    color: #493f34;
+
+    background: #eef7fb;
+
+    font-size: 1.65rem;
+
+    cursor: pointer;
+}
+
+
+.salon-dialog__close:hover {
+    color: var(--salon-blue-dark);
+
+    background: #e3f3fa;
+}
+
+
+.salon-dialog__header {
+    padding-right: 2rem;
+
+    margin-bottom: 2.5rem;
+}
+
+
+.salon-dialog__header h2 {
+    margin: 0 0 1rem;
+
+    color: var(--salon-dark);
+
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+}
+
+
+.salon-dialog__header p {
+    line-height: 1.7;
+}
+
+
+.salon-dialog__info {
+    margin-top: 1.5rem;
+
+    padding: 1rem 1.25rem;
+
+    border-left: 3px solid var(--salon-blue);
+
+    background: rgba(1, 155, 227, 0.07);
+
+    line-height: 1.6;
+}
+
+
+.salon-dialog__info strong {
+    display: block;
+}
+
+
+/* FORM */
+
+.salon-form fieldset {
+    margin: 0;
+
+    padding: 2rem 0;
+
+    border: 0;
+    border-top: 1px solid #e8e0d4;
+}
+
+
+.salon-form legend {
+    padding: 0 0.75rem 0 0;
+
+    color: var(--salon-dark);
+
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+
+.salon-form__grid {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 1rem;
+}
+
+
+.salon-form__field {
+    display: grid;
+
+    gap: 0.45rem;
+}
+
+
+.salon-form__field--wide {
+    grid-column: 1 / -1;
+}
+
+
+.salon-form label {
+    color: #40372e;
+
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+
+.salon-form label span {
+    color: #83786d;
+
+    font-weight: 400;
+}
+
+
+.salon-form input,
+.salon-form textarea {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 0.8rem 0.9rem;
+
+    border: 1px solid #d9d0c3;
+    border-radius: 10px;
+
+    outline: none;
+
+    color: #241f1a;
+
+    background: #fff;
+
+    font: inherit;
+
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+
+.salon-form textarea {
+    resize: vertical;
+}
+
+
+.salon-form input:focus,
+.salon-form textarea:focus {
+    border-color: var(--salon-blue);
+
+    box-shadow:
+        0 0 0 3px rgba(1, 155, 227, 0.13);
+}
+
+
+.salon-form small {
+    color: #776d62;
+
+    line-height: 1.5;
+}
+
+
+.salon-form .errorlist {
+    margin: 0.15rem 0 0;
+
+    padding: 0;
+
+    color: #a32f2f;
+
+    font-size: 0.87rem;
+
+    list-style: none;
+}
+
+
+.salon-form__errors {
+    margin-bottom: 1rem;
+
+    padding: 1rem;
+
+    border-radius: 10px;
+
+    color: #842828;
+
+    background: #fbeaea;
+}
+
+
+.salon-form__submit {
+    margin-top: 1rem;
+    padding-bottom: 0.25rem;
+}
+
+
+.salon-form__submit .mlady-salon-button {
+    min-width: 190px;
+}
+
+
+.salon-form__honeypot {
+    position: absolute !important;
+
+    left: -10000px !important;
+}
+
+
+/* SUCCESS */
+
+.salon-dialog__success {
+    position: relative;
+
+    padding: 4rem 3rem;
+
+    text-align: center;
+}
+
+
+.salon-dialog__success-mark {
+    display: grid;
+
+    place-items: center;
+
+    width: 64px;
+    height: 64px;
+
+    margin: 0 auto 1.5rem;
+
+    border-radius: 50%;
+
+    color: #fff;
+
+    background: var(--salon-blue);
+
+    font-size: 2rem;
+}
+
+
+.salon-dialog__success h2 {
+    color: var(--salon-dark);
+}
+
+
+/* DARK MODE */
+
 body.dark-mode .mlady-salon-page {
+    --salon-dark: #f7efe0;
+    --salon-text: #d6c8b4;
+    --salon-muted: #b9ab98;
+
+    background: #15120f;
+}
+
+
+body.dark-mode .mlady-salon-hero {
     background:
-        radial-gradient(circle at top left, rgba(199, 154, 67, 0.16), transparent 34rem),
-        linear-gradient(135deg, #15120f 0%, #211b14 52%, #111 100%);
+        radial-gradient(
+            circle at 10% 0,
+            rgba(1, 155, 227, 0.14),
+            transparent 32rem
+        ),
+        linear-gradient(
+            135deg,
+            #15120f,
+            #1a2125
+        );
 }
 
-body.dark-mode .mlady-salon-main h1,
-body.dark-mode .mlady-salon-lead,
-body.dark-mode .mlady-salon-card h2 {
-    color: #f7efe0;
+
+body.dark-mode .mlady-salon-hero__subtitle {
+    color: #f1e8dc;
 }
 
-body.dark-mode .mlady-salon-text,
-body.dark-mode .mlady-salon-card p,
-body.dark-mode .mlady-salon-card li {
-    color: #d6c8b4;
+
+body.dark-mode .mlady-salon-section--soft {
+    background: #171c1f;
 }
 
-body.dark-mode .mlady-salon-kicker,
-body.dark-mode .mlady-salon-card,
+
+body.dark-mode .mlady-salon-feature,
+body.dark-mode .mlady-salon-award-card {
+    border-color: rgba(1, 155, 227, 0.18);
+
+    background: #211c17;
+}
+
+
+body.dark-mode .mlady-salon-section--award {
+    background: #161d21;
+}
+
+
 body.dark-mode .mlady-salon-button--secondary {
-    border-color: rgba(242, 223, 184, 0.18);
-    background: rgba(255, 255, 255, 0.06);
-}
+    border-color: rgba(255, 255, 255, 0.16);
 
-body.dark-mode .mlady-salon-kicker {
-    color: #f2dfb8;
-}
-
-body.dark-mode .mlady-salon-button--primary {
-    background: #f2dfb8;
-    color: #1f1b16;
-}
-
-body.dark-mode .mlady-salon-button--primary:hover {
-    background: #ffffff;
-    color: #1f1b16;
-}
-
-body.dark-mode .mlady-salon-button--secondary {
     color: #f7efe0;
+
+    background: rgba(255, 255, 255, 0.05);
 }
 
-body.dark-mode .mlady-salon-button--secondary:hover {
-    background: rgba(255, 255, 255, 0.12);
-    color: #f2dfb8;
-}
 
-body.dark-mode .mlady-salon-card {
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
-}
+/* RESPONSIVE */
 
-body.dark-mode .mlady-salon-card-mark {
-    background: rgba(242, 223, 184, 0.12);
-    color: #f2dfb8;
-}
+@media (max-width: 900px) {
 
-@media (max-width: 820px) {
-    .mlady-salon-page {
-        padding: 3.5rem 1rem 4.5rem;
+    .mlady-salon-feature-grid {
+        grid-template-columns: 1fr 1fr;
     }
 
-    .mlady-salon-shell {
+    .mlady-salon-year,
+    .mlady-salon-open__inner {
         grid-template-columns: 1fr;
+
         gap: 2rem;
     }
 
-    .mlady-salon-card {
-        padding: 1.5rem;
-        border-radius: 22px;
+    .mlady-salon-year--reverse .mlady-salon-year__image {
+        order: 0;
+    }
+
+    .mlady-salon-award-grid {
+        grid-template-columns: 1fr;
     }
 }
 
-@media (max-width: 520px) {
+
+@media (max-width: 680px) {
+
+    .mlady-salon-container {
+        width: min(100% - 2rem, 1120px);
+    }
+
+    .mlady-salon-hero {
+        padding: 4.5rem 0 5rem;
+    }
+
+    .mlady-salon-section {
+        padding: 4.5rem 0;
+    }
+
+    .mlady-salon-columns,
+    .mlady-salon-feature-grid,
+    .salon-form__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mlady-salon-columns {
+        gap: 1rem;
+    }
+
+    .salon-form__field--wide {
+        grid-column: auto;
+    }
+
     .mlady-salon-actions {
         flex-direction: column;
+
+        align-items: stretch;
     }
 
     .mlady-salon-button {
         width: 100%;
+    }
+
+    .salon-dialog {
+        width: calc(100% - 1rem);
+
+        max-height: calc(100vh - 1rem);
+    }
+
+    .salon-dialog__inner {
+        padding: 1.4rem;
+    }
+
+    .salon-dialog__success {
+        padding: 3rem 1.5rem;
     }
 }

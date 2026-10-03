@@ -351,3 +351,68 @@ class HomeQuoteSlideForm(forms.ModelForm):
             )
             .order_by("-uploaded_at", "-id")
         )
+
+
+
+# mladej salooon
+
+class OpenSalonApplicationForm(forms.Form):
+    singer_name = forms.CharField(
+        label="Jméno a příjmení",
+        max_length=150,
+    )
+    singer_email = forms.EmailField(
+        label="E-mail",
+    )
+    voice_type = forms.CharField(
+        label="Hlasový obor",
+        max_length=100,
+    )
+
+    pianist_name = forms.CharField(
+        label="Jméno a příjmení",
+        max_length=150,
+    )
+    pianist_email = forms.EmailField(
+        label="E-mail",
+    )
+
+    repertoire = forms.CharField(
+        label="Jaký český nebo slovenský repertoár chcete představit?",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 5,
+                "placeholder": "Uveďte prosím skladatele a názvy skladeb/písní.",
+            }
+        ),
+    )
+
+    recording_url = forms.URLField(
+        label="Odkaz na nahrávku vašeho dua",
+        required=False,
+    )
+
+    note = forms.CharField(
+        label="Ještě něco, co bychom měli vědět?",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 4}),
+    )
+
+    # jednoduchý honeypot proti robotům
+    website = forms.CharField(
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "tabindex": "-1",
+                "autocomplete": "off",
+            }
+        ),
+    )
+
+    def clean_website(self):
+        value = self.cleaned_data.get("website")
+
+        if value:
+            raise forms.ValidationError("Neplatné odeslání formuláře.")
+
+        return value
