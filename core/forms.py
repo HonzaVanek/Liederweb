@@ -398,6 +398,14 @@ class OpenSalonApplicationForm(forms.Form):
         widget=forms.Textarea(attrs={"rows": 4}),
     )
 
+    fee_consent = forms.BooleanField(
+        label=(
+            "Souhlasím s úhradou účastnického poplatku 500 Kč za osobu. "
+            "Při účasti ve více písňových dvojicích se poplatek hradí pouze jednou."
+        ),
+        required=True,
+    )
+
     # jednoduchý honeypot proti robotům
     website = forms.CharField(
         required=False,

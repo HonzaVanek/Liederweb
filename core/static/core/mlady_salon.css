@@ -1025,6 +1025,33 @@
 }
 
 
+.salon-form__consent {
+    padding: 1.5rem 0 !important;
+}
+
+.salon-form__checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+}
+
+.salon-form__checkbox input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 0.2rem 0 0;
+    accent-color: var(--salon-blue);
+}
+
+.salon-form__checkbox label {
+    margin: 0;
+    color: var(--salon-dark);
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.55;
+    cursor: pointer;
+}
+
 /* DARK MODE */
 
 body.dark-mode .mlady-salon-page {
@@ -1160,3 +1187,5 @@ body.dark-mode .mlady-salon-button--secondary {
         padding: 3rem 1.5rem;
     }
 }
+
+

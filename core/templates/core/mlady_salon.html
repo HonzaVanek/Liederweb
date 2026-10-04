@@ -850,6 +850,22 @@
             </fieldset>
 
 
+            <fieldset class="salon-form__consent">
+
+                <div class="salon-form__checkbox">
+
+                    {{ form.fee_consent }}
+
+                    <label for="{{ form.fee_consent.id_for_label }}">
+                        {{ form.fee_consent.label }}
+                    </label>
+
+                </div>
+
+                {{ form.fee_consent.errors }}
+
+            </fieldset>
+
             <div class="salon-form__submit">
 
                 <button

@@ -935,6 +935,9 @@ def mlady_salon(request):
 
                 DALŠÍ INFORMACE
                 {note}
+
+                ÚČASTNICKÝ POPLATEK
+                Souhlas s úhradou poplatku 500 Kč za osobu: ANO
                 """.strip()
 
             email = EmailMessage(
