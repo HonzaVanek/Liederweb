@@ -12,6 +12,10 @@ urlpatterns = [
     path("obchodni-podminky/verze/<int:version>/", views.terms_version, name="terms_version"),
     path("ochrana-osobnich-udaju/", views.privacy, name="privacy"),
     path("ochrana-osobnich-udaju/verze/<int:version>/", views.privacy_version, name="privacy_version"),
+    path("odstoupeni-od-smlouvy/", views.withdrawal, name="withdrawal"),
+    path("odstoupeni-od-smlouvy/verze/<int:version>/", views.withdrawal_version, name="withdrawal_version"),
+    path("mimosoudni-reseni-sporu/", views.adr, name="adr"),
+    path("mimosoudni-reseni-sporu/verze/<int:version>/", views.adr_version, name="adr_version"),
 
     path("kosik/", views.cart_detail, name="cart_detail"),
     path("kosik/pridat/<slug:slug>/", views.cart_add, name="cart_add"),

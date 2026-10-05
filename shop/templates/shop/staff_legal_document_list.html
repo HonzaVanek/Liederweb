@@ -79,7 +79,11 @@
                 </td>
 
                 <td>
-                  {{ document.order_count }}
+                  {% if document.document_type == "terms" %}
+                    {{ document.order_count }}
+                  {% else %}
+                    —
+                  {% endif %}
                 </td>
 
                 <td>
@@ -93,9 +97,28 @@
                       >
                         Zobrazit
                       </a>
-                    {% else %}
+
+                    {% elif document.document_type == "privacy" %}
                       <a
                         href="{% url 'shop:privacy_version' document.version %}"
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        Zobrazit
+                      </a>
+
+                    {% elif document.document_type == "withdrawal" %}
+                      <a
+                        href="{% url 'shop:withdrawal_version' document.version %}"
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        Zobrazit
+                      </a>
+
+                    {% elif document.document_type == "adr" %}
+                      <a
+                        href="{% url 'shop:adr_version' document.version %}"
                         target="_blank"
                         rel="noopener"
                       >

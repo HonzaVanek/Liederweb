@@ -21,7 +21,7 @@ from .cart import CartQuantityError, SessionCart
 from .forms import ProductForm, ProductVariantFormSet, ProductVariantImageFormSet, AddToCartForm, CartQuantityForm, CheckoutForm, CancelOrderForm, StaffOrderStateForm, ShippingMethodForm, AlbumTrackForm, ShopLegalDocumentForm
 from .models import Product, ProductVariant, ProductImage, ProductVariantImage, AlbumTrack, Order, ShippingMethod, DigitalDownloadGrant, ShopLegalDocument
 
-from .services.legal import get_current_terms_document, get_current_privacy_document, get_next_legal_document_version
+from .services.legal import get_current_terms_document, get_current_privacy_document, get_next_legal_document_version, get_current_withdrawal_document, get_current_adr_document
 from .services.checkout import CheckoutError, create_order_from_cart
 from .services.orders import OrderManagementError, update_order_states, cancel_order
 from .services.payments import get_bank_transfer_payment_data
@@ -206,6 +206,65 @@ def privacy_version(request, version):
         ShopLegalDocument,
         document_type=(
             ShopLegalDocument.DocumentType.PRIVACY
+        ),
+        version=version,
+        is_published=True,
+    )
+
+    return _render_legal_document(
+        request,
+        document,
+    )
+
+def withdrawal(request):
+    document = get_current_withdrawal_document()
+
+    if document is None:
+        raise Http404(
+            "Informace o odstoupení od smlouvy zatím nejsou publikované."
+        )
+
+    return _render_legal_document(
+        request,
+        document,
+    )
+
+
+def withdrawal_version(request, version):
+    document = get_object_or_404(
+        ShopLegalDocument,
+        document_type=(
+            ShopLegalDocument.DocumentType.WITHDRAWAL
+        ),
+        version=version,
+        is_published=True,
+    )
+
+    return _render_legal_document(
+        request,
+        document,
+    )
+
+
+def adr(request):
+    document = get_current_adr_document()
+
+    if document is None:
+        raise Http404(
+            "Informace o mimosoudním řešení sporů zatím nejsou publikované."
+        )
+
+    return _render_legal_document(
+        request,
+        document,
+    )
+
+
+def adr_version(request, version):
+    document = get_object_or_404(
+        ShopLegalDocument,
+        document_type=(
+            ShopLegalDocument.DocumentType.ADR
         ),
         version=version,
         is_published=True,
@@ -1648,12 +1707,10 @@ def staff_legal_document_list(request):
         "shop/staff_legal_document_list.html",
         {
             "documents": documents,
-            "current_terms": (
-                get_current_terms_document()
-            ),
-            "current_privacy": (
-                get_current_privacy_document()
-            ),
+            "current_terms": get_current_terms_document(),
+            "current_privacy": get_current_privacy_document(),
+            "current_withdrawal": get_current_withdrawal_document(),
+            "current_adr": get_current_adr_document(),
         },
     )
 

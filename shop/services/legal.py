@@ -29,23 +29,6 @@ def get_current_legal_document(document_type):
     )
 
 
-def get_current_legal_document(document_type):
-    return (
-        ShopLegalDocument.objects
-        .filter(
-            document_type=document_type,
-            is_published=True,
-            effective_from__lte=timezone.localdate(),
-        )
-        .order_by(
-            "-effective_from",
-            "-version",
-            "-id",
-        )
-        .first()
-    )
-
-
 def get_current_terms_document():
     return get_current_legal_document(ShopLegalDocument.DocumentType.TERMS)
 
@@ -63,6 +46,15 @@ def get_next_legal_document_version(document_type):
     )
 
     return (max_version or 0) + 1
+
+
+def get_current_withdrawal_document():
+    return get_current_legal_document(ShopLegalDocument.DocumentType.WITHDRAWAL)
+
+
+def get_current_adr_document():
+    return get_current_legal_document(ShopLegalDocument.DocumentType.ADR)
+
 
 def _build_plain_legal_body(body):
     text = (body or "").strip()

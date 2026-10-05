@@ -384,6 +384,8 @@ class ShopLegalDocument(models.Model):
     class DocumentType(models.TextChoices):
         TERMS = "terms", "Obchodní podmínky"
         PRIVACY = "privacy", "Ochrana osobních údajů"
+        WITHDRAWAL = "withdrawal", "Odstoupení od smlouvy"
+        ADR = "adr", "Mimosoudní řešení sporů"
 
     document_type = models.CharField(
         "typ dokumentu",
