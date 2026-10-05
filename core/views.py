@@ -356,26 +356,41 @@ def _get_safe_redirect_url(request):
     return _add_newsletter_anchor(reverse("core:home"))
 
 
-@require_POST
-def newsletter_signup(request):
-    redirect_url = _get_safe_redirect_url(request)
-    form = NewsletterSignupForm(request.POST)
+# newsletter signup view a pomocné funkce
 
-    if not form.is_valid():
-        messages.error(request, "Zkontrolujte prosím e-mail a zkuste to znovu.", extra_tags="newsletter")
-        return redirect(redirect_url)
+NEWSLETTER_ANCHOR = "newsletter-signup"
 
-    # Honeypot – pokud je vyplněný, pravděpodobně bot.
-    # Nevracíme chybu, jen tiše přesměrujeme.
-    if form.cleaned_data.get("website"):
-        return redirect(redirect_url)
 
-    email = form.cleaned_data["email"]
-    name = form.cleaned_data.get("name", "").strip()
+def _add_newsletter_anchor(url):
+    url_without_fragment, _fragment = urldefrag(url)
+    return f"{url_without_fragment}#{NEWSLETTER_ANCHOR}"
+
+
+def _get_safe_redirect_url(request):
+    redirect_url = request.POST.get("next") or request.META.get("HTTP_REFERER")
+
+    if redirect_url and url_has_allowed_host_and_scheme(
+        url=redirect_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return _add_newsletter_anchor(redirect_url)
+
+    return _add_newsletter_anchor(reverse("core:home"))
+
+
+def add_contact_to_newsletter(email, name=""):
+    """
+    Přidá nebo znovu aktivuje kontakt ve skupině webového newsletteru.
+
+    Používá se jak z běžného newsletter signup formuláře,
+    tak z přihlášky do Mladého salónu.
+    """
+    name = (name or "").strip()
 
     group = get_web_contacts_group()
 
-    contact, created = Contact.objects.get_or_create(
+    contact, _created = Contact.objects.get_or_create(
         email=email,
         defaults={
             "name": name,
@@ -389,8 +404,7 @@ def newsletter_signup(request):
         contact.is_active = True
         update_fields.append("is_active")
 
-    # Jméno bych nepřepisoval agresivně.
-    # Když už kontakt jméno má, nechal bych ho být.
+    # Existující jméno nepřepisujeme.
     if name and not contact.name:
         contact.name = name
         update_fields.append("name")
@@ -400,7 +414,42 @@ def newsletter_signup(request):
 
     contact.groups.add(group)
 
-    messages.success(request, "Děkujeme, přihlášení k newsletteru je zaznamenané.", extra_tags="newsletter")
+    return contact
+
+
+@require_POST
+def newsletter_signup(request):
+    redirect_url = _get_safe_redirect_url(request)
+
+    form = NewsletterSignupForm(request.POST)
+
+    if not form.is_valid():
+        messages.error(
+            request,
+            "Zkontrolujte prosím e-mail a zkuste to znovu.",
+            extra_tags="newsletter",
+        )
+        return redirect(redirect_url)
+
+    # Honeypot – pokud je vyplněný, pravděpodobně bot.
+    # Nevracíme chybu, jen tiše přesměrujeme.
+    if form.cleaned_data.get("website"):
+        return redirect(redirect_url)
+
+    email = form.cleaned_data["email"]
+    name = form.cleaned_data.get("name", "").strip()
+
+    add_contact_to_newsletter(
+        email=email,
+        name=name,
+    )
+
+    messages.success(
+        request,
+        "Děkujeme, přihlášení k newsletteru je zaznamenané.",
+        extra_tags="newsletter",
+    )
+
     return redirect(redirect_url)
 
 
@@ -915,34 +964,67 @@ def mlady_salon(request):
             recording = data["recording_url"] or "Neuvedeno"
             note = data["note"] or "Neuvedeno"
 
-            message = f"""
-                Nová přihláška do Otevřeného salónu
+            singer_newsletter = (
+                "ANO"
+                if data["singer_newsletter"]
+                else "NE"
+            )
 
-                PĚVEC / PĚVKYNĚ
-                Jméno: {data["singer_name"]}
-                E-mail: {data["singer_email"]}
-                Hlasový obor: {data["voice_type"]}
+            pianist_newsletter = (
+                "ANO"
+                if data["pianist_newsletter"]
+                else "NE"
+            )
 
-                KLAVÍRISTA / KLAVÍRISTKA
-                Jméno: {data["pianist_name"]}
-                E-mail: {data["pianist_email"]}
+            # Newsletter – každý člen dua dává souhlas samostatně.
+            if data["singer_newsletter"]:
+                add_contact_to_newsletter(
+                    email=data["singer_email"],
+                    name=data["singer_name"],
+                )
 
-                REPERTOÁR
-                {data["repertoire"]}
+            if data["pianist_newsletter"]:
+                add_contact_to_newsletter(
+                    email=data["pianist_email"],
+                    name=data["pianist_name"],
+                )
 
-                NAHRÁVKA
-                {recording}
+            # -----------------------------------------
+            # INTERNÍ E-MAIL PRO LIEDER SOCIETY
+            # -----------------------------------------
 
-                DALŠÍ INFORMACE
-                {note}
+            internal_message = f"""Nová přihláška do Otevřeného salónu
 
-                ÚČASTNICKÝ POPLATEK
-                Souhlas s úhradou poplatku 500 Kč za osobu: ANO
-                """.strip()
+PĚVEC / PĚVKYNĚ
+Jméno: {data["singer_name"]}
+E-mail: {data["singer_email"]}
+Hlasový obor: {data["voice_type"]}
+Newsletter: {singer_newsletter}
 
-            email = EmailMessage(
+KLAVÍRISTA / KLAVÍRISTKA
+Jméno: {data["pianist_name"]}
+E-mail: {data["pianist_email"]}
+Newsletter: {pianist_newsletter}
+
+REPERTOÁR
+{data["repertoire"]}
+
+NAHRÁVKA
+{recording}
+
+DALŠÍ INFORMACE
+{note}
+
+ÚČASTNICKÝ POPLATEK
+Souhlas s úhradou poplatku 500 Kč za osobu: ANO
+
+OCHRANA OSOBNÍCH ÚDAJŮ
+Potvrzení seznámení s informacemi o zpracování osobních údajů: ANO
+""".strip()
+
+            internal_email = EmailMessage(
                 subject="Nová přihláška – Otevřený salón",
-                body=message,
+                body=internal_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=["info@lieder-society.cz"],
                 reply_to=[
@@ -951,7 +1033,60 @@ def mlady_salon(request):
                 ],
             )
 
-            email.send(fail_silently=False)
+            internal_email.send(
+                fail_silently=False
+            )
+
+            # -----------------------------------------
+            # POTVRZOVACÍ E-MAIL PRO ÚČASTNÍKY
+            # -----------------------------------------
+
+            privacy_url = (
+                "https://lieder-society.cz/"
+                "vyberte-si/ochrana-osobnich-udaju/verze/4/"
+            )
+
+            confirmation_body = f"""Dobrý den,
+
+potvrzujeme přijetí vaší přihlášky do programu Mladý salón. Děkujeme za váš zájem! O výsledku výběru a dalším postupu vás budeme brzy informovat e-mailem.
+
+Informace o zpracování osobních údajů, včetně vašich práv a dob uchování, najdete zde:
+{privacy_url}
+
+Pokud přihlášku podal váš partner v písňovém duu, získali jsme vaše údaje prostřednictvím této společné přihlášky.
+
+Máte-li dotazy k přihlášce nebo zpracování osobních údajů, napište nám na info@lieder-society.cz.
+
+Těšíme se na společné chvíle s písní!
+
+Tým Lieder Society
+""".strip()
+
+            # Set zabrání odeslání dvou stejných zpráv,
+            # pokud oba členové dua uvedou stejnou e-mailovou adresu.
+            recipients = {
+                data["singer_email"],
+                data["pianist_email"],
+            }
+
+            for recipient in recipients:
+                confirmation_email = EmailMessage(
+                    subject="Potvrzení přihlášky – Mladý salón",
+                    body=confirmation_body,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[recipient],
+                    reply_to=[
+                        "info@lieder-society.cz"
+                    ],
+                )
+
+                confirmation_email.send(
+                    fail_silently=False
+                )
+
+            # -----------------------------------------
+            # HOTOVO
+            # -----------------------------------------
 
             return redirect(
                 f"{reverse('core:mlady_salon')}?application=sent"

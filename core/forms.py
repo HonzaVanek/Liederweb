@@ -406,6 +406,30 @@ class OpenSalonApplicationForm(forms.Form):
         required=True,
     )
 
+    singer_newsletter = forms.BooleanField(
+        label=(
+            "Chci dostávat newsletter Lieder Society a souhlasím s použitím "
+            "svého e-mailu pro tento účel. Odběr lze v newsletteru kdykoliv zrušit."
+        ),
+        required=False,
+    )
+
+    pianist_newsletter = forms.BooleanField(
+        label=(
+            "Chci dostávat newsletter Lieder Society a souhlasím s použitím "
+            "svého e-mailu pro tento účel. Odběr lze v newsletteru kdykoliv zrušit."
+        ),
+        required=False,
+    )
+
+    privacy_acknowledgement = forms.BooleanField(
+        label=(
+            "Potvrzuji, že jsem se seznámil/a s informacemi "
+            "o zpracování osobních údajů."
+        ),
+        required=True,
+    )
+
     # jednoduchý honeypot proti robotům
     website = forms.CharField(
         required=False,
