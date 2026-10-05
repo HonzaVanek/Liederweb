@@ -952,6 +952,34 @@ def agnes_tyrrell_landing(request):
     )
 
 
+
+def _open_salon_submission_allowed(request):
+    """
+    Povolí maximálně 3 validní odeslání formuláře
+    z jedné IP adresy během 30 minut.
+    """
+    ip = get_client_ip(request) or "unknown"
+
+    # Do cache key nedáváme přímo IP adresu.
+    ip_hash = hashlib.sha256(ip.encode("utf-8")).hexdigest()
+
+    cache_key = f"open_salon_submit:{ip_hash}"
+    timeout = 30 * 60
+    limit = 3
+
+    # První odeslání – vytvoříme počítadlo.
+    if cache.add(cache_key, 1, timeout=timeout):
+        return True
+
+    try:
+        attempts = cache.incr(cache_key)
+    except ValueError:
+        # Kdyby klíč mezitím expiroval.
+        cache.set(cache_key, 1, timeout=timeout)
+        return True
+
+    return attempts <= limit
+
 def mlady_salon(request):
     application_sent = request.GET.get("application") == "sent"
 
@@ -959,41 +987,69 @@ def mlady_salon(request):
         form = OpenSalonApplicationForm(request.POST)
 
         if form.is_valid():
-            data = form.cleaned_data
-
-            recording = data["recording_url"] or "Neuvedeno"
-            note = data["note"] or "Neuvedeno"
-
-            singer_newsletter = (
-                "ANO"
-                if data["singer_newsletter"]
-                else "NE"
-            )
-
-            pianist_newsletter = (
-                "ANO"
-                if data["pianist_newsletter"]
-                else "NE"
-            )
-
-            # Newsletter – každý člen dua dává souhlas samostatně.
-            if data["singer_newsletter"]:
-                add_contact_to_newsletter(
-                    email=data["singer_email"],
-                    name=data["singer_name"],
-                )
-
-            if data["pianist_newsletter"]:
-                add_contact_to_newsletter(
-                    email=data["pianist_email"],
-                    name=data["pianist_name"],
-                )
 
             # -----------------------------------------
-            # INTERNÍ E-MAIL PRO LIEDER SOCIETY
+            # OCHRANA PROTI HROMADNÉMU ODESÍLÁNÍ
             # -----------------------------------------
 
-            internal_message = f"""Nová přihláška do Otevřeného salónu
+            if not _open_salon_submission_allowed(request):
+                form.add_error(
+                    None,
+                    (
+                        "Formulář byl z tohoto připojení odeslán "
+                        "příliš mnohokrát. Zkuste to prosím později."
+                    ),
+                )
+
+            else:
+                data = form.cleaned_data
+
+                recording = (
+                    data["recording_url"]
+                    or "Neuvedeno"
+                )
+
+                note = (
+                    data["note"]
+                    or "Neuvedeno"
+                )
+
+                singer_newsletter = (
+                    "ANO"
+                    if data["singer_newsletter"]
+                    else "NE"
+                )
+
+                pianist_newsletter = (
+                    "ANO"
+                    if data["pianist_newsletter"]
+                    else "NE"
+                )
+
+                # -----------------------------------------
+                # NEWSLETTER
+                # -----------------------------------------
+
+                # Každý člen dua dává souhlas samostatně.
+
+                if data["singer_newsletter"]:
+                    add_contact_to_newsletter(
+                        email=data["singer_email"],
+                        name=data["singer_name"],
+                    )
+
+                if data["pianist_newsletter"]:
+                    add_contact_to_newsletter(
+                        email=data["pianist_email"],
+                        name=data["pianist_name"],
+                    )
+
+
+                # -----------------------------------------
+                # INTERNÍ E-MAIL PRO LIEDER SOCIETY
+                # -----------------------------------------
+
+                internal_message = f"""Nová přihláška do Otevřeného salónu
 
 PĚVEC / PĚVKYNĚ
 Jméno: {data["singer_name"]}
@@ -1022,31 +1078,36 @@ OCHRANA OSOBNÍCH ÚDAJŮ
 Potvrzení seznámení s informacemi o zpracování osobních údajů: ANO
 """.strip()
 
-            internal_email = EmailMessage(
-                subject="Nová přihláška – Otevřený salón",
-                body=internal_message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=["info@lieder-society.cz"],
-                reply_to=[
-                    data["singer_email"],
-                    data["pianist_email"],
-                ],
-            )
+                internal_email = EmailMessage(
+                    subject="Nová přihláška – Otevřený salón",
+                    body=internal_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[
+                        "info@lieder-society.cz"
+                    ],
+                    reply_to=[
+                        data["singer_email"],
+                        data["pianist_email"],
+                    ],
+                )
 
-            internal_email.send(
-                fail_silently=False
-            )
+                internal_email.send(
+                    fail_silently=False
+                )
 
-            # -----------------------------------------
-            # POTVRZOVACÍ E-MAIL PRO ÚČASTNÍKY
-            # -----------------------------------------
 
-            privacy_url = (
-                "https://lieder-society.cz/"
-                "vyberte-si/ochrana-osobnich-udaju/verze/4/"
-            )
+                # -----------------------------------------
+                # POTVRZOVACÍ E-MAIL PRO ÚČASTNÍKY
+                # -----------------------------------------
 
-            confirmation_body = f"""Dobrý den,
+                privacy_url = (
+                    "https://lieder-society.cz/"
+                    "vyberte-si/"
+                    "ochrana-osobnich-udaju/"
+                    "verze/4/"
+                )
+
+                confirmation_body = f"""Dobrý den,
 
 potvrzujeme přijetí vaší přihlášky do programu Mladý salón. Děkujeme za váš zájem! O výsledku výběru a dalším postupu vás budeme brzy informovat e-mailem.
 
@@ -1062,38 +1123,48 @@ Těšíme se na společné chvíle s písní!
 Tým Lieder Society
 """.strip()
 
-            # Set zabrání odeslání dvou stejných zpráv,
-            # pokud oba členové dua uvedou stejnou e-mailovou adresu.
-            recipients = {
-                data["singer_email"],
-                data["pianist_email"],
-            }
+                # Set zabrání odeslání dvou stejných zpráv,
+                # pokud oba členové dua uvedou stejnou
+                # e-mailovou adresu.
 
-            for recipient in recipients:
-                confirmation_email = EmailMessage(
-                    subject="Potvrzení přihlášky – Mladý salón",
-                    body=confirmation_body,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[recipient],
-                    reply_to=[
-                        "info@lieder-society.cz"
-                    ],
+                recipients = {
+                    data["singer_email"],
+                    data["pianist_email"],
+                }
+
+                for recipient in recipients:
+                    confirmation_email = EmailMessage(
+                        subject=(
+                            "Potvrzení přihlášky – "
+                            "Mladý salón"
+                        ),
+                        body=confirmation_body,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        to=[
+                            recipient
+                        ],
+                        reply_to=[
+                            "info@lieder-society.cz"
+                        ],
+                    )
+
+                    confirmation_email.send(
+                        fail_silently=False
+                    )
+
+
+                # -----------------------------------------
+                # HOTOVO
+                # -----------------------------------------
+
+                return redirect(
+                    f"{reverse('core:mlady_salon')}"
+                    "?application=sent"
                 )
-
-                confirmation_email.send(
-                    fail_silently=False
-                )
-
-            # -----------------------------------------
-            # HOTOVO
-            # -----------------------------------------
-
-            return redirect(
-                f"{reverse('core:mlady_salon')}?application=sent"
-            )
 
     else:
         form = OpenSalonApplicationForm()
+
 
     return render(
         request,
@@ -1103,7 +1174,6 @@ Tým Lieder Society
             "application_sent": application_sent,
         },
     )
-
 
 #JS beacon prodetekci lidských návštěv:
 
