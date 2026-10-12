@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <title>
+    Potvrzení přijetí odstoupení od smlouvy
+  </title>
+</head>
+
+<body
+  style="
+    margin:0;
+    padding:0;
+    background:#f5f5f5;
+    font-family:Arial,Helvetica,sans-serif;
+    color:#222;
+  "
+>
+  <div
+    style="
+      max-width:680px;
+      margin:0 auto;
+      padding:32px 20px;
+    "
+  >
+    <div
+      style="
+        background:#fff;
+        padding:28px;
+        border:1px solid #ddd;
+        border-radius:8px;
+      "
+    >
+      <p>Dobrý den,</p>
+
+      <p>
+        potvrzujeme, že jsme dne
+        <strong>
+          {{ withdrawal.submitted_at|date:"j. n. Y" }}
+        </strong>
+        v
+        <strong>
+          {{ withdrawal.submitted_at|date:"H:i" }}
+        </strong>
+        prostřednictvím našeho internetového obchodu
+        přijali Vaše odstoupení od smlouvy týkající se
+        objednávky č.
+        <strong>{{ order.number }}</strong>.
+      </p>
+
+      <h2
+        style="
+          margin:26px 0 10px;
+          font-size:18px;
+        "
+      >
+        Obsah Vašeho prohlášení
+      </h2>
+
+      <blockquote
+        style="
+          margin:0;
+          padding:14px 18px;
+          border-left:4px solid #222;
+          background:#f7f7f7;
+        "
+      >
+        {{ withdrawal.statement_text }}
+      </blockquote>
+
+      <p>
+        <strong>Datum a čas odeslání odstoupení:</strong>
+        {{ withdrawal.submitted_at|date:"j. n. Y H:i" }}
+      </p>
+
+      {% if order.requires_shipping %}
+        <p>
+          Pokud se odstoupení týká fyzického zboží,
+          zašlete nebo předejte nám zboží bez zbytečného
+          odkladu, nejpozději do 14 dnů od odstoupení
+          od smlouvy, na adresu:
+        </p>
+
+        <p>
+          <strong>Lieder Society z.s.</strong><br>
+          Střimelická 2504/24<br>
+          141 00 Praha 4
+        </p>
+
+        <p>
+          Přímé náklady spojené s vrácením zboží nese
+          spotřebitel, pokud nebylo dohodnuto jinak.
+        </p>
+      {% endif %}
+
+      <p>
+        Přijaté peněžní prostředky včetně nákladů
+        na nejlevnější nabízený způsob dodání Vám vrátíme
+        v souladu s obchodními podmínkami a platnými
+        právními předpisy. U fyzického zboží můžeme
+        s vrácením platby počkat do doby, než zboží
+        obdržíme nebo než prokážete jeho odeslání,
+        podle toho, co nastane dříve.
+      </p>
+
+      <p>
+        Tento e-mail je automatickým potvrzením přijetí
+        Vašeho odstoupení od smlouvy. Uschovejte si jej
+        prosím pro případnou další komunikaci.
+      </p>
+
+      <p style="margin-bottom:0;">
+        S pozdravem<br><br>
+
+        <strong>Lieder Society z.s.</strong><br>
+        Střimelická 2504/24, 141 00 Praha 4<br>
+        IČ: 09862455<br>
+        <a href="mailto:info@lieder-society.cz">
+          info@lieder-society.cz
+        </a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

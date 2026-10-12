@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <title>Nové odstoupení od smlouvy</title>
+</head>
+
+<body style="font-family:Arial,Helvetica,sans-serif;color:#222;">
+  <h2>Nové odstoupení od smlouvy</h2>
+
+  <p>
+    Zákazník odeslal odstoupení od smlouvy
+    k objednávce
+    <strong>{{ order.number }}</strong>.
+  </p>
+
+  <table
+    cellpadding="6"
+    cellspacing="0"
+    style="border-collapse:collapse;"
+  >
+    <tr>
+      <td><strong>Zákazník</strong></td>
+      <td>{{ withdrawal.customer_name }}</td>
+    </tr>
+
+    <tr>
+      <td><strong>E-mail</strong></td>
+      <td>{{ withdrawal.confirmation_email }}</td>
+    </tr>
+
+    <tr>
+      <td><strong>Datum objednávky</strong></td>
+      <td>{{ order.created_at|date:"j. n. Y H:i" }}</td>
+    </tr>
+
+    <tr>
+      <td><strong>Datum odstoupení</strong></td>
+      <td>{{ withdrawal.submitted_at|date:"j. n. Y H:i" }}</td>
+    </tr>
+
+    <tr>
+      <td><strong>Rozsah</strong></td>
+      <td>{{ withdrawal.get_scope_display }}</td>
+    </tr>
+  </table>
+
+  <h3>Obsah prohlášení</h3>
+
+  <blockquote>
+    {{ withdrawal.statement_text }}
+  </blockquote>
+
+  {% if withdrawal.items_snapshot %}
+    <h3>Položky zahrnuté v odstoupení</h3>
+
+    <ul>
+      {% for item in withdrawal.items_snapshot %}
+        <li>
+          {{ item.product_name }}
+          {% if item.variant_name %}
+            – {{ item.variant_name }}
+          {% endif %}
+          ({{ item.quantity }} ks)
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <p>
+    Objednávku je potřeba dále zpracovat v
+    administraci e-shopu.
+  </p>
+</body>
+</html>

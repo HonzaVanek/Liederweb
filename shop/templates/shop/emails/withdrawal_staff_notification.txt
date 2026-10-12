@@ -1,0 +1,23 @@
+Bylo přijato nové odstoupení od smlouvy.
+
+Objednávka: {{ order.number }}
+Zákazník: {{ withdrawal.customer_name }}
+E-mail: {{ withdrawal.confirmation_email }}
+Datum objednávky: {{ order.created_at|date:"j. n. Y H:i" }}
+Datum odstoupení: {{ withdrawal.submitted_at|date:"j. n. Y H:i" }}
+
+Rozsah:
+{{ withdrawal.get_scope_display }}
+
+Obsah prohlášení:
+
+{{ withdrawal.statement_text }}
+
+{% if withdrawal.items_snapshot %}
+Položky zahrnuté v odstoupení:
+{% for item in withdrawal.items_snapshot %}
+- {{ item.product_name }} – {{ item.variant_name }} ({{ item.quantity }} ks)
+{% endfor %}
+{% endif %}
+
+Objednávku je potřeba dále zpracovat ve staff administraci e-shopu.

@@ -18,8 +18,8 @@ from django.utils.text import slugify
 from .decorators import shop_public_or_staff_preview
 from core.decorators import staff_required
 from .cart import CartQuantityError, SessionCart
-from .forms import ProductForm, ProductVariantFormSet, ProductVariantImageFormSet, AddToCartForm, CartQuantityForm, CheckoutForm, CancelOrderForm, StaffOrderStateForm, ShippingMethodForm, AlbumTrackForm, ShopLegalDocumentForm
-from .models import Product, ProductVariant, ProductImage, ProductVariantImage, AlbumTrack, Order, ShippingMethod, DigitalDownloadGrant, ShopLegalDocument
+from .forms import ProductForm, ProductVariantFormSet, ProductVariantImageFormSet, AddToCartForm, CartQuantityForm, CheckoutForm, CancelOrderForm, StaffOrderStateForm, ShippingMethodForm, AlbumTrackForm, ShopLegalDocumentForm, WithdrawalConfirmationForm, WithdrawalLookupForm
+from .models import Product, ProductVariant, ProductImage, ProductVariantImage, AlbumTrack, Order, ShippingMethod, DigitalDownloadGrant, ShopLegalDocument, WithdrawalRequest
 
 from .services.legal import get_current_terms_document, get_current_privacy_document, get_next_legal_document_version, get_current_withdrawal_document, get_current_adr_document
 from .services.checkout import CheckoutError, create_order_from_cart
@@ -30,6 +30,7 @@ from .services.audio import AudioProcessingError, generate_track_preview
 from .services.tracks import sync_track_purchase_variant
 from .services.payment_completion import mark_order_paid
 from .services.packeta import PacketaValidationError, validate_packeta_pickup_point
+from .services.emails import send_withdrawal_confirmation_email, send_withdrawal_staff_notification_email
 from .storage import private_shop_storage
 
 
@@ -147,7 +148,51 @@ def _public_product_detail_queryset():
         )
     )
 
+# Právní věci (nejdřív helpery):
 
+WITHDRAWAL_SESSION_KEY = "shop_withdrawal_verified_order"
+
+
+def _build_withdrawal_item_snapshot(item):
+    return {
+        "order_item_id": item.id,
+        "product_name": item.product_name,
+        "variant_name": item.variant_name,
+        "quantity": item.quantity,
+    }
+
+
+def _build_withdrawal_statement(
+    order,
+    scope,
+    selected_items,
+):
+    order_date = timezone.localtime(
+        order.created_at
+    ).strftime("%d. %m. %Y")
+
+    if scope == WithdrawalRequest.Scope.WHOLE_ORDER:
+        return (
+            "Odstupuji od smlouvy týkající se objednávky "
+            f"č. {order.number}, uzavřené dne {order_date}, "
+            "v rozsahu celé objednávky."
+        )
+
+    items_text = "; ".join(
+        (
+            f"{item.product_name} – "
+            f"{item.variant_name} "
+            f"({item.quantity} ks)"
+        )
+        for item in selected_items
+    )
+
+    return (
+        "Odstupuji od smlouvy týkající se objednávky "
+        f"č. {order.number}, uzavřené dne {order_date}, "
+        "v rozsahu těchto položek: "
+        f"{items_text}."
+    )
 
 def _render_legal_document(request, document):
     return render(
@@ -221,12 +266,264 @@ def withdrawal(request):
 
     if document is None:
         raise Http404(
-            "Informace o odstoupení od smlouvy zatím nejsou publikované."
+            "Informace o odstoupení od smlouvy "
+            "zatím nejsou publikované."
         )
 
-    return _render_legal_document(
+    lookup_form = WithdrawalLookupForm()
+    confirmation_form = None
+    verified_order = None
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+
+        # --------------------------------------------------
+        # 1. Identifikace objednávky
+        # --------------------------------------------------
+
+        if action == "lookup":
+            # Pokud už byla dříve ověřena jiná objednávka,
+            # staré ověření zahodíme.
+            request.session.pop(
+                WITHDRAWAL_SESSION_KEY,
+                None,
+            )
+
+            lookup_form = WithdrawalLookupForm(
+                request.POST
+            )
+
+            if lookup_form.is_valid():
+                order_number = (
+                    lookup_form.cleaned_data[
+                        "order_number"
+                    ]
+                )
+                email = lookup_form.cleaned_data[
+                    "email"
+                ]
+
+                verified_order = (
+                    Order.objects
+                    .prefetch_related("items")
+                    .filter(
+                        number__iexact=order_number,
+                        email__iexact=email,
+                    )
+                    .first()
+                )
+
+                if verified_order is None:
+                    lookup_form.add_error(
+                        None,
+                        (
+                            "Objednávku se zadaným číslem "
+                            "a e-mailem se nepodařilo ověřit."
+                        ),
+                    )
+
+                else:
+                    request.session[
+                        WITHDRAWAL_SESSION_KEY
+                    ] = str(
+                        verified_order.public_token
+                    )
+
+                    confirmation_form = (
+                        WithdrawalConfirmationForm(
+                            order=verified_order
+                        )
+                    )
+
+        # --------------------------------------------------
+        # 2. Potvrzení odstoupení
+        # --------------------------------------------------
+
+        elif action == "confirm":
+            posted_token = (
+                request.POST.get("order_token")
+                or ""
+            )
+
+            verified_token = (
+                request.session.get(
+                    WITHDRAWAL_SESSION_KEY
+                )
+            )
+
+            if (
+                not verified_token
+                or posted_token != verified_token
+            ):
+                lookup_form.add_error(
+                    None,
+                    (
+                        "Ověření objednávky vypršelo "
+                        "nebo není platné. "
+                        "Ověřte objednávku znovu."
+                    ),
+                )
+
+            else:
+                verified_order = (
+                    Order.objects
+                    .prefetch_related("items")
+                    .filter(
+                        public_token=verified_token
+                    )
+                    .first()
+                )
+
+                if verified_order is None:
+                    request.session.pop(
+                        WITHDRAWAL_SESSION_KEY,
+                        None,
+                    )
+
+                    lookup_form.add_error(
+                        None,
+                        (
+                            "Objednávku se nepodařilo "
+                            "ověřit. Zkuste to znovu."
+                        ),
+                    )
+
+                else:
+                    confirmation_form = (
+                        WithdrawalConfirmationForm(
+                            request.POST,
+                            order=verified_order,
+                        )
+                    )
+
+                    if confirmation_form.is_valid():
+                        scope = (
+                            confirmation_form
+                            .cleaned_data["scope"]
+                        )
+
+                        order_items = list(
+                            verified_order.items.all()
+                        )
+
+                        item_map = {
+                            str(item.id): item
+                            for item in order_items
+                        }
+
+                        if (
+                            scope
+                            == WithdrawalRequest.Scope.WHOLE_ORDER
+                        ):
+                            selected_items = order_items
+
+                        else:
+                            selected_ids = (
+                                confirmation_form
+                                .cleaned_data["items"]
+                            )
+
+                            selected_items = [
+                                item_map[item_id]
+                                for item_id in selected_ids
+                            ]
+
+                        items_snapshot = [
+                            _build_withdrawal_item_snapshot(
+                                item
+                            )
+                            for item in selected_items
+                        ]
+
+                        statement_text = (
+                            _build_withdrawal_statement(
+                                verified_order,
+                                scope,
+                                selected_items,
+                            )
+                        )
+
+                        withdrawal_request = (
+                            WithdrawalRequest.objects.create(
+                                order=verified_order,
+                                scope=scope,
+                                items_snapshot=items_snapshot,
+                                customer_name=(
+                                    verified_order.customer_name
+                                ),
+                                confirmation_email=(
+                                    verified_order.email
+                                ),
+                                statement_text=statement_text,
+                            )
+                        )
+
+                        # Ověření už po přijetí odstoupení
+                        # nepotřebujeme.
+                        request.session.pop(
+                            WITHDRAWAL_SESSION_KEY,
+                            None,
+                        )
+
+                        email_sent = (
+                            send_withdrawal_confirmation_email(
+                                withdrawal_request.id
+                            )
+                        )
+
+                        send_withdrawal_staff_notification_email(
+                            withdrawal_request.id
+                        )
+
+                        messages.success(
+                            request,
+                            (
+                                "Vaše odstoupení od smlouvy "
+                                "jsme přijali."
+                            ),
+                        )
+
+                        if email_sent:
+                            messages.success(
+                                request,
+                                (
+                                    "Potvrzení jsme odeslali "
+                                    f"na e-mail "
+                                    f"{withdrawal_request.confirmation_email}."
+                                ),
+                            )
+
+                        else:
+                            messages.warning(
+                                request,
+                                (
+                                    "Odstoupení bylo přijato, "
+                                    "ale potvrzovací e-mail se "
+                                    "nepodařilo odeslat. "
+                                    "Vaše odstoupení je přesto "
+                                    "v systému uložené."
+                                ),
+                            )
+
+                        return redirect(
+                            "shop:withdrawal"
+                        )
+
+        else:
+            lookup_form.add_error(
+                None,
+                "Neplatný požadavek.",
+            )
+
+    return render(
         request,
-        document,
+        "shop/withdrawal.html",
+        {
+            "document": document,
+            "lookup_form": lookup_form,
+            "confirmation_form": confirmation_form,
+            "verified_order": verified_order,
+        },
     )
 
 
@@ -240,9 +537,13 @@ def withdrawal_version(request, version):
         is_published=True,
     )
 
-    return _render_legal_document(
+    return render(
         request,
-        document,
+        "shop/withdrawal.html",
+        {
+            "document": document,
+            "is_historical_version": True,
+        },
     )
 
 
@@ -1720,7 +2021,8 @@ def staff_legal_document_list(request):
 def staff_legal_document_create(request):
     if request.method == "POST":
         form = ShopLegalDocumentForm(
-            request.POST
+            request.POST,
+            request.FILES,
         )
 
         if form.is_valid():
@@ -1802,6 +2104,7 @@ def staff_legal_document_edit(
     if request.method == "POST":
         form = ShopLegalDocumentForm(
             request.POST,
+            request.FILES,
             instance=document,
         )
 
@@ -1825,6 +2128,7 @@ def staff_legal_document_edit(
         form = ShopLegalDocumentForm(
             instance=document,
         )
+
         form.fields[
             "document_type"
         ].disabled = True
@@ -1853,17 +2157,31 @@ def staff_legal_document_new_version(
         id=document_id,
     )
 
-    initial = {
-        "document_type": source.document_type,
-        "title": source.title,
-        "body": source.body,
-        "effective_from": timezone.localdate(),
-    }
+    # Připravíme novou, zatím neuloženou verzi.
+    # Text i případná příloha vycházejí ze zdrojové verze.
+    document = ShopLegalDocument(
+        document_type=source.document_type,
+        title=source.title,
+        body=source.body,
+        effective_from=timezone.localdate(),
+        attachment=(
+            source.attachment.name
+            if source.attachment
+            else ""
+        ),
+        attachment_original_filename=(
+            source.attachment_original_filename
+        ),
+        attachment_label=(
+            source.attachment_label
+        ),
+    )
 
     if request.method == "POST":
         form = ShopLegalDocumentForm(
             request.POST,
-            initial=initial,
+            request.FILES,
+            instance=document,
         )
 
         form.fields[
@@ -1875,6 +2193,8 @@ def staff_legal_document_new_version(
                 commit=False
             )
 
+            # Typ verze vždy přebíráme ze zdrojového
+            # dokumentu, nespoléháme na POST.
             document.document_type = (
                 source.document_type
             )
@@ -1906,7 +2226,7 @@ def staff_legal_document_new_version(
 
     else:
         form = ShopLegalDocumentForm(
-            initial=initial
+            instance=document,
         )
 
         form.fields[
@@ -1918,7 +2238,12 @@ def staff_legal_document_new_version(
         "shop/staff_legal_document_form.html",
         {
             "form": form,
+
+            # Záměrně None. Nová verze ještě není
+            # uložená, takže nesmíme zobrazit sekci
+            # "Publikovat" ani neexistující číslo verze.
             "document": None,
+
             "page_title": (
                 f"Nová verze: {source.title}"
             ),

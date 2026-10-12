@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+{% load static %}
+{% load content_tags %}
+
+
+{% block title %}
+  {{ document.title }} | Lieder Society
+{% endblock title %}
+
+
+{% block extra_css %}
+  {{ block.super }}
+
+  <link
+    rel="stylesheet"
+    href="{% static 'shop/shop.css' %}"
+  >
+{% endblock extra_css %}
+
+
+{% block content %}
+  <main class="shop-page">
+
+    <article class="shop-legal-document">
+
+        {% if messages %}
+        <div class="shop-withdrawal-messages">
+            {% for message in messages %}
+            <div
+                class="
+                shop-withdrawal-message
+                {% if message.tags %}
+                    shop-withdrawal-message--{{ message.tags }}
+                {% endif %}
+                "
+            >
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+      <header class="shop-legal-document__header">
+        <p class="shop-eyebrow">
+          Lieder Society e-shop
+        </p>
+
+        <h1>{{ document.title }}</h1>
+
+        <p class="shop-legal-document__meta">
+          Verze {{ document.version }}
+          · účinné od
+          {{ document.effective_from|date:"j. n. Y" }}
+        </p>
+
+        {% if is_historical_version %}
+          <p class="shop-legal-document__meta">
+            Zobrazená stránka je historickou verzí dokumentu.
+          </p>
+        {% endif %}
+      </header>
+
+
+      <div class="shop-legal-document__body">
+        {{ document.body|content_richtext }}
+      </div>
+
+
+      {% if document.attachment %}
+        <section class="shop-withdrawal-section">
+          <h2>Vzorový formulář</h2>
+
+          <p>
+            Pro odstoupení od smlouvy můžete využít
+            také vzorový formulář ke stažení.
+          </p>
+
+          <a
+            href="{{ document.attachment.url }}"
+            class="shop-primary-button"
+            download
+          >
+            {% if document.attachment_label %}
+              {{ document.attachment_label }}
+            {% else %}
+              Stáhnout vzorový formulář
+            {% endif %}
+          </a>
+        </section>
+      {% endif %}
+
+
+      {% if not is_historical_version %}
+        <section
+          class="shop-withdrawal-section"
+          id="withdrawal-form"
+        >
+          <header class="shop-withdrawal-section__header">
+            <h2>Online odstoupení od smlouvy</h2>
+
+            <p>
+              Od smlouvy můžete odstoupit také
+              prostřednictvím tohoto online formuláře.
+            </p>
+          </header>
+
+
+          {% if verified_order and confirmation_form %}
+
+            {# --------------------------------------------- #}
+            {# 2. krok – potvrzení odstoupení                #}
+            {# --------------------------------------------- #}
+
+            <div class="shop-withdrawal-step">
+              <p class="shop-eyebrow">
+                Krok 2 ze 2
+              </p>
+
+              <h3>Potvrzení odstoupení od smlouvy</h3>
+
+              <p>
+                Zkontrolujte údaje objednávky a zvolte,
+                zda odstupujete od smlouvy v rozsahu celé
+                objednávky, nebo pouze konkrétních položek.
+              </p>
+
+
+              <dl class="shop-withdrawal-order-summary">
+                <div>
+                  <dt>Jméno</dt>
+                  <dd>
+                    {{ verified_order.customer_name }}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Číslo objednávky</dt>
+                  <dd>
+                    {{ verified_order.number }}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>Datum objednávky</dt>
+                  <dd>
+                    {{ verified_order.created_at|date:"j. n. Y" }}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt>E-mail pro potvrzení</dt>
+                  <dd>
+                    {{ verified_order.email }}
+                  </dd>
+                </div>
+              </dl>
+
+
+              <div class="shop-withdrawal-order-items">
+                <h4>Položky objednávky</h4>
+
+                <ul>
+                  {% for item in verified_order.items.all %}
+                    <li>
+                      <strong>
+                        {{ item.product_name }}
+                      </strong>
+
+                      {% if item.variant_name %}
+                        – {{ item.variant_name }}
+                      {% endif %}
+
+                      × {{ item.quantity }}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+
+
+              <form method="post">
+                {% csrf_token %}
+
+                <input
+                  type="hidden"
+                  name="action"
+                  value="confirm"
+                >
+
+                {{ confirmation_form.order_token }}
+
+
+                {% if confirmation_form.non_field_errors %}
+                  <div class="shop-form-errors">
+                    {{ confirmation_form.non_field_errors }}
+                  </div>
+                {% endif %}
+
+
+                <fieldset class="shop-withdrawal-scope">
+                  <legend>
+                    {{ confirmation_form.scope.label }}
+                  </legend>
+
+                  {{ confirmation_form.scope }}
+
+                  {{ confirmation_form.scope.errors }}
+                </fieldset>
+
+
+                <div
+                  id="withdrawal-selected-items"
+                  class="shop-withdrawal-selected-items"
+                  hidden
+                >
+                  <h4>
+                    {{ confirmation_form.items.label }}
+                  </h4>
+
+                  <p class="muted">
+                    Vyberte položky, kterých se odstoupení
+                    týká.
+                  </p>
+
+                  {{ confirmation_form.items }}
+
+                  {{ confirmation_form.items.errors }}
+                </div>
+
+
+                <div class="shop-withdrawal-confirmation-note">
+                  <p>
+                    Odesláním formuláře činíte prohlášení
+                    o odstoupení od smlouvy v uvedeném
+                    rozsahu.
+                  </p>
+
+                  <p>
+                    Na e-mail
+                    <strong>
+                      {{ verified_order.email }}
+                    </strong>
+                    Vám následně zašleme potvrzení
+                    o přijetí odstoupení.
+                  </p>
+                </div>
+
+
+                <button
+                  type="submit"
+                  class="shop-primary-button"
+                >
+                  Potvrdit odstoupení od smlouvy
+                </button>
+              </form>
+            </div>
+
+          {% else %}
+
+            {# --------------------------------------------- #}
+            {# 1. krok – identifikace objednávky             #}
+            {# --------------------------------------------- #}
+
+            <div class="shop-withdrawal-step">
+              <p class="shop-eyebrow">
+                Krok 1 ze 2
+              </p>
+
+              <h3>Identifikace objednávky</h3>
+
+              <p>
+                Zadejte číslo objednávky a e-mailovou
+                adresu, kterou jste použili při jejím
+                vytvoření.
+              </p>
+
+
+              <form method="post">
+                {% csrf_token %}
+
+                <input
+                  type="hidden"
+                  name="action"
+                  value="lookup"
+                >
+
+
+                {% if lookup_form.non_field_errors %}
+                  <div class="shop-form-errors">
+                    {{ lookup_form.non_field_errors }}
+                  </div>
+                {% endif %}
+
+
+                <div class="form-group">
+                  {{ lookup_form.order_number.label_tag }}
+                  {{ lookup_form.order_number }}
+
+                  {{ lookup_form.order_number.errors }}
+                </div>
+
+
+                <div class="form-group">
+                  {{ lookup_form.email.label_tag }}
+                  {{ lookup_form.email }}
+
+                  {{ lookup_form.email.errors }}
+                </div>
+
+
+                <button
+                  type="submit"
+                  class="shop-primary-button"
+                >
+                  Pokračovat
+                </button>
+              </form>
+            </div>
+
+          {% endif %}
+        </section>
+      {% endif %}
+
+
+      {% include "shop/includes/legal_links.html" %}
+
+    </article>
+
+  </main>
+
+
+  {% if confirmation_form %}
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const scopeFields = document.querySelectorAll(
+          'input[name="scope"]'
+        );
+
+        const selectedItems = document.getElementById(
+          "withdrawal-selected-items"
+        );
+
+        if (!scopeFields.length || !selectedItems) {
+          return;
+        }
+
+        function updateSelectedItemsVisibility() {
+          const selectedScope = document.querySelector(
+            'input[name="scope"]:checked'
+          );
+
+          const showSelectedItems =
+            selectedScope
+            && selectedScope.value === "selected_items";
+
+          selectedItems.hidden = !showSelectedItems;
+        }
+
+        scopeFields.forEach(function (field) {
+          field.addEventListener(
+            "change",
+            updateSelectedItemsVisibility
+          );
+        });
+
+        updateSelectedItemsVisibility();
+      });
+    </script>
+  {% endif %}
+
+{% endblock content %}

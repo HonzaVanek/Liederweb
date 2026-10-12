@@ -2,7 +2,7 @@ from django import forms
 from django.forms import inlineformset_factory, BaseInlineFormSet
 from pathlib import Path
 
-from .models import Product, ProductVariant, Order, ShippingMethod, ProductVariantImage, AlbumTrack, ShopLegalDocument
+from .models import Product, ProductVariant, Order, ShippingMethod, ProductVariantImage, AlbumTrack, ShopLegalDocument, WithdrawalRequest
 from .cart import SessionCart
 from shop.constants import DIGITAL_CONTENT_CONSENT_TEXT
 
@@ -935,7 +935,10 @@ class ShopLegalDocumentForm(forms.ModelForm):
             "title",
             "body",
             "effective_from",
+            "attachment",
+            "attachment_label",
         ]
+
         widgets = {
             "document_type": forms.Select(
                 attrs={"class": "form-control"}
@@ -944,17 +947,43 @@ class ShopLegalDocumentForm(forms.ModelForm):
             "title": forms.TextInput(
                 attrs={"class": "form-control"}
             ),
+
             "effective_from": forms.DateInput(
                 attrs={
                     "class": "form-control",
                     "type": "date",
                 }
             ),
+
             "body": forms.Textarea(
                 attrs={
-                    "class": "form-control content-richtext-textarea",
+                    "class": (
+                        "form-control "
+                        "content-richtext-textarea"
+                    ),
                     "rows": 24,
                     "data-content-richtext": "1",
+                }
+            ),
+
+            "attachment": forms.ClearableFileInput(
+                attrs={
+                    "class": "form-control",
+                    "accept": (
+                        ".docx,.pdf,"
+                        "application/vnd.openxmlformats-"
+                        "officedocument.wordprocessingml.document,"
+                        "application/pdf"
+                    ),
+                }
+            ),
+
+            "attachment_label": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": (
+                        "Stáhnout vzorový formulář"
+                    ),
                 }
             ),
         }
@@ -963,10 +992,23 @@ class ShopLegalDocumentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         self.fields["body"].help_text = (
-            "Pro základní formátování označ text a použij tlačítka nad polem. "
-            "Tučně vloží **text**, odrážka přidá '- ' na začátek řádku. "
-            "Prázdný řádek vytvoří nový odstavec, běžný Enter nový řádek."
+            "Pro základní formátování označ text a použij "
+            "tlačítka nad polem. Tučně vloží **text**, "
+            "odrážka přidá '- ' na začátek řádku. "
+            "Prázdný řádek vytvoří nový odstavec, "
+            "běžný Enter nový řádek."
         )
+
+        self.fields["attachment"].help_text = (
+            "Volitelná příloha k dokumentu. "
+            "Pro odstoupení od smlouvy zde nahrajte "
+            "vzorový formulář ve formátu DOCX nebo PDF."
+        )
+
+        if not self.instance.pk:
+            self.fields["attachment_label"].initial = (
+                "Stáhnout vzorový formulář"
+            )
 
     def clean_title(self):
         return (
@@ -986,3 +1028,212 @@ class ShopLegalDocumentForm(forms.ModelForm):
             )
 
         return body
+
+    def clean_attachment(self):
+        attachment = self.cleaned_data.get("attachment")
+
+        if not attachment:
+            return attachment
+
+        filename = attachment.name.lower()
+
+        if not (
+            filename.endswith(".docx")
+            or filename.endswith(".pdf")
+        ):
+            raise forms.ValidationError(
+                "Příloha musí být ve formátu DOCX nebo PDF."
+            )
+
+        if attachment.size > 10 * 1024 * 1024:
+            raise forms.ValidationError(
+                "Příloha může mít maximálně 10 MB."
+            )
+
+        return attachment
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        document_type = cleaned_data.get("document_type")
+        attachment = cleaned_data.get("attachment")
+
+        if (
+            attachment
+            and document_type
+            != ShopLegalDocument.DocumentType.WITHDRAWAL
+        ):
+            self.add_error(
+                "attachment",
+                (
+                    "Přílohu nyní používáme pouze u dokumentu "
+                    "Odstoupení od smlouvy."
+                ),
+            )
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        document = super().save(commit=False)
+
+        if "attachment" in self.changed_data:
+            attachment = self.cleaned_data.get("attachment")
+
+            if attachment:
+                document.attachment_original_filename = (
+                    attachment.name
+                )
+            else:
+                document.attachment_original_filename = ""
+
+        if commit:
+            document.save()
+
+        return document
+
+
+class WithdrawalLookupForm(forms.Form):
+    order_number = forms.CharField(
+        label="Číslo objednávky",
+        max_length=40,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Např. LS-2026-000123",
+                "autocomplete": "off",
+            }
+        ),
+    )
+
+    email = forms.EmailField(
+        label="E-mail použitý v objednávce",
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-control",
+                "autocomplete": "email",
+            }
+        ),
+    )
+
+    def clean_order_number(self):
+        return (
+            self.cleaned_data["order_number"]
+            .strip()
+            .upper()
+        )
+
+    def clean_email(self):
+        return (
+            self.cleaned_data["email"]
+            .strip()
+            .lower()
+        )
+
+class WithdrawalConfirmationForm(forms.Form):
+    SCOPE_WHOLE_ORDER = "whole_order"
+    SCOPE_SELECTED_ITEMS = "selected_items"
+
+    SCOPE_CHOICES = [
+        (
+            SCOPE_WHOLE_ORDER,
+            "Odstupuji od smlouvy v rozsahu celé objednávky",
+        ),
+        (
+            SCOPE_SELECTED_ITEMS,
+            "Odstupuji pouze od smlouvy týkající se vybraných položek",
+        ),
+    ]
+
+    order_token = forms.UUIDField(
+        widget=forms.HiddenInput(),
+    )
+
+    scope = forms.ChoiceField(
+        label="Rozsah odstoupení",
+        choices=SCOPE_CHOICES,
+        widget=forms.RadioSelect,
+        initial=SCOPE_WHOLE_ORDER,
+    )
+
+    items = forms.MultipleChoiceField(
+        label="Položky, kterých se odstoupení týká",
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    def __init__(
+        self,
+        *args,
+        order,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+
+        self.order = order
+
+        self.fields["order_token"].initial = (
+            order.public_token
+        )
+
+        self.fields["items"].choices = [
+            (
+                str(item.id),
+                (
+                    f"{item.product_name} – "
+                    f"{item.variant_name} "
+                    f"({item.quantity} ks)"
+                ),
+            )
+            for item in order.items.all()
+        ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        order_token = cleaned_data.get(
+            "order_token"
+        )
+
+        if (
+            order_token
+            and order_token != self.order.public_token
+        ):
+            raise forms.ValidationError(
+                "Objednávku se nepodařilo ověřit."
+            )
+
+        scope = cleaned_data.get("scope")
+        items = cleaned_data.get("items") or []
+
+        if (
+            scope == self.SCOPE_SELECTED_ITEMS
+            and not items
+        ):
+            self.add_error(
+                "items",
+                (
+                    "Vyberte alespoň jednu položku, "
+                    "které se odstoupení týká."
+                ),
+            )
+
+        if scope == self.SCOPE_WHOLE_ORDER:
+            items = []
+            cleaned_data["items"] = []
+
+        valid_item_ids = {
+            str(item.id)
+            for item in self.order.items.all()
+        }
+
+        invalid_item_ids = (
+            set(items) - valid_item_ids
+        )
+
+        if invalid_item_ids:
+            raise forms.ValidationError(
+                "Některá vybraná položka nepatří "
+                "k této objednávce."
+            )
+
+        return cleaned_data

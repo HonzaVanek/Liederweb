@@ -645,6 +645,35 @@ body.dark-mode .rozesilac-main a.shop-action-button:hover {
     margin-top: 16px;
 }
 
+.shop-legal-attachment-fields {
+    margin: 28px 0;
+    padding: 18px;
+    border: 1px solid #d4d4d4;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.shop-legal-attachment-fields h3 {
+    margin: 0 0 6px;
+}
+
+.shop-legal-attachment-fields > .muted {
+    margin: 0 0 20px;
+}
+
+.shop-legal-attachment-fields .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.shop-legal-attachment-fields[hidden] {
+    display: none;
+}
+
+body.dark-mode .shop-legal-attachment-fields {
+    background: #202020;
+    border-color: #444;
+}
+
 body.dark-mode .shop-track-sale-info {
     background: #202020;
     border-color: #444;

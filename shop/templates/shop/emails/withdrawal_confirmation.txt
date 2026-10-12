@@ -1,0 +1,30 @@
+Dobrý den,
+
+potvrzujeme, že jsme dne {{ withdrawal.submitted_at|date:"j. n. Y" }} v {{ withdrawal.submitted_at|date:"H:i" }} prostřednictvím našeho internetového obchodu přijali Vaše odstoupení od smlouvy týkající se objednávky č. {{ order.number }}.
+
+Obsah Vašeho prohlášení:
+
+„{{ withdrawal.statement_text }}“
+
+Datum a čas odeslání odstoupení: {{ withdrawal.submitted_at|date:"j. n. Y H:i" }}
+
+{% if order.requires_shipping %}
+Pokud se odstoupení týká fyzického zboží, zašlete nebo předejte nám zboží bez zbytečného odkladu, nejpozději do 14 dnů od odstoupení od smlouvy, na adresu:
+
+Lieder Society z.s.
+Střimelická 2504/24
+141 00 Praha 4
+
+Přímé náklady spojené s vrácením zboží nese spotřebitel, pokud nebylo dohodnuto jinak.
+
+{% endif %}
+Přijaté peněžní prostředky včetně nákladů na nejlevnější nabízený způsob dodání Vám vrátíme v souladu s obchodními podmínkami a platnými právními předpisy. U fyzického zboží můžeme s vrácením platby počkat do doby, než zboží obdržíme nebo než prokážete jeho odeslání, podle toho, co nastane dříve.
+
+Tento e-mail je automatickým potvrzením přijetí Vašeho odstoupení od smlouvy. Uschovejte si jej prosím pro případnou další komunikaci.
+
+S pozdravem
+
+Lieder Society z.s.
+Střimelická 2504/24, 141 00 Praha 4
+IČ: 09862455
+info@lieder-society.cz

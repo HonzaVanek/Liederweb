@@ -18,6 +18,7 @@
   >
 {% endblock extra_css %}
 
+
 {% block rozesilac_content %}
   <div class="shop-admin-page">
 
@@ -39,19 +40,30 @@
       </div>
     </div>
 
+
     <section class="content-section">
 
-      <form method="post">
+      <form
+        method="post"
+        enctype="multipart/form-data"
+      >
         {% csrf_token %}
 
         {{ form.non_field_errors }}
 
         {% if form.errors %}
-          <div style="background:#fee; padding:15px; margin-bottom:20px;">
+          <div
+            style="
+              background:#fee;
+              padding:15px;
+              margin-bottom:20px;
+            "
+          >
             <strong>FORM ERRORS:</strong>
             <pre>{{ form.errors }}</pre>
           </div>
         {% endif %}
+
 
         <div class="form-group">
           {{ form.document_type.label_tag }}
@@ -59,17 +71,20 @@
           {{ form.document_type.errors }}
         </div>
 
+
         <div class="form-group">
           {{ form.title.label_tag }}
           {{ form.title }}
           {{ form.title.errors }}
         </div>
 
+
         <div class="form-group">
           {{ form.effective_from.label_tag }}
           {{ form.effective_from }}
           {{ form.effective_from.errors }}
         </div>
+
 
         <div class="form-group content-form-row">
           {{ form.body.label_tag }}
@@ -114,12 +129,57 @@
           {{ form.body.errors }}
         </div>
 
+
+        <div
+          id="legal-attachment-fields"
+          class="shop-legal-attachment-fields"
+          {% if form.document_type.value != "withdrawal" %}
+            hidden
+          {% endif %}
+        >
+          <h3>Vzorový formulář ke stažení</h3>
+
+          <p class="muted">
+            Tato příloha se zobrazí na veřejné stránce
+            „Odstoupení od smlouvy“ jako soubor ke stažení.
+          </p>
+
+
+          <div class="form-group">
+            {{ form.attachment.label_tag }}
+            {{ form.attachment }}
+
+            {% if form.attachment.help_text %}
+              <small class="content-form-help">
+                {{ form.attachment.help_text }}
+              </small>
+            {% endif %}
+
+            {{ form.attachment.errors }}
+          </div>
+
+
+          <div class="form-group">
+            {{ form.attachment_label.label_tag }}
+            {{ form.attachment_label }}
+
+            <small class="content-form-help">
+              Text odkazu nebo tlačítka, které zákazník
+              uvidí na veřejné stránce.
+            </small>
+
+            {{ form.attachment_label.errors }}
+          </div>
+        </div>
+
+
         <button type="submit">
           Uložit
         </button>
       </form>
 
     </section>
+
 
     {% if document and not document.is_published %}
       <section class="content-section">
@@ -146,5 +206,36 @@
 
   </div>
 
-<script src="{% static 'content/content_staff.js' %}"></script>
+
+  <script src="{% static 'content/content_staff.js' %}"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const documentTypeField = document.getElementById(
+        "{{ form.document_type.id_for_label }}"
+      );
+
+      const attachmentFields = document.getElementById(
+        "legal-attachment-fields"
+      );
+
+      if (!documentTypeField || !attachmentFields) {
+        return;
+      }
+
+      function updateAttachmentFields() {
+        const isWithdrawal =
+          documentTypeField.value === "withdrawal";
+
+        attachmentFields.hidden = !isWithdrawal;
+      }
+
+      documentTypeField.addEventListener(
+        "change",
+        updateAttachmentFields
+      );
+
+      updateAttachmentFields();
+    });
+  </script>
 {% endblock rozesilac_content %}

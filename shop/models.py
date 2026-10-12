@@ -411,6 +411,26 @@ class ShopLegalDocument(models.Model):
         ),
     )
 
+    attachment = models.FileField(
+        "příloha ke stažení",
+        upload_to="shop/legal/attachments/",
+        blank=True,
+    )
+
+    attachment_original_filename = models.CharField(
+        "původní název přílohy",
+        max_length=255,
+        blank=True,
+        editable=False,
+    )
+
+    attachment_label = models.CharField(
+        "text tlačítka přílohy",
+        max_length=120,
+        blank=True,
+        default="",
+    )
+
     effective_from = models.DateField(
         "účinné od",
         db_index=True,
@@ -837,6 +857,81 @@ class Order(models.Model):
 
         return f"{self.created_at:%Y}{self.pk:06d}"
 
+
+class WithdrawalRequest(models.Model):
+    class Scope(models.TextChoices):
+        WHOLE_ORDER = (
+            "whole_order",
+            "Celá objednávka",
+        )
+        SELECTED_ITEMS = (
+            "selected_items",
+            "Konkrétní položky",
+        )
+
+    order = models.ForeignKey(
+        Order,
+        verbose_name="objednávka",
+        on_delete=models.PROTECT,
+        related_name="withdrawal_requests",
+    )
+
+    scope = models.CharField(
+        "rozsah odstoupení",
+        max_length=30,
+        choices=Scope.choices,
+        default=Scope.WHOLE_ORDER,
+    )
+
+    items_snapshot = models.JSONField(
+        "položky odstoupení",
+        default=list,
+        blank=True,
+    )
+
+    customer_name = models.CharField(
+        "jméno zákazníka",
+        max_length=200,
+    )
+
+    confirmation_email = models.EmailField(
+        "e-mail pro potvrzení",
+    )
+
+    statement_text = models.TextField(
+        "obsah prohlášení",
+    )
+
+    submitted_at = models.DateTimeField(
+        "odesláno",
+        auto_now_add=True,
+        db_index=True,
+    )
+
+    confirmation_sent_at = models.DateTimeField(
+        "potvrzení odesláno",
+        null=True,
+        blank=True,
+    )
+
+    confirmation_email_error = models.TextField(
+        "chyba potvrzovacího e-mailu",
+        blank=True,
+    )
+
+    class Meta:
+        ordering = (
+            "-submitted_at",
+            "-id",
+        )
+        verbose_name = "odstoupení od smlouvy"
+        verbose_name_plural = "odstoupení od smlouvy"
+
+    def __str__(self):
+        return (
+            f"Odstoupení – {self.order.number} "
+            f"– {self.customer_name}"
+        )
 
 class OrderItem(models.Model):
     order = models.ForeignKey(

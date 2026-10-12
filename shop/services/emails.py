@@ -6,7 +6,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.urls import reverse
 
-from shop.models import Order
+from shop.models import Order, WithdrawalRequest
 from shop.services.invoice_pdf import build_invoice_pdf, build_invoice_pdf_filename
 from shop.services.legal import build_legal_document_text
 
@@ -395,5 +395,186 @@ def send_digital_ready_email(order_id):
         digital_ready_email_sent_at=timezone.now(),
         digital_ready_email_error="",
     )
+
+    return True
+
+
+def send_withdrawal_confirmation_email(
+    withdrawal_request_id,
+):
+    withdrawal = (
+        WithdrawalRequest.objects
+        .select_related("order")
+        .get(pk=withdrawal_request_id)
+    )
+
+    # Ochrana proti dvojímu odeslání.
+    if withdrawal.confirmation_sent_at:
+        return True
+
+    order = withdrawal.order
+
+    try:
+        context = {
+            "withdrawal": withdrawal,
+            "order": order,
+        }
+
+        text_body = render_to_string(
+            "shop/emails/withdrawal_confirmation.txt",
+            context,
+        )
+
+        html_body = render_to_string(
+            "shop/emails/withdrawal_confirmation.html",
+            context,
+        )
+
+        reply_to = []
+
+        if settings.SHOP_EMAIL_REPLY_TO:
+            reply_to.append(
+                settings.SHOP_EMAIL_REPLY_TO
+            )
+
+        with get_shop_email_connection() as connection:
+            message = EmailMultiAlternatives(
+                subject=(
+                    "Potvrzení přijetí odstoupení od smlouvy "
+                    f"– objednávka č. {order.number}"
+                ),
+                body=text_body,
+                from_email=settings.SHOP_EMAIL_FROM,
+                to=[
+                    withdrawal.confirmation_email
+                ],
+                reply_to=reply_to,
+                connection=connection,
+            )
+
+            message.attach_alternative(
+                html_body,
+                "text/html",
+            )
+
+            sent_count = message.send(
+                fail_silently=False
+            )
+
+            if sent_count != 1:
+                raise RuntimeError(
+                    "SMTP server nepotvrdil "
+                    "odeslání potvrzení odstoupení."
+                )
+
+    except Exception as exc:
+        logger.exception(
+            "Nepodařilo se odeslat potvrzení "
+            "odstoupení od smlouvy pro objednávku %s.",
+            order.number,
+        )
+
+        WithdrawalRequest.objects.filter(
+            pk=withdrawal.pk
+        ).update(
+            confirmation_email_error=str(exc)[:2000],
+        )
+
+        return False
+
+    WithdrawalRequest.objects.filter(
+        pk=withdrawal.pk
+    ).update(
+        confirmation_sent_at=timezone.now(),
+        confirmation_email_error="",
+    )
+
+    return True
+
+
+
+
+def send_withdrawal_staff_notification_email(
+    withdrawal_request_id,
+):
+    withdrawal = (
+        WithdrawalRequest.objects
+        .select_related("order")
+        .get(pk=withdrawal_request_id)
+    )
+
+    order = withdrawal.order
+
+    recipients = getattr(
+        settings,
+        "SHOP_STAFF_NOTIFICATION_EMAILS",
+        [],
+    )
+
+    if not recipients:
+        logger.warning(
+            "SHOP_STAFF_NOTIFICATION_EMAILS není nastaveno. "
+            "Staff upozornění na odstoupení nebylo odesláno."
+        )
+        return False
+
+    try:
+        context = {
+            "withdrawal": withdrawal,
+            "order": order,
+        }
+
+        text_body = render_to_string(
+            "shop/emails/withdrawal_staff_notification.txt",
+            context,
+        )
+
+        html_body = render_to_string(
+            "shop/emails/withdrawal_staff_notification.html",
+            context,
+        )
+
+        reply_to = []
+
+        if settings.SHOP_EMAIL_REPLY_TO:
+            reply_to.append(
+                settings.SHOP_EMAIL_REPLY_TO
+            )
+
+        with get_shop_email_connection() as connection:
+            message = EmailMultiAlternatives(
+                subject=(
+                    "Nové odstoupení od smlouvy "
+                    f"– objednávka {order.number}"
+                ),
+                body=text_body,
+                from_email=settings.SHOP_EMAIL_FROM,
+                to=list(recipients),
+                reply_to=reply_to,
+                connection=connection,
+            )
+
+            message.attach_alternative(
+                html_body,
+                "text/html",
+            )
+
+            sent_count = message.send(
+                fail_silently=False
+            )
+
+            if sent_count != 1:
+                raise RuntimeError(
+                    "SMTP server nepotvrdil odeslání "
+                    "staff upozornění na odstoupení."
+                )
+
+    except Exception:
+        logger.exception(
+            "Nepodařilo se odeslat staff upozornění "
+            "na odstoupení od smlouvy pro objednávku %s.",
+            order.number,
+        )
+        return False
 
     return True
