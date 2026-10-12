@@ -175,7 +175,10 @@ BOT_USER_AGENT_PARTS = (
     "newsai/",
     "eshoplist/",
     "beacon-prober/",
-    "domainatlas"
+    "domainatlas",
+    "recraft-image-dataset",
+    "colectare-domenii",
+    "ct-sender-poc"
 )
 
 BOT_REFERER_PARTS = (
@@ -2485,7 +2488,21 @@ class SiteVisitStatsMiddleware:
                 bot_like_reason = "subnet_swarm"
 
 
-        if not is_known_bot and not is_bot_like:
+        # Rapid navigation sledujeme jen u skutečných
+        # HTML document GET requestů.
+        # Nechceme do stejného rapid okna započítávat
+        # beacony, assety, API requesty, prefetch apod.,
+        # protože pak může normální přechod
+        # homepage -> detail vypadat jako 3+ rychlé hity.
+        if (
+            not is_known_bot
+            and not is_bot_like
+            and request.method == "GET"
+            and not self.is_ignored_path(path)
+            and "text/html" in content_type
+            and not is_prefetch_or_prerender
+            and is_document_request
+        ):
             visitor_is_confirmed = (
                 self.has_js_browser_confirmation(
                     today,
