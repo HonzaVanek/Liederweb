@@ -1116,6 +1116,7 @@ def checkout(request):
     form = CheckoutForm(
         request.POST or None,
         requires_shipping=cart.requires_shipping,
+        contains_digital_content=cart.contains_digital_content,
     )
 
     if request.method == "POST" and form.is_valid():

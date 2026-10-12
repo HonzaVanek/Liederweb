@@ -4,6 +4,7 @@ from pathlib import Path
 
 from .models import Product, ProductVariant, Order, ShippingMethod, ProductVariantImage, AlbumTrack, ShopLegalDocument
 from .cart import SessionCart
+from shop.constants import DIGITAL_CONTENT_CONSENT_TEXT
 
 class ProductForm(forms.ModelForm):
     class Meta:
@@ -590,6 +591,11 @@ class CheckoutForm(forms.Form):
         required=True,
     )
 
+    digital_content_consent = forms.BooleanField(
+        required=False,
+        label=DIGITAL_CONTENT_CONSENT_TEXT,
+    )
+
     shipping_method = forms.ModelChoiceField(
         label="Způsob dopravy",
         queryset=ShippingMethod.objects.none(),
@@ -638,11 +644,13 @@ class CheckoutForm(forms.Form):
         self,
         *args,
         requires_shipping,
+        contains_digital_content=False,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
 
         self.requires_shipping = requires_shipping
+        self.contains_digital_content = contains_digital_content
 
         if not requires_shipping:
             self.fields.pop("address_line1")
@@ -678,6 +686,11 @@ class CheckoutForm(forms.Form):
                     f"{method.price:.2f} Kč"
                 )
             )
+
+        if not contains_digital_content:
+            self.fields.pop("digital_content_consent", None)
+        else:
+            self.fields["digital_content_consent"].required = True
 
 
     def clean_postal_code(self):

@@ -212,6 +212,19 @@
           {{ form.newsletter_consent.errors }}
         </section>
 
+      {% if cart.contains_digital_content %}
+        <section class="shop-checkout-section">
+          <div class="shop-checkout-checkbox">
+            {{ form.digital_content_consent }}
+
+            <label for="{{ form.digital_content_consent.id_for_label }}">
+              {{ form.digital_content_consent.label }}
+            </label>
+          </div>
+
+          {{ form.digital_content_consent.errors }}
+        </section>
+      {% endif %}
 
         <div class="shop-checkout-checkbox">
           {{ form.terms_accepted }}

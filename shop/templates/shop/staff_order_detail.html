@@ -202,6 +202,38 @@
             </dd>
           </div>
 
+          {% if order.contains_digital_content %}
+          <div>
+            <dt>Digitální obsah před uplynutím 14 dnů</dt>
+            <dd>
+              {% if order.digital_content_consent %}
+                Souhlas udělen
+                {% if order.digital_content_consent_at %}
+                  dne
+                  {{ order.digital_content_consent_at|date:"j. n. Y H:i" }}
+                {% endif %}
+              {% else %}
+                Souhlas nebyl udělen
+              {% endif %}
+            </dd>
+          </div>
+        {% endif %}
+
+          {% if order.digital_content_consent_text %}
+          <div>
+            <dt>Znění souhlasu</dt>
+            <dd>
+              <details>
+                <summary>Zobrazit znění</summary>
+
+                <p class="small">
+                  {{ order.digital_content_consent_text }}
+                </p>
+              </details>
+            </dd>
+          </div>
+          {% endif %}
+
         </dl>
       </section>
 

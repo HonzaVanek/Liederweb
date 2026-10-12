@@ -127,6 +127,40 @@
             několika minut.
           </p>
         {% endif %}
+        {% if order.digital_content_consent %}
+        <div
+          style="
+            margin:16px 0;
+            padding:14px;
+            background:#fff;
+            border:1px solid #ddd;
+          "
+        >
+          <p style="margin:0 0 6px;">
+            <strong>
+              Souhlas se zpřístupněním digitálního obsahu
+            </strong>
+          </p>
+
+          <p style="margin:0;">
+            {{ order.digital_content_consent_text }}
+          </p>
+
+          {% if order.digital_content_consent_at %}
+            <p
+              style="
+                margin:8px 0 0;
+                font-size:13px;
+                color:#666;
+              "
+            >
+              Souhlas udělen:
+              {{ order.digital_content_consent_at|date:"j. n. Y H:i" }}
+            </p>
+          {% endif %}
+        </div>
+        {% endif %}
+
 
         <p style="margin:0 0 16px;">
           Stav objednávky a soubory ke stažení

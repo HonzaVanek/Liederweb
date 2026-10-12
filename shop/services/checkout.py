@@ -11,6 +11,7 @@ from shop.services.newsletter import add_order_contact_to_newsletter
 from shop.services.emails import send_order_confirmation_email, send_staff_new_order_email
 from shop.services.invoices import issue_invoice_for_order
 from shop.services.legal import get_current_terms_document
+from shop.constants import DIGITAL_CONTENT_CONSENT_TEXT
 
 
 class CheckoutError(Exception):
@@ -147,6 +148,25 @@ def create_order_from_cart(
 
     now = timezone.now()
 
+    digital_content_consent = False
+    digital_content_consent_at = None
+    digital_content_consent_text = ""
+
+    if cart.contains_digital_content:
+        if not cleaned_data.get(
+            "digital_content_consent"
+        ):
+            raise CheckoutError(
+                "Pro okamžité zpřístupnění digitálního obsahu "
+                "je nutné udělit souhlas."
+            )
+
+        digital_content_consent = True
+        digital_content_consent_at = now
+        digital_content_consent_text = (
+            DIGITAL_CONTENT_CONSENT_TEXT
+        )
+
     order = Order.objects.create(
         user=user,
 
@@ -182,6 +202,10 @@ def create_order_from_cart(
         contains_digital_content=(
             cart.contains_digital_content
         ),
+
+        digital_content_consent=digital_content_consent,
+        digital_content_consent_at=digital_content_consent_at,
+        digital_content_consent_text=digital_content_consent_text,
 
         # Snapshot dopravy
         shipping_method=shipping_method,

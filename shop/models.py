@@ -713,6 +713,22 @@ class Order(models.Model):
         blank=True,
     )
 
+    digital_content_consent = models.BooleanField(
+        "souhlas s okamžitým zpřístupněním digitálního obsahu",
+        default=False,
+    )
+
+    digital_content_consent_at = models.DateTimeField(
+        "souhlas s okamžitým zpřístupněním udělen",
+        null=True,
+        blank=True,
+    )
+
+    digital_content_consent_text = models.TextField(
+        "znění souhlasu s digitálním obsahem",
+        blank=True,
+    )
+
     expires_at = models.DateTimeField(
         "objednávka expiruje",
         null=True,
