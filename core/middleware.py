@@ -178,7 +178,9 @@ BOT_USER_AGENT_PARTS = (
     "domainatlas",
     "recraft-image-dataset",
     "colectare-domenii",
-    "ct-sender-poc"
+    "ct-sender-poc",
+    "dyonysosradar",
+    "sitecarecrm-audit",
 )
 
 BOT_REFERER_PARTS = (
@@ -574,7 +576,13 @@ class SiteVisitStatsMiddleware:
         return cleaned_visitors
 
 
-    def is_suspicious_shared_user_agent(self, path, referer_raw, user_agent, client_label):
+    def is_suspicious_shared_user_agent(
+        self,
+        path,
+        referer_raw,
+        user_agent,
+        client_label,
+    ):
         ua = (user_agent or "").strip().lower()
 
         if not ua:
@@ -582,33 +590,43 @@ class SiteVisitStatsMiddleware:
 
         host = self.get_referer_host(referer_raw)
 
+        # Search referer je dobrý human signál.
         if self.is_search_referer_host(host):
             return False, ""
 
-        ua_client_count = self.remember_user_agent_client(user_agent, client_label)
-
-        is_social_iab = self.is_social_or_in_app_ua(user_agent)
-        is_mobile_browser = self.is_common_mobile_browser_ua(user_agent)
-
-        # Facebook/Instagram in-app browser po reklamě:
-        # neřešit přes shared_ua, ale přes Meta IP, scanner pathy, rapid behavior a beacon matching.
-        if is_social_iab:
+        # Facebook / Instagram in-app browser:
+        # shared UA zde není spolehlivý bot signál.
+        if self.is_social_or_in_app_ua(user_agent):
             return False, ""
 
-        # Desktop / generic bez refereru: pořád přísné.
+        # Běžné mobilní browsery dnes často používají velmi generické
+        # / redukované User-Agenty. Stejný přesný UA z mnoha různých
+        # clientů proto sám o sobě není bezpečný bot signál.
+        if self.is_common_mobile_browser_ua(user_agent):
+            return False, ""
+
+        # Počet clientů má smysl sledovat až pro UA,
+        # na které shared-UA pravidlo skutečně aplikujeme.
+        ua_client_count = self.remember_user_agent_client(
+            user_agent,
+            client_label,
+        )
+
+        # Desktop / generic bez refereru:
+        # tento pattern se nám u scannerů naopak osvědčil.
         empty_ref_shared_ua_client_threshold = 3
         general_shared_ua_client_threshold = 8
 
-        # Mobilní browsery mají častěji stejné UA, tak mírně povolit,
-        # ale ne úplně absurdně vysoko.
-        if is_mobile_browser:
-            empty_ref_shared_ua_client_threshold = 8
-            general_shared_ua_client_threshold = 15
-
-        if not host and ua_client_count >= empty_ref_shared_ua_client_threshold:
+        if (
+            not host
+            and ua_client_count >= empty_ref_shared_ua_client_threshold
+        ):
             return True, f"same_ua_empty_ref_clients:{ua_client_count}"
 
-        if self.is_own_referer_host(host) and ua_client_count >= general_shared_ua_client_threshold:
+        if (
+            self.is_own_referer_host(host)
+            and ua_client_count >= general_shared_ua_client_threshold
+        ):
             return True, f"same_ua_many_clients:{ua_client_count}"
 
         return False, ""
